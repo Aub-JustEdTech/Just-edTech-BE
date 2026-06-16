@@ -1,0 +1,52 @@
+# Additional build context optimizations
+# This file is used with --file flag for even faster builds
+
+# Version control
+.git/
+.gitignore
+
+# Virtual environments
+RAG-venv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Documentation (keep only essential)
+*.md
+!README.md
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tests and scripts
+tests/
+scripts/
+simple_add_user.py
+add_user_docker.py
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+.dockerbuildignore
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db

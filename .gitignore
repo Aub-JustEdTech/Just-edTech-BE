@@ -1,0 +1,343 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry - lock file is committed for reproducible builds
+# poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+RAG-venv/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+*.bak
+*.swp
+~$*
+$RECYCLE.BIN/
+Desktop.ini
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Docker
+.dockerignore
+Dockerfile.dev
+docker-compose.override.yml
+.docker/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+postgres_data/
+db_data/
+
+# Vector Database
+vector_db/
+faiss_index/
+chroma_db/
+pinecone_data/
+qdrant_config/
+qdrant_storage/
+qdrant*.log
+qdrant
+qdrant-web-ui/
+qdrant-*.tar.gz
+.qdrant-initialized
+*.index
+*.pkl
+*.pickle
+
+# Logs
+logs/
+*.log
+*.out
+
+# Configuration files with sensitive data
+.env
+.env.local
+.env.prod
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+config.ini
+settings.ini
+secrets.json
+credentials.json
+
+# API keys and tokens
+*.key
+*.pem
+*.crt
+*.cert
+*.p12
+*.pfx
+
+# Machine Learning / AI
+checkpoints/
+*.model
+*.h5
+*.pkl
+*.joblib
+wandb/
+mlruns/
+experiments/
+*.onnx
+*.tflite
+*.pb
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Cache directories
+.cache/
+cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node.js (if using any frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+coverage.html
+
+# Profiling data
+.prof
+
+# Local development files
+local/
+dev/
+scratch/
+playground/
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# OS generated files
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# IDE files
+*.sublime-*
+.idea
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.metadata
+.recommenders
+
+# Alembic
+# Keep alembic.ini and versions/ but ignore migration state
+alembic.ini.bak
+migration_state.txt
+
+# LangSmith & LangGraph Files
+.langgraph_api/
+
+# FastAPI specific
+.fastapi_cache/

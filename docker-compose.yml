@@ -1,0 +1,189 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: just_edtech
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.3"
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Session Management and Celery Broker
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6386:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:v1.13.2
+    restart: always
+    ports:
+      - "6343:6333"  # HTTP API
+      - "6344:6334"  # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 768M
+        reservations:
+          cpus: "0.3"
+          memory: 384M
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/6333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # FastAPI Application
+  api:
+    container_name: just-edtech
+    build: .
+    restart: always
+    ports:
+      - "8013:8000"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=just_edtech
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QDRANT_URL=http://qdrant:6333
+      - VECTOR_STORE_TYPE=qdrant
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      # Mount app code for hot-reload during development
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./pyproject.toml:/app/pyproject.toml
+      # Mount data directories
+      - temp_uploads:/app/temp_uploads
+      - ./data:/app/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.8"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery Worker for Document Processing (OPTIMIZED)
+  celery-worker:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=just_edtech
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QDRANT_URL=http://qdrant:6333
+      - VECTOR_STORE_TYPE=qdrant
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
+    command: >
+      celery -A app.celery_app worker
+      --loglevel=info
+      --concurrency=2
+      --max-tasks-per-child=1000
+      --time-limit=3600
+      --soft-time-limit=3000
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Flower - Celery Monitoring Dashboard
+  # REMOVED to match production and save ~150-300MB RAM
+  # To run Flower on-demand: docker run -p 5555:5555 --network just-edtech-be_default \
+  #   -e REDIS_HOST=redis -e REDIS_PORT=6379 <image> celery -A app.celery_app flower
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  temp_uploads:
