@@ -2,7 +2,6 @@
 Celery tasks for token usage aggregation and monthly billing.
 """
 
-import asyncio
 import logging
 from datetime import date, datetime, timedelta
 
@@ -10,21 +9,9 @@ from app.celery_app import celery_app
 from app.crud.daily_token_usage import daily_token_usage
 from app.crud.monthly_billing import monthly_billing
 from app.db.connector import AsyncSessionLocal
+from app.tasks.loop_utils import get_event_loop
 
 logger = logging.getLogger(__name__)
-
-
-def _get_event_loop():
-    """Get or create event loop for the current thread."""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop
 
 
 @celery_app.task(name="aggregate_daily_token_usage", bind=True)
@@ -49,7 +36,7 @@ def aggregate_daily_token_usage_task(self, target_date_str: str | None = None):
         logger.info(f"Starting token usage aggregation for date: {target_date}")
 
         # Get or create event loop for this worker
-        loop = _get_event_loop()
+        loop = get_event_loop()
 
         # Run async aggregation function
         result = loop.run_until_complete(_aggregate_daily_usage_async(target_date))
@@ -125,7 +112,7 @@ def backfill_daily_token_usage_task(self, start_date_str: str, end_date_str: str
         logger.info(f"Starting token usage backfill from {start_date} to {end_date}")
 
         # Get or create event loop for this worker
-        loop = _get_event_loop()
+        loop = get_event_loop()
 
         # Run async backfill function
         result = loop.run_until_complete(_backfill_usage_async(start_date, end_date))
@@ -234,7 +221,7 @@ def aggregate_monthly_billing_task(
         )
 
         # Get or create event loop for this worker
-        loop = _get_event_loop()
+        loop = get_event_loop()
 
         # Run async aggregation function
         result = loop.run_until_complete(

@@ -158,33 +158,6 @@ class S3Manager:
         except Exception as e:
             raise RuntimeError(f"Unexpected error during S3 deletion: {e}") from e
 
-    async def file_exists(self, s3_key: str) -> bool:
-        """
-        Check if a file exists in S3.
-
-        Args:
-            s3_key: S3 object key (path within bucket)
-
-        Returns:
-            True if file exists, False otherwise
-        """
-        if not self.bucket_name:
-            raise ValueError("S3 bucket name is not configured")
-
-        try:
-            async with self.session.client("s3") as s3_client:
-                await s3_client.head_object(
-                    Bucket=self.bucket_name,
-                    Key=s3_key,
-                )
-            return True
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "404":
-                return False
-            raise RuntimeError(f"Failed to check file existence in S3: {e}") from e
-        except Exception as e:
-            raise RuntimeError(f"Unexpected error checking S3 file: {e}") from e
-
     async def get_presigned_url(
         self,
         s3_key: str,

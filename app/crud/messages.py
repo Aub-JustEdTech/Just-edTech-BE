@@ -112,22 +112,5 @@ class MessageCRUD:
         messages = messages_result.unique().scalars().all()
         return messages
 
-    async def get_last_message_preview(
-        self, db: AsyncSession, conversation_id: int
-    ) -> str | None:
-        """Get preview of last message for conversation list"""
-        message_query = (
-            select(Message.content)
-            .where(Message.conversation_id == conversation_id)
-            .order_by(Message.created_at.desc())
-            .limit(1)
-        )
-
-        content_result = await db.execute(message_query)
-        content = content_result.scalar()
-        if content:
-            return content[:100] + "..." if len(content) > 100 else content
-        return None
-
 
 message = MessageCRUD()

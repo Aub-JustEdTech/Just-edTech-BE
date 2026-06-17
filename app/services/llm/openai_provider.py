@@ -342,22 +342,3 @@ class OpenAIProvider(BaseLLMProvider):
         # Allow unknown models but log warning
         logger.warning(f"Model {model_name} not in known list, allowing anyway")
         return True
-
-    def get_model_info(self, model_name: str) -> dict[str, Any]:
-        """
-        Get information about a specific model.
-
-        Args:
-            model_name: Model name
-
-        Returns:
-            Model information dictionary
-        """
-        config = self._get_model_config(model_name)
-        return {
-            "model": model_name,
-            "provider": "openai",
-            "max_tokens_param": config["max_tokens_param"],
-            "default_max_tokens": config["default_max_tokens"],
-            "supports_system_prompt": config["supports_system_prompt"],
-        }

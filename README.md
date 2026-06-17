@@ -129,14 +129,13 @@ Just-EdTech-BE/
 ├── pyproject.toml            # Poetry dependencies
 ├── quality_check.sh
 ├── quality_checks/
-│   ├── quality_check.py
-│   ├── quality_check_simple.py
 │   └── run_quality_checks.py
 ├── README.md                # This file
 ├── scripts/
 │   ├── __init__.py
-│   ├── add_user.py
-│   └── create_user.py
+│   ├── clear_vectors.py
+│   ├── seed_roles.py
+│   └── setup_model_pricing.py
 ├── tests/                     # Test files
 │   ├── __init__.py
 │   └── test_main.py           # Basic tests

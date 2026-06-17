@@ -41,16 +41,3 @@ class ProcessorFactory:
 
         logger.debug(f"Selected {processor_class.__name__} for {extension}")
         return processor_class()
-
-    @classmethod
-    def register_processor(
-        cls, extension: str, processor_class: type[DocumentProcessor]
-    ):
-        """Register new processor for extension"""
-        cls._processors[extension] = processor_class
-        logger.info(f"Registered {processor_class.__name__} for {extension}")
-
-    @classmethod
-    def get_supported_extensions(cls) -> list[str]:
-        """Get list of supported file extensions"""
-        return list(cls._processors.keys())

@@ -40,19 +40,6 @@ async def get_batch(
     return result.scalar_one_or_none()
 
 
-async def get_batch_by_id(
-    db: AsyncSession, id: int, tenant_id: int
-) -> UploadBatch | None:
-    """Get a batch by database ID for a specific tenant."""
-    result = await db.execute(
-        select(UploadBatch).where(
-            UploadBatch.id == id,
-            UploadBatch.tenant_id == tenant_id,
-        )
-    )
-    return result.scalar_one_or_none()
-
-
 async def update_batch_counts(db: AsyncSession, batch_id: int):
     """
     Update batch counts based on current document statuses.

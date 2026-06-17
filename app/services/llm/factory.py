@@ -71,26 +71,3 @@ class LLMProviderFactory:
                 f"Unknown model prefix for {model_name}, defaulting to OpenAI provider"
             )
             return cls.create_provider("openai")
-
-    @classmethod
-    def register_provider(cls, name: str, provider_class: type[BaseLLMProvider]):
-        """
-        Register a new provider.
-
-        Args:
-            name: Provider name
-            provider_class: Provider class (must inherit from BaseLLMProvider)
-        """
-        if not issubclass(provider_class, BaseLLMProvider):
-            raise TypeError(
-                f"Provider class must inherit from BaseLLMProvider, "
-                f"got {provider_class}"
-            )
-
-        cls._providers[name.lower()] = provider_class
-        logger.info(f"Registered new LLM provider: {name}")
-
-    @classmethod
-    def list_providers(cls) -> list[str]:
-        """Get list of available providers"""
-        return list(cls._providers.keys())

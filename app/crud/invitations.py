@@ -50,25 +50,6 @@ class InvitationCRUD:
         )
         return res.scalars().first()
 
-    async def get_active_by_email(
-        self, db: AsyncSession, email: str
-    ) -> Invitation | None:
-        """Return the most recent active (not accepted) invitation for an email, across tenants.
-
-        Deterministic by ordering newest first.
-        """
-        res = await db.execute(
-            select(Invitation)
-            .where(
-                and_(
-                    Invitation.email == email,
-                    Invitation.accepted.is_(False),
-                )
-            )
-            .order_by(Invitation.id.desc())
-        )
-        return res.scalars().first()
-
     async def get_all_active_by_email(
         self, db: AsyncSession, email: str
     ) -> list[Invitation]:

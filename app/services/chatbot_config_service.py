@@ -13,7 +13,6 @@ from app.core.config import settings
 from app.crud.chatbot_configs import chatbot_config
 from app.models.chatbot_configs import ChatbotConfig
 from app.models.llm_models import LLMModel
-from app.schemas.chatbot_configs import ChatbotConfigCreate, ChatbotConfigUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -264,36 +263,6 @@ class ChatbotConfigService:
             "chunk_overlap": rag_config.get("chunk_overlap", settings.CHUNK_OVERLAP),
         }
 
-    async def create_chatbot_config(
-        self, db: AsyncSession, chatbot_config_create: ChatbotConfigCreate
-    ) -> ChatbotConfig:
-        """
-        Create a new chatbot configuration.
-
-        Args:
-            db: Database session
-            chatbot_config_create: Chatbot configuration creation schema
-
-        Returns:
-            Created ChatbotConfig object
-        """
-        return await chatbot_config.create(db, chatbot_config_create)
-
-    async def list_chatbot_configs(
-        self, db: AsyncSession, tenant_id: int
-    ) -> list[ChatbotConfig]:
-        """
-        List all chatbot configurations for a tenant.
-
-        Args:
-            db: Database session
-            tenant_id: Tenant ID
-
-        Returns:
-            List of ChatbotConfig objects
-        """
-        return await chatbot_config.list_by_tenant(db, tenant_id)
-
     async def get_default_chatbot_config(
         self, db: AsyncSession, tenant_id: int
     ) -> ChatbotConfig | None:
@@ -308,56 +277,6 @@ class ChatbotConfigService:
             ChatbotConfig object or None if not found
         """
         return await chatbot_config.get_default(db, tenant_id)
-
-    async def update_chatbot_config(
-        self,
-        db: AsyncSession,
-        chatbot_config_id: int,
-        chatbot_config_update: ChatbotConfigUpdate,
-    ) -> ChatbotConfig | None:
-        """
-        Update chatbot configuration.
-
-        Args:
-            db: Database session
-            chatbot_config_id: Chatbot configuration ID
-            chatbot_config_update: Chatbot configuration update schema
-
-        Returns:
-            Updated ChatbotConfig object or None if not found
-        """
-        return await chatbot_config.update(db, chatbot_config_id, chatbot_config_update)
-
-    async def delete_chatbot_config(
-        self, db: AsyncSession, chatbot_config_id: int
-    ) -> bool:
-        """
-        Delete chatbot configuration.
-
-        Args:
-            db: Database session
-            chatbot_config_id: Chatbot configuration ID
-
-        Returns:
-            True if deleted, False if not found
-        """
-        return await chatbot_config.delete(db, chatbot_config_id)
-
-    async def set_default_chatbot(
-        self, db: AsyncSession, tenant_id: int, chatbot_config_id: int
-    ) -> ChatbotConfig | None:
-        """
-        Set a chatbot as default for a tenant.
-
-        Args:
-            db: Database session
-            tenant_id: Tenant ID
-            chatbot_config_id: Chatbot configuration ID
-
-        Returns:
-            Updated ChatbotConfig object or None if not found
-        """
-        return await chatbot_config.set_default(db, tenant_id, chatbot_config_id)
 
     def get_latest_version_index(
         self, chatbot_config_obj: ChatbotConfig

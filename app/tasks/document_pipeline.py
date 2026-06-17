@@ -16,7 +16,6 @@ Each stage:
 - Logs errors with full context
 """
 
-import asyncio
 import logging
 import os
 import traceback
@@ -43,23 +42,11 @@ from app.services.document_processing.factory import ProcessorFactory
 from app.services.embeddings.embedding_service import EmbeddingService
 from app.services.image_caption_service import ImageCaptionService
 from app.services.vector_store.factory import VectorStoreFactory, VectorStoreType
+from app.tasks.loop_utils import get_event_loop
 from app.utils.redis_pipeline import get_redis_tracker
 from app.utils.s3 import S3Manager
 
 logger = logging.getLogger(__name__)
-
-
-def _get_event_loop():
-    """Get or create event loop for the current thread."""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop
 
 
 # ==================== Helper Functions ====================
@@ -228,7 +215,7 @@ def step1_download_from_s3(self, context_dict: dict[str, Any]) -> dict[str, Any]
     """
     ctx = PipelineContext.from_dict(context_dict)
     redis_tracker = get_redis_tracker()
-    loop = _get_event_loop()
+    loop = get_event_loop()
 
     try:
         logger.info(f"[Doc {ctx.document_id}] Stage 1: Downloading from S3")
@@ -351,7 +338,7 @@ def step2_extract_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     ctx = PipelineContext.from_dict(context_dict)
     redis_tracker = get_redis_tracker()
-    loop = _get_event_loop()
+    loop = get_event_loop()
 
     try:
         logger.info(f"[Doc {ctx.document_id}] Stage 2: Extracting text")
@@ -545,7 +532,7 @@ def step2_5_summarize_document(self, context_dict: dict[str, Any]) -> dict[str, 
     """
     ctx = PipelineContext.from_dict(context_dict)
     redis_tracker = get_redis_tracker()
-    loop = _get_event_loop()
+    loop = get_event_loop()
 
     try:
         logger.info(f"[Doc {ctx.document_id}] Stage 2.5: Summarising document")
@@ -632,7 +619,7 @@ def step3_chunk_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     ctx = PipelineContext.from_dict(context_dict)
     redis_tracker = get_redis_tracker()
-    loop = _get_event_loop()
+    loop = get_event_loop()
 
     try:
         logger.info(f"[Doc {ctx.document_id}] Stage 3: Chunking text")
@@ -787,7 +774,7 @@ def step4_generate_embeddings(self, context_dict: dict[str, Any]) -> dict[str, A
     """
     ctx = PipelineContext.from_dict(context_dict)
     redis_tracker = get_redis_tracker()
-    loop = _get_event_loop()
+    loop = get_event_loop()
 
     try:
         logger.info(f"[Doc {ctx.document_id}] Stage 4: Generating embeddings")
@@ -924,7 +911,7 @@ def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     ctx = PipelineContext.from_dict(context_dict)
     redis_tracker = get_redis_tracker()
-    loop = _get_event_loop()
+    loop = get_event_loop()
 
     try:
         logger.info(f"[Doc {ctx.document_id}] Stage 5: Storing in vector database")

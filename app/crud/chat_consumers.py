@@ -35,20 +35,5 @@ class ChatConsumerCRUD:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_id(
-        self, db: AsyncSession, chat_consumer_id: int
-    ) -> ChatConsumer | None:
-        """Get chat consumer by ID"""
-        return await db.get(ChatConsumer, chat_consumer_id)
-
-    async def get_tenant_chat_consumers(
-        self, db: AsyncSession, tenant_id: int
-    ) -> list[ChatConsumer]:
-        """Get all chat consumers for a tenant"""
-        result = await db.execute(
-            select(ChatConsumer).where(ChatConsumer.tenant_id == tenant_id)
-        )
-        return result.scalars().all()
-
 
 chat_consumer = ChatConsumerCRUD()

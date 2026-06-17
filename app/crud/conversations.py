@@ -116,19 +116,6 @@ class ConversationCRUD:
 
         return items, total
 
-    async def get_user_conversations(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        tenant_id: int,
-        page: int = 1,
-        per_page: int = 20,
-    ) -> tuple[list[ConversationListItem], int]:
-        """Get user's conversations with pagination and last message preview (legacy method)"""
-        return await self.get_conversations(
-            db, tenant_id, page, per_page, user_id=user_id
-        )
-
     async def create_conversation(
         self,
         db: AsyncSession,
