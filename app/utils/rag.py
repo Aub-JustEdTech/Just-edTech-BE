@@ -16,38 +16,9 @@ from app.services.embeddings.embedding_service import EmbeddingService
 from app.services.llm_service import LLMService
 from app.services.chatbot_config_service import chatbot_config_service
 from app.services.vector_store.factory import VectorStoreFactory
+from app.utils.model_names import normalize_model_name
 
 logger = logging.getLogger(__name__)
-
-
-def normalize_model_name(model_name: str) -> str:
-    """
-    Normalize model name by removing version suffixes.
-
-    Examples:
-        gpt-4o-mini-2024-07-18 -> gpt-4o-mini
-        gpt-4-turbo-2024-04-09 -> gpt-4-turbo
-        gpt-3.5-turbo-0125 -> gpt-3.5-turbo
-
-    Args:
-        model_name: Full model name from API
-
-    Returns:
-        Normalized base model name
-    """
-    if not model_name or model_name == "unknown":
-        return model_name
-
-    # Remove date patterns (YYYY-MM-DD or YYYYMMDD)
-    normalized = re.sub(r"-?\d{4}-?\d{2}-?\d{2}", "", model_name)
-
-    # Remove version numbers at the end (like -0125, -0613, etc.)
-    normalized = re.sub(r"-\d{4}$", "", normalized)
-
-    # Remove trailing dashes
-    normalized = normalized.rstrip("-")
-
-    return normalized
 
 
 class RAGProcessor:
@@ -468,28 +439,6 @@ async def _retrieve_relevant_images(
     except Exception as e:
         logger.error(f"Error retrieving relevant images: {e}", exc_info=True)
         return []
-
-
-def format_context_for_llm(messages: list, max_context_length: int = 4000) -> str:
-    """Format conversation history for LLM context"""
-    context_parts = []
-    current_length = 0
-
-    # Add messages in reverse order (most recent first) until we hit the limit
-    for msg in reversed(messages):
-        role = msg.role
-        content = msg.content
-
-        message_text = f"{role.upper()}: {content}\n"
-        message_length = len(message_text)
-
-        if current_length + message_length > max_context_length:
-            break
-
-        context_parts.insert(0, message_text)  # Insert at beginning to maintain order
-        current_length += message_length
-
-    return "\n".join(context_parts)
 
 
 def _is_casual_query(query: str) -> bool:

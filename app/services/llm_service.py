@@ -154,63 +154,6 @@ class LLMService:
             **kwargs,
         )
 
-    @traceable(name="llm_generate_conversation_title")
-    async def generate_conversation_title(
-        self,
-        first_message: str,
-        max_length: int = 50,
-        model: str | None = None,
-    ) -> str:
-        """
-        Generate a concise conversation title from the first message.
-
-        Args:
-            first_message: The first user message in the conversation
-            max_length: Maximum length of the title
-            model: Model to use (defaults to gpt-3.5-turbo)
-
-        Returns:
-            Generated title string
-        """
-        try:
-            # Prefer gpt-4o-mini by default for better quality and consistency
-            model = model or "gpt-4o-mini"
-
-            messages = [
-                {
-                    "role": "system",
-                    "content": "Generate a very short, concise title (max 7 words) for a conversation that starts with the following message. Only return the title, nothing else.",
-                },
-                {"role": "user", "content": first_message},
-            ]
-
-            # Use the factory pattern to get appropriate provider
-            result = await self.generate_chat_completion(
-                messages=messages,
-                model=model,
-                temperature=0.5,
-                max_tokens=20,
-            )
-
-            title = result["content"].strip()
-
-            # Ensure it doesn't exceed max_length
-            if len(title) > max_length:
-                title = title[:max_length].rsplit(" ", 1)[0] + "..."
-
-            return title
-
-        except Exception as e:
-            logger.error(f"Error generating conversation title: {e}")
-            # Fallback to simple truncation
-            words = first_message.strip().split()[:7]
-            title = " ".join(words)
-            if len(title) > max_length:
-                title = title[:max_length].rsplit(" ", 1)[0]
-            if len(title) < len(first_message):
-                title += "..."
-            return title
-
 
 # Global LLM service instance
 llm_service = LLMService()

@@ -2,7 +2,6 @@
 CRUD operations for DailyTokenUsage model.
 """
 
-import re
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -11,15 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.daily_token_usage import DailyTokenUsage
 from app.models.llm_models import LLMModel
-
-
-def _normalize_model_name(model_name: str) -> str:
-    """Normalize model name by removing version suffixes."""
-    if not model_name or model_name == "unknown":
-        return model_name
-    normalized = re.sub(r"-?\d{4}-?\d{2}-?\d{2}", "", model_name)
-    normalized = re.sub(r"-\d{4}$", "", normalized)
-    return normalized.rstrip("-")
+from app.utils.model_names import normalize_model_name
 
 
 class DailyTokenUsageCRUD:
@@ -106,26 +97,6 @@ class DailyTokenUsageCRUD:
             query = query.where(DailyTokenUsage.model_name == model_name)
 
         query = query.order_by(DailyTokenUsage.usage_date.desc())
-
-        result = await db.execute(query)
-        return result.scalars().all()
-
-    async def get_daily_usage_by_date(
-        self,
-        db: AsyncSession,
-        usage_date: date,
-        tenant_id: int | None = None,
-    ) -> list[DailyTokenUsage]:
-        """
-        Get all daily token usage records for a specific date.
-        Optionally filter by tenant_id.
-        """
-        query = select(DailyTokenUsage).where(DailyTokenUsage.usage_date == usage_date)
-
-        if tenant_id:
-            query = query.where(DailyTokenUsage.tenant_id == tenant_id)
-
-        query = query.order_by(DailyTokenUsage.tenant_id, DailyTokenUsage.model_name)
 
         result = await db.execute(query)
         return result.scalars().all()
@@ -253,7 +224,7 @@ class DailyTokenUsageCRUD:
             message_count = agg.message_count or 0
 
             # Normalize model name for pricing lookup
-            normalized_model = _normalize_model_name(model_name)
+            normalized_model = normalize_model_name(model_name)
 
             # Get model pricing (Global lookup)
             pricing_query = select(LLMModel).where(LLMModel.name == normalized_model)

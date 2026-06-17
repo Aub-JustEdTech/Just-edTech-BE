@@ -257,7 +257,6 @@ async def get_current_user_or_chat_consumer(
 # Convenience aliases for common role combinations
 require_super_admin = Depends(get_current_super_admin)
 require_tenant_admin = Depends(get_current_tenant_admin)
-require_any_user = Depends(get_current_tenant_user)
 require_chat_consumer = Depends(get_chat_consumer_from_uuid)
 require_user_or_chat_consumer = Depends(get_current_user_or_chat_consumer)
 

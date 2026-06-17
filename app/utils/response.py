@@ -8,7 +8,7 @@ from fastapi import status
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
-from app.schemas.common import APIResponse, ErrorDetail
+from app.schemas.common import APIResponse
 
 
 def success_response(
@@ -31,39 +31,6 @@ def success_response(
         success=True,
         data=data,
         error=None,
-        extra=extra,
-    )
-    return JSONResponse(
-        content=jsonable_encoder(response, exclude_none=False),
-        status_code=status_code,
-    )
-
-
-def error_response(
-    code: str,
-    message: str,
-    details: dict[str, Any] | None = None,
-    status_code: int = status.HTTP_400_BAD_REQUEST,
-    extra: dict[str, Any] | None = None,
-) -> JSONResponse:
-    """
-    Create a standardized error response.
-
-    Args:
-        code: Error type (e.g., 'VALIDATION_ERROR', 'NOT_FOUND')
-        message: Human-readable error message
-        details: Additional error details
-        status_code: HTTP status code (default: 400)
-        extra: Additional metadata
-
-    Returns:
-        JSONResponse with standardized structure
-    """
-    error_detail = ErrorDetail(error_type=code, message=message, details=details)
-    response = APIResponse(
-        success=False,
-        data=None,
-        error=error_detail,
         extra=extra,
     )
     return JSONResponse(

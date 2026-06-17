@@ -19,6 +19,7 @@ from app.api.api import api_router
 from app.core.config import settings
 from app.db.connector import create_tables
 from app.db.redis_connector import close_redis, init_redis
+from app.services.agentic_rag.service import setup_checkpointer
 from app.utils.exception_handlers import (
     general_exception_handler,
     http_exception_handler,
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     initialize_langsmith()
     await create_tables()
+    await setup_checkpointer()
     await init_redis()
     yield
     await close_redis()

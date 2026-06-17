@@ -1,6 +1,5 @@
 """Celery tasks for document processing."""
 
-import asyncio
 import logging
 from datetime import datetime
 
@@ -12,21 +11,9 @@ from app.db.connector import AsyncSessionLocal
 from app.models.documents import Document, ProcessingStatus
 from app.models.processing_jobs import DocumentProcessingJob, JobStatus
 from app.services.document_service import DocumentService
+from app.tasks.loop_utils import get_event_loop
 
 logger = logging.getLogger(__name__)
-
-
-def _get_event_loop():
-    """Get or create event loop for the current thread."""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop
 
 
 @celery_app.task(name="process_document", bind=True, max_retries=3)
@@ -45,7 +32,7 @@ def process_document_task(
         logger.info(f"Starting processing for document {document_id}, job {job_id}")
 
         # Get or create event loop for this worker
-        loop = _get_event_loop()
+        loop = get_event_loop()
 
         # Run async function in sync context
         loop.run_until_complete(_process_document_async(document_id, job_id, batch_id))
@@ -57,7 +44,7 @@ def process_document_task(
 
         # Update job status to failed
         try:
-            loop = _get_event_loop()
+            loop = get_event_loop()
             loop.run_until_complete(_mark_job_failed(job_id, str(exc)))
         except Exception as update_error:
             logger.error(f"Failed to update job status: {update_error}")

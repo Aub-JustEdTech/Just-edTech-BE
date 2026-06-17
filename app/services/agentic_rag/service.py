@@ -142,10 +142,15 @@ class AgenticRAGService:
         try:
             from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
+            # NOTE: checkpointer.setup() is intentionally NOT called here. It runs
+            # CREATE INDEX CONCURRENTLY, which must wait for all in-flight
+            # transactions to finish — including this request's own open DB
+            # session — causing a self-deadlock and hanging the endpoint. The
+            # checkpoint tables are provisioned once at application startup via
+            # setup_checkpointer(); see app.main.lifespan.
             async with AsyncPostgresSaver.from_conn_string(
                 settings.DATABASE_URL
             ) as checkpointer:
-                await checkpointer.setup()
                 compiled = self._graph.compile(checkpointer=checkpointer)
                 return await compiled.ainvoke(initial_state, config=run_config)
 
@@ -207,6 +212,59 @@ class AgenticRAGService:
         }
 
         return response_text, citations, metadata
+
+
+async def setup_checkpointer() -> None:
+    """
+    Provision the LangGraph PostgreSQL checkpoint tables exactly once.
+
+    ``AsyncPostgresSaver.setup()`` issues ``CREATE INDEX CONCURRENTLY`` which
+    cannot run inside a transaction and must wait for every in-flight
+    transaction to finish before it completes. When this was called per-request
+    it deadlocked against the request's own open DB transaction, hanging the
+    ``/conversations`` endpoint indefinitely. Running it here at startup — where
+    no request transactions compete — lets the index build complete cleanly.
+
+    A previously interrupted build can leave an INVALID index of the same name;
+    ``CREATE INDEX CONCURRENTLY IF NOT EXISTS`` would then keep retrying it, so
+    we proactively drop any invalid checkpoint index first.
+    """
+    try:
+        from sqlalchemy import text
+
+        from app.db.connector import async_engine
+
+        # Drop leftover INVALID checkpoint indexes from prior interrupted runs.
+        async with async_engine.connect() as conn:
+            invalid = (
+                await conn.execute(
+                    text(
+                        "SELECT c.relname FROM pg_class c "
+                        "JOIN pg_index i ON i.indexrelid = c.oid "
+                        "JOIN pg_class t ON t.oid = i.indrelid "
+                        "WHERE t.relname = 'checkpoints' AND i.indisvalid = false"
+                    )
+                )
+            ).scalars().all()
+            for index_name in invalid:
+                await conn.exec_driver_sql(f'DROP INDEX IF EXISTS "{index_name}"')
+            await conn.commit()
+
+        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+        async with AsyncPostgresSaver.from_conn_string(
+            settings.DATABASE_URL
+        ) as checkpointer:
+            await checkpointer.setup()
+
+        logger.info("[AgenticRAGService] Checkpointer tables ready.")
+    except Exception as exc:  # pragma: no cover - defensive
+        # Checkpointing is best-effort; the agent falls back to stateless runs
+        # if the checkpointer is unavailable, so a setup failure must not crash
+        # application startup.
+        logger.warning(
+            f"[AgenticRAGService] Checkpointer setup failed: {exc}", exc_info=True
+        )
 
 
 # Singleton — build once at import time so the graph and LLM binding are

@@ -1,0 +1,42 @@
+REGRESSION TEST DOCUMENT - PLAIN TEXT
+
+Title: Introduction to Neural Networks
+
+This is a sample plain text document used for regression testing of the Just-EdTech RAG API.
+
+OVERVIEW
+--------
+Neural networks are computing systems loosely inspired by the biological neural networks that
+constitute animal brains. These systems learn to perform tasks by considering examples, generally
+without being programmed with task-specific rules.
+
+HOW NEURAL NETWORKS WORK
+--------------------------
+A neural network consists of layers of interconnected nodes (neurons). Information passes through
+these layers, with each neuron applying an activation function to determine whether it should
+"fire" or pass information to the next layer.
+
+KEY COMPONENTS
+--------------
+1. Input Layer: Receives raw data.
+2. Hidden Layers: Performs transformations on the data.
+3. Output Layer: Produces the final result.
+4. Weights and Biases: Adjustable parameters learned during training.
+
+TRAINING PROCESS
+----------------
+Neural networks are trained using backpropagation and gradient descent, which iteratively
+adjusts the weights and biases to minimize the difference between predicted and actual outputs.
+
+APPLICATIONS OF NEURAL NETWORKS
+---------------------------------
+- Image recognition and classification
+- Speech recognition
+- Natural language understanding
+- Time series forecasting
+- Autonomous vehicles
+
+CONCLUSION
+----------
+Neural networks are a powerful tool for solving complex pattern-recognition and prediction tasks.
+This plain text file is used to test the .txt document type ingestion in the regression suite.

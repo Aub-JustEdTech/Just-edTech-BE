@@ -184,21 +184,3 @@ class Chunker:
 
         logger.info(f"Created {len(chunks)} chunks using paragraph strategy")
         return chunks
-
-    def get_chunk_metadata(self, chunk_index: int, total_chunks: int) -> dict:
-        """
-        Generate metadata for a chunk.
-
-        Args:
-            chunk_index: Index of the chunk
-            total_chunks: Total number of chunks
-
-        Returns:
-            Dictionary with chunk metadata
-        """
-        return {
-            "chunk_index": chunk_index,
-            "total_chunks": total_chunks,
-            "chunk_size": self.chunk_size,
-            "chunk_overlap": self.chunk_overlap,
-        }

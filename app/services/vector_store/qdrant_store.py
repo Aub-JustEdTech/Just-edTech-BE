@@ -52,15 +52,6 @@ class QdrantStore(VectorStore):
         """Generate collection name for document summary embeddings"""
         return f"{settings.QDRANT_COLLECTION_PREFIX}_{tenant_id}_summaries"
 
-    @staticmethod
-    def _is_valid_uuid(uuid_string: str) -> bool:
-        """Check if a string is a valid UUID"""
-        try:
-            uuid.UUID(uuid_string)
-            return True
-        except (ValueError, AttributeError, TypeError):
-            return False
-
     def _insert_point_via_rest(self, collection_name: str, point: models.PointStruct):
         """
         Insert a single point via REST API as last resort for Qdrant 1.7.0.

@@ -321,11 +321,6 @@ class RedisManager:
 redis_manager = RedisManager()
 
 
-async def get_redis() -> Redis:
-    """Dependency to get Redis connection"""
-    return await redis_manager.get_redis()
-
-
 # Startup and shutdown events
 async def init_redis():
     """Initialize Redis connection on startup"""

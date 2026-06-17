@@ -65,23 +65,6 @@ def verify_token(token: str) -> TokenVerificationResult:
         return TokenVerificationResult(error="invalid")
 
 
-def get_user_id_from_token(token: str) -> int | None:
-    """
-    Extract user ID from JWT token (backward compatible)
-    Returns None if token is invalid or expired
-    """
-    result = verify_token(token)
-    if result.payload:
-        # Try both 'user_id' (new format) and 'sub' (JWT standard) for compatibility
-        user_id = result.payload.get("user_id") or result.payload.get("sub")
-        if user_id is not None:
-            try:
-                return int(user_id)  # Ensure it's an integer
-            except (ValueError, TypeError):
-                return None
-    return None
-
-
 def verify_token_and_get_user_id(
     token: str,
 ) -> tuple[int | None, TokenVerificationResult]:
