@@ -602,6 +602,105 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
         )
 
 
+# ==================== Stage 2.6: Extract HeatMap Metadata ====================
+
+
+@celery_app.task(name="pipeline.extract_heatmap_metadata", bind=True, max_retries=1)
+def step2_6_extract_heatmap_metadata(self, context_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Stage 2.6: Extract county/school_district/document_date from document text via LLM.
+
+    Non-fatal: if extraction fails the pipeline continues unchanged.
+    Extracted fields (county, school_district, document_date, state) are stored
+    in ctx.doc_metadata so that Stage 5 automatically includes them on every chunk.
+    """
+    ctx = PipelineContext.from_dict(context_dict)
+    loop = get_event_loop()
+
+    try:
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.6: Extracting heatmap metadata")
+        loop.run_until_complete(_step2_6_extract_async(ctx))
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.6 completed")
+    except Exception as exc:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 2.6 (heatmap metadata) failed – "
+            f"pipeline continues: {exc}",
+            exc_info=True,
+        )
+
+    return ctx.to_dict()
+
+
+async def _step2_6_extract_async(ctx: PipelineContext) -> None:
+    """Async implementation of heatmap metadata extraction."""
+    from openai import AsyncOpenAI
+
+    from app.core.config import settings
+    from app.crud.heatmap import heatmap_crud
+    from app.db.connector import AsyncSessionLocal
+
+    if not ctx.extracted_text:
+        return
+
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    text_sample = ctx.extracted_text[:4000]
+
+    from app.utils.geography import get_county_names
+    valid_counties = get_county_names("MA")
+    county_list = ", ".join(valid_counties)
+
+    system_prompt = (
+        "You are a document classification assistant. "
+        "Given text from a Massachusetts school board document, extract the following as JSON:\n"
+        '  "county"          – one of the valid MA county names listed below, or null if not determinable\n'
+        '  "school_district" – the specific school district name, or null\n'
+        '  "document_date"   – the meeting/publication date in YYYY-MM-DD format, or null\n\n'
+        f"Valid MA county names: {county_list}.\n"
+        "Return ONLY the JSON object. Do not wrap in markdown fences."
+    )
+
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Document text:\n\n{text_sample}"},
+        ],
+        temperature=0,
+        response_format={"type": "json_object"},
+    )
+
+    import json as _json
+
+    raw = response.choices[0].message.content or "{}"
+    extracted = _json.loads(raw)
+
+    county = extracted.get("county")
+    school_district = extracted.get("school_district")
+    document_date = extracted.get("document_date")
+
+    if county and county not in valid_counties:
+        county = None
+
+    if not county and school_district:
+        async with AsyncSessionLocal() as db:
+            resolved = await heatmap_crud.get_county_for_district(db, school_district)
+            if resolved:
+                county = resolved
+
+    if county:
+        ctx.doc_metadata["county"] = county
+    if school_district:
+        ctx.doc_metadata["school_district"] = school_district
+    if document_date:
+        ctx.doc_metadata["document_date"] = document_date
+    ctx.doc_metadata["state"] = "MA"
+
+    logger.info(
+        f"[Doc {ctx.document_id}] HeatMap metadata: county={county}, "
+        f"district={school_district}, date={document_date}"
+    )
+
+
 # ==================== Stage 3: Chunk Text ====================
 
 
@@ -948,6 +1047,14 @@ def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
         # Cleanup temp file
         if ctx.temp_file_path and os.path.exists(ctx.temp_file_path):
             os.remove(ctx.temp_file_path)
+
+        # Invalidate heatmap cache for this tenant so new document appears on map
+        if ctx.tenant_id:
+            try:
+                from app.services.heatmap_service import heatmap_service
+                loop.run_until_complete(heatmap_service.invalidate_heatmap_cache(ctx.tenant_id))
+            except Exception as cache_exc:
+                logger.warning(f"[Doc {ctx.document_id}] Heatmap cache invalidation failed: {cache_exc}")
 
         logger.info(f"[Doc {ctx.document_id}] ✅ Pipeline completed successfully!")
 
@@ -1310,6 +1417,7 @@ def process_document_pipeline(
         step1_download_from_s3.s(ctx.to_dict()),
         step2_extract_text.s(),
         step2_5_summarize_document.s(),
+        step2_6_extract_heatmap_metadata.s(),
         step3_chunk_text.s(),
         step4_generate_embeddings.s(),
         step5_store_vectors.s(),

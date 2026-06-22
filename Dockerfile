@@ -40,6 +40,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/pypoetry \
     poetry install --only main --no-root
 
+# Install addfips separately (US Census county data — not in lock file yet)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install addfips==0.4.0
+
 # -----------------------------
 # Production Stage
 # -----------------------------
