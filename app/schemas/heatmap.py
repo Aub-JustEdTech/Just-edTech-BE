@@ -76,6 +76,7 @@ class HeatmapSummaryResponse(BaseModel):
 
 
 class CitationItem(BaseModel):
+    document_id: str = ""
     document_title: str
     school_district: str
     date: str

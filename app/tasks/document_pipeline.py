@@ -1048,14 +1048,6 @@ def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
         if ctx.temp_file_path and os.path.exists(ctx.temp_file_path):
             os.remove(ctx.temp_file_path)
 
-        # Invalidate heatmap cache for this tenant so new document appears on map
-        if ctx.tenant_id:
-            try:
-                from app.services.heatmap_service import heatmap_service
-                loop.run_until_complete(heatmap_service.invalidate_heatmap_cache(ctx.tenant_id))
-            except Exception as cache_exc:
-                logger.warning(f"[Doc {ctx.document_id}] Heatmap cache invalidation failed: {cache_exc}")
-
         logger.info(f"[Doc {ctx.document_id}] ✅ Pipeline completed successfully!")
 
         return ctx.to_dict()
@@ -1122,6 +1114,7 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
                 "tenant_id": ctx.tenant_id,
                 "document_type": ctx.document_type,
                 "created_at": datetime.utcnow().isoformat(),
+                "s3_url": document.s3_url,
                 **doc_meta_clean,
                 **per_chunk,
             }

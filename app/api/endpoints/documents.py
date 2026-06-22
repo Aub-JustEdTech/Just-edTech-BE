@@ -1245,3 +1245,47 @@ async def get_document_image(
             "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
         }
     )
+
+
+@router.get("/text/{doc_uuid}")
+async def get_document_text(
+    doc_uuid: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+):
+    """
+    Return the full extracted text of a document by its UUID (doc_id).
+    Fetches chunks from Qdrant, sorts by chunk_index, and joins them.
+    Used by the heatmap citation viewer to display the full document.
+    """
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not have an associated tenant",
+        )
+
+    result = await db.execute(
+        select(Document).where(
+            Document.doc_id == doc_uuid,
+            Document.tenant_id == tenant_id,
+        )
+    )
+    document = result.scalar_one_or_none()
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
+
+    chunks = await get_document_service().vector_store.get_document_chunks(
+        document_id=doc_uuid,
+        tenant_id=tenant_id,
+    )
+
+    chunks.sort(key=lambda c: c.get("metadata", {}).get("chunk_index", 0))
+    full_text = "\n\n".join(c.get("text", "") for c in chunks)
+
+    return success_response(
+        data={"title": document.name, "text": full_text}
+    )

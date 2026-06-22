@@ -1,18 +1,15 @@
 """
-HeatMap service: Qdrant search, Redis caching, presigned S3 URLs, and PDF export.
+HeatMap service: Qdrant search, presigned S3 URLs, and PDF export.
 """
 
-import json
 import logging
 import math
 from collections import defaultdict
-from datetime import timedelta
 from io import BytesIO
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.redis_connector import redis_manager
 from app.schemas.heatmap import (
     CitationItem,
     CountyCitationsData,
@@ -28,7 +25,6 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 _SNIPPET_MAX_LEN = 200
-_CACHE_TTL = timedelta(hours=1)
 _SCORE_THRESHOLD = 0.20
 
 
@@ -38,12 +34,8 @@ def _truncate_snippet(text: str) -> str:
     return text[:_SNIPPET_MAX_LEN] + "…"
 
 
-def _cache_key(tenant_id: int, query: str, state: str) -> str:
-    return f"heatmap:{tenant_id}:{query}:{state}"
-
-
 class HeatmapService:
-    """Orchestrates Qdrant search, Redis caching, S3, and PDF for heatmap endpoints."""
+    """Orchestrates Qdrant search, S3, and PDF for heatmap endpoints."""
 
     def __init__(self):
         self._embedding_service = EmbeddingService()
@@ -66,23 +58,8 @@ class HeatmapService:
         query: str,
         state: str,
     ) -> list[CountyScoreItem]:
-        """Return per-county intensity scores, using Redis cache when available."""
-        key = _cache_key(tenant_id, query, state)
-
-        cached = await redis_manager.get(key)
-        if cached:
-            try:
-                raw = json.loads(cached)
-                return [CountyScoreItem(**item) for item in raw]
-            except Exception:
-                pass
-
-        results = await self._search_heatmap(tenant_id, query)
-
-        serializable = [item.model_dump() for item in results]
-        await redis_manager.set(key, serializable, expire=_CACHE_TTL)
-
-        return results
+        """Return per-county intensity scores by querying Qdrant in real-time."""
+        return await self._search_heatmap(tenant_id, query)
 
     async def _search_heatmap(
         self,
@@ -169,6 +146,7 @@ class HeatmapService:
             source_url = await self._resolve_source_url(meta.get("s3_url") or meta.get("source_url"))
             citations.append(
                 CitationItem(
+                    document_id=meta.get("document_id", ""),
                     document_title=meta.get("document_name", meta.get("document_id", "")),
                     school_district=meta.get("school_district", ""),
                     date=meta.get("document_date", ""),
@@ -247,24 +225,6 @@ class HeatmapService:
 
         doc.build(story)
         return buf.getvalue()
-
-    async def invalidate_heatmap_cache(self, tenant_id: int) -> None:
-        """Delete all Redis keys matching heatmap:{tenant_id}:* ."""
-        try:
-            r = await redis_manager.get_redis()
-            pattern = f"heatmap:{tenant_id}:*"
-            cursor = 0
-            keys_to_delete: list[str] = []
-            while True:
-                cursor, keys = await r.scan(cursor, match=pattern, count=100)
-                keys_to_delete.extend(keys)
-                if cursor == 0:
-                    break
-            if keys_to_delete:
-                await r.delete(*keys_to_delete)
-                logger.info(f"Invalidated {len(keys_to_delete)} heatmap cache keys for tenant {tenant_id}")
-        except Exception as exc:
-            logger.warning(f"Failed to invalidate heatmap cache for tenant {tenant_id}: {exc}")
 
     async def _resolve_source_url(self, raw_url: str | None) -> str:
         if not raw_url:
