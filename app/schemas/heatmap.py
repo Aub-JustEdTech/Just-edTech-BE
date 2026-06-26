@@ -121,3 +121,62 @@ class KeywordItem(BaseModel):
 
 class HeatmapKeywordsResponse(BaseModel):
     data: list[KeywordItem]
+
+
+# ── District-level schemas ────────────────────────────────────────────────────
+
+class DistrictCitationsParams(BaseModel):
+    district: str = Field(..., description="School district name")
+    query: str = Field(..., description="Search keyword")
+    page: int = Field(1, ge=1)
+    page_size: int = Field(10, ge=1)
+
+    @field_validator("query")
+    @classmethod
+    def query_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must not be empty")
+        return v.strip()
+
+    @field_validator("page_size")
+    @classmethod
+    def clamp_page_size(cls, v: int) -> int:
+        return min(v, 25)
+
+
+class DistrictExportParams(BaseModel):
+    district: str = Field(..., description="School district name")
+    query: str = Field(..., description="Search keyword")
+
+    @field_validator("query")
+    @classmethod
+    def query_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("query must not be empty")
+        return v.strip()
+
+
+class DistrictScoreItem(BaseModel):
+    district_name: str
+    intensity_score: int
+    conversation_count: int
+    source_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class DistrictCitationsData(BaseModel):
+    district_name: str
+    keyword: str
+    conversation_count: int
+    source_count: int
+    citations: list[CitationItem]
+
+    class Config:
+        from_attributes = True
+
+
+class DistrictCitationsResponse(BaseModel):
+    data: DistrictCitationsData
+    meta: PaginationMeta
