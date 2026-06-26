@@ -128,3 +128,81 @@ async def get_heatmap_keywords(
     keywords = await heatmap_crud.get_keywords_by_tenant(db=db, tenant_id=tenant_id)
     items = [KeywordItem(id=kw.id, label=kw.label).model_dump() for kw in keywords]
     return success_response(data=items)
+
+
+# ── District-level endpoints ─────────────────────────────────────────────────
+
+@router.get("/district/", response_class=None)
+async def get_heatmap_district_summary(
+    query: str = Query(..., description="Search keyword"),
+    state: str = Query(..., description="State abbreviation — must be 'MA'"),
+    current_user: User = Depends(get_current_tenant_user),
+):
+    """Return per-district intensity scores for a keyword."""
+    if not query or not query.strip():
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="query must not be empty")
+    if state.upper() != "MA":
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="state must be 'MA'")
+
+    scores = await heatmap_service.get_heatmap_district_summary(
+        tenant_id=current_user.tenant_id,
+        query=query.strip(),
+        state=state.upper(),
+    )
+
+    return success_response(data=[item.model_dump() for item in scores])
+
+
+@router.get("/district/export/")
+async def export_district_citations_pdf(
+    district: str = Query(...),
+    query: str = Query(...),
+    current_user: User = Depends(get_current_tenant_user),
+):
+    """Generate and return a PDF of all citations for district + keyword."""
+    if not query or not query.strip():
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="query must not be empty")
+
+    pdf_bytes = await heatmap_service.get_district_export_pdf(
+        tenant_id=current_user.tenant_id,
+        district=district,
+        query=query.strip(),
+    )
+
+    safe_district = district.replace(" ", "_")
+    safe_query = query.strip().replace(" ", "_")[:50]
+    filename = f"citations_{safe_district}_{safe_query}.pdf"
+
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/district/citations/")
+async def get_district_citations(
+    district: str = Query(...),
+    query: str = Query(...),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1),
+    current_user: User = Depends(get_current_tenant_user),
+):
+    """Return paginated citations for a specific district + keyword."""
+    if not query or not query.strip():
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="query must not be empty")
+
+    page_size = min(page_size, 25)
+
+    data, meta = await heatmap_service.get_district_citations(
+        tenant_id=current_user.tenant_id,
+        district=district,
+        query=query.strip(),
+        page=page,
+        page_size=page_size,
+    )
+
+    return success_response(
+        data=data.model_dump(),
+        extra=meta.model_dump(),
+    )
