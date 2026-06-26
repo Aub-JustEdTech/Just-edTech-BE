@@ -14,6 +14,8 @@ from app.schemas.heatmap import (
     CitationItem,
     CountyCitationsData,
     CountyScoreItem,
+    DistrictCitationsData,
+    DistrictScoreItem,
     KeywordItem,
     PaginationMeta,
 )
@@ -241,6 +243,183 @@ class HeatmapService:
     def _empty_citations(county: str, query: str, page: int, page_size: int) -> tuple[CountyCitationsData, PaginationMeta]:
         return (
             CountyCitationsData(county_name=county, keyword=query, conversation_count=0, source_count=0, citations=[]),
+            PaginationMeta(page=page, page_size=page_size, total=0, total_pages=1),
+        )
+
+    # ── District-level methods ────────────────────────────────────────────────
+
+    async def get_heatmap_district_summary(
+        self,
+        tenant_id: int,
+        query: str,
+        state: str,
+    ) -> list[DistrictScoreItem]:
+        """Return per-district intensity scores by querying Qdrant in real-time."""
+        return await self._search_heatmap_by_district(tenant_id, query)
+
+    async def _search_heatmap_by_district(
+        self,
+        tenant_id: int,
+        query: str,
+    ) -> list[DistrictScoreItem]:
+        embeddings = await self._embedding_service.generate_embeddings([query])
+        if not embeddings:
+            return []
+
+        query_vector = embeddings[0]
+
+        chunks = await self._get_vector_store().search(
+            query_embedding=query_vector,
+            tenant_id=tenant_id,
+            limit=1000,
+        )
+
+        district_chunks: dict[str, list[dict]] = defaultdict(list)
+        for chunk in chunks:
+            if chunk.get("score", 0) < _SCORE_THRESHOLD:
+                continue
+            meta = chunk.get("metadata", {})
+            district = meta.get("school_district")
+            if not district:
+                continue
+            district_chunks[district].append(chunk)
+
+        scores: list[DistrictScoreItem] = []
+        for district_name, items in district_chunks.items():
+            doc_ids = {c.get("metadata", {}).get("document_id") for c in items if c.get("metadata", {}).get("document_id")}
+            weighted_score = round(sum(c.get("score", 0) for c in items) * 100)
+            scores.append(
+                DistrictScoreItem(
+                    district_name=district_name,
+                    intensity_score=weighted_score,
+                    conversation_count=len(items),
+                    source_count=len(doc_ids),
+                )
+            )
+
+        scores.sort(key=lambda x: x.intensity_score, reverse=True)
+        return scores
+
+    async def get_district_citations(
+        self,
+        tenant_id: int,
+        district: str,
+        query: str,
+        page: int,
+        page_size: int,
+    ) -> tuple[DistrictCitationsData, PaginationMeta]:
+        """Return paginated citations for a specific district + keyword."""
+        embeddings = await self._embedding_service.generate_embeddings([query])
+        if not embeddings:
+            return self._empty_district_citations(district, query, page, page_size)
+
+        query_vector = embeddings[0]
+
+        chunks = await self._get_vector_store().search(
+            query_embedding=query_vector,
+            tenant_id=tenant_id,
+            limit=1000,
+            filters={"school_district": district},
+        )
+
+        district_chunks = [
+            c for c in chunks
+            if c.get("metadata", {}).get("school_district") == district
+        ]
+
+        district_chunks.sort(key=lambda x: x.get("score", 0), reverse=True)
+
+        total = len(district_chunks)
+        total_pages = max(1, math.ceil(total / page_size))
+        offset = (page - 1) * page_size
+        page_chunks = district_chunks[offset: offset + page_size]
+
+        doc_ids = {c.get("metadata", {}).get("document_id") for c in district_chunks if c.get("metadata", {}).get("document_id")}
+
+        citations: list[CitationItem] = []
+        for chunk in page_chunks:
+            meta = chunk.get("metadata", {})
+            source_url = await self._resolve_source_url(meta.get("s3_url") or meta.get("source_url"))
+            citations.append(
+                CitationItem(
+                    document_id=meta.get("document_id", ""),
+                    document_title=meta.get("document_name", meta.get("document_id", "")),
+                    school_district=meta.get("school_district", ""),
+                    date=meta.get("document_date", ""),
+                    snippet=_truncate_snippet(chunk.get("text", "")),
+                    source_url=source_url,
+                    relevance_score=round(chunk.get("score", 0.0), 4),
+                )
+            )
+
+        data = DistrictCitationsData(
+            district_name=district,
+            keyword=query,
+            conversation_count=total,
+            source_count=len(doc_ids),
+            citations=citations,
+        )
+        meta_out = PaginationMeta(
+            page=page,
+            page_size=page_size,
+            total=total,
+            total_pages=total_pages,
+        )
+        return data, meta_out
+
+    async def get_district_export_pdf(
+        self,
+        tenant_id: int,
+        district: str,
+        query: str,
+    ) -> bytes:
+        """Generate a PDF of all citations for district + keyword, return bytes."""
+        data, _ = await self.get_district_citations(
+            tenant_id=tenant_id,
+            district=district,
+            query=query,
+            page=1,
+            page_size=10_000,
+        )
+        return self._build_district_pdf(data)
+
+    def _build_district_pdf(self, data: DistrictCitationsData) -> bytes:
+        """Build a ReportLab PDF from district citation data."""
+        try:
+            from reportlab.lib import colors
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import cm
+            from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+        except ImportError as e:
+            raise RuntimeError("reportlab is required for PDF export — install it via: pip install reportlab") from e
+
+        buf = BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=2 * cm, leftMargin=2 * cm, topMargin=2 * cm, bottomMargin=2 * cm)
+        styles = getSampleStyleSheet()
+        story = []
+
+        story.append(Paragraph(f"{data.district_name} — Citation Export", styles["Title"]))
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(Paragraph(f"Keyword: <b>{data.keyword}</b>", styles["Normal"]))
+        story.append(Paragraph(f"Conversations: {data.conversation_count}  |  Sources: {data.source_count}", styles["Normal"]))
+        story.append(Spacer(1, 0.5 * cm))
+
+        for i, citation in enumerate(data.citations, start=1):
+            story.append(Paragraph(f"<b>SOURCE {i}</b>", styles["Heading3"]))
+            story.append(Paragraph(f"<b>{citation.document_title}</b>", styles["Normal"]))
+            story.append(Paragraph(f"School District: {citation.school_district}  |  Date: {citation.date}", styles["Normal"]))
+            story.append(Paragraph(citation.snippet, ParagraphStyle("Snippet", parent=styles["Normal"], leftIndent=12, rightIndent=12, backColor=colors.HexColor("#f5f5f5"))))
+            story.append(Paragraph(f'Source: <a href="{citation.source_url}">{citation.source_url}</a>', styles["Normal"]))
+            story.append(Spacer(1, 0.4 * cm))
+
+        doc.build(story)
+        return buf.getvalue()
+
+    @staticmethod
+    def _empty_district_citations(district: str, query: str, page: int, page_size: int) -> tuple[DistrictCitationsData, PaginationMeta]:
+        return (
+            DistrictCitationsData(district_name=district, keyword=query, conversation_count=0, source_count=0, citations=[]),
             PaginationMeta(page=page, page_size=page_size, total=0, total_pages=1),
         )
 
