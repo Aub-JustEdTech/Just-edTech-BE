@@ -1,127 +1,254 @@
-name: Deploy Chats to S3
+name: Deploy Backend
 
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Branch or tag to deploy'
+        description: Branch or tag
         required: true
-        default: 'main'
-        type: string
+        default: main
 
 permissions:
   id-token: write
   contents: read
 
 env:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '10'
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
 
 jobs:
-  build-and-deploy:
+
+  deploy:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+
+      ############################################################
+      # Checkout
+      ############################################################
+
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event.inputs.ref }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+      ############################################################
+      # AWS Login (OIDC)
+      ############################################################
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Build @justedtech/theme
-        run: |
-          cd packages/theme
-          pnpm install
-          pnpm build
-          echo "✅ @justedtech/theme built successfully"
-
-      - name: Create .env file for chats
-        env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-        run: |
-          test -n "$VITE_API_BASE_URL" || (echo "❌ Missing variable: VITE_API_BASE_URL" && exit 1)
-
-          cd apps/chats
-          echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" > .env
-          echo "✅ Environment file created"
-
-      - name: Build @chats application
-        run: |
-          cd apps/chats
-          pnpm install
-          pnpm build
-          echo "✅ @chats built successfully"
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Deploy to S3
-        env:
-          S3_BUCKET: ${{ vars.CHATS_S3_BUCKET_NAME }}
+      ############################################################
+      # Login ECR
+      ############################################################
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      ############################################################
+      # Build Image
+      ############################################################
+
+      - name: Build Docker Image
         run: |
-          aws s3 sync apps/chats/dist/ s3://$S3_BUCKET/ \
-            --delete \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "*.html" \
-            --exclude "*.json"
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            .
 
-          # Upload HTML and JSON files without cache
-          aws s3 sync apps/chats/dist/ s3://$S3_BUCKET/ \
-            --exclude "*" \
-            --include "*.html" \
-            --include "*.json" \
-            --cache-control "no-cache, no-store, must-revalidate"
+      ############################################################
+      # Push Image
+      ############################################################
 
-          echo "✅ Files uploaded to S3"
-
-      - name: Invalidate CloudFront cache
-        env:
-          CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CHATS_CLOUDFRONT_DISTRIBUTION_ID }}
+      - name: Push Docker Image
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
-            --paths "/*"
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-          echo "✅ CloudFront cache invalidated"
+      ############################################################
+      # Configure SSH
+      ############################################################
 
-      - name: Deployment summary
+      - name: Configure SSH
         run: |
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ vars.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      ############################################################
+      # Generate .env.prod locally, then SCP it to EC2
+      ############################################################
+
+      - name: Generate .env.prod
+        run: |
+          cat > .env.prod << 'ENVEOF'
+          ECR_IMAGE=${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          AWS_REGION=${{ vars.AWS_REGION }}
+          AWS_BUCKET=${{ secrets.AWS_BUCKET }}
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          ENVEOF
+
+      - name: Copy .env.prod to EC2
+        run: |
+          scp .env.prod ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }}:${{ vars.APP_DIRECTORY }}/.env.prod
+
+      ############################################################
+      # Deploy
+      ############################################################
+
+      - name: Deploy to EC2
+        run: |
+          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} 'bash -s' << 'EOF'
+            set -e
+
+            cd ${{ vars.APP_DIRECTORY }}
+
+            echo "==============================="
+            echo "Logging into ECR"
+            echo "==============================="
+
+            aws ecr get-login-password \
+              --region ${{ vars.AWS_REGION }} \
+            | docker login \
+                --username AWS \
+                --password-stdin \
+                ${{ vars.ECR_REGISTRY }}
+
+            echo "==============================="
+            echo "Updating Source"
+            echo "==============================="
+
+            git fetch origin
+            git checkout ${{ github.event.inputs.ref }}
+            git pull origin ${{ github.event.inputs.ref }}
+
+            echo "==============================="
+            echo ".env.prod (masked)"
+            echo "==============================="
+
+            sed \
+              -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
+              -e 's/JWT_SECRET=.*/JWT_SECRET=********/' \
+              -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
+              .env.prod
+
+            echo "==============================="
+            echo "Checking ECR_IMAGE"
+            echo "==============================="
+
+            grep ECR_IMAGE .env.prod
+            test -n "$(grep ECR_IMAGE .env.prod | cut -d= -f2)"
+
+            echo
+            echo "Pulling latest images..."
+            echo
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              pull
+
+            echo
+            echo "Stopping previous containers..."
+            echo
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              down
+
+            echo
+            echo "Starting new containers..."
+            echo
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              up -d
+
+            echo
+            echo "Waiting for startup..."
+            echo
+
+            sleep 25
+
+            echo
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              ps
+
+            echo
+            echo "Checking health..."
+            echo
+
+            API_ID=$(docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              ps -q api)
+
+            STATUS=$(docker inspect \
+              --format='{{.State.Health.Status}}' $API_ID)
+
+            echo "API Health = $STATUS"
+
+            if [ "$STATUS" != "healthy" ]; then
+              echo
+              echo "Deployment failed"
+              echo
+
+              docker compose \
+                --env-file .env.prod \
+                -f docker-compose.prod.yml \
+                logs --tail=300
+
+              exit 1
+            fi
+
+            echo
+            echo "Deployment Successful"
+
+            docker image prune -af
+            docker system prune -f
+          EOF
+
+      ############################################################
+      # Verify
+      ############################################################
+
+      - name: Verify Deployment
+        run: |
+          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} 'bash -s' << 'EOF'
+            cd ${{ vars.APP_DIRECTORY }}
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              ps
+
+            docker ps
+          EOF
+
+      ############################################################
+      # Summary
+      ############################################################
+
+      - name: Deployment Summary
+        run: |
+          echo "## Backend Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch/Tag**: ${{ inputs.ref }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **AWS Region**: ${{ vars.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **S3 Bucket**: ${{ vars.CHATS_S3_BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **CloudFront Distribution**: ${{ vars.CHATS_CLOUDFRONT_DISTRIBUTION_ID }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deployed at**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build Order" >> $GITHUB_STEP_SUMMARY
-          echo "1. ✅ @justedtech/theme" >> $GITHUB_STEP_SUMMARY
-          echo "2. ✅ @chats" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎉 **Deployment completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "**Image**: $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**EC2**: ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region**: ${{ vars.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
