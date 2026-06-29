@@ -1,12 +1,12 @@
 name: Deploy Backend
-#####
+
 on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch or tag
+        description: "Branch or Tag"
         required: true
-        default: main
+        default: "main"
 
 permissions:
   id-token: write
@@ -18,110 +18,62 @@ env:
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
 
 jobs:
-
   deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-
-      ############################################################
-      # Checkout
-      ############################################################
-
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.ref }}
 
-      ############################################################
-      # AWS Login (OIDC)
-      ############################################################
-
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      ############################################################
-      # Login ECR
-      ############################################################
-
-      - uses: aws-actions/amazon-ecr-login@v2
-
-      ############################################################
-      # Build Image
-      ############################################################
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker Image
         run: |
-
           docker build \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
             .
 
-      ############################################################
-      # Push Image
-      ############################################################
-
       - name: Push Docker Image
         run: |
-
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      ############################################################
-      # Configure SSH
-      ############################################################
-
       - name: Configure SSH
         run: |
-
           mkdir -p ~/.ssh
-
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-
+          printf "%s" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
           ssh-keyscan -H ${{ vars.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      ############################################################
-      # Deploy
-      ############################################################
 
       - name: Deploy to EC2
         run: |
-
-          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} <<EOF
-
+          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} 'bash -s' <<EOF
           set -e
 
           cd ${{ vars.APP_DIRECTORY }}
 
-          echo "==============================="
-          echo "Logging into ECR"
-          echo "==============================="
+          echo "Logging into ECR..."
 
           aws ecr get-login-password \
             --region ${{ vars.AWS_REGION }} \
           | docker login \
-              --username AWS \
-              --password-stdin \
-              ${{ vars.ECR_REGISTRY }}
-
-          echo "==============================="
-          echo "Updating Source"
-          echo "==============================="
+            --username AWS \
+            --password-stdin \
+            ${{ vars.ECR_REGISTRY }}
 
           git fetch origin
-
           git checkout ${{ github.event.inputs.ref }}
-
           git pull origin ${{ github.event.inputs.ref }}
-
-          echo "==============================="
-          echo "Generating .env.prod"
-          echo "==============================="
 
           cat > .env.prod <<EOL
 ECR_IMAGE=${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
@@ -143,134 +95,83 @@ REDIS_HOST=redis
 REDIS_PORT=6379
 EOL
 
-          echo
-          echo "==============================="
-          echo ".env.prod"
-          echo "==============================="
+          echo ""
+          echo "Generated .env.prod"
 
           sed \
-            -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
-            -e 's/JWT_SECRET=.*/JWT_SECRET=********/' \
-            -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
+            -e "s/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/" \
+            -e "s/JWT_SECRET=.*/JWT_SECRET=********/" \
+            -e "s/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/" \
             .env.prod
 
-          echo
-
-          echo "==============================="
-          echo "Checking ECR_IMAGE"
-          echo "==============================="
+          echo ""
+          echo "Checking ECR_IMAGE..."
 
           grep ECR_IMAGE .env.prod
 
-          test -n "$(grep ECR_IMAGE .env.prod | cut -d= -f2)"
-
-          echo
-          echo "Pulling latest images..."
-          echo
+          docker compose \
+            --env-file .env.prod \
+            -f docker-compose.prod.yml pull
 
           docker compose \
             --env-file .env.prod \
-            -f docker-compose.prod.yml \
-            pull
-
-          echo
-          echo "Stopping previous containers..."
-          echo
+            -f docker-compose.prod.yml down
 
           docker compose \
             --env-file .env.prod \
-            -f docker-compose.prod.yml \
-            down
+            -f docker-compose.prod.yml up -d
 
-          echo
-          echo "Starting new containers..."
-          echo
+          echo "Waiting 30 seconds..."
+          sleep 30
 
           docker compose \
             --env-file .env.prod \
-            -f docker-compose.prod.yml \
-            up -d
-
-          echo
-          echo "Waiting for startup..."
-          echo
-
-          sleep 25
-
-          echo
-          docker compose \
-            --env-file .env.prod \
-            -f docker-compose.prod.yml \
-            ps
-
-          echo
-          echo "Checking health..."
-          echo
+            -f docker-compose.prod.yml ps
 
           API_ID=\$(docker compose \
             --env-file .env.prod \
-            -f docker-compose.prod.yml \
-            ps -q api)
+            -f docker-compose.prod.yml ps -q api)
 
           STATUS=\$(docker inspect \
-            --format='{{.State.Health.Status}}' \$API_ID)
+            --format="{{.State.Health.Status}}" \
+            \$API_ID)
 
-          echo "API Health = \$STATUS"
+          echo "Health = \$STATUS"
 
           if [ "\$STATUS" != "healthy" ]; then
+            echo "Deployment failed"
 
-              echo
-              echo "Deployment failed"
-              echo
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml logs --tail=300
 
-              docker compose \
-                --env-file .env.prod \
-                -f docker-compose.prod.yml \
-                logs --tail=300
-
-              exit 1
-
+            exit 1
           fi
-
-          echo
-          echo "Deployment Successful"
 
           docker image prune -af
           docker system prune -f
 
-          EOF
+          echo "Deployment Successful"
 
-      ############################################################
-      # Verify
-      ############################################################
+EOF
 
       - name: Verify Deployment
         run: |
-
           ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} <<EOF
-
           cd ${{ vars.APP_DIRECTORY }}
 
           docker compose \
             --env-file .env.prod \
-            -f docker-compose.prod.yml \
-            ps
+            -f docker-compose.prod.yml ps
 
           docker ps
-
-          EOF
-
-      ############################################################
-      # Summary
-      ############################################################
+EOF
 
       - name: Deployment Summary
-
         run: |
-
           echo "## Backend Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image**: $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**EC2**: ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Region**: ${{ vars.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ vars.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**EC2:** ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
