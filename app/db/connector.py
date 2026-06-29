@@ -8,6 +8,11 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
+_connect_args: dict = {}
+if settings.POSTGRES_SSLMODE:
+    # asyncpg requires ssl via connect_args, not a query-string parameter.
+    _connect_args["ssl"] = True
+
 async_engine = create_async_engine(
     settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
     pool_pre_ping=True,
@@ -15,6 +20,7 @@ async_engine = create_async_engine(
     pool_size=10,
     max_overflow=20,
     pool_recycle=300,
+    connect_args=_connect_args,
 )
 
 AsyncSessionLocal = sessionmaker(

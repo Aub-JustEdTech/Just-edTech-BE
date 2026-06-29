@@ -149,7 +149,7 @@ class AgenticRAGService:
             # checkpoint tables are provisioned once at application startup via
             # setup_checkpointer(); see app.main.lifespan.
             async with AsyncPostgresSaver.from_conn_string(
-                settings.DATABASE_URL
+                settings.SYNC_DATABASE_URL
             ) as checkpointer:
                 compiled = self._graph.compile(checkpointer=checkpointer)
                 return await compiled.ainvoke(initial_state, config=run_config)
@@ -253,7 +253,7 @@ async def setup_checkpointer() -> None:
         from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
         async with AsyncPostgresSaver.from_conn_string(
-            settings.DATABASE_URL
+            settings.SYNC_DATABASE_URL
         ) as checkpointer:
             await checkpointer.setup()
 

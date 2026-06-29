@@ -1,43 +1,15 @@
 # Production Docker Compose - Optimized for High-Performance Bulk Uploads
 #
-# Features:
-# - 2 Celery worker containers (scale horizontally)
-# - Each worker runs 8 concurrent processes
-# - Total: 16 parallel document processing tasks
-# - Expected performance: 200 docs in ~3 minutes (vs 50 minutes with single worker)
+# Postgres is NOT managed here; it runs on AWS RDS.
+# All environment variables (including POSTGRES_SERVER, credentials, secrets)
+# are injected via .env.prod which the CI/CD deploy step writes from GitHub
+# Actions secrets before running this file.
 #
 # Usage:
-#   docker-compose -f docker-compose.prod.yml up -d
-#   docker-compose -f docker-compose.prod.yml up -d --scale celery-worker=8  # 8 workers
+#   docker compose -f docker-compose.prod.yml up -d
+#   docker compose -f docker-compose.prod.yml up -d --scale celery-worker=8  # 8 workers
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: just_edtech
-    ports:
-      - "5436:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-        reservations:
-          cpus: "0.3"
-          memory: 256M
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   # Redis for Session Management and Celery Broker
   redis:
     image: redis:7-alpine
@@ -93,20 +65,12 @@ services:
     ports:
       - "8013:8000"
     env_file:
-      - .env
+      - .env.prod
     environment:
-      - POSTGRES_SERVER=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=just_edtech
-      - POSTGRES_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - QDRANT_URL=http://qdrant:6333
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
       qdrant:
@@ -140,7 +104,7 @@ services:
     build: .
     restart: always
     env_file:
-      - .env
+      - .env.prod
     deploy:
       replicas: 1 # Single worker for t4g.medium (2 vCPU, 4GB RAM)
       resources:
@@ -151,18 +115,10 @@ services:
           cpus: "0.5" # Reserve 0.5 CPU per worker
           memory: 512M # Reserve 512MB RAM per worker
     environment:
-      - POSTGRES_SERVER=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=just_edtech
-      - POSTGRES_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - QDRANT_URL=http://qdrant:6333
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
       qdrant:
@@ -185,10 +141,9 @@ services:
 
   # Flower - Celery Monitoring Dashboard
   # REMOVED from production to save ~150-300MB RAM on t4g.medium
-  # To run Flower on-demand: docker-compose -f docker-compose.yml up flower
+  # To run Flower on-demand: docker compose -f docker-compose.yml up flower
 
 volumes:
-  postgres_data:
   redis_data:
   qdrant_data:
   temp_uploads:
