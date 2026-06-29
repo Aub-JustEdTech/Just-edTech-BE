@@ -31,6 +31,8 @@ When reviewing backend code, go through each category and report findings.
   - Tenant isolation: `require_tenant_access()`
 - [ ] All responses use `success_response(data=...)` — no raw dicts or Pydantic models returned directly
 - [ ] Tenant isolation enforced (`require_tenant_access()` dependency or `tenant_id` filter in CRUD)
+- [ ] Services raise domain exceptions (`NotFoundError`, `ValidationError`, `UnauthorizedError`) — not raw `HTTPException`
+- [ ] Exception handlers registered in `main.py` via `register_exception_handlers(app)`
 
 ## 4. Pydantic Schemas
 
@@ -38,6 +40,8 @@ When reviewing backend code, go through each category and report findings.
 - [ ] Separate request and response schemas — no schema used for both
 - [ ] Naming: `{Resource}Request`, `{Resource}Response`
 - [ ] Validators use `@field_validator` (Pydantic v2), not `@validator` (Pydantic v1)
+- [ ] Base schemas used for shared fields where appropriate (`UserBase` → `UserCreate`, `UserResponse`)
+- [ ] `Field(...)` constraints used for string length / numeric range where applicable
 
 ## 5. CRUD & Database
 
@@ -67,6 +71,8 @@ When reviewing backend code, go through each category and report findings.
 ## 8. Code Quality
 
 - [ ] Type hints on all function signatures
+- [ ] Return type annotated on all functions — not just parameters (`-> ReturnType`)
+- [ ] `| None` used for optional returns — not `Optional[X]` unless targeting < Python 3.10
 - [ ] No `print()` — `logging` used instead
 - [ ] Import order: stdlib → third-party → local (`app.*`), separated by blank lines
 - [ ] No unused imports (Ruff F401)
@@ -86,6 +92,14 @@ When reviewing backend code, go through each category and report findings.
 - [ ] Every new model has `tenant_id` column with FK to `tenants.id`
 - [ ] CRUD queries filter by `tenant_id`
 - [ ] No cross-tenant data leakage possible in list endpoints
+
+## 11. Factory & Strategy Patterns
+
+- [ ] If a factory is present: new implementations registered in `_providers` dict — never instantiated directly in callers
+- [ ] Factory `create()` guard preserved — raises `ValueError` for unknown names
+- [ ] If a strategy is present: `can_handle()` does not overlap with other strategies
+- [ ] `ProcessorManager` (or equivalent context) not modified to add type-specific conditional logic
+- [ ] Factory/Strategy base classes are ABCs with `@abstractmethod` on all interface methods
 
 ---
 

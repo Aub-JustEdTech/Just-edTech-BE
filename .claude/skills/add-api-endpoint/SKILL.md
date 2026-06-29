@@ -101,6 +101,32 @@ class NewResourceService:
 new_resource_service = NewResourceService()
 ```
 
+## 5b. Error Handling in Service
+
+Raise domain exceptions from `app/utils/exceptions.py` — never raw `HTTPException` in services:
+
+```python
+from app.utils.exceptions import NotFoundError, UnauthorizedError, ValidationError
+
+class NewResourceService:
+    async def get(self, db: AsyncSession, resource_id: int, tenant_id: int) -> NewResourceResponse:
+        obj = await new_resource.get(db, resource_id)
+        if not obj:
+            raise NotFoundError("NewResource", resource_id)
+        if obj.tenant_id != tenant_id:
+            raise UnauthorizedError()
+        return NewResourceResponse.model_validate(obj)
+
+    async def create(self, db: AsyncSession, request: NewResourceRequest, tenant_id: int) -> NewResourceResponse:
+        # Example business validation
+        # if await new_resource.exists(db, name=request.name, tenant_id=tenant_id):
+        #     raise ValidationError("A resource with this name already exists")
+        obj = await new_resource.create(db, request, tenant_id)
+        return NewResourceResponse.model_validate(obj)
+```
+
+The endpoint does nothing special — exception handlers in `main.py` catch and format the response automatically.
+
 ## 6. Endpoint
 
 Create `app/api/endpoints/{domain}.py`:
@@ -156,5 +182,7 @@ api_router.include_router({domain}.router, prefix="/new-resources", tags=["NewRe
 - Always return `success_response(data=...)` — never raw dicts
 - Always inject `db` via `Depends(get_db)` — never instantiate session inline
 - Always filter by `tenant_id` in CRUD queries
-- Type hints required on all function signatures
+- Type hints required on all function signatures including return type (`-> ReturnType`)
 - No `print()` — use `logging`
+- Raise `NotFoundError` / `ValidationError` / `UnauthorizedError` from service layer — never `HTTPException` directly in services
+- Use `@field_validator` (Pydantic v2) on schemas — never `@validator`

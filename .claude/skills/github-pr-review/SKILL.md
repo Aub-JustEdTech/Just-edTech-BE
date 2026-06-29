@@ -85,6 +85,21 @@ Check the diff for violations of the rules in `.claude/rules/`:
 - Celery tasks use `bind=True`, `max_retries=3`, exponential backoff
 - Type hints on all function signatures
 
+**Error handling rules** (`error-handling.md`):
+- Services raise `NotFoundError` / `ValidationError` / `UnauthorizedError` — not raw `HTTPException`
+- CRUD layer returns `None` for not-found, does not raise domain exceptions
+- `register_exception_handlers(app)` wired in `main.py`
+
+**Pydantic schema rules** (`pydantic-schemas.md`):
+- `@field_validator` used (Pydantic v2), not `@validator`
+- `model_config = ConfigDict(from_attributes=True)` present on response schemas
+- Separate request / response schemas — no schema doubles as both
+
+**Type safety rules** (`type-safety.md`):
+- Return type annotated on every function (`-> ReturnType`)
+- No bare `Any` unless justified with a comment
+- `| None` for optional values — not `Optional[X]` unless targeting < Python 3.10
+
 ## Step 8 — Produce review report
 
 ```
