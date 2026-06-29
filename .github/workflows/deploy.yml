@@ -4,161 +4,200 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch or tag
+        description: "Branch or Tag"
         required: true
-        default: main
+        default: "main"
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
-  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
 
 jobs:
-
   deploy:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     steps:
 
-      ############################################################
+      ###########################################################
       # Checkout
-      ############################################################
+      ###########################################################
 
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.ref }}
 
-      ############################################################
-      # AWS Login (OIDC)
-      ############################################################
+      ###########################################################
+      # AWS Login
+      ###########################################################
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      ############################################################
+      ###########################################################
       # Login ECR
-      ############################################################
+      ###########################################################
 
-      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      ############################################################
-      # Build Image
-      ############################################################
+      ###########################################################
+      # Buildx
+      ###########################################################
 
-      - name: Build Docker Image
-        run: |
-          docker build \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            .
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      ############################################################
-      # Push Image
-      ############################################################
+      ###########################################################
+      # Build & Push ARM64 Image
+      ###########################################################
 
-      - name: Push Docker Image
-        run: |
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Build & Push Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/arm64
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:latest
 
-      ############################################################
-      # Configure SSH
-      ############################################################
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-
-          cat > ~/.ssh/id_rsa <<'EOF'
-          ${{ secrets.EC2_SSH_KEY }}
-          EOF
-
-          chmod 600 ~/.ssh/id_rsa
-
-          ssh-keyscan -H ${{ vars.EC2_HOST }} >> ~/.ssh/known_hosts
-
-        ###### Verify the key is valid #######
-        ###ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null
-
-      ############################################################
-      # Generate .env.prod locally, then SCP it to EC2
-      ############################################################
+      ###########################################################
+      # Generate .env.prod
+      ###########################################################
 
       - name: Generate .env.prod
         run: |
-          cat > .env.prod << 'ENVEOF'
-          ECR_IMAGE=${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+
+          cat > .env.prod <<EOF
+          ECR_IMAGE=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+
           POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}
           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
+
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+
           AWS_REGION=${{ vars.AWS_REGION }}
-          AWS_BUCKET=${{ secrets.AWS_BUCKET }}
+          AWS_BUCKET=${{ secrets.S3_BUCKET_NAME }}
+
           REDIS_HOST=redis
           REDIS_PORT=6379
-          ENVEOF
+          EOF
 
-      - name: Copy .env.prod to EC2
+      ###########################################################
+      # Show env (masked)
+      ###########################################################
+
+      - name: Verify .env.prod
         run: |
-          scp .env.prod ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }}:${{ vars.APP_DIRECTORY }}/.env.prod
 
-      ############################################################
+          sed \
+          -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
+          -e 's/JWT_SECRET=.*/JWT_SECRET=********/' \
+          -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
+          .env.prod
+
+      ###########################################################
+      # Copy .env
+      ###########################################################
+
+      - name: Copy Environment File
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: ".env.prod"
+          target: "${{ vars.APP_DIRECTORY }}"
+          overwrite: true
+
+      ###########################################################
+      # Get ECR Login Password
+      ###########################################################
+
+      - name: Generate ECR Login Password
+        id: ecr
+        run: |
+
+          PASSWORD=$(aws ecr get-login-password --region "${{ vars.AWS_REGION }}")
+
+          echo "::add-mask::$PASSWORD"
+
+          {
+            echo "password<<EOF"
+            printf '%s\n' "$PASSWORD"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      ###########################################################
       # Deploy
-      ############################################################
+      ###########################################################
 
       - name: Deploy to EC2
-        run: |
-          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} 'bash -s' << 'EOF'
+        uses: appleboy/ssh-action@v1.2.0
+
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          ECR_PASSWORD: ${{ steps.ecr.outputs.password }}
+          REF: ${{ github.event.inputs.ref }}
+
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY,ECR_PASSWORD,REF
+
+          script: |
+
             set -e
 
             cd ${{ vars.APP_DIRECTORY }}
 
-            echo "==============================="
-            echo "Logging into ECR"
-            echo "==============================="
-
-            aws ecr get-login-password \
-              --region ${{ vars.AWS_REGION }} \
-            | docker login \
-                --username AWS \
-                --password-stdin \
-                ${{ vars.ECR_REGISTRY }}
-
-            echo "==============================="
-            echo "Updating Source"
-            echo "==============================="
+            echo "======================================="
+            echo "Updating Repository"
+            echo "======================================="
 
             git fetch origin
-            git checkout ${{ github.event.inputs.ref }}
-            git pull origin ${{ github.event.inputs.ref }}
 
-            echo "==============================="
-            echo ".env.prod (masked)"
-            echo "==============================="
+            git checkout $REF
 
-            sed \
-              -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
-              -e 's/JWT_SECRET=.*/JWT_SECRET=********/' \
-              -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
-              .env.prod
-
-            echo "==============================="
-            echo "Checking ECR_IMAGE"
-            echo "==============================="
-
-            grep ECR_IMAGE .env.prod
-            test -n "$(grep ECR_IMAGE .env.prod | cut -d= -f2)"
+            git pull origin $REF
 
             echo
-            echo "Pulling latest images..."
+            echo "======================================="
+            echo "Docker Login"
+            echo "======================================="
+
+            printf '%s' "$ECR_PASSWORD" | docker login \
+              --username AWS \
+              --password-stdin \
+              ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+            echo
+            echo "======================================="
+            echo "Using Image"
+            echo "======================================="
+
+            grep ECR_IMAGE .env.prod
+
+            echo
+            echo "Pulling Images..."
             echo
 
             docker compose \
@@ -167,7 +206,7 @@ jobs:
               pull
 
             echo
-            echo "Stopping previous containers..."
+            echo "Stopping Containers..."
             echo
 
             docker compose \
@@ -176,7 +215,7 @@ jobs:
               down
 
             echo
-            echo "Starting new containers..."
+            echo "Starting Containers..."
             echo
 
             docker compose \
@@ -185,77 +224,59 @@ jobs:
               up -d
 
             echo
-            echo "Waiting for startup..."
-            echo
+            sleep 30
 
-            sleep 25
-
-            echo
             docker compose \
               --env-file .env.prod \
               -f docker-compose.prod.yml \
               ps
 
             echo
-            echo "Checking health..."
-            echo
+            echo "Health Check"
 
-            API_ID=$(docker compose \
+            API=$(docker compose \
               --env-file .env.prod \
               -f docker-compose.prod.yml \
               ps -q api)
 
             STATUS=$(docker inspect \
-              --format='{{.State.Health.Status}}' $API_ID)
+              --format='{{.State.Health.Status}}' \
+              $API)
 
-            echo "API Health = $STATUS"
+            echo "API STATUS = $STATUS"
 
             if [ "$STATUS" != "healthy" ]; then
-              echo
-              echo "Deployment failed"
-              echo
 
-              docker compose \
-                --env-file .env.prod \
-                -f docker-compose.prod.yml \
-                logs --tail=300
+                echo
+                echo "Deployment Failed"
 
-              exit 1
+                docker compose \
+                  --env-file .env.prod \
+                  -f docker-compose.prod.yml \
+                  logs --tail=300
+
+                exit 1
+
             fi
 
             echo
-            echo "Deployment Successful"
+            echo "Cleaning Docker"
 
             docker image prune -af
+
             docker system prune -f
-          EOF
 
-      ############################################################
-      # Verify
-      ############################################################
-
-      - name: Verify Deployment
-        run: |
-          ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} 'bash -s' << 'EOF'
-            cd ${{ vars.APP_DIRECTORY }}
-
-            docker compose \
-              --env-file .env.prod \
-              -f docker-compose.prod.yml \
-              ps
-
-            docker ps
-          EOF
-
-      ############################################################
+      ###########################################################
       # Summary
-      ############################################################
+      ###########################################################
 
       - name: Deployment Summary
         run: |
+
           echo "## Backend Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image**: $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**EC2**: ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Region**: ${{ vars.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository** : ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch** : ${{ github.event.inputs.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image** : ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**EC2** : ${{ secrets.EC2_SSH_PRIVATE_KEY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status** : ✅ Success" >> $GITHUB_STEP_SUMMARY
