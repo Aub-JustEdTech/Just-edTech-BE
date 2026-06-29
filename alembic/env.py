@@ -21,8 +21,10 @@ from app.models.base import Base  # noqa: E402, I001
 # this is the Alembic Config object
 config = context.config
 
-# Override the sqlalchemy.url with our settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Override the sqlalchemy.url with our settings.
+# SYNC_DATABASE_URL uses the psycopg2/psycopg3-compatible format and appends
+# sslmode when POSTGRES_SSLMODE is set (required for RDS).
+config.set_main_option("sqlalchemy.url", settings.SYNC_DATABASE_URL)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:

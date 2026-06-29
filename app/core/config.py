@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_PORT: str = "5432"
+    # Set to "require" for RDS/production; leave empty for local dev without TLS.
+    POSTGRES_SSLMODE: str | None = None
 
     # Redis Configuration (HOST should be set in .env)
     REDIS_HOST: str
@@ -214,11 +216,25 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        """Construct database URL"""
+        """Async-driver database URL (asyncpg). SSL handled via connect_args."""
         return (
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+
+    @property
+    def SYNC_DATABASE_URL(self) -> str:
+        """Sync-driver database URL (psycopg2/psycopg3).
+        Appends sslmode query param when POSTGRES_SSLMODE is set, which is the
+        correct way to enable TLS for synchronous drivers (Alembic, langgraph
+        AsyncPostgresSaver)."""
+        base = (
+            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+        if self.POSTGRES_SSLMODE:
+            return f"{base}?sslmode={self.POSTGRES_SSLMODE}"
+        return base
 
     @property
     def REDIS_URL(self) -> str:
