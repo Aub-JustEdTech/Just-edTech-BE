@@ -1,0 +1,174 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or tag
+        required: true
+        default: main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    ########################################################
+
+    - name: Checkout
+
+      uses: actions/checkout@v4
+
+      with:
+        ref: ${{ github.event.inputs.ref }}
+
+    ########################################################
+
+    - name: Configure AWS Credentials
+
+      uses: aws-actions/configure-aws-credentials@v4
+
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    ########################################################
+
+    - name: Login to ECR
+
+      id: ecr
+
+      uses: aws-actions/amazon-ecr-login@v2
+
+    ########################################################
+
+    - name: Build Docker Image
+
+      run: |
+
+        docker build \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} \
+          -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          .
+
+    ########################################################
+
+    - name: Push Docker Image
+
+      run: |
+
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+    ########################################################
+
+    - name: Configure SSH
+
+      run: |
+
+        mkdir -p ~/.ssh
+
+        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+
+        chmod 600 ~/.ssh/id_rsa
+
+        ssh-keyscan -H ${{ vars.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    ########################################################
+
+    - name: Deploy
+
+      run: |
+
+        ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} << EOF
+
+        cd ${{ vars.APP_DIRECTORY }}
+
+        aws ecr get-login-password \
+        --region ${{ vars.AWS_REGION }} \
+        | docker login \
+        --username AWS \
+        --password-stdin \
+        ${{ vars.ECR_REGISTRY }}
+
+        git fetch origin
+
+        git checkout ${{ github.event.inputs.ref }}
+
+        git pull origin ${{ github.event.inputs.ref }}
+
+        cat > .env.prod <<EOL
+
+        ECR_IMAGE=${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+
+        POSTGRES_SERVER=${{ vars.POSTGRES_SERVER }}
+        POSTGRES_DB=${{ vars.POSTGRES_DB }}
+        POSTGRES_USER=${{ vars.POSTGRES_USER }}
+        POSTGRES_PASSWORD=${{ vars.POSTGRES_PASSWORD }}
+
+        JWT_SECRET=${{ vars.JWT_SECRET }}
+
+        OPENAI_API_KEY=${{ vars.OPENAI_API_KEY }}
+
+        AWS_REGION=${{ vars.AWS_REGION }}
+
+        AWS_BUCKET=${{ vars.AWS_BUCKET }}
+
+        REDIS_HOST=redis
+        REDIS_PORT=6379
+
+        EOL
+
+        docker compose -f docker-compose.prod.yml pull
+
+        docker compose -f docker-compose.prod.yml down
+
+        docker compose -f docker-compose.prod.yml up -d
+
+        docker image prune -af
+
+        docker system prune -f
+
+        EOF
+
+    ########################################################
+
+    - name: Verify Deployment
+
+      run: |
+
+        ssh ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} << EOF
+
+        docker ps
+
+        docker compose \
+        -f ${{ vars.APP_DIRECTORY }}/docker-compose.prod.yml \
+        ps
+
+        EOF
+
+    ########################################################
+
+    - name: Deployment Summary
+
+      run: |
+
+        echo "## Backend Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Image : $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "EC2    : ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
+        echo "Region : ${{ vars.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+        echo "Completed Successfully" >> $GITHUB_STEP_SUMMARY
