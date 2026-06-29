@@ -27,31 +27,24 @@ async def get_db() -> AsyncSession:
         yield session
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db),
+async def _user_from_token(
+    token: str,
+    db: AsyncSession,
 ) -> User:
-    """Get current authenticated user with specific error handling for expired/invalid tokens"""
-
-    token = credentials.credentials
+    """Validate a JWT and return the corresponding User, raising HTTPException on failure."""
     user_id, verification_result = verify_token_and_get_user_id(token)
-
-    # Handle expired token
     if verification_result.is_expired:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Token expired", "expired": True},
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # Handle invalid token
     if verification_result.is_invalid or user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Invalid token", "expired": False},
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     db_user = await user.get(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(
@@ -59,8 +52,15 @@ async def get_current_user(
             detail={"message": "Could not validate credentials", "expired": False},
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     return db_user
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Get current authenticated user with specific error handling for expired/invalid tokens"""
+    return await _user_from_token(credentials.credentials, db)
 
 
 # Role-based access control dependencies
@@ -223,35 +223,7 @@ async def get_current_user_or_chat_consumer(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required. Provide either X-Chat-Consumer-UUID header/query parameter or Bearer token",
         )
-
-    token = credentials.credentials
-    user_id, verification_result = verify_token_and_get_user_id(token)
-
-    # Handle expired token
-    if verification_result.is_expired:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Token expired", "expired": True},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Handle invalid token
-    if verification_result.is_invalid or user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Invalid token", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    db_user = await user.get(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Could not validate credentials", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return db_user
+    return await _user_from_token(credentials.credentials, db)
 
 
 # Convenience aliases for common role combinations
@@ -328,36 +300,12 @@ async def get_principal_with_api_key(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required: provide Bearer token or chat UUID",
         )
-
-    token = credentials.credentials
-    user_id, verification_result = verify_token_and_get_user_id(token)
-    if verification_result.is_expired:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Token expired", "expired": True},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if verification_result.is_invalid or user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Invalid token", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    db_user = await user.get(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Could not validate credentials", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+    db_user = await _user_from_token(credentials.credentials, db)
     if db_user.tenant_id != api_key_info["tenant_id"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="API key tenant mismatch",
         )
-
     return db_user
 
 

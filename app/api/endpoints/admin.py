@@ -7,10 +7,19 @@ These endpoints demonstrate role-based access control.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.crud.tenants import tenant as tenant_crud
 from app.crud.users import user
 from app.models.users import User
+from app.schemas.admin import (
+    InviteAdminRequest,
+    InviteAdminResponse,
+    TenantCreateRequest,
+    TenantResponse,
+)
 from app.schemas.users import User as UserSchema
 from app.schemas.users import UserCreate, UserUpdate
+from app.services.invitation_service import invitation_service
 from app.utils.dependencies import (
     get_db,
     require_role,
@@ -36,7 +45,7 @@ async def list_all_users(
     return success_response(data=[])
 
 
-@router.get("/tenants/all")
+@router.get("/tenants/all", response_model=list[TenantResponse])
 async def list_all_tenants(
     skip: int = 0,
     limit: int = 100,
@@ -44,8 +53,72 @@ async def list_all_tenants(
     admin: User = require_super_admin,
 ):
     """List all tenants (Super Admin only)"""
-    # Implementation would go here
-    return success_response(data=[])
+    tenants = await tenant_crud.get_all(db, skip=skip, limit=limit)
+    return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
+
+
+@router.post("/tenants", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
+async def create_tenant(
+    payload: TenantCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: User = require_super_admin,
+):
+    """Create a new tenant (Super Admin only)"""
+    domain = payload.domain or payload.name.lower().replace(" ", "-") + ".local"
+
+    if await tenant_crud.get_by_name(db, payload.name):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A tenant with this name already exists",
+        )
+    if await tenant_crud.get_by_domain(db, domain):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A tenant with this domain already exists",
+        )
+
+    new_tenant = await tenant_crud.create(
+        db, name=payload.name, domain=domain, logo_url=payload.logo_url
+    )
+    return success_response(
+        data=TenantResponse.model_validate(new_tenant),
+        status_code=status.HTTP_201_CREATED,
+    )
+
+
+@router.post("/tenants/{tenant_id}/invite-admin", response_model=InviteAdminResponse)
+async def invite_tenant_admin(
+    tenant_id: int,
+    payload: InviteAdminRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: User = require_super_admin,
+):
+    """Invite a user to become tenant_admin of an existing tenant (Super Admin only)"""
+    if not await tenant_crud.get(db, tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
+        )
+
+    existing_user = await user.get_by_email(db, email=payload.email)
+    if existing_user:
+        return success_response(
+            data=InviteAdminResponse(email=payload.email, status="already_member")
+        )
+
+    sent = await invitation_service.create_and_send(
+        db,
+        tenant_id=tenant_id,
+        email=payload.email,
+        role_id=settings.DEFAULT_ROLE_ID,
+        enforce_tenant_user=False,
+    )
+
+    return success_response(
+        data=InviteAdminResponse(
+            email=payload.email,
+            status="sent" if sent else "cooldown",
+        )
+    )
 
 
 # Tenant Admin or Super Admin Endpoints

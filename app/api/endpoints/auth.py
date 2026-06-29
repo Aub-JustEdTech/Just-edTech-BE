@@ -79,11 +79,8 @@ async def register(signup_req: SignupRequest, db: AsyncSession = Depends(get_db)
             )
 
         pwd_hash = get_password_hash(signup_req.password)
-        # Enforce tenant_user role
         role_id_to_use = data["role_id"]
         if not role_id_to_use:
-            await db.execute(select(Tenant).where(Tenant.id == data["tenant_id"]))
-            # Although tenant fetch isn't strictly needed, keep select imported context consistent
             from app.models.roles import Role
 
             res = await db.execute(select(Role.id).where(Role.name == "tenant_user"))
