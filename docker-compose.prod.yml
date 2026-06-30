@@ -9,14 +9,12 @@
 #   docker compose -f docker-compose.prod.yml up -d
 #   docker compose -f docker-compose.prod.yml up -d --scale celery-worker=8  # 8 workers
 
-
-version: "3.9"
-
 services:
 
   ##################################################
   # Redis
   ##################################################
+
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -35,7 +33,7 @@ services:
       - redis_data:/data
 
     healthcheck:
-      test: ["CMD","redis-cli","ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,6 +41,7 @@ services:
   ##################################################
   # Qdrant
   ##################################################
+
   qdrant:
     image: qdrant/qdrant:v1.13.2
     container_name: qdrant
@@ -55,19 +54,15 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/healthz || exit 1"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
-
   ##################################################
   # FastAPI
   ##################################################
+
   api:
     image: ${ECR_IMAGE}
-    container_name: just-edtech-api
+    pull_policy: always
 
+    container_name: just-edtech-api
     restart: unless-stopped
 
     env_file:
@@ -84,9 +79,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
       qdrant:
-        condition: service_healthy
 
     volumes:
       - temp_uploads:/app/temp_uploads
@@ -98,24 +91,27 @@ services:
       "
 
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://localhost:8000/health"
-        ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
 
   ##################################################
   # Celery Worker
   ##################################################
+
   celery-worker:
     image: ${ECR_IMAGE}
-    container_name: celery-worker
+    pull_policy: always
 
+    container_name: celery-worker
     restart: unless-stopped
 
     env_file:
@@ -129,9 +125,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
       qdrant:
-        condition: service_healthy
 
     volumes:
       - temp_uploads:/app/temp_uploads
@@ -145,6 +139,12 @@ services:
       --max-tasks-per-child=1000
       --time-limit=3600
       --soft-time-limit=3000
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
 
 volumes:
   redis_data:
