@@ -80,22 +80,64 @@ jobs:
 
       - name: Generate .env.prod
         run: |
-
           cat > .env.prod <<EOF
           ECR_IMAGE=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
-          POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }}
-          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
           AWS_REGION=${{ vars.AWS_REGION }}
-          AWS_BUCKET=${{ secrets.S3_BUCKET_NAME }}
+          AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
+
+          POSTGRES_SERVER=${{ vars.POSTGRES_SERVER }}
+          POSTGRES_DB=${{ vars.POSTGRES_DB }}
+          POSTGRES_USER=${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ vars.POSTGRES_PASSWORD }}
+
+          OPENAI_API_KEY=${{ vars.OPENAI_API_KEY }}
+          OPENAI_EMBEDDING_MODEL=${{ vars.OPENAI_EMBEDDING_MODEL }}
+
+          ACCESS_TOKEN_EXPIRE_MINUTES=${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
+          REFRESH_TOKEN_EXPIRE_DAYS=${{ vars.REFRESH_TOKEN_EXPIRE_DAYS }}
+          ALGORITHM=${{ vars.ALGORITHM }}
+
+          JWT_SECRET=${{ vars.JWT_SECRET }}
+
+          FRONTEND_BASE_URL=${{ vars.FRONTEND_BASE_URL }}
+          BACKEND_CORS_ORIGINS=${{ vars.BACKEND_CORS_ORIGINS }}
+
+          SMTP_HOST=${{ vars.SMTP_HOST }}
+          SMTP_PORT=${{ vars.SMTP_PORT }}
+          SMTP_USER=${{ vars.SMTP_USER }}
+          SMTP_PASSWORD=${{ vars.SMTP_PASSWORD }}
+          SMTP_FROM=${{ vars.SMTP_FROM }}
+
+          EMAIL_VERIFICATION_EXPIRE_HOURS=${{ vars.EMAIL_VERIFICATION_EXPIRE_HOURS }}
+
+          S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}
+          S3_REGION=${{ vars.S3_REGION }}
+
+          VECTOR_STORE_TYPE=${{ vars.VECTOR_STORE_TYPE }}
+          VECTOR_DB_PATH=${{ vars.VECTOR_DB_PATH }}
+          CHROMA_COLLECTION_PREFIX=${{ vars.CHROMA_COLLECTION_PREFIX }}
+          CHROMA_PERSIST_DIR=${{ vars.CHROMA_PERSIST_DIR }}
+
+          CHUNK_SIZE=${{ vars.CHUNK_SIZE }}
+          CHUNK_OVERLAP=${{ vars.CHUNK_OVERLAP }}
+
+          MAX_TOKENS=${{ vars.MAX_TOKENS }}
+          MAX_FILE_SIZE_MB=${{ vars.MAX_FILE_SIZE_MB }}
+
+          ALLOWED_DOCUMENT_TYPES=${{ vars.ALLOWED_DOCUMENT_TYPES }}
+
+          DEFAULT_ROLE_ID=${{ vars.DEFAULT_ROLE_ID }}
+          DEFAULT_TENANT_ID=${{ vars.DEFAULT_TENANT_ID }}
+
+          TEMP_UPLOAD_DIR=${{ vars.TEMP_UPLOAD_DIR }}
 
           REDIS_HOST=redis
           REDIS_PORT=6379
+
           EOF
 
       ###########################################################
@@ -104,12 +146,13 @@ jobs:
 
       - name: Verify .env.prod
         run: |
-
           sed \
-          -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
-          -e 's/JWT_SECRET=.*/JWT_SECRET=********/' \
-          -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
-          .env.prod
+            -e 's/AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=********/' \
+            -e 's/AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=********/' \
+            -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
+            -e 's/SMTP_PASSWORD=.*/SMTP_PASSWORD=********/' \
+            -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
+            .env.prod
 
       ###########################################################
       # Copy .env
@@ -278,5 +321,5 @@ jobs:
           echo "**Repository** : ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch** : ${{ github.event.inputs.ref }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image** : ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**EC2** : ${{ secrets.EC2_SSH_PRIVATE_KEY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**EC2** : ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
           echo "**Status** : ✅ Success" >> $GITHUB_STEP_SUMMARY
