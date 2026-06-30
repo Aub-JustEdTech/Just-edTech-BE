@@ -56,7 +56,7 @@ services:
       - qdrant_data:/qdrant/storage
 
     healthcheck:
-      test: ["CMD","wget","--spider","-q","http://localhost:6333/healthz"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/healthz || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 10
