@@ -80,6 +80,7 @@ services:
       redis:
         condition: service_healthy
       qdrant:
+        condition: service_started
 
     volumes:
       - temp_uploads:/app/temp_uploads
@@ -126,6 +127,7 @@ services:
       redis:
         condition: service_healthy
       qdrant:
+        condition: service_started
 
     volumes:
       - temp_uploads:/app/temp_uploads
