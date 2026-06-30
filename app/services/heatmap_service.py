@@ -1,8 +1,5 @@
 import math
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.crud.heatmap import heatmap_crud
 from app.schemas.heatmap import (
     CitationItem,
     DistrictCitationsResponse,
@@ -11,6 +8,7 @@ from app.schemas.heatmap import (
 )
 from app.services.heatmap_sample_data import (
     KEYWORD_DATA,
+    KEYWORDS,
     SAMPLE_CITATIONS,
     SAMPLE_DISTRICT_SCORES,
 )
@@ -54,11 +52,8 @@ class HeatmapService:
         }
         return response, meta
 
-    async def get_keywords(
-        self, db: AsyncSession, tenant_id: int
-    ) -> list[KeywordItem]:
-        rows = await heatmap_crud.list_keywords(db, tenant_id)
-        return [KeywordItem.model_validate(r) for r in rows]
+    async def get_keywords(self) -> list[KeywordItem]:
+        return KEYWORDS
 
 
 heatmap_service = HeatmapService()

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 MA_SCHOOL_DISTRICTS = [
@@ -46,7 +46,5 @@ class DistrictCitationsResponse(BaseModel):
 
 
 class KeywordItem(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     label: str

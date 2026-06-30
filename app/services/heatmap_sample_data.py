@@ -1,4 +1,12 @@
-from app.schemas.heatmap import CitationItem, DistrictScoreItem
+from app.schemas.heatmap import CitationItem, DistrictScoreItem, KeywordItem
+
+KEYWORDS: list[KeywordItem] = [
+    KeywordItem(id=1, label="Book Ban"),
+    KeywordItem(id=2, label="Budget Cuts"),
+    KeywordItem(id=3, label="DEI"),
+    KeywordItem(id=4, label="School Safety"),
+    KeywordItem(id=5, label="Special Education"),
+]
 
 # ── Where should we invest resources? ────────────────────────────────────────
 

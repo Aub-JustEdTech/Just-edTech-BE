@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.users import User
 from app.services.heatmap_service import heatmap_service
-from app.utils.dependencies import get_current_user, get_db
+from app.utils.dependencies import get_current_user
 from app.utils.response import success_response
 
 router = APIRouter()
@@ -13,7 +12,6 @@ router = APIRouter()
 async def get_heatmap_summary(
     query: str,
     state: str = "MA",
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     result = await heatmap_service.get_heatmap_summary(
@@ -28,7 +26,6 @@ async def get_heatmap_summary(
 async def get_district_summary(
     query: str,
     state: str = "MA",
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     result = await heatmap_service.get_heatmap_summary(
@@ -45,7 +42,6 @@ async def get_district_citations(
     query: str,
     page: int = 1,
     page_size: int = Query(default=10, le=25),
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     citations, meta = await heatmap_service.get_district_citations(
@@ -73,8 +69,7 @@ async def export_district_citations(
 
 @router.get("/keywords/")
 async def get_heatmap_keywords(
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await heatmap_service.get_keywords(db=db, tenant_id=current_user.tenant_id)
+    result = await heatmap_service.get_keywords()
     return success_response(data=[r.model_dump() for r in result])
