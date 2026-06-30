@@ -237,12 +237,14 @@ jobs:
             echo "Using Image"
             echo "======================================="
 
+            cd /home/ubuntu/justedtech
+            
             grep ECR_IMAGE .env.prod
 
             echo
             echo "Pulling Images..."
             echo
-
+            
             docker compose \
               --env-file .env.prod \
               -f docker-compose.prod.yml \
