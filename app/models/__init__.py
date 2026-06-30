@@ -25,6 +25,7 @@ from app.models.processing_stages import (
 from app.models.roles import Role
 from app.models.signups import Signup
 from app.models.chatbot_configs import ChatbotConfig, PerformanceMetric
+from app.models.heatmap import HeatmapKeyword
 from app.models.image_captions import ImageCaption
 from app.models.tenants import Tenant
 from app.models.upload_batches import BatchStatus, UploadBatch
@@ -61,4 +62,5 @@ __all__ = [
     "DailyTokenUsage",
     "MonthlyBilling",
     "ImageCaption",
+    "HeatmapKeyword",
 ]
