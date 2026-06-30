@@ -101,8 +101,6 @@ jobs:
           REFRESH_TOKEN_EXPIRE_DAYS=${{ vars.REFRESH_TOKEN_EXPIRE_DAYS }}
           ALGORITHM=${{ vars.ALGORITHM }}
 
-          JWT_SECRET=${{ vars.JWT_SECRET }}
-
           FRONTEND_BASE_URL=${{ vars.FRONTEND_BASE_URL }}
           BACKEND_CORS_ORIGINS=${{ vars.BACKEND_CORS_ORIGINS }}
 
