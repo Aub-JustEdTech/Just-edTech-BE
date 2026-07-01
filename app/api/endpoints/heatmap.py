@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 
 from app.models.users import User
 from app.services.heatmap_service import heatmap_service
+from app.services.pdf_export import generate_citations_pdf
 from app.utils.dependencies import get_current_user
 from app.utils.response import success_response
 
@@ -60,10 +62,29 @@ async def export_district_citations(
     query: str,
     current_user: User = Depends(get_current_user),
 ):
-    return success_response(
-        data=None,
-        extra={"message": "PDF export not yet implemented"},
-        status_code=501,
+    citations_response, _ = await heatmap_service.get_district_citations(
+        tenant_id=current_user.tenant_id,
+        district=district,
+        query=query,
+        page=1,
+        page_size=1000,
+    )
+
+    citation_dicts = [c.model_dump() for c in citations_response.citations]
+    district_type = "charter" if "(District)" in district else "public"
+
+    pdf_bytes = generate_citations_pdf(
+        district_name=district,
+        keyword=query,
+        citations=citation_dicts,
+        district_type=district_type,
+    )
+
+    safe_name = f"citations_{district}_{query}.pdf".replace(" ", "_").replace("/", "-")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
     )
 
 
