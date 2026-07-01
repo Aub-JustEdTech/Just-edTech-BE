@@ -7,7 +7,7 @@ import io
 from datetime import date
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
@@ -67,6 +67,23 @@ def _styles() -> dict:
             fontName="Helvetica-Bold",
             textColor=_BRAND_BLUE,
             spaceBefore=4 * mm,
+            spaceAfter=1 * mm,
+        ),
+        "section_heading_charter": ParagraphStyle(
+            "section_heading_charter",
+            parent=base["Normal"],
+            fontSize=11,
+            fontName="Helvetica-Bold",
+            textColor=_CHARTER_BLUE,
+            spaceBefore=4 * mm,
+            spaceAfter=1 * mm,
+        ),
+        "section_sub": ParagraphStyle(
+            "section_sub",
+            parent=base["Normal"],
+            fontSize=8,
+            fontName="Helvetica",
+            textColor=_MID_GREY,
             spaceAfter=2 * mm,
         ),
         "citation_num": ParagraphStyle(
@@ -122,18 +139,112 @@ def _footer(canvas, doc):
     canvas.restoreState()
 
 
+def _render_section(
+    story: list,
+    section_name: str,
+    section_type: str,
+    citations: list[dict],
+    s: dict,
+) -> None:
+    """Append one district/school section (heading + citation cards) to story."""
+    is_charter = section_type == "charter"
+    accent = _CHARTER_BLUE if is_charter else _BRAND_BLUE
+    heading_style = s["section_heading_charter"] if is_charter else s["section_heading"]
+    label = "Charter School" if is_charter else "Public School District"
+
+    story.append(Paragraph(f"{label}: {section_name}", heading_style))
+
+    if not citations:
+        story.append(Paragraph("No citations found.", s["doc_meta"]))
+        return
+
+    story.append(Paragraph(f"{len(citations)} citation(s)", s["section_sub"]))
+
+    for i, c in enumerate(citations, start=1):
+        doc_title = c.get("document_title") or "Unknown Document"
+        date_str = c.get("date") or ""
+        snippet = c.get("snippet") or ""
+        page_num = c.get("page_number")
+        relevance = c.get("relevance_score")
+
+        meta_parts = []
+        if date_str:
+            meta_parts.append(date_str)
+        if page_num is not None:
+            meta_parts.append(f"Page {page_num}")
+        if relevance is not None:
+            meta_parts.append(f"Relevance {int(relevance * 100)}%")
+        meta_str = "  ·  ".join(meta_parts)
+
+        num_cell = Table(
+            [[Paragraph(str(i), s["citation_num"])]],
+            colWidths=[6 * mm],
+            rowHeights=[6 * mm],
+        )
+        num_cell.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (0, 0), accent),
+            ("ROUNDEDCORNERS", [3]),
+            ("VALIGN", (0, 0), (0, 0), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (0, 0), 0),
+            ("BOTTOMPADDING", (0, 0), (0, 0), 0),
+        ]))
+
+        header_row = Table(
+            [[num_cell, Paragraph(doc_title, s["doc_title"])]],
+            colWidths=[8 * mm, PAGE_W - 2 * MARGIN - 8 * mm],
+        )
+        header_row.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+
+        snippet_table = Table(
+            [[Paragraph(f'"{snippet}"', s["snippet"])]],
+            colWidths=[PAGE_W - 2 * MARGIN - 4 * mm],
+        )
+        snippet_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), _SNIPPET_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("LINEAFTER", (0, 0), (0, -1), 3, accent),
+        ]))
+
+        card = Table(
+            [[header_row], [Paragraph(meta_str, s["doc_meta"])], [snippet_table]],
+            colWidths=[PAGE_W - 2 * MARGIN],
+        )
+        card.setStyle(TableStyle([
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+
+        story.append(card)
+        story.append(Spacer(1, 4 * mm))
+
+
 def generate_citations_pdf(
     district_name: str,
     keyword: str,
-    citations: list[dict],
-    district_type: str = "public",
+    sections: list[dict],
 ) -> bytes:
     """
-    Build a PDF report for district citations and return the raw bytes.
+    Build a multi-section PDF report for district + charter school citations.
 
-    citations: list of dicts with keys:
-        document_title, date, snippet, page_number, relevance_score
+    sections: list of dicts, each with:
+        name: str
+        type: "public" | "charter"
+        citations: list of dicts (document_title, date, snippet, page_number, relevance_score)
     """
+    total_citations = sum(len(sec.get("citations", [])) for sec in sections)
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -150,24 +261,19 @@ def generate_citations_pdf(
     story = []
 
     # ── Header bar ────────────────────────────────────────────────────────────
-    badge_color = _CHARTER_BLUE if district_type == "charter" else _BRAND_BLUE
-    badge_label = "Charter School" if district_type == "charter" else "Public District"
-
-    header_data = [
-        [
-            Paragraph("District Citations Report", s["report_title"]),
-            Paragraph(badge_label, ParagraphStyle(
-                "badge",
-                fontSize=8,
-                fontName="Helvetica-Bold",
-                textColor=colors.white,
-                alignment=TA_RIGHT,
-            )),
-        ]
-    ]
+    header_data = [[
+        Paragraph("District Citations Report", s["report_title"]),
+        Paragraph("Combined Report", ParagraphStyle(
+            "badge",
+            fontSize=8,
+            fontName="Helvetica-Bold",
+            textColor=colors.white,
+            alignment=TA_RIGHT,
+        )),
+    ]]
     header_table = Table(header_data, colWidths=[PAGE_W - 2 * MARGIN - 30 * mm, 30 * mm])
     header_table.setStyle(TableStyle([
-        ("BACKGROUND", (1, 0), (1, 0), badge_color),
+        ("BACKGROUND", (1, 0), (1, 0), _BRAND_BLUE),
         ("ROUNDEDCORNERS", [4]),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (1, 0), (1, 0), 4),
@@ -178,20 +284,20 @@ def generate_citations_pdf(
     story.append(header_table)
     story.append(Spacer(1, 3 * mm))
 
-    # ── Meta row: district | keyword | date | count ───────────────────────────
+    # ── Meta row ──────────────────────────────────────────────────────────────
     today = date.today().strftime("%B %d, %Y")
     meta_data = [
         [
             Paragraph("DISTRICT", s["meta_label"]),
             Paragraph("KEYWORD", s["meta_label"]),
             Paragraph("GENERATED", s["meta_label"]),
-            Paragraph("CITATIONS", s["meta_label"]),
+            Paragraph("TOTAL CITATIONS", s["meta_label"]),
         ],
         [
             Paragraph(district_name, s["meta_value"]),
             Paragraph(keyword, s["meta_value"]),
             Paragraph(today, s["meta_value"]),
-            Paragraph(str(len(citations)), s["meta_value"]),
+            Paragraph(str(total_citations), s["meta_value"]),
         ],
     ]
     col_w = (PAGE_W - 2 * MARGIN) / 4
@@ -211,83 +317,20 @@ def generate_citations_pdf(
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e5e7eb")))
     story.append(Spacer(1, 4 * mm))
 
-    if not citations:
+    if total_citations == 0:
         story.append(Paragraph("No citations found for this district and keyword.", s["doc_meta"]))
     else:
-        story.append(Paragraph(f"Citations ({len(citations)})", s["section_heading"]))
-
-        for i, c in enumerate(citations, start=1):
-            doc_title = c.get("document_title") or "Unknown Document"
-            date_str = c.get("date") or ""
-            snippet = c.get("snippet") or ""
-            page_num = c.get("page_number")
-            relevance = c.get("relevance_score")
-
-            meta_parts = []
-            if date_str:
-                meta_parts.append(date_str)
-            if page_num is not None:
-                meta_parts.append(f"Page {page_num}")
-            if relevance is not None:
-                meta_parts.append(f"Relevance {int(relevance * 100)}%")
-            meta_str = "  ·  ".join(meta_parts)
-
-            # Number badge + doc title + meta in a two-column row
-            num_cell = Table(
-                [[Paragraph(str(i), s["citation_num"])]],
-                colWidths=[6 * mm],
-                rowHeights=[6 * mm],
+        for idx, section in enumerate(sections):
+            _render_section(
+                story,
+                section_name=section["name"],
+                section_type=section.get("type", "public"),
+                citations=section.get("citations", []),
+                s=s,
             )
-            num_cell.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (0, 0), _BRAND_BLUE),
-                ("ROUNDEDCORNERS", [3]),
-                ("VALIGN", (0, 0), (0, 0), "MIDDLE"),
-                ("TOPPADDING", (0, 0), (0, 0), 0),
-                ("BOTTOMPADDING", (0, 0), (0, 0), 0),
-            ]))
-
-            header_row = Table(
-                [[num_cell, Paragraph(doc_title, s["doc_title"])]],
-                colWidths=[8 * mm, PAGE_W - 2 * MARGIN - 8 * mm],
-            )
-            header_row.setStyle(TableStyle([
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ]))
-
-            # Snippet block with light background
-            snippet_table = Table(
-                [[Paragraph(f'"{snippet}"', s["snippet"])]],
-                colWidths=[PAGE_W - 2 * MARGIN - 4 * mm],
-            )
-            snippet_table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, -1), _SNIPPET_BG),
-                ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                ("LINEAFTER", (0, 0), (0, -1), 3, _BRAND_BLUE),
-            ]))
-
-            card_content = [
-                [header_row],
-                [Paragraph(meta_str, s["doc_meta"])],
-                [snippet_table],
-            ]
-            card = Table(card_content, colWidths=[PAGE_W - 2 * MARGIN])
-            card.setStyle(TableStyle([
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 2),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-            ]))
-
-            story.append(card)
-            story.append(Spacer(1, 4 * mm))
+            if idx < len(sections) - 1:
+                story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
+                story.append(Spacer(1, 2 * mm))
 
     doc.build(story, onFirstPage=_footer, onLaterPages=_footer)
     return buffer.getvalue()

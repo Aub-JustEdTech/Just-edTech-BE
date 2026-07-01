@@ -60,24 +60,43 @@ async def get_district_citations(
 async def export_district_citations(
     district: str,
     query: str,
+    charter_schools: str = "",
     current_user: User = Depends(get_current_user),
 ):
-    citations_response, _ = await heatmap_service.get_district_citations(
+    sections = []
+
+    public_response, _ = await heatmap_service.get_district_citations(
         tenant_id=current_user.tenant_id,
         district=district,
         query=query,
         page=1,
         page_size=1000,
     )
+    sections.append({
+        "name": district,
+        "type": "public",
+        "citations": [c.model_dump() for c in public_response.citations],
+    })
 
-    citation_dicts = [c.model_dump() for c in citations_response.citations]
-    district_type = "charter" if "(District)" in district else "public"
+    for school_name in (s.strip() for s in charter_schools.split(",") if s.strip()):
+        charter_response, _ = await heatmap_service.get_district_citations(
+            tenant_id=current_user.tenant_id,
+            district=school_name,
+            query=query,
+            page=1,
+            page_size=1000,
+        )
+        if charter_response.citations:
+            sections.append({
+                "name": school_name,
+                "type": "charter",
+                "citations": [c.model_dump() for c in charter_response.citations],
+            })
 
     pdf_bytes = generate_citations_pdf(
         district_name=district,
         keyword=query,
-        citations=citation_dicts,
-        district_type=district_type,
+        sections=sections,
     )
 
     safe_name = f"citations_{district}_{query}.pdf".replace(" ", "_").replace("/", "-")
