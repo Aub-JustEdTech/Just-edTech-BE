@@ -59,7 +59,7 @@ services:
   ##################################################
 
   api:
-    image: 940031346406.dkr.ecr.us-west-1.amazonaws.com/justedtech-prod-be
+    image: ${ECR_IMAGE}
     pull_policy: always
 
     container_name: just-edtech-api
@@ -143,11 +143,12 @@ services:
       --soft-time-limit=3000
 
     healthcheck:
-      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping", "--timeout", "5"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 3
+      # Wait 30 seconds after container starts before detecting healthcheck failures
+      start_period: 30s     
 
     deploy:
       resources:
