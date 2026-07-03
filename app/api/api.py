@@ -19,6 +19,7 @@ from app.api.endpoints import (
     monthly_billing,
     pipeline_status,
     rag,
+    school_scraper,
     upload_batches,
 )
 
@@ -53,4 +54,7 @@ api_router.include_router(
 )
 api_router.include_router(
     llm_models.router, prefix="/llm-models", tags=["LLM Models"]
+)
+api_router.include_router(
+    school_scraper.router, prefix="/school-scraper", tags=["School Scraper"]
 )

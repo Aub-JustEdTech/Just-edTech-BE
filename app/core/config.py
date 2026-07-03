@@ -151,6 +151,48 @@ class Settings(BaseSettings):
         30  # Default timeout in seconds for web scraping requests
     )
 
+    # School Scraper Configuration
+    SCHOOL_SCRAPER_USE_PLAYWRIGHT: bool = False
+    SCHOOL_SCRAPER_MEETING_KEYWORDS: list[str] = [
+        "meeting",
+        "minutes",
+        "archive",
+        "archives",
+        "minutes archive",
+        "minutes archive",
+        "board",
+        "agenda",
+        "governance",
+        "committee",
+        "records",
+        "video",
+        "media",
+    ]
+    SCHOOL_SCRAPER_VIDEO_EXTENSIONS: list[str] = [
+        ".mp4",
+        ".mov",
+        ".webm",
+    ]
+    SCHOOL_SCRAPER_AUDIO_EXTENSIONS: list[str] = [
+        ".mp3",
+        ".wav",
+        ".m4a",
+    ]
+    SCHOOL_SCRAPER_DOCUMENT_EXTENSIONS: list[str] = [
+        ".pdf",
+        ".docx",
+        ".doc",
+        ".xlsx",
+        ".xls",
+        ".pptx",
+        ".ppt",
+    ]
+    SCHOOL_SCRAPER_MAX_CANDIDATES: int = 10
+    SCHOOL_SCRAPER_MAX_CRAWL_DEPTH: int = 2
+    SCHOOL_SCRAPER_MAX_PAGES_PER_CRAWL: int = 20
+    # How many top candidate pages to follow for sub-link discovery
+    SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
+
     # Email / SMTP
     SMTP_HOST: str | None = None
     SMTP_PORT: int | None = None
