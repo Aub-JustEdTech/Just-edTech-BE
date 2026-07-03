@@ -234,7 +234,7 @@ jobs:
              --query SecretString \
              --output text > /home/ubuntu/justedtech/.env.prod
 
-             echo "ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${GITHUB_SHA}" >> .env.prod
+             echo "ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}" >> .env.prod
 
              echo ".env.prod created successfully"
 
@@ -254,8 +254,6 @@ jobs:
             echo "======================================="
 
             cd /home/ubuntu/justedtech
-            
-            grep ECR_IMAGE .env.prod
 
             echo
             echo "Pulling Images..."
