@@ -30,8 +30,10 @@ async def create_invitation(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Authorization: current_user must be admin of the tenant
-    if current_user.tenant_id != tenant_id or not user.is_tenant_admin(current_user):
+    # Super admin can invite to their own tenant only; tenant admin can invite to their own tenant
+    is_super = user.is_super_admin(current_user)
+    is_admin = user.is_tenant_admin(current_user)
+    if not (is_super or is_admin) or current_user.tenant_id != tenant_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     emails = [e.strip().lower() for e in payload.emails]
