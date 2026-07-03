@@ -232,12 +232,17 @@ jobs:
             aws secretsmanager get-secret-value \
             --secret-id justedtech-prod-secrets \
             --query SecretString \
-            --output text |
-            jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > .env.prod
+            --output text \
+            | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' \
+            > .env.prod
 
             echo "ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}" >> .env.prod
 
             echo ".env.prod created successfully"
+
+            echo "===================="
+            cat .env.prod
+            echo "===================="
 
              
 
