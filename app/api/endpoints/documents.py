@@ -1192,6 +1192,164 @@ async def reprocess_document(
     )
 
 
+@router.get("/url/{doc_ref}")
+async def get_document_url_by_ref(
+    doc_ref: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+    expires_in: int = Query(3600, ge=60, le=86400, description="URL expiry in seconds"),
+):
+    """
+    Return a presigned S3 URL for a document identified by doc_id (UUID) or name (filename).
+    Used by the HeatMap transcript viewer to render the raw PDF directly in the browser.
+    """
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not have an associated tenant",
+        )
+
+    result = await db.execute(
+        select(Document)
+        .where(Document.doc_id == doc_ref, Document.tenant_id == tenant_id)
+        .limit(1)
+    )
+    document = result.scalar_one_or_none()
+
+    if not document:
+        result = await db.execute(
+            select(Document)
+            .where(Document.name == doc_ref, Document.tenant_id == tenant_id)
+            .limit(1)
+        )
+        document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    if not document.s3_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Document does not have an associated S3 URL",
+        )
+
+    prefix = f"s3://{settings.S3_BUCKET_NAME}/"
+    if not document.s3_url.startswith(prefix):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invalid S3 URL stored for document",
+        )
+
+    s3_key = document.s3_url[len(prefix):]
+
+    try:
+        s3_manager = S3Manager(
+            bucket_name=settings.S3_BUCKET_NAME,
+            region_name=settings.S3_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+        ext = (document.document_type or "").lower()
+        mime_map = {
+            ".pdf": "application/pdf",
+            ".md": "text/markdown; charset=utf-8",
+            ".txt": "text/plain; charset=utf-8",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }
+        content_type = mime_map.get(ext, "application/octet-stream")
+        safe_name = (document.name or f"document_{document.id}").replace('"', "")
+        url = await s3_manager.get_presigned_url(
+            s3_key=s3_key,
+            expiration=expires_in,
+            http_method="GET",
+            response_content_type=content_type,
+            response_content_disposition=f'inline; filename="{safe_name}"',
+        )
+        return success_response(
+            data={"title": document.name, "url": url, "expires_in": expires_in}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate presigned URL: {str(e)}",
+        ) from e
+
+
+@router.get("/text/{doc_ref}")
+async def get_document_text(
+    doc_ref: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+):
+    """
+    Return the full text of a document assembled from its Qdrant chunks, grouped by page.
+    Used by the HeatMap "View full transcript" flow.
+
+    doc_ref may be either the document's doc_id (UUID) or its name/filename — whichever
+    the citation carries. Sample data uses the filename; live Qdrant data uses the UUID.
+    """
+    tenant_id = current_user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not have an associated tenant",
+        )
+
+    # Try by doc_id first; if not found, fall back to matching by name (filename).
+    result = await db.execute(
+        select(Document)
+        .where(Document.doc_id == doc_ref, Document.tenant_id == tenant_id)
+        .limit(1)
+    )
+    document = result.scalar_one_or_none()
+
+    if not document:
+        result = await db.execute(
+            select(Document)
+            .where(Document.name == doc_ref, Document.tenant_id == tenant_id)
+            .limit(1)
+        )
+        document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    if document.processing_status != ProcessingStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Document not fully processed yet. Status: {document.processing_status.value}",
+        )
+
+    try:
+        chunks = await get_document_service().vector_store.get_document_chunks(
+            document_id=document.doc_id,
+            tenant_id=tenant_id,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve document chunks: {str(e)}",
+        ) from e
+
+    # Group chunks by page_number; fall back to chunk_index as a synthetic page
+    pages: dict[int, list[str]] = {}
+    for chunk in chunks:
+        meta = chunk.get("metadata", {})
+        page = int(meta.get("page_number", meta.get("chunk_index", 1)))
+        pages.setdefault(page, []).append(chunk["text"])
+
+    return success_response(
+        data={
+            "title": document.name,
+            "pages": [
+                {"page_number": pn, "text": "\n\n".join(texts)}
+                for pn, texts in sorted(pages.items())
+            ],
+        }
+    )
+
+
 @router.get("/images/{image_filename}")
 async def get_document_image(
     image_filename: str,

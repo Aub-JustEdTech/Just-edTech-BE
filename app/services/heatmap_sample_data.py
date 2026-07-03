@@ -1,655 +1,410 @@
+"""
+Sample data derived from:
+  AKF Bear Bulletin — Elementary News 6.12.26
+  Abby Kelley Foster Charter Public School, Worcester, MA
+  Author: Anne Duke (Principal)
+
+Citations are keyed by lowercase district name so get_district_citations can
+filter correctly. Only districts that authored or are directly referenced by
+the document have citations — others appear on the map but return an empty list.
+"""
+
 from app.schemas.heatmap import CitationItem, DistrictScoreItem, KeywordItem
 
+_DOC_ID = "Elementary-School-Update-June-12-2026.pdf"
+_DOC_TITLE = "Elementary-School-Update-June-12-2026.pdf"
+_DOC_DATE = "2026-06-12"
+_DOC_URL = ""
+
+# Shorthand keys used throughout
+_AKFCS = "abby kelley foster charter public (district)"
+_WORCESTER = "worcester"
+
 KEYWORDS: list[KeywordItem] = [
-    KeywordItem(id=1, label="Book Ban"),
-    KeywordItem(id=2, label="Budget Cuts"),
-    KeywordItem(id=3, label="DEI"),
-    KeywordItem(id=4, label="School Safety"),
-    KeywordItem(id=5, label="Special Education"),
+    KeywordItem(id=1, label="End of Year"),
+    KeywordItem(id=2, label="Medication Policy"),
+    KeywordItem(id=3, label="Book Drive"),
+    KeywordItem(id=4, label="Family Engagement"),
+    KeywordItem(id=5, label="School Transition"),
 ]
 
-# ── Where should we invest resources? ────────────────────────────────────────
 
-INVEST_RESOURCES_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Springfield School District",  intensity_score=245, conversation_count=7, source_count=3),
-    DistrictScoreItem(district_name="Brockton School District",     intensity_score=198, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Lawrence School District",     intensity_score=172, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="New Bedford School District",  intensity_score=145, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Holyoke School District",      intensity_score=118, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Fall River School District",   intensity_score=97,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Lynn School District",         intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Lowell School District",       intensity_score=74,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Worcester School District",    intensity_score=62,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Fitchburg School District",    intensity_score=51,  conversation_count=2, source_count=1),
+def _akfcs(score: int, convos: int) -> DistrictScoreItem:
+    return DistrictScoreItem(
+        district_name="Abby Kelley Foster Charter Public (District)",
+        intensity_score=score,
+        conversation_count=convos,
+        source_count=1,
+        district_type="charter",
+    )
+
+
+# ── End of Year ───────────────────────────────────────────────────────────────
+
+END_OF_YEAR_SCORES: list[DistrictScoreItem] = [
+    _akfcs(245, 8),
+    DistrictScoreItem(district_name="Worcester",  intensity_score=162, conversation_count=5, source_count=1),
+    DistrictScoreItem(district_name="Shrewsbury", intensity_score=97,  conversation_count=3, source_count=1),
+    DistrictScoreItem(district_name="Millbury",   intensity_score=61,  conversation_count=2, source_count=1),
+    DistrictScoreItem(district_name="Auburn",     intensity_score=38,  conversation_count=1, source_count=1),
 ]
 
-INVEST_RESOURCES_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Springfield 2024 Education Funding Gap Report",
-        date="2024-02-10",
-        snippet=(
-            "Springfield schools face a $14M shortfall in per-pupil spending relative to the "
-            "state average. Facilities maintenance and special education staffing are the most "
-            "acute gaps identified by the superintendent's office."
+END_OF_YEAR_CITATIONS: dict[str, list[CitationItem]] = {
+    _AKFCS: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Over the next several days, classrooms will be filled with end-of-year celebrations, "
+                "activities, and special moments. Some classes will celebrate together in their classrooms, "
+                "while others will enjoy a fun movie experience at the high school where students can relax "
+                "and enjoy the cool air while spending time with classmates."
+            ),
+            source_url=_DOC_URL, relevance_score=0.921, page_number=1,
         ),
-        source_url="https://example.com/documents/springfield-funding-gap-2024.pdf",
-        relevance_score=0.391,
-        page_number=4,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Brockton Infrastructure & Technology Needs Assessment",
-        date="2024-03-18",
-        snippet=(
-            "Three of Brockton's seven elementary schools were built before 1965 and require "
-            "significant HVAC and electrical upgrades. The district estimates $22M in deferred "
-            "capital investment needed over the next five years."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Along with these festivities, we will also have our final Goodies with Grownups of the "
+                "year next Wednesday morning on the playground. Students and families are invited to join "
+                "us for a special treat, enjoy some time together, and visit with one another before we "
+                "head into summer break."
+            ),
+            source_url=_DOC_URL, relevance_score=0.884, page_number=1,
         ),
-        source_url="https://example.com/documents/brockton-needs-assessment-2024.pdf",
-        relevance_score=0.354,
-        page_number=9,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Massachusetts Low-Income District Resource Allocation Review",
-        date="2024-01-30",
-        snippet=(
-            "A statewide review found that districts serving the highest proportions of "
-            "low-income students receive on average 18% less discretionary funding per pupil "
-            "than their wealthier counterparts, exacerbating existing achievement gaps."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "We have 4 and a half days left of our school year! Let's make it count! "
+                "June 19th NO School. June 22nd LAST DAY of CLASSES, Dismissal at 11:45am."
+            ),
+            source_url=_DOC_URL, relevance_score=0.847, page_number=2,
         ),
-        source_url="https://example.com/documents/ma-resource-allocation-2024.pdf",
-        relevance_score=0.318,
-        page_number=6,
-    ),
+    ],
+    _WORCESTER: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Over the next several days, classrooms will be filled with end-of-year celebrations, "
+                "activities, and special moments. Some classes will celebrate together in their classrooms, "
+                "while others will enjoy a fun movie experience at the high school where students can relax "
+                "and enjoy the cool air while spending time with classmates."
+            ),
+            source_url=_DOC_URL, relevance_score=0.901, page_number=1,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "We have 4 and a half days left of our school year! Let's make it count! "
+                "June 19th NO School. June 22nd LAST DAY of CLASSES, Dismissal at 11:45am."
+            ),
+            source_url=_DOC_URL, relevance_score=0.832, page_number=2,
+        ),
+    ],
+}
+
+
+# ── Medication Policy ─────────────────────────────────────────────────────────
+
+MEDICATION_POLICY_SCORES: list[DistrictScoreItem] = [
+    _akfcs(231, 7),
+    DistrictScoreItem(district_name="Worcester",    intensity_score=148, conversation_count=5, source_count=1),
+    DistrictScoreItem(district_name="Grafton",      intensity_score=85,  conversation_count=3, source_count=1),
+    DistrictScoreItem(district_name="Northborough", intensity_score=52,  conversation_count=2, source_count=1),
 ]
 
-# ── Which candidates should we support? ──────────────────────────────────────
+MEDICATION_POLICY_CITATIONS: dict[str, list[CitationItem]] = {
+    _AKFCS: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Many of our children have daily medications that are given here at school or medications "
+                "that are here for emergency purposes. These medications cannot be kept at school during "
+                "the summer and must be picked up during dismissal on the last day of school by a parent/"
+                "guardian or designated adult. Students cannot transport the medication for safety reasons."
+            ),
+            source_url=_DOC_URL, relevance_score=0.935, page_number=2,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Any medications left over after the close of school on Monday June 22nd 2026, will be "
+                "disposed of. Life Saving medications (Epi pens, Inhalers and Seizure meds) MUST be kept "
+                "in the building until the end of the school day on the last day of school. Non-life "
+                "saving medications may be picked up sooner."
+            ),
+            source_url=_DOC_URL, relevance_score=0.898, page_number=2,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "All medications, over the counter or prescription must have an updated doctors order "
+                "dated after 6/30/26 (for the upcoming school year). Epi pens, Asthma and Seizure "
+                "medications must be accompanied by an updated doctor's order and an action plan dated "
+                "after 6/30/26. Medications will not be accepted without all proper documentation."
+            ),
+            source_url=_DOC_URL, relevance_score=0.861, page_number=3,
+        ),
+    ],
+    _WORCESTER: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Many of our children have daily medications that are given here at school or medications "
+                "that are here for emergency purposes. These medications cannot be kept at school during "
+                "the summer and must be picked up during dismissal on the last day of school by a parent/"
+                "guardian or designated adult. Students cannot transport the medication for safety reasons."
+            ),
+            source_url=_DOC_URL, relevance_score=0.912, page_number=2,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Any medications left over after the close of school on Monday June 22nd 2026, will be "
+                "disposed of. Life Saving medications (Epi pens, Inhalers and Seizure meds) MUST be kept "
+                "in the building until the end of the school day on the last day of school."
+            ),
+            source_url=_DOC_URL, relevance_score=0.874, page_number=2,
+        ),
+    ],
+}
 
-CANDIDATES_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Newton School District",       intensity_score=245, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Lexington School District",    intensity_score=198, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Framingham School District",   intensity_score=172, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Quincy School District",       intensity_score=145, conversation_count=5, source_count=1),
-    DistrictScoreItem(district_name="Waltham School District",      intensity_score=118, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Medford School District",      intensity_score=97,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Somerville School District",   intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Cambridge School District",    intensity_score=74,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Brookline School District",    intensity_score=62,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Malden School District",       intensity_score=51,  conversation_count=2, source_count=1),
+
+# ── Book Drive ────────────────────────────────────────────────────────────────
+
+BOOK_DRIVE_SCORES: list[DistrictScoreItem] = [
+    _akfcs(218, 7),
+    DistrictScoreItem(district_name="Worcester", intensity_score=134, conversation_count=4, source_count=1),
+    DistrictScoreItem(district_name="Holden",    intensity_score=79,  conversation_count=3, source_count=1),
+    DistrictScoreItem(district_name="Paxton",    intensity_score=47,  conversation_count=2, source_count=1),
+    DistrictScoreItem(district_name="Leicester", intensity_score=28,  conversation_count=1, source_count=1),
 ]
 
-CANDIDATES_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Newton School Committee Election Voter Guide 2024",
-        date="2024-09-05",
-        snippet=(
-            "Three incumbent school committee members face challengers in November. Key issues "
-            "include the district's literacy curriculum adoption and proposed redistricting. "
-            "The teachers' union has endorsed two of the three challengers."
+BOOK_DRIVE_CITATIONS: dict[str, list[CitationItem]] = {
+    _AKFCS: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "AKFCS ELEMENTARY SCHOOL BOOK DRIVE — HELP US BUILD OUR CLASSROOM LIBRARIES & SPARK A "
+                "LOVE OF READING! What we need: Gently Used Children's Books — Fiction (Chapter books, "
+                "Graphic Novels, Picture books, Early Readers) — Non-Fiction (Animals, Science, History, "
+                "Biography). Drop off donations at AKFCS Elementary. Donation dates: June 1 – June 23."
+            ),
+            source_url=_DOC_URL, relevance_score=0.952, page_number=7,
         ),
-        source_url="https://example.com/documents/newton-voter-guide-2024.pdf",
-        relevance_score=0.402,
-        page_number=2,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Lexington School Board Candidate Forum Transcript",
-        date="2024-09-22",
-        snippet=(
-            "Candidates were asked about positions on social-emotional learning programs, "
-            "gifted education funding, and library collection policies. The forum drew over "
-            "300 attendees, the highest turnout for a school board event in a decade."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "We have already gotten over 300 books. Keep them coming! "
+                "For more info, contact Lauren Blumberg at lblumberg@akfcs.org."
+            ),
+            source_url=_DOC_URL, relevance_score=0.903, page_number=6,
         ),
-        source_url="https://example.com/documents/lexington-forum-transcript-2024.pdf",
-        relevance_score=0.367,
-        page_number=11,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Framingham School Committee Race — PAC Spending Analysis",
-        date="2024-10-01",
-        snippet=(
-            "Outside PAC spending in Framingham's school committee race has exceeded $85,000 — "
-            "an unusual level for a local school board contest. Education advocacy groups on "
-            "both sides cite curriculum and book access policies as the motivating issues."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet="YOUR DONATIONS MAKE A DIFFERENCE! THANK YOU FOR SUPPORTING OUR YOUNG READERS!",
+            source_url=_DOC_URL, relevance_score=0.856, page_number=7,
         ),
-        source_url="https://example.com/documents/framingham-pac-analysis-2024.pdf",
-        relevance_score=0.331,
-        page_number=7,
-    ),
+    ],
+    _WORCESTER: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "AKFCS ELEMENTARY SCHOOL BOOK DRIVE — HELP US BUILD OUR CLASSROOM LIBRARIES & SPARK A "
+                "LOVE OF READING! What we need: Gently Used Children's Books — Fiction (Chapter books, "
+                "Graphic Novels, Picture books, Early Readers) — Non-Fiction (Animals, Science, History, "
+                "Biography). Drop off donations at AKFCS Elementary. Donation dates: June 1 – June 23."
+            ),
+            source_url=_DOC_URL, relevance_score=0.928, page_number=7,
+        ),
+    ],
+}
+
+
+# ── Family Engagement ─────────────────────────────────────────────────────────
+
+FAMILY_ENGAGEMENT_SCORES: list[DistrictScoreItem] = [
+    _akfcs(237, 8),
+    DistrictScoreItem(district_name="Worcester",     intensity_score=155, conversation_count=5, source_count=1),
+    DistrictScoreItem(district_name="West Boylston", intensity_score=91,  conversation_count=3, source_count=1),
+    DistrictScoreItem(district_name="Boylston",      intensity_score=57,  conversation_count=2, source_count=1),
+    DistrictScoreItem(district_name="Sterling",      intensity_score=33,  conversation_count=1, source_count=1),
 ]
 
-# ── Which districts are at risk? ──────────────────────────────────────────────
+FAMILY_ENGAGEMENT_CITATIONS: dict[str, list[CitationItem]] = {
+    _AKFCS: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "We'd love to see you at Goodies with Grownups this Wednesday at 7:45 AM! Come start "
+                "the morning with a sweet treat, some friendly conversation, and time together as a "
+                "school community. Families can park in the car drop-off line and walk over to the "
+                "playground for a delicious donut treat. While the kids play, grownups can relax, "
+                "connect, and visit with other members of our school community."
+            ),
+            source_url=_DOC_URL, relevance_score=0.941, page_number=4,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "We also want to give a very special shout out to Alicia, Nay, Samantha, Shiqui, and "
+                "Flor for their amazing work behind the scenes in re energizing the PTO at the ES. Your "
+                "efforts to welcome new families, encourage involvement, and invite parents to join the "
+                "PTO help strengthen the partnership between our school, families, and students."
+            ),
+            source_url=_DOC_URL, relevance_score=0.897, page_number=3,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Join the Abby Kelley PTO for the upcoming school year 2026-2027! Together, we empower "
+                "every scholar to achieve their greatest potential. We welcome all parents and caregivers! "
+                "Get involved in the way that works best for you throughout the year. Questions? Contact: "
+                "Lucy Marcil at LMarcil@akfcs.org, Ext 4108."
+            ),
+            source_url=_DOC_URL, relevance_score=0.852, page_number=8,
+        ),
+    ],
+    _WORCESTER: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "We'd love to see you at Goodies with Grownups this Wednesday at 7:45 AM! Come start "
+                "the morning with a sweet treat, some friendly conversation, and time together as a "
+                "school community. Families can park in the car drop-off line and walk over to the "
+                "playground for a delicious donut treat."
+            ),
+            source_url=_DOC_URL, relevance_score=0.918, page_number=4,
+        ),
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Join the Abby Kelley PTO for the upcoming school year 2026-2027! Together, we empower "
+                "every scholar to achieve their greatest potential. We welcome all parents and caregivers!"
+            ),
+            source_url=_DOC_URL, relevance_score=0.831, page_number=8,
+        ),
+    ],
+}
 
-DISTRICTS_AT_RISK_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Boston School District",       intensity_score=245, conversation_count=7, source_count=3),
-    DistrictScoreItem(district_name="Lowell School District",       intensity_score=198, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Lawrence School District",     intensity_score=172, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Springfield School District",  intensity_score=145, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Holyoke School District",      intensity_score=118, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Brockton School District",     intensity_score=97,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Worcester School District",    intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Fall River School District",   intensity_score=74,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Lynn School District",         intensity_score=62,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="New Bedford School District",  intensity_score=51,  conversation_count=2, source_count=1),
+
+# ── School Transition ─────────────────────────────────────────────────────────
+
+SCHOOL_TRANSITION_SCORES: list[DistrictScoreItem] = [
+    _akfcs(209, 6),
+    DistrictScoreItem(district_name="Worcester", intensity_score=127, conversation_count=4, source_count=1),
+    DistrictScoreItem(district_name="Millbury",  intensity_score=74,  conversation_count=2, source_count=1),
+    DistrictScoreItem(district_name="Sutton",    intensity_score=44,  conversation_count=2, source_count=1),
 ]
 
-DISTRICTS_AT_RISK_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Boston Public Schools Academic Recovery Plan 2024",
-        date="2024-03-12",
-        snippet=(
-            "The state education department identified 14 Boston schools as requiring "
-            "comprehensive support under the ESSA framework. Chronic absenteeism rates remain "
-            "above 30% in six of those schools, hampering post-pandemic recovery efforts."
+SCHOOL_TRANSITION_CITATIONS: dict[str, list[CitationItem]] = {
+    _AKFCS: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Our final day of school, Monday, June 22nd, will be a very special day for all students. "
+                "We will be hosting our annual 'Meet and Greet: Find Your Seat' event! Students will visit "
+                "their next year's classroom, meet their new teacher, and spend approximately an hour "
+                "getting to know their new learning space and teacher for the upcoming school year."
+            ),
+            source_url=_DOC_URL, relevance_score=0.944, page_number=1,
         ),
-        source_url="https://example.com/documents/boston-recovery-plan-2024.pdf",
-        relevance_score=0.415,
-        page_number=3,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Lowell Academic Performance & Equity Gap Report",
-        date="2024-02-28",
-        snippet=(
-            "Third-grade reading proficiency in Lowell stands at 41%, compared to a statewide "
-            "average of 57%. The report flags growing disparities between ELL students and "
-            "native English speakers as the district's most pressing at-risk indicator."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Because this is such an exciting and important transition opportunity for our students, "
+                "it is especially important that students attend school on June 22nd. This experience "
+                "helps students feel prepared, welcomed, and excited as they look ahead to the next "
+                "chapter in their AKF journey."
+            ),
+            source_url=_DOC_URL, relevance_score=0.908, page_number=1,
         ),
-        source_url="https://example.com/documents/lowell-equity-gap-2024.pdf",
-        relevance_score=0.378,
-        page_number=8,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Springfield Fiscal Distress & Enrollment Decline Audit",
-        date="2024-04-05",
-        snippet=(
-            "Springfield has lost 2,100 students over the past five years, triggering a "
-            "downward spiral in state aid. The auditor's report warns the district may face "
-            "receivership if enrollment continues to decline at the current rate."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "This will be the final weekly Bear Bulletin of the 2025-2026 school year. Families can "
+                "look forward to hearing from us again in late July/early August as we begin sharing "
+                "important information and updates for the start of the 2026–2027 school year. Our first "
+                "week of school will take place the week of August 24th."
+            ),
+            source_url=_DOC_URL, relevance_score=0.863, page_number=2,
         ),
-        source_url="https://example.com/documents/springfield-fiscal-audit-2024.pdf",
-        relevance_score=0.342,
-        page_number=5,
-    ),
-]
+    ],
+    _WORCESTER: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Our final day of school, Monday, June 22nd, will be a very special day for all students. "
+                "We will be hosting our annual 'Meet and Greet: Find Your Seat' event! Students will visit "
+                "their next year's classroom, meet their new teacher, and spend approximately an hour "
+                "getting to know their new learning space and teacher for the upcoming school year."
+            ),
+            source_url=_DOC_URL, relevance_score=0.921, page_number=1,
+        ),
+    ],
+}
 
-# ── What issues are driving conflict? ─────────────────────────────────────────
-
-CONFLICT_ISSUES_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Cambridge School District",    intensity_score=245, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Salem School District",        intensity_score=198, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Northampton School District",  intensity_score=172, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Amherst School District",      intensity_score=145, conversation_count=5, source_count=1),
-    DistrictScoreItem(district_name="Somerville School District",   intensity_score=118, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Boston School District",       intensity_score=97,  conversation_count=3, source_count=2),
-    DistrictScoreItem(district_name="Newton School District",       intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Brookline School District",    intensity_score=74,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Medford School District",      intensity_score=62,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Gloucester School District",   intensity_score=51,  conversation_count=2, source_count=1),
-]
-
-CONFLICT_ISSUES_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Cambridge School Committee — Curriculum Controversy Minutes",
-        date="2024-04-17",
-        snippet=(
-            "A proposed revision to the K-8 history curriculum sparked a four-hour public "
-            "comment session. Parents on opposing sides cited concerns about both cultural "
-            "representation and age-appropriateness. The vote was tabled pending a community review."
-        ),
-        source_url="https://example.com/documents/cambridge-curriculum-controversy-2024.pdf",
-        relevance_score=0.408,
-        page_number=5,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Salem Library Book Challenge — Board Hearing Summary",
-        date="2024-05-09",
-        snippet=(
-            "The Salem school board received 47 formal book challenge requests in the 2023-24 "
-            "school year — up from 3 the previous year. The board voted 4-3 to retain all "
-            "challenged titles pending completion of a new materials review policy."
-        ),
-        source_url="https://example.com/documents/salem-book-challenge-2024.pdf",
-        relevance_score=0.371,
-        page_number=2,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Northampton Community Forum on School Policy Conflicts",
-        date="2024-03-30",
-        snippet=(
-            "Northampton's public forum on inclusive school policies drew 400 residents. "
-            "Tensions centered on gender identity guidelines for student records, with "
-            "community members sharply divided over parental notification requirements."
-        ),
-        source_url="https://example.com/documents/northampton-forum-2024.pdf",
-        relevance_score=0.334,
-        page_number=9,
-    ),
-]
-
-# ── Which messages resonate with voters? ──────────────────────────────────────
-
-VOTER_MESSAGES_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Quincy School District",       intensity_score=245, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Framingham School District",   intensity_score=198, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Waltham School District",      intensity_score=172, conversation_count=5, source_count=1),
-    DistrictScoreItem(district_name="Plymouth School District",     intensity_score=145, conversation_count=5, source_count=1),
-    DistrictScoreItem(district_name="Weymouth School District",     intensity_score=118, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Braintree School District",    intensity_score=97,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Needham School District",      intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Natick School District",       intensity_score=74,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Lexington School District",    intensity_score=62,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Burlington School District",   intensity_score=51,  conversation_count=2, source_count=1),
-]
-
-VOTER_MESSAGES_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Quincy Voter Survey — Education Priority Index 2024",
-        date="2024-06-14",
-        snippet=(
-            "Survey respondents in Quincy ranked 'school safety' and 'teacher retention' as "
-            "their top two education priorities, outranking curriculum content by a wide margin. "
-            "Messages focused on classroom stability tested 22 points higher than policy-focused framing."
-        ),
-        source_url="https://example.com/documents/quincy-voter-survey-2024.pdf",
-        relevance_score=0.397,
-        page_number=6,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Framingham Focus Group Report — School Board Messaging",
-        date="2024-07-02",
-        snippet=(
-            "Focus groups of Framingham swing voters responded most positively to messages "
-            "emphasizing 'keeping politics out of the classroom' and 'investing in basics.' "
-            "Highly partisan messaging on either side drove unfavorable ratings above 60%."
-        ),
-        source_url="https://example.com/documents/framingham-focus-group-2024.pdf",
-        relevance_score=0.362,
-        page_number=4,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Massachusetts Suburban Voter Education Poll — Fall 2024",
-        date="2024-09-18",
-        snippet=(
-            "Statewide polling of suburban school districts found that 68% of likely voters "
-            "prioritize 'academic outcomes over social issues' when evaluating school board "
-            "candidates. Reading and math proficiency data is the most trusted performance signal."
-        ),
-        source_url="https://example.com/documents/ma-suburban-voter-poll-2024.pdf",
-        relevance_score=0.329,
-        page_number=12,
-    ),
-]
-
-# ── Book Ban ──────────────────────────────────────────────────────────────────
-
-BOOK_BAN_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Boston School District",       intensity_score=245, conversation_count=8, source_count=3),
-    DistrictScoreItem(district_name="Salem School District",        intensity_score=210, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Cambridge School District",    intensity_score=183, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Northampton School District",  intensity_score=154, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Amherst School District",      intensity_score=127, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Brookline School District",    intensity_score=101, conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Somerville School District",   intensity_score=88,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Newton School District",       intensity_score=72,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Lexington School District",    intensity_score=55,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Gloucester School District",   intensity_score=34,  conversation_count=1, source_count=1),
-]
-
-BOOK_BAN_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Boston School Board — Library Materials Review Hearing",
-        date="2024-02-14",
-        snippet=(
-            "Parents and educators packed the February hearing to debate removal of 12 titles "
-            "from high school libraries. The board voted 5-2 to retain all books pending a "
-            "formal review process to be completed by June 2024."
-        ),
-        source_url="https://example.com/documents/boston-library-review-2024.pdf",
-        relevance_score=0.421,
-        page_number=2,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Salem Book Challenge — Formal Complaints Summary 2024",
-        date="2024-04-03",
-        snippet=(
-            "Salem received 47 formal book challenge requests this academic year — a 15x "
-            "increase from 2022. Most challenges targeted titles dealing with LGBTQ+ themes "
-            "and racially diverse narratives in grades 6 through 10."
-        ),
-        source_url="https://example.com/documents/salem-challenges-2024.pdf",
-        relevance_score=0.387,
-        page_number=5,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Massachusetts Library Freedom Coalition — Statewide Report",
-        date="2024-05-21",
-        snippet=(
-            "The coalition documented 134 distinct book challenge incidents across 22 districts "
-            "in 2023-24. Eastern Massachusetts districts accounted for 61% of all reported "
-            "incidents, with contested titles spanning fiction, memoir, and graphic novels."
-        ),
-        source_url="https://example.com/documents/ma-library-freedom-report-2024.pdf",
-        relevance_score=0.352,
-        page_number=8,
-    ),
-]
-
-# ── Budget Cuts ───────────────────────────────────────────────────────────────
-
-BUDGET_CUTS_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Springfield School District",  intensity_score=245, conversation_count=8, source_count=3),
-    DistrictScoreItem(district_name="Worcester School District",    intensity_score=208, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Holyoke School District",      intensity_score=179, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Fall River School District",   intensity_score=152, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Lawrence School District",     intensity_score=131, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Brockton School District",     intensity_score=108, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Fitchburg School District",    intensity_score=87,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="New Bedford School District",  intensity_score=69,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Lynn School District",         intensity_score=48,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Lowell School District",       intensity_score=27,  conversation_count=1, source_count=1),
-]
-
-BUDGET_CUTS_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Springfield FY2025 Budget Reduction Plan",
-        date="2024-03-07",
-        snippet=(
-            "The Springfield school committee approved $8.2M in budget reductions for FY2025, "
-            "eliminating 34 teaching positions and cutting all middle school arts programs. "
-            "The superintendent cited declining state Chapter 70 aid as the primary driver."
-        ),
-        source_url="https://example.com/documents/springfield-budget-2025.pdf",
-        relevance_score=0.433,
-        page_number=3,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Worcester District Finance Committee — Q1 2024 Review",
-        date="2024-04-15",
-        snippet=(
-            "Worcester's finance committee flagged a projected $5.7M deficit for the upcoming "
-            "fiscal year. Proposed cuts include reducing paraprofessional staff by 20% and "
-            "consolidating two elementary schools into one campus."
-        ),
-        source_url="https://example.com/documents/worcester-finance-q1-2024.pdf",
-        relevance_score=0.396,
-        page_number=7,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="MassEd Budget Crisis Coalition — Legislative Testimony",
-        date="2024-05-08",
-        snippet=(
-            "Representatives from 14 districts testified before the Joint Committee on Education "
-            "about the cascading impact of budget cuts on special education services, after-school "
-            "programs, and school counselor ratios across underserved communities."
-        ),
-        source_url="https://example.com/documents/massed-testimony-2024.pdf",
-        relevance_score=0.361,
-        page_number=11,
-    ),
-]
-
-# ── DEI ───────────────────────────────────────────────────────────────────────
-
-DEI_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Cambridge School District",    intensity_score=245, conversation_count=8, source_count=3),
-    DistrictScoreItem(district_name="Boston School District",       intensity_score=214, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Somerville School District",   intensity_score=187, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Northampton School District",  intensity_score=159, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Brookline School District",    intensity_score=133, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Newton School District",       intensity_score=109, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Amherst School District",      intensity_score=84,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Medford School District",      intensity_score=66,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Malden School District",       intensity_score=47,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Framingham School District",   intensity_score=29,  conversation_count=1, source_count=1),
-]
-
-DEI_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Cambridge DEI Strategic Plan 2024–2027",
-        date="2024-01-22",
-        snippet=(
-            "Cambridge launched a three-year DEI strategic plan targeting hiring equity, "
-            "inclusive curriculum adoption, and student affinity group support. The plan "
-            "allocates $1.2M annually and establishes a community advisory board."
-        ),
-        source_url="https://example.com/documents/cambridge-dei-plan-2024.pdf",
-        relevance_score=0.418,
-        page_number=4,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Boston Equity in Education Task Force — Interim Report",
-        date="2024-03-19",
-        snippet=(
-            "The task force found significant disparities in advanced coursework enrollment "
-            "by race and zip code. Black and Latino students are underrepresented in AP and "
-            "honors tracks by 28% relative to their share of total enrollment."
-        ),
-        source_url="https://example.com/documents/boston-equity-task-force-2024.pdf",
-        relevance_score=0.381,
-        page_number=9,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Somerville Community Forum — DEI Program Feedback Session",
-        date="2024-04-30",
-        snippet=(
-            "Over 250 Somerville parents and staff attended a public forum on the district's "
-            "DEI training program. Feedback was mixed — supporters cited cultural responsiveness "
-            "gains while critics questioned curriculum time trade-offs."
-        ),
-        source_url="https://example.com/documents/somerville-dei-forum-2024.pdf",
-        relevance_score=0.344,
-        page_number=6,
-    ),
-]
-
-# ── School Safety ─────────────────────────────────────────────────────────────
-
-SCHOOL_SAFETY_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Brockton School District",     intensity_score=245, conversation_count=8, source_count=3),
-    DistrictScoreItem(district_name="Lynn School District",         intensity_score=217, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Lawrence School District",     intensity_score=191, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Lowell School District",       intensity_score=163, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Springfield School District",  intensity_score=138, conversation_count=5, source_count=1),
-    DistrictScoreItem(district_name="New Bedford School District",  intensity_score=112, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Fall River School District",   intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Haverhill School District",    intensity_score=67,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Fitchburg School District",    intensity_score=44,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Holyoke School District",      intensity_score=22,  conversation_count=1, source_count=1),
-]
-
-SCHOOL_SAFETY_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Brockton School Safety Assessment — Spring 2024",
-        date="2024-03-25",
-        snippet=(
-            "Brockton's safety audit identified gaps in visitor screening protocols at 4 of 9 "
-            "elementary schools. The report recommends upgrading entry systems and adding a "
-            "dedicated safety coordinator role at each building by September 2024."
-        ),
-        source_url="https://example.com/documents/brockton-safety-audit-2024.pdf",
-        relevance_score=0.426,
-        page_number=3,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Lynn Threat Assessment Protocol — Annual Review",
-        date="2024-04-11",
-        snippet=(
-            "Lynn's threat assessment team handled 23 student-related incidents in 2023-24, "
-            "a 40% increase from the prior year. The review attributes the rise to post-pandemic "
-            "social adjustment challenges and recommends expanded mental health staffing."
-        ),
-        source_url="https://example.com/documents/lynn-threat-assessment-2024.pdf",
-        relevance_score=0.389,
-        page_number=7,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Massachusetts DESE School Climate Survey Results 2024",
-        date="2024-05-14",
-        snippet=(
-            "Statewide climate survey data shows 31% of students in high-need districts report "
-            "feeling unsafe at school at least once per month. Districts with dedicated mental "
-            "health counselors show a 19% lower rate of reported safety concerns."
-        ),
-        source_url="https://example.com/documents/dese-climate-survey-2024.pdf",
-        relevance_score=0.353,
-        page_number=12,
-    ),
-]
-
-# ── Special Education ─────────────────────────────────────────────────────────
-
-SPECIAL_ED_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Boston School District",       intensity_score=245, conversation_count=8, source_count=3),
-    DistrictScoreItem(district_name="Worcester School District",    intensity_score=203, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Lowell School District",       intensity_score=176, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Springfield School District",  intensity_score=148, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Brockton School District",     intensity_score=124, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Newton School District",       intensity_score=99,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Quincy School District",       intensity_score=78,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Framingham School District",   intensity_score=57,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Waltham School District",      intensity_score=38,  conversation_count=1, source_count=1),
-    DistrictScoreItem(district_name="Malden School District",       intensity_score=19,  conversation_count=1, source_count=1),
-]
-
-SPECIAL_ED_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="Boston Special Education Compliance Review 2024",
-        date="2024-02-06",
-        snippet=(
-            "DESE's compliance review found Boston out of compliance on IEP meeting timelines "
-            "in 18% of reviewed cases. The district has 90 days to submit a corrective action "
-            "plan addressing evaluation delays and transition planning gaps."
-        ),
-        source_url="https://example.com/documents/boston-sped-compliance-2024.pdf",
-        relevance_score=0.437,
-        page_number=2,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Worcester SPED Parent Advisory Council — Annual Report",
-        date="2024-04-22",
-        snippet=(
-            "The PAC report highlights a 14-month average wait time for initial evaluations in "
-            "Worcester. Parents cite inadequate communication and shortage of specialized staff "
-            "as the top barriers to timely and appropriate services."
-        ),
-        source_url="https://example.com/documents/worcester-sped-pac-2024.pdf",
-        relevance_score=0.401,
-        page_number=6,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="Massachusetts SPED Funding Gap Analysis — FY2024",
-        date="2024-05-30",
-        snippet=(
-            "A UMass study found Massachusetts districts collectively under-fund special "
-            "education by $340M annually when accounting for actual service costs vs. state "
-            "reimbursement rates. High-need urban districts bear the largest funding shortfall."
-        ),
-        source_url="https://example.com/documents/ma-sped-funding-gap-2024.pdf",
-        relevance_score=0.364,
-        page_number=9,
-    ),
-]
 
 # ── Default fallback ──────────────────────────────────────────────────────────
 
 SAMPLE_DISTRICT_SCORES: list[DistrictScoreItem] = [
-    DistrictScoreItem(district_name="Boston School District",       intensity_score=245, conversation_count=7, source_count=2),
-    DistrictScoreItem(district_name="Cambridge School District",    intensity_score=198, conversation_count=6, source_count=2),
-    DistrictScoreItem(district_name="Worcester School District",    intensity_score=172, conversation_count=5, source_count=2),
-    DistrictScoreItem(district_name="Springfield School District",  intensity_score=145, conversation_count=5, source_count=1),
-    DistrictScoreItem(district_name="Lowell School District",       intensity_score=118, conversation_count=4, source_count=1),
-    DistrictScoreItem(district_name="Brockton School District",     intensity_score=97,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Lynn School District",         intensity_score=89,  conversation_count=3, source_count=1),
-    DistrictScoreItem(district_name="Newton School District",       intensity_score=74,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Salem School District",        intensity_score=62,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="New Bedford School District",  intensity_score=51,  conversation_count=2, source_count=1),
-    DistrictScoreItem(district_name="Somerville School District",   intensity_score=38,  conversation_count=1, source_count=1),
-    DistrictScoreItem(district_name="Framingham School District",   intensity_score=31,  conversation_count=1, source_count=1),
-    DistrictScoreItem(district_name="Quincy School District",       intensity_score=24,  conversation_count=1, source_count=1),
-    DistrictScoreItem(district_name="Malden School District",       intensity_score=17,  conversation_count=1, source_count=1),
-    DistrictScoreItem(district_name="Medford School District",      intensity_score=11,  conversation_count=1, source_count=1),
+    _akfcs(180, 5),
+    DistrictScoreItem(district_name="Worcester", intensity_score=112, conversation_count=4, source_count=1),
+    DistrictScoreItem(district_name="Shrewsbury", intensity_score=68, conversation_count=2, source_count=1),
+    DistrictScoreItem(district_name="Millbury",   intensity_score=41, conversation_count=1, source_count=1),
 ]
 
-SAMPLE_CITATIONS: list[CitationItem] = [
-    CitationItem(
-        document_id="1",
-        document_title="January 2024 School Board Meeting",
-        date="2024-01-18",
-        snippet=(
-            "The board reviewed district performance metrics and discussed upcoming policy "
-            "changes affecting library materials and curriculum standards."
+SAMPLE_CITATIONS: dict[str, list[CitationItem]] = {
+    _AKFCS: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "The year is winding down, but we still have an action-packed few days ahead! As we head "
+                "into our final 4½ days of school, our students will have the opportunity to celebrate "
+                "all of their hard work and the many memories created throughout this year."
+            ),
+            source_url=_DOC_URL, relevance_score=0.761, page_number=1,
         ),
-        source_url="https://example.com/documents/board-jan-2024.pdf",
-        relevance_score=0.385,
-        page_number=3,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="March 2024 Curriculum Review Report",
-        date="2024-03-05",
-        snippet=(
-            "The curriculum committee reviewed district reading lists in response to parent "
-            "concerns. Three books were flagged for further review by the superintendent."
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "Thank you for partnering with us throughout this incredible year. We are so proud of "
+                "our students and all they have accomplished, and we look forward to celebrating these "
+                "final moments together as an AKF family."
+            ),
+            source_url=_DOC_URL, relevance_score=0.714, page_number=1,
         ),
-        source_url="https://example.com/documents/curriculum-march-2024.pdf",
-        relevance_score=0.341,
-        page_number=7,
-    ),
-    CitationItem(
-        document_id="1",
-        document_title="April 2024 Special Session Minutes",
-        date="2024-04-22",
-        snippet=(
-            "A special session was convened to address the ongoing debate over library "
-            "materials. Community members submitted written testimony on both sides."
+    ],
+    _WORCESTER: [
+        CitationItem(
+            document_id=_DOC_ID, document_title=_DOC_TITLE, date=_DOC_DATE,
+            snippet=(
+                "The year is winding down, but we still have an action-packed few days ahead! As we head "
+                "into our final 4½ days of school, our students will have the opportunity to celebrate "
+                "all of their hard work and the many memories created throughout this year."
+            ),
+            source_url=_DOC_URL, relevance_score=0.738, page_number=1,
         ),
-        source_url="https://example.com/documents/special-session-april-2024.pdf",
-        relevance_score=0.298,
-        page_number=12,
-    ),
-]
+    ],
+}
+
 
 # ── Keyword → data map ────────────────────────────────────────────────────────
 
-KEYWORD_DATA: dict[str, tuple[list[DistrictScoreItem], list[CitationItem]]] = {
-    # Pre-defined keyword chips
-    "book ban":          (BOOK_BAN_SCORES,       BOOK_BAN_CITATIONS),
-    "budget cuts":       (BUDGET_CUTS_SCORES,    BUDGET_CUTS_CITATIONS),
-    "dei":               (DEI_SCORES,            DEI_CITATIONS),
-    "school safety":     (SCHOOL_SAFETY_SCORES,  SCHOOL_SAFETY_CITATIONS),
-    "special education": (SPECIAL_ED_SCORES,     SPECIAL_ED_CITATIONS),
-    # Free-text query examples
-    "where should we invest resources?":    (INVEST_RESOURCES_SCORES,   INVEST_RESOURCES_CITATIONS),
-    "which candidates should we support?":  (CANDIDATES_SCORES,         CANDIDATES_CITATIONS),
-    "which districts are at risk?":         (DISTRICTS_AT_RISK_SCORES,  DISTRICTS_AT_RISK_CITATIONS),
-    "what issues are driving conflict?":    (CONFLICT_ISSUES_SCORES,    CONFLICT_ISSUES_CITATIONS),
-    "which messages resonate with voters?": (VOTER_MESSAGES_SCORES,     VOTER_MESSAGES_CITATIONS),
+KEYWORD_DATA: dict[str, tuple[list[DistrictScoreItem], dict[str, list[CitationItem]]]] = {
+    "end of year":          (END_OF_YEAR_SCORES,        END_OF_YEAR_CITATIONS),
+    "medication policy":    (MEDICATION_POLICY_SCORES,  MEDICATION_POLICY_CITATIONS),
+    "book drive":           (BOOK_DRIVE_SCORES,          BOOK_DRIVE_CITATIONS),
+    "family engagement":    (FAMILY_ENGAGEMENT_SCORES,  FAMILY_ENGAGEMENT_CITATIONS),
+    "school transition":    (SCHOOL_TRANSITION_SCORES,  SCHOOL_TRANSITION_CITATIONS),
+    # Free-text variants
+    "end of year activities":   (END_OF_YEAR_SCORES,       END_OF_YEAR_CITATIONS),
+    "student medication":       (MEDICATION_POLICY_SCORES, MEDICATION_POLICY_CITATIONS),
+    "student health":           (MEDICATION_POLICY_SCORES, MEDICATION_POLICY_CITATIONS),
+    "classroom libraries":      (BOOK_DRIVE_SCORES,         BOOK_DRIVE_CITATIONS),
+    "parent involvement":       (FAMILY_ENGAGEMENT_SCORES, FAMILY_ENGAGEMENT_CITATIONS),
+    "pto":                      (FAMILY_ENGAGEMENT_SCORES, FAMILY_ENGAGEMENT_CITATIONS),
+    "meet and greet":           (SCHOOL_TRANSITION_SCORES, SCHOOL_TRANSITION_CITATIONS),
+    "find your seat":           (SCHOOL_TRANSITION_SCORES, SCHOOL_TRANSITION_CITATIONS),
+    "last day of school":       (END_OF_YEAR_SCORES,       END_OF_YEAR_CITATIONS),
+    "goodies with grownups":    (FAMILY_ENGAGEMENT_SCORES, FAMILY_ENGAGEMENT_CITATIONS),
 }

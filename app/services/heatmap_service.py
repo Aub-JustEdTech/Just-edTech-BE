@@ -15,7 +15,9 @@ from app.services.heatmap_sample_data import (
 
 
 class HeatmapService:
-    def _resolve(self, query: str) -> tuple[list[DistrictScoreItem], list[CitationItem]]:
+    def _resolve(
+        self, query: str
+    ) -> tuple[list[DistrictScoreItem], dict[str, list[CitationItem]]]:
         return KEYWORD_DATA.get(query.strip().lower(), (SAMPLE_DISTRICT_SCORES, SAMPLE_CITATIONS))
 
     async def get_heatmap_summary(
@@ -32,7 +34,8 @@ class HeatmapService:
         page: int,
         page_size: int,
     ) -> tuple[DistrictCitationsResponse, dict]:
-        _, citations = self._resolve(query)
+        _, citations_by_district = self._resolve(query)
+        citations = citations_by_district.get(district.strip().lower(), [])
         total = len(citations)
         start = (page - 1) * page_size
         paginated = citations[start : start + page_size]
@@ -41,7 +44,7 @@ class HeatmapService:
             district_name=district,
             keyword=query,
             conversation_count=total,
-            source_count=len({c.document_title for c in citations}),
+            source_count=len({c.document_id for c in citations if c.document_id}),
             citations=paginated,
         )
         meta = {
