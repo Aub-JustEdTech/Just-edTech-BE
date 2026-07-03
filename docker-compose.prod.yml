@@ -59,7 +59,8 @@ services:
   ##################################################
 
   api:
-    image: 940031346406.dkr.ecr.us-west-1.amazonaws.com/justedtech-prod-be
+    # image: 940031346406.dkr.ecr.us-west-1.amazonaws.com/justedtech-prod-be
+    image: ${ECR_IMAGE}
     pull_policy: always
 
     container_name: just-edtech-api
