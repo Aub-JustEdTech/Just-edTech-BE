@@ -229,36 +229,17 @@ jobs:
             echo "Fetching secrets from AWS Secrets Manager..."
             echo "======================================="
 
-             aws secretsmanager get-secret-value \
-             --secret-id justedtech-prod-secrets \
-             --query SecretString \
-             --output text > /home/ubuntu/justedtech/.env.prod
+            aws secretsmanager get-secret-value \
+            --secret-id justedtech-prod-secrets \
+            --query SecretString \
+            --output text |
+            jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > .env.prod
 
-             echo "ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}" >> .env.prod
+            echo "ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}" >> .env.prod
 
-             echo ".env.prod created successfully"
+            echo ".env.prod created successfully"
 
-             pwd
-
-             ls -lah
-
-             echo "Checking .env.prod..."
-
-             if [ -f .env.prod ]; then
-              echo ".env.prod exists"
-              else
-              echo ".env.prod NOT FOUND"
-              exit 1
-              fi
-
-              echo "------ Last 5 lines ------"
-              tail -5 .env.prod
-
-              echo "------ ECR_IMAGE ------"
-              cat .env.prod | grep ECR_IMAGE || true
-
-              echo "------ docker-compose ------"
-              cat docker-compose.prod.yml | grep ECR_IMAGE || true
+             
 
             echo
             echo "======================================="
