@@ -20,7 +20,7 @@ class InvitationService:
         self,
         db: AsyncSession,
         *,
-        tenant_id: int,
+        tenant_id: int | None,
         email: str,
         role_id: int | None,
         enforce_tenant_user: bool = True,
@@ -29,8 +29,8 @@ class InvitationService:
 
         When enforce_tenant_user=True (default), the stored role is always overridden to
         tenant_user regardless of role_id — used by tenant_admin bulk-invite flow.
-        When enforce_tenant_user=False, role_id is used as-is — used by super_admin
-        invite-admin flow.
+        When enforce_tenant_user=False, role_id is used as-is — used for admin invites.
+        tenant_id=None means a tenant_admin invite (no single tenant assignment).
         """
         if await redis_manager.is_invite_on_cooldown(email):
             return False
@@ -39,9 +39,12 @@ class InvitationService:
             res = await db.execute(select(Role.id).where(Role.name == "tenant_user"))
             role_id = res.scalar_one_or_none() or role_id
 
-        existing_inv = await invitations.get_active_by_email_tenant(
-            db, tenant_id=tenant_id, email=email
-        )
+        if tenant_id is None:
+            existing_inv = await invitations.get_active_admin_invite_by_email(db, email)
+        else:
+            existing_inv = await invitations.get_active_by_email_tenant(
+                db, tenant_id=tenant_id, email=email
+            )
 
         if existing_inv:
             token_exists = await redis_manager.exists_invite_token(existing_inv.token)

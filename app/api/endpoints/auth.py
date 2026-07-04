@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.crud.api_keys import api_keys
 from app.crud.signups import signup
+from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.db.redis_connector import redis_manager
 from app.models.tenants import Tenant
@@ -85,17 +86,26 @@ async def register(signup_req: SignupRequest, db: AsyncSession = Depends(get_db)
 
             res = await db.execute(select(Role.id).where(Role.name == "tenant_user"))
             role_id_to_use = res.scalar_one_or_none() or settings.DEFAULT_TENANT_USER_ID
+
+        invite_tenant_id = data["tenant_id"]  # None for tenant_admin invites
+
         new_user = UserModel(
             email=normalized_email,
             name=signup_req.name,
             password_hash=pwd_hash,
-            tenant_id=data["tenant_id"],
+            tenant_id=invite_tenant_id,
             role_id=role_id_to_use,
             email_verified=True,
         )
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
+
+        # For tenant_admin invites (tenant_id=None), grant access to all existing tenants
+        if invite_tenant_id is None:
+            await user_tenant_access.grant_all_existing_tenants_to_user(
+                db, user_id=new_user.id
+            )
 
         # Clean up any existing signup record and related Redis verification data
         await signup.delete_by_email(db, normalized_email)
