@@ -121,8 +121,12 @@ async def send_unified_invitation(
     is_super = user.is_super_admin(current_user)
     is_admin = user.is_tenant_admin(current_user)
 
-    # For tenant_user invites, validate the caller has access to the target tenant
-    if payload.role_id == TENANT_USER_ROLE_ID and payload.tenant_id is not None:
+    if payload.role_id == TENANT_USER_ROLE_ID:
+        if payload.tenant_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="tenant_id is required when inviting members",
+            )
         if is_admin and not is_super:
             has = await user_tenant_access.has_access(
                 db, user_id=current_user.id, tenant_id=payload.tenant_id

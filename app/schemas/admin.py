@@ -3,7 +3,6 @@ from pydantic import BaseModel, EmailStr
 
 class TenantCreateRequest(BaseModel):
     name: str
-    domain: str | None = None
     logo_url: str | None = None
 
 

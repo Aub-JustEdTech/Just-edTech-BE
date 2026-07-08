@@ -55,10 +55,20 @@ async def list_all_tenants(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    admin: User = require_super_admin,
+    current_user: User = Depends(get_current_tenant_admin),
 ):
-    """List all tenants (Super Admin only)"""
-    tenants = await tenant_crud.get_all(db, skip=skip, limit=limit)
+    """List tenants scoped by the caller's role.
+
+    super_admin: all tenants (optional skip/limit).
+    tenant_admin: tenants they have access to via user_tenant_access.
+    Creating tenants remains super_admin-only (POST /tenants).
+    """
+    if user.is_super_admin(current_user):
+        tenants = await tenant_crud.get_all(db, skip=skip, limit=limit)
+    else:
+        tenants = await user_tenant_access.get_tenants_for_user(
+            db, user_id=current_user.id
+        )
     return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
 
 
@@ -69,7 +79,7 @@ async def create_tenant(
     admin: User = require_super_admin,
 ):
     """Create a new tenant (Super Admin only)"""
-    domain = payload.domain or payload.name.lower().replace(" ", "-") + ".local"
+    domain = payload.name.lower().replace(" ", "-") + ".local"
 
     if await tenant_crud.get_by_name(db, payload.name):
         raise HTTPException(
