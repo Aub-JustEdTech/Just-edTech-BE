@@ -80,13 +80,24 @@ async def get_current_super_admin(
 
 async def get_current_tenant_admin(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Require tenant admin role or higher"""
-    if not (user.is_super_admin(current_user) or user.is_tenant_admin(current_user)):
+    """Require tenant admin role or higher."""
+    from app.services.tenant_access_service import is_privileged_admin
+
+    db_user = await user.get(db, user_id=current_user.id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Could not validate credentials", "expired": False},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not is_privileged_admin(db_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Tenant admin access required"
         )
-    return current_user
+    return db_user
 
 
 async def get_current_tenant_user(

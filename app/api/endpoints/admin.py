@@ -24,6 +24,7 @@ from app.schemas.admin import (
 from app.schemas.users import User as UserSchema
 from app.schemas.users import UserCreate, UserUpdate
 from app.services.invitation_service import invitation_service
+from app.services.tenant_access_service import list_tenants_for_principal
 from app.utils.dependencies import (
     get_current_tenant_admin,
     get_db,
@@ -64,19 +65,11 @@ async def list_all_tenants(
     Creating tenants remains super_admin-only (POST /tenants).
     """
     if user.is_super_admin(current_user):
-        tenants = await tenant_crud.get_all(db, skip=skip, limit=limit)
-    else:
-        tenants = await user_tenant_access.get_tenants_for_user(
-            db, user_id=current_user.id
+        tenants = await list_tenants_for_principal(
+            db, current_user, skip=skip, limit=limit
         )
-        # Self-heal legacy tenant_admins missing user_tenant_access rows
-        if not tenants and user.is_tenant_admin(current_user):
-            await user_tenant_access.grant_all_existing_tenants_to_user(
-                db, user_id=current_user.id
-            )
-            tenants = await user_tenant_access.get_tenants_for_user(
-                db, user_id=current_user.id
-            )
+    else:
+        tenants = await list_tenants_for_principal(db, current_user)
     return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
 
 

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.db.redis_connector import redis_manager
+from app.schemas.admin import TenantResponse
 from app.schemas.users import (
     BulkInvitationCreateRequest,
     BulkInvitationResponse,
@@ -15,6 +16,7 @@ from app.schemas.users import (
     User,
 )
 from app.services.invitation_service import invitation_service
+from app.services.tenant_access_service import list_tenants_for_principal
 from app.utils.dependencies import get_current_tenant_admin, get_current_user, get_db
 from app.utils.response import success_response
 
@@ -192,6 +194,16 @@ async def send_unified_invitation(
         },
         status_code=status.HTTP_201_CREATED,
     )
+
+
+@router.get("/accessible-tenants", response_model=list[TenantResponse])
+async def list_accessible_tenants(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+):
+    """Tenants the caller may assign when inviting members (not under /admin)."""
+    tenants = await list_tenants_for_principal(db, current_user)
+    return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
 
 
 @router.get("/{token}/validate")
