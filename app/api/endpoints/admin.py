@@ -69,6 +69,14 @@ async def list_all_tenants(
         tenants = await user_tenant_access.get_tenants_for_user(
             db, user_id=current_user.id
         )
+        # Self-heal legacy tenant_admins missing user_tenant_access rows
+        if not tenants and user.is_tenant_admin(current_user):
+            await user_tenant_access.grant_all_existing_tenants_to_user(
+                db, user_id=current_user.id
+            )
+            tenants = await user_tenant_access.get_tenants_for_user(
+                db, user_id=current_user.id
+            )
     return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
 
 

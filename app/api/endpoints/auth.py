@@ -101,10 +101,16 @@ async def register(signup_req: SignupRequest, db: AsyncSession = Depends(get_db)
         await db.commit()
         await db.refresh(new_user)
 
-        # For tenant_admin invites (tenant_id=None), grant access to all existing tenants
-        if invite_tenant_id is None:
+        # Grant tenant access for the invite flow
+        if role_id_to_use == settings.DEFAULT_ROLE_ID:
+            # tenant_admin: access to all existing tenants
             await user_tenant_access.grant_all_existing_tenants_to_user(
                 db, user_id=new_user.id
+            )
+        elif invite_tenant_id is not None:
+            # tenant_user: explicit access to the assigned tenant
+            await user_tenant_access.add_access(
+                db, user_id=new_user.id, tenant_id=invite_tenant_id
             )
 
         # Clean up any existing signup record and related Redis verification data
