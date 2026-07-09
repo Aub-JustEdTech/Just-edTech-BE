@@ -14,6 +14,7 @@ from app.api.endpoints import (
     conversations,
     daily_token_usage,
     documents,
+    heatmap,
     invitations,
     llm_models,
     monthly_billing,
@@ -55,6 +56,7 @@ api_router.include_router(
 api_router.include_router(
     llm_models.router, prefix="/llm-models", tags=["LLM Models"]
 )
+api_router.include_router(heatmap.router, prefix="/heatmap", tags=["HeatMap"])
 api_router.include_router(
     school_scraper.router, prefix="/school-scraper", tags=["School Scraper"]
 )

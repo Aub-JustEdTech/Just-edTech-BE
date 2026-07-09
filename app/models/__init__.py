@@ -28,6 +28,7 @@ from app.models.chatbot_configs import ChatbotConfig, PerformanceMetric
 from app.models.image_captions import ImageCaption
 from app.models.tenants import Tenant
 from app.models.upload_batches import BatchStatus, UploadBatch
+from app.models.user_tenant_access import UserTenantAccess
 from app.models.users import User
 
 __all__ = [
@@ -61,4 +62,5 @@ __all__ = [
     "DailyTokenUsage",
     "MonthlyBilling",
     "ImageCaption",
+    "UserTenantAccess",
 ]

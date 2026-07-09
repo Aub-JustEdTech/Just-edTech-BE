@@ -12,7 +12,7 @@ class User(BaseModel):
     __tablename__ = "users"
 
     tenant_id = Column(
-        BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+        BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
     )
 
     name = Column(String, nullable=True)
@@ -30,3 +30,6 @@ class User(BaseModel):
     tenant = relationship("Tenant", back_populates="users")
     role = relationship("Role", back_populates="users")
     conversations = relationship("Conversation", back_populates="user")
+    tenant_access = relationship(
+        "UserTenantAccess", back_populates="user", cascade="all, delete-orphan"
+    )
