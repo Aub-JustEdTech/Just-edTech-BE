@@ -132,11 +132,86 @@ services:
       --max-tasks-per-child=1000
       --time-limit=3600
       --soft-time-limit=3000
+      -Q celery,documents
     healthcheck:
       test: ["CMD-SHELL", "celery -A app.celery_app inspect ping"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Celery Worker for School Scraping (Playwright + downloads + transcription)
+  # Dedicated queue `scraping` isolates long-running scraper work from
+  # document processing. Uses the same image (Chromium is pre-installed
+  # via the Dockerfile) but with higher memory for Playwright/Whisper.
+  celery-scraper:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QDRANT_URL=http://qdrant:6333
+      - VECTOR_STORE_TYPE=qdrant
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
+    command: >
+      celery -A app.celery_app worker
+      --loglevel=info
+      --concurrency=1
+      --max-tasks-per-child=100
+      --time-limit=7200
+      --soft-time-limit=6000
+      -Q scraping
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery Beat - Periodic Task Scheduler
+  # Runs the biweekly school scrape cycle + daily/monthly token/billing
+  # aggregation. Without this service, beat_schedule entries never fire.
+  celery-beat:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QDRANT_URL=http://qdrant:6333
+      - VECTOR_STORE_TYPE=qdrant
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+    command: >
+      celery -A app.celery_app beat
+      --loglevel=info
+      --pidfile=/tmp/celerybeat.pid
 
   # Flower - Celery Monitoring Dashboard
   # REMOVED to match production and save ~150-300MB RAM

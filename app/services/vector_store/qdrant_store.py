@@ -163,10 +163,59 @@ class QdrantStore(VectorStore):
                 )
                 logger.info(f"Created new Qdrant collection: {collection_name}")
 
+            # Ensure payload indexes exist for commonly-filtered keys.
+            # These make searches on school-scraper metadata efficient.
+            # Idempotent: creating an index that already exists is a no-op.
+            await self._ensure_payload_indexes(collection_name)
+
             return collection_name
         except Exception as e:
             logger.error(f"Error getting/creating Qdrant collection: {e}", exc_info=True)
             raise
+
+    async def _ensure_payload_indexes(self, collection_name: str) -> None:
+        """Create payload indexes for school-scraper filterable fields.
+
+        Safe to call repeatedly; Qdrant treats duplicate index creation as
+        a no-op. Wrapped per-field so one missing index doesn't block others.
+        """
+        # keyword fields
+        keyword_fields = [
+            "tenant_id",
+            "document_id",
+            "document_type",
+            "school_org_code",
+            "school_name",
+            "district_type",
+            "document_type",
+            "source_page_url",
+            "source_media_url",
+            "scrape_run_id",
+        ]
+        for field in keyword_fields:
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                # Already exists or field not present yet; either way, ignore.
+                pass
+
+        # datetime / date-like fields stored as strings — index as keyword
+        # since we store ISO strings, not Qdrant datetime values.
+        for field in ("meeting_date", "scraped_at"):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
 
     async def add_chunks(
         self,

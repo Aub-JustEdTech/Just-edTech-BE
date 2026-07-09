@@ -293,6 +293,14 @@ async def _step1_download_async(ctx: PipelineContext, redis_tracker):
         ctx.document_type = document.document_type
         ctx.s3_url = document.s3_url
 
+        # Propagate source_metadata (e.g. school-scraper origin info) onto
+        # the pipeline context so it flows through to the Qdrant payload.
+        # Keys prefixed with "_" are reserved for pipeline-internal use.
+        if document.source_metadata:
+            for k, v in document.source_metadata.items():
+                if not k.startswith("_") and k not in ctx.doc_metadata:
+                    ctx.doc_metadata[k] = v
+
         # Download from S3
         s3_manager = S3Manager(
             bucket_name=settings.S3_BUCKET_NAME,

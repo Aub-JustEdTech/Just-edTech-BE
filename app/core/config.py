@@ -153,6 +153,16 @@ class Settings(BaseSettings):
 
     # School Scraper Configuration
     SCHOOL_SCRAPER_USE_PLAYWRIGHT: bool = False
+    # User-Agent used by the school scraper for HTTP requests.
+    # Default is a curl-style UA because many school-district sites
+    # (WordPress + Wordfence/Cloudflare WAFs) block `python-httpx/*` and
+    # bot-like UAs with 403, while allowing `curl/*` / `okhttp/*`.
+    SCHOOL_SCRAPER_USER_AGENT: str = "curl/8.5.0"
+    # Path to a system-installed Chromium binary (e.g. /usr/bin/chromium).
+    # Set via env in Docker images that apt-install Chromium instead of
+    # letting Playwright download its own copy. Left unset for local dev,
+    # where Playwright's own `playwright install chromium` browser is used.
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: str | None = None
     SCHOOL_SCRAPER_MEETING_KEYWORDS: list[str] = [
         "meeting",
         "minutes",
@@ -192,6 +202,23 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_MAX_PAGES_PER_CRAWL: int = 20
     # How many top candidate pages to follow for sub-link discovery
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
+
+    # School scraper pipeline (knowledge base) settings.
+    # Master toggle for the biweekly Celery beat schedule. When False, the
+    # `scrape-schools-biweekly` entry is skipped (manual triggers via the
+    # API still work).
+    SCHOOL_SCRAPER_CRON_ENABLED: bool = True
+    # Fetch YouTube transcripts via yt-dlp (no video download) when True.
+    # When False, youtube media items are recorded but skipped at ingest.
+    SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
+    # Transcribe audio/video via Whisper. When False, audio/video media
+    # items are recorded and archived to S3 but no transcript is embedded.
+    SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED: bool = True
+    # S3 path prefix for scraped media. Final key layout is:
+    #   {SCHOOL_SCRAPER_S3_PREFIX}tenants/{tenant_id}/schools/{org_code}/...
+    SCHOOL_SCRAPER_S3_PREFIX: str = ""
+    # Concurrency for per-school scrape sub-tasks within a single cycle.
+    SCHOOL_SCRAPER_CYCLE_CONCURRENCY: int = 5
 
     # Email / SMTP
     SMTP_HOST: str | None = None

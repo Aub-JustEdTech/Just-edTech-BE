@@ -5,16 +5,29 @@ Two-step flow:
   1. discover_candidate_urls – finds meeting-minutes-style URLs from a school site
      using sitemaps (WP / generic / robots.txt) with a nav-crawl fallback, then
      a targeted follow-up crawl on the top candidates to surface deeper sub-pages.
-     When SCHOOL_SCRAPER_USE_PLAYWRIGHT=true the follow-up crawl uses a headless
-     Chromium browser so that JavaScript-rendered navigation (e.g. Finalsite CMS
-     in-section sidebars) is visible and deeper pages can be discovered.
+
+     JS auto-detection: the follow-up crawl fetches each candidate with plain
+     httpx first.  If the response HTML contains fingerprints of a JS-heavy CMS
+     or SPA framework (Finalsite, Next.js, Angular, Nuxt, …), a headless
+     Chromium browser is launched automatically via Playwright and the page is
+     re-fetched with full JavaScript execution.  This surfaces dynamically-
+     injected navigation links (e.g. Finalsite in-section sidebars) that are
+     invisible to a plain HTTP client.  The browser is launched at most once per
+     request and reused for all remaining candidates.
+
+     Callers can also force Playwright on unconditionally by passing
+     use_playwright=True (or setting SCHOOL_SCRAPER_USE_PLAYWRIGHT=true in
+     config), which skips the detection step.
+
   2. scrape_media_files – extracts audio, video and document links from a confirmed
      page, optionally following same-domain sub-pages up to a configurable depth.
 """
 
+import json
 import logging
+import re
 import xml.etree.ElementTree as ET
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -29,10 +42,41 @@ logger = logging.getLogger(__name__)
 
 _SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
 
-# Intentionally do not spoof a browser User-Agent.
-# Several school websites (e.g. WordPress-based) return 403 for common
-# Chrome/Firefox UA strings while allowing the default python-httpx UA.
-_DEFAULT_HEADERS: dict[str, str] = {}
+# User-Agent for HTTP requests.
+#
+# Some school-district sites (notably WordPress installs behind Wordfence /
+# Cloudflare-style WAFs, e.g. akfcs.org) block requests whose UA matches
+# `python-httpx/<version>`, `Go-http-client`, or generic bot patterns
+# (`Mozilla/5.0 (compatible; bot/...)`) with a 403. The same WAFs typically
+# allow tool-style UAs such as `curl/<version>` and `okhttp/<version>`.
+#
+# We therefore default to a curl-style UA, which is the most broadly
+# compatible across the school sites we scrape while not pretending to be a
+# browser. Override per-deployment via SCHOOL_SCRAPER_USER_AGENT in .env if a
+# specific site requires something different.
+_DEFAULT_USER_AGENT: str = "curl/8.5.0"
+
+# HTML fingerprints that indicate JavaScript-rendered navigation.
+# When any of these strings appear in the raw httpx response body, the
+# in-page navigation (sidebars, section menus, etc.) is likely injected by
+# client-side JS and httpx alone will miss links.  The follow-up crawl will
+# automatically switch to a Playwright browser for the affected site.
+_JS_RENDER_SIGNALS: tuple[str, ...] = (
+    "finalsitestatic.com",   # Finalsite CMS  (e.g. Boston Public Schools)
+    'id="__next"',           # Next.js
+    'id="__nuxt"',           # Nuxt.js
+    'ng-version="',          # Angular
+    "data-reactroot",        # React (legacy attr)
+    "_next/static/",         # Next.js static asset path
+    "__nuxt_island",         # Nuxt.js islands
+    "blackboard.com/",       # Blackboard LMS
+    "eschoolsolutions.com",  # eSchool Solutions CMS
+    "ccms_documentlinklisting",  # Catapult CMS "Document Link Listing" widget
+    "catapultcms.com",       # Catapult CMS (edu2.catapultcms.com utilities)
+    "ccms-contentelement",   # Catapult CMS generic content element wrapper
+    "apptegy.net",           # Apptegy / Thrillshare CMS (Nuxt SSR)
+    "thrillshare.com",       # Apptegy document CDN / API host
+)
 
 
 class SchoolScraperService:
@@ -48,17 +92,36 @@ class SchoolScraperService:
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(self.timeout, connect=10.0),
             follow_redirects=True,
-            headers=_DEFAULT_HEADERS,
+            headers={"User-Agent": settings.SCHOOL_SCRAPER_USER_AGENT},
         )
         self._pw: "Playwright | None" = None
         self._browser: "Browser | None" = None
+
+    @staticmethod
+    def _chromium_launch_kwargs() -> dict:
+        """
+        Build kwargs for `chromium.launch()`.
+
+        When PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH is set (Docker images that
+        apt-install a system Chromium instead of Playwright's own downloaded
+        browser), point Playwright at that binary and disable the setuid
+        sandbox, which isn't usable for a non-root container user.
+        """
+        kwargs: dict = {"headless": True}
+        executable_path = settings.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+        if executable_path:
+            kwargs["executable_path"] = executable_path
+            kwargs["args"] = ["--no-sandbox"]
+        return kwargs
 
     async def __aenter__(self) -> "SchoolScraperService":
         if self.use_playwright:
             from playwright.async_api import async_playwright
 
             self._pw = await async_playwright().start()
-            self._browser = await self._pw.chromium.launch(headless=True)
+            self._browser = await self._pw.chromium.launch(
+                **self._chromium_launch_kwargs()
+            )
             logger.debug("Playwright Chromium browser launched")
         return self
 
@@ -97,14 +160,22 @@ class SchoolScraperService:
             logger.debug("Failed to fetch %s (%s): %s", url, type(exc).__name__, exc)
             return None
 
-    async def _fetch_text_rendered(self, url: str) -> str | None:
+    async def _fetch_text_rendered(
+        self,
+        url: str,
+        wait_until: str = "load",
+    ) -> str | None:
         """
         Fetch a page's fully JS-rendered HTML using a Playwright browser page.
 
         Falls back to plain httpx if the browser is not available.
-        Uses 'networkidle' to wait until all JS-triggered requests settle so that
-        dynamically injected navigation (e.g. Finalsite in-section sidebars) is
-        present in the returned HTML.
+
+        Uses ``wait_until="load"`` by default so that the page's initial JS
+        bundle (navigation, section sidebars, etc.) is fully executed without
+        waiting for every background analytics / beacon request to settle.
+        'networkidle' is avoided by default because many school district sites
+        fire continuous background pings that prevent networkidle from being
+        reached within the configured timeout.
         """
         if not self._browser:
             return await self._fetch_text(url)
@@ -113,7 +184,7 @@ class SchoolScraperService:
             try:
                 await page.goto(
                     url,
-                    wait_until="networkidle",
+                    wait_until=wait_until,
                     timeout=self.timeout * 1000,
                 )
                 html = await page.content()
@@ -128,6 +199,36 @@ class SchoolScraperService:
                 exc,
             )
             return await self._fetch_text(url)
+
+    @staticmethod
+    def _html_needs_playwright(html: str) -> bool:
+        """
+        Return True when the raw HTML contains fingerprints of a JavaScript-heavy
+        CMS or SPA framework whose navigation is injected client-side.
+
+        Checked against _JS_RENDER_SIGNALS (case-sensitive substring match —
+        the signals are lowercase/mixed-case literals that appear verbatim in
+        real pages, so a full lower() pass is unnecessary and avoids false
+        positives on content text).
+        """
+        return any(signal in html for signal in _JS_RENDER_SIGNALS)
+
+    async def _ensure_playwright(self) -> None:
+        """
+        Lazily launch the Playwright Chromium browser if it is not already
+        running.  Safe to call multiple times — subsequent calls are no-ops.
+        """
+        if self._browser:
+            return
+        from playwright.async_api import async_playwright
+
+        self._pw = await async_playwright().start()
+        self._browser = await self._pw.chromium.launch(
+            **self._chromium_launch_kwargs()
+        )
+        logger.info(
+            "Playwright Chromium auto-launched — JS-rendered navigation detected"
+        )
 
     # ------------------------------------------------------------------
     # Sitemap helpers
@@ -207,8 +308,24 @@ class SchoolScraperService:
         """
         Fetch the homepage and extract same-domain links found inside
         <nav> / <header> / <ul> elements, then fall back to all <a> tags.
+
+        Fetch strategy:
+        - Browser already available (pre-launched or previously auto-detected):
+          use Playwright directly so that JS-rendered navigation menus (e.g.
+          Finalsite CMS, Next.js, Angular) are visible in the returned HTML.
+        - No browser yet: fetch with plain httpx; if the raw HTML contains known
+          JS-framework fingerprints, launch Playwright automatically and re-fetch.
         """
-        html = await self._fetch_text(base_url)
+        if self._browser:
+            html = await self._fetch_text_rendered(base_url)
+        else:
+            html = await self._fetch_text(base_url)
+            if html and self._html_needs_playwright(html):
+                await self._ensure_playwright()
+                rendered = await self._fetch_text_rendered(base_url)
+                if rendered:
+                    html = rendered
+
         if not html:
             return []
 
@@ -249,16 +366,40 @@ class SchoolScraperService:
         section root (e.g. /school-committee/about) while the actual
         meeting-archive page is one level deeper (/school-committee/meeting-archives).
 
+        Fetch strategy per candidate:
+        - Browser already available (pre-launched or previously auto-detected):
+          go straight to Playwright for full JS rendering.
+        - No browser yet: fetch with plain httpx; if the HTML contains known
+          JS-framework / CMS fingerprints (_JS_RENDER_SIGNALS), launch
+          Playwright automatically, re-fetch the page, and use the browser
+          for all remaining candidates in this loop.
+
         Returns a flat deduplicated list of discovered URLs.
         """
         extra_urls: list[str] = []
         seen: set[str] = set()
 
         for candidate in candidates[:max_pages]:
-            html = await self._fetch_text_rendered(candidate["url"])
+            if self._browser:
+                # Playwright is already available (pre-launched via use_playwright=True
+                # or auto-detected on a previous candidate). Use it directly — no need
+                # for a preliminary httpx fetch.
+                html = await self._fetch_text_rendered(candidate["url"])
+            else:
+                # No browser yet: fetch with fast httpx first.
+                html = await self._fetch_text(candidate["url"])
+                # Auto-detect JS rendering from the raw HTML.  If signals are
+                # found, launch Playwright once and re-fetch this page so that
+                # dynamically-injected navigation is present.  All subsequent
+                # candidates will also hit the `self._browser` branch above.
+                if html and self._html_needs_playwright(html):
+                    await self._ensure_playwright()
+                    rendered = await self._fetch_text_rendered(candidate["url"])
+                    if rendered:
+                        html = rendered
+
             if not html:
                 continue
-
             soup = BeautifulSoup(html, "html.parser")
             for a_tag in soup.find_all("a", href=True):
                 href = str(a_tag["href"]).strip()
@@ -391,6 +532,212 @@ class SchoolScraperService:
     # Media extraction helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _match_file_extension(
+        path_lower: str,
+        all_ext: set[str],
+        *,
+        filename_hint: str | None = None,
+    ) -> str | None:
+        """
+        Return the first configured extension that matches ``path_lower`` or,
+        when provided, ``filename_hint`` (e.g. Finalsite ``data-file-name``).
+        """
+        matched = next((e for e in all_ext if path_lower.endswith(e)), None)
+        if matched:
+            return matched
+        if filename_hint:
+            hint_lower = filename_hint.lower()
+            return next((e for e in all_ext if hint_lower.endswith(e)), None)
+        return None
+
+    @staticmethod
+    def _media_type_for_extension(
+        ext: str,
+        video_ext: list[str],
+        audio_ext: list[str],
+    ) -> str:
+        if ext in video_ext:
+            return "video"
+        if ext in audio_ext:
+            return "audio"
+        return "document"
+
+    @staticmethod
+    def _media_url_pattern(all_ext: set[str]) -> re.Pattern[str]:
+        """Regex for absolute http(s) URLs whose path ends in a known media ext."""
+        ext_alt = "|".join(
+            re.escape(ext.lstrip("."))
+            for ext in sorted(all_ext, key=lambda e: len(e.lstrip(".")), reverse=True)
+        )
+        return re.compile(
+            rf"https?://[^\s\"'<>\\]+?\.(?:{ext_alt})(?:\?[^\s\"'<>\\]*)?",
+            re.IGNORECASE,
+        )
+
+    def _append_media_url(
+        self,
+        media_files: list[dict],
+        seen_media: set[str],
+        *,
+        url: str,
+        page_url: str,
+        all_ext: set[str],
+        video_ext: list[str],
+        audio_ext: list[str],
+        name: str | None = None,
+        filename_hint: str | None = None,
+    ) -> None:
+        url = url.rstrip(".,;)]}")
+        if not url or url in seen_media:
+            return
+
+        path_lower = urlparse(url).path.lower()
+        matched_ext = self._match_file_extension(
+            path_lower, all_ext, filename_hint=filename_hint
+        )
+        if not matched_ext:
+            return
+
+        seen_media.add(url)
+        if not name:
+            filename = urlparse(url).path.split("/")[-1]
+            name = filename or None
+
+        media_files.append(
+            {
+                "name": name,
+                "url": url,
+                "file_extension": matched_ext,
+                "media_type": self._media_type_for_extension(
+                    matched_ext, video_ext, audio_ext
+                ),
+                "size_bytes": None,
+                "source_page_url": page_url,
+            }
+        )
+
+    def _extract_media_urls_from_text(
+        self,
+        text: str,
+        page_url: str,
+        all_ext: set[str],
+        video_ext: list[str],
+        audio_ext: list[str],
+        seen_media: set[str],
+        media_files: list[dict],
+    ) -> None:
+        """Find absolute media URLs embedded in HTML or JSON script payloads."""
+        if not text:
+            return
+
+        pattern = self._media_url_pattern(all_ext)
+        for match in pattern.finditer(text):
+            self._append_media_url(
+                media_files,
+                seen_media,
+                url=match.group(0),
+                page_url=page_url,
+                all_ext=all_ext,
+                video_ext=video_ext,
+                audio_ext=audio_ext,
+            )
+
+    def _extract_media_urls_from_json_scripts(
+        self,
+        soup: BeautifulSoup,
+        page_url: str,
+        all_ext: set[str],
+        video_ext: list[str],
+        audio_ext: list[str],
+        seen_media: set[str],
+        media_files: list[dict],
+    ) -> None:
+        """
+        Walk JSON embedded in <script> tags (e.g. Nuxt ``__NUXT_DATA__``).
+
+        Apptegy / Thrillshare document folders SSR their file list into a
+        dehydrated JSON tree where URLs are string leaves, not <a href> tags.
+        """
+
+        def walk(node: Any) -> None:
+            if isinstance(node, str):
+                if node.startswith(("http://", "https://")):
+                    self._append_media_url(
+                        media_files,
+                        seen_media,
+                        url=node,
+                        page_url=page_url,
+                        all_ext=all_ext,
+                        video_ext=video_ext,
+                        audio_ext=audio_ext,
+                    )
+            elif isinstance(node, dict):
+                url = node.get("url")
+                if isinstance(url, str) and url.startswith(("http://", "https://")):
+                    file_ext = node.get("file_extension")
+                    filename_hint: str | None = None
+                    if isinstance(file_ext, str):
+                        filename_hint = (
+                            file_ext if file_ext.startswith(".") else f"file.{file_ext}"
+                        )
+                    file_name = node.get("file_name") or node.get("name")
+                    display_name = (
+                        str(file_name) if isinstance(file_name, str) else None
+                    )
+                    self._append_media_url(
+                        media_files,
+                        seen_media,
+                        url=url,
+                        page_url=page_url,
+                        all_ext=all_ext,
+                        video_ext=video_ext,
+                        audio_ext=audio_ext,
+                        name=display_name,
+                        filename_hint=filename_hint
+                        or (display_name if display_name else None),
+                    )
+                for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for item in node:
+                    walk(item)
+
+        for script in soup.find_all("script"):
+            raw = script.string or script.get_text()
+            if not raw:
+                continue
+            script_type = script.get("type", "")
+            script_id = (script.get("id") or "").lower()
+            if (
+                script_type != "application/json"
+                and "nuxt" not in script_id
+                and not any(
+                    marker in raw
+                    for marker in (
+                        "files-backend",
+                        "thrillshare",
+                        "file_extension",
+                        "foldersAndDocuments",
+                    )
+                )
+            ):
+                continue
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                self._extract_media_urls_from_text(
+                    raw,
+                    page_url,
+                    all_ext,
+                    video_ext,
+                    audio_ext,
+                    seen_media,
+                    media_files,
+                )
+                continue
+            walk(payload)
+
     def _extract_media_from_page(
         self,
         html: str,
@@ -432,38 +779,36 @@ class SchoolScraperService:
                 parsed = urlparse(full_url)
                 path_lower = parsed.path.lower()
 
-                # Check for a matching file extension
-                matched_ext = next((e for e in all_ext if path_lower.endswith(e)), None)
+                filename_hint: str | None = None
+                if tag_name == "a":
+                    # Finalsite CMS stores the real filename on the anchor while
+                    # href points at /fs/resource-manager/view/{uuid} (no ext).
+                    filename_hint = elem.get("data-file-name") or elem.get(
+                        "data-filename"
+                    )
 
-                if matched_ext and full_url not in seen_media:
-                    seen_media.add(full_url)
+                matched_ext = self._match_file_extension(
+                    path_lower, all_ext, filename_hint=filename_hint
+                )
 
-                    if matched_ext in video_ext:
-                        media_type = "video"
-                    elif matched_ext in audio_ext:
-                        media_type = "audio"
-                    else:
-                        media_type = "document"
-
-                    # Best-effort name: <a> link text, then filename from path
+                if matched_ext:
                     name: str | None = None
                     if tag_name == "a":
                         text = elem.get_text(strip=True)
                         if text:
                             name = text
-                    if not name:
-                        filename = parsed.path.split("/")[-1]
-                        name = filename if filename else None
-
-                    media_files.append(
-                        {
-                            "name": name,
-                            "url": full_url,
-                            "file_extension": matched_ext,
-                            "media_type": media_type,
-                            "size_bytes": None,
-                            "source_page_url": page_url,
-                        }
+                    if not name and filename_hint:
+                        name = str(filename_hint)
+                    self._append_media_url(
+                        media_files,
+                        seen_media,
+                        url=full_url,
+                        page_url=page_url,
+                        all_ext=all_ext,
+                        video_ext=video_ext,
+                        audio_ext=audio_ext,
+                        name=name,
+                        filename_hint=filename_hint,
                     )
 
                 elif tag_name == "a" and not matched_ext:
@@ -474,6 +819,27 @@ class SchoolScraperService:
                         and full_url != page_url
                     ):
                         sub_pages.append(full_url)
+
+        # Apptegy / Nuxt and similar CMS platforms embed document URLs in SSR
+        # JSON payloads rather than plain <a href="...pdf"> tags.
+        self._extract_media_urls_from_json_scripts(
+            soup,
+            page_url,
+            all_ext,
+            video_ext,
+            audio_ext,
+            seen_media,
+            media_files,
+        )
+        self._extract_media_urls_from_text(
+            html,
+            page_url,
+            all_ext,
+            video_ext,
+            audio_ext,
+            seen_media,
+            media_files,
+        )
 
         return media_files, list(dict.fromkeys(sub_pages))  # deduplicate sub_pages
 
@@ -489,6 +855,17 @@ class SchoolScraperService:
         """
         Scrape audio, video and document files from a page, following
         same-domain sub-page links up to crawl_depth levels deep.
+
+        Fetch strategy per page (same JS auto-detection as discovery):
+        - Browser already available (pre-launched via use_playwright=True or
+          auto-detected on a previous page in this crawl): fetch with
+          Playwright directly so JS-injected content (e.g. Catapult/Finalsite
+          CMS document-listing widgets that populate hidden containers via
+          jQuery after page load) is present in the returned HTML.
+        - No browser yet: fetch with plain httpx first; if the raw HTML
+          contains known JS-framework/CMS fingerprints, launch Playwright
+          automatically, re-fetch the page, and reuse the browser for all
+          remaining pages in the crawl.
 
         Returns a dict with keys: source_url, pages_crawled, media_files.
         """
@@ -507,7 +884,16 @@ class SchoolScraperService:
         while queue:
             current_url, depth = queue.pop(0)
 
-            html = await self._fetch_text(current_url)
+            if self._browser:
+                html = await self._fetch_text_rendered(current_url)
+            else:
+                html = await self._fetch_text(current_url)
+                if html and self._html_needs_playwright(html):
+                    await self._ensure_playwright()
+                    rendered = await self._fetch_text_rendered(current_url)
+                    if rendered:
+                        html = rendered
+
             if not html:
                 continue
 

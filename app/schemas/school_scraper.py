@@ -2,9 +2,9 @@
 Pydantic schemas for the generalised school website scraper endpoints.
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class DiscoverRequest(BaseModel):
@@ -12,7 +12,20 @@ class DiscoverRequest(BaseModel):
 
     base_url: str
     max_candidates: int = 10
-    use_playwright: bool = False
+    use_playwright: Annotated[
+        bool,
+        Field(
+            default=False,
+            description=(
+                "Force Playwright (headless Chromium) for the follow-up crawl. "
+                "When False (default), the scraper auto-detects JS-rendered sites "
+                "by inspecting the raw HTML for framework fingerprints (Finalsite, "
+                "Next.js, Angular, etc.) and launches Playwright automatically if "
+                "needed. Set to True only to override detection and always use the "
+                "browser."
+            ),
+        ),
+    ] = False
 
     @field_validator("base_url")
     @classmethod

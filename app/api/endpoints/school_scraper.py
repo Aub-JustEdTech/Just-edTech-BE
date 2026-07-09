@@ -3,7 +3,7 @@ Generalised school website scraper endpoints.
 
 Two-step workflow:
   POST /school-scraper/discover    — finds candidate meeting-archive URLs
-  POST /school-scraper/scrape-media — scrapes audio/video files from a confirmed URL
+  POST /school-scraper/scrape-media — scrapes audio, video and document files from a confirmed URL
 """
 
 import logging
@@ -110,7 +110,7 @@ async def discover_urls(
     "/scrape-media",
     response_model=ScrapeMediaResponse,
     status_code=status.HTTP_200_OK,
-    summary="Scrape audio/video files from a school meeting-archive page",
+    summary="Scrape audio, video and document files from a school meeting-archive page",
 )
 async def scrape_media(
     request: ScrapeMediaRequest,
@@ -120,16 +120,18 @@ async def scrape_media(
     Step 2 — Media Scraping.
 
     Given the confirmed meeting-archive URL (chosen by the user from `/discover`
-    results), this endpoint scrapes the page and returns all audio and video
-    file links found on it.
+    results), this endpoint scrapes the page and returns all audio, video and
+    document file links found on it (e.g. PDF/Word minutes and agendas, in
+    addition to recorded meeting audio/video).
 
     It also follows same-domain sub-page links (e.g. year-archive pages like
     `/meeting-archives/2024/`) up to `crawl_depth` levels deep (default 1,
     max 3).
 
     **Supported media types (current):**
-    - Video: `.mp4`, `.mov`, `.avi`, `.webm`, `.m4v`, `.mkv`
-    - Audio: `.mp3`, `.wav`, `.m4a`, `.aac`, `.ogg`, `.flac`
+    - Video: `.mp4`, `.mov`, `.webm`
+    - Audio: `.mp3`, `.wav`, `.m4a`
+    - Document: `.pdf`, `.docx`, `.doc`, `.xlsx`, `.xls`, `.pptx`, `.ppt`
 
     The returned file list can be displayed in the frontend. The user selects
     specific files which are then passed to the extraction pipeline.

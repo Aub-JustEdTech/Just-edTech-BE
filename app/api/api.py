@@ -21,6 +21,7 @@ from app.api.endpoints import (
     pipeline_status,
     rag,
     school_scraper,
+    schools,
     upload_batches,
 )
 
@@ -59,4 +60,7 @@ api_router.include_router(
 api_router.include_router(heatmap.router, prefix="/heatmap", tags=["HeatMap"])
 api_router.include_router(
     school_scraper.router, prefix="/school-scraper", tags=["School Scraper"]
+)
+api_router.include_router(
+    schools.router, prefix="/schools", tags=["Schools"]
 )
