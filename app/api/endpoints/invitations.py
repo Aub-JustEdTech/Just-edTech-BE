@@ -115,7 +115,9 @@ async def send_unified_invitation(
     """Unified invite endpoint for both tenant_admin and tenant_user roles.
 
     - role_id=2 (tenant_admin): tenant_id ignored; invite grants access to all tenants
-    - role_id=3 (tenant_user): tenant_id required; must be accessible by caller
+    - role_id=3 (tenant_user): each invite's tenant_id is required and must be
+      individually accessible by the caller — different emails in the same
+      request may target different tenants.
     """
     TENANT_ADMIN_ROLE_ID = 2
     TENANT_USER_ROLE_ID = 3
@@ -123,15 +125,13 @@ async def send_unified_invitation(
     is_super = user.is_super_admin(current_user)
     is_admin = user.is_tenant_admin(current_user)
 
-    if payload.role_id == TENANT_USER_ROLE_ID:
-        if payload.tenant_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="tenant_id is required when inviting members",
-            )
-        if is_admin and not is_super:
+    if payload.role_id == TENANT_USER_ROLE_ID and is_admin and not is_super:
+        distinct_tenant_ids = {
+            inv.tenant_id for inv in payload.invites if inv.tenant_id is not None
+        }
+        for tenant_id in distinct_tenant_ids:
             has = await user_tenant_access.has_access(
-                db, user_id=current_user.id, tenant_id=payload.tenant_id
+                db, user_id=current_user.id, tenant_id=tenant_id
             )
             if not has:
                 raise HTTPException(
@@ -139,11 +139,13 @@ async def send_unified_invitation(
                     detail="Access denied: tenant not in your access list",
                 )
 
-    emails = [e.strip().lower() for e in payload.emails]
+    invites = [
+        (inv.email.strip().lower(), inv.tenant_id) for inv in payload.invites
+    ]
     results: list[dict[str, str | bool]] = []
     successful = 0
 
-    for e in emails:
+    for e, tenant_id in invites:
         existing_user = await user.get_by_email(db, e)
         if existing_user:
             results.append(
@@ -173,7 +175,7 @@ async def send_unified_invitation(
         else:
             ok = await invitation_service.create_and_send(
                 db,
-                tenant_id=payload.tenant_id,
+                tenant_id=tenant_id,
                 email=e,
                 role_id=TENANT_USER_ROLE_ID,
                 enforce_tenant_user=True,
@@ -187,9 +189,9 @@ async def send_unified_invitation(
 
     return success_response(
         data={
-            "total": len(emails),
+            "total": len(invites),
             "successful": successful,
-            "failed": len(emails) - successful,
+            "failed": len(invites) - successful,
             "results": results,
         },
         status_code=status.HTTP_201_CREATED,

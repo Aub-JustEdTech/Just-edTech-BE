@@ -151,18 +151,22 @@ class InvitationValidateResponse(BaseModel):
     role_id: int | None = None
 
 
-class UnifiedInvitationRequest(BaseModel):
-    emails: list[EmailStr]
-    role_id: int
+class UnifiedInvite(BaseModel):
+    email: EmailStr
     tenant_id: int | None = None
 
-    @validator("emails")
-    def validate_emails(cls, v):
+
+class UnifiedInvitationRequest(BaseModel):
+    invites: list[UnifiedInvite]
+    role_id: int
+
+    @validator("invites")
+    def validate_invites(cls, v):
         if len(v) == 0:
             raise ValueError("At least one email is required")
         if len(v) > 9:
             raise ValueError("Maximum 9 emails allowed per request")
-        normalized = [e.lower().strip() for e in v]
+        normalized = [i.email.lower().strip() for i in v]
         if len(normalized) != len(set(normalized)):
             raise ValueError("Duplicate emails are not allowed")
         return v
@@ -170,8 +174,13 @@ class UnifiedInvitationRequest(BaseModel):
     @model_validator(mode="after")
     def tenant_required_for_user(self) -> "UnifiedInvitationRequest":
         TENANT_USER_ROLE_ID = 3
-        if self.role_id == TENANT_USER_ROLE_ID and self.tenant_id is None:
-            raise ValueError("tenant_id is required when inviting a tenant_user")
+        if self.role_id == TENANT_USER_ROLE_ID:
+            missing = [i.email for i in self.invites if i.tenant_id is None]
+            if missing:
+                raise ValueError(
+                    "tenant_id is required for each invite when inviting a tenant_user: "
+                    + ", ".join(missing)
+                )
         return self
 
 
