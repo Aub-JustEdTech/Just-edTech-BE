@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.api_keys import api_keys
 from app.crud.chat_consumers import chat_consumer
+from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.db.connector import get_session
 from app.models.chat_consumers import ChatConsumer
@@ -79,13 +80,24 @@ async def get_current_super_admin(
 
 async def get_current_tenant_admin(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Require tenant admin role or higher"""
-    if not (user.is_super_admin(current_user) or user.is_tenant_admin(current_user)):
+    """Require tenant admin role or higher."""
+    from app.services.tenant_access_service import is_privileged_admin
+
+    db_user = await user.get(db, user_id=current_user.id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Could not validate credentials", "expired": False},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not is_privileged_admin(db_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Tenant admin access required"
         )
-    return current_user
+    return db_user
 
 
 async def get_current_tenant_user(
@@ -102,32 +114,42 @@ async def get_current_tenant_user(
 def require_tenant_access(check_admin_only: bool = False):
     """
     Factory function to create tenant-specific access dependency.
-    If check_admin_only=True, only tenant admins and super admins can access.
-    If check_admin_only=False, any user in the same tenant can access.
+    - super_admin: bypasses all checks
+    - tenant_admin: checked against user_tenant_access join table
+    - tenant_user: checked against their single tenant_id column
+    If check_admin_only=True, tenant_users are rejected regardless of tenant match.
     """
 
     async def check_tenant_access(
         tenant_id: int,
         current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
     ) -> User:
-        # Super admins have access to all tenants
         if user.is_super_admin(current_user):
             return current_user
 
-        # Check if user belongs to the requested tenant
+        if user.is_tenant_admin(current_user):
+            has = await user_tenant_access.has_access(
+                db, user_id=current_user.id, tenant_id=tenant_id
+            )
+            if not has:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: tenant not in your access list",
+                )
+            return current_user
+
+        # tenant_user path
+        if check_admin_only:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tenant admin access required",
+            )
         if current_user.tenant_id != tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Different tenant",
             )
-
-        # If admin-only check is required
-        if check_admin_only and not user.is_tenant_admin(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Tenant admin access required",
-            )
-
         return current_user
 
     return check_tenant_access
@@ -301,11 +323,13 @@ async def get_principal_with_api_key(
             detail="Authentication required: provide Bearer token or chat UUID",
         )
     db_user = await _user_from_token(credentials.credentials, db)
-    if db_user.tenant_id != api_key_info["tenant_id"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="API key tenant mismatch",
-        )
+    # super_admin and tenant_admin have NULL tenant_id — they bypass the tenant match check
+    if not (user.is_super_admin(db_user) or user.is_tenant_admin(db_user)):
+        if db_user.tenant_id != api_key_info["tenant_id"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="API key tenant mismatch",
+            )
     return db_user
 
 
