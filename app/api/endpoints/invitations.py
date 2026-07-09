@@ -2,6 +2,8 @@
 Invitation endpoints for tenant admins, super admins, and public validation.
 """
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +17,7 @@ from app.schemas.users import (
     UnifiedInvitationRequest,
     User,
 )
-from app.services.invitation_service import invitation_service
+from app.services.invitation_service import PreparedInvite, invitation_service
 from app.services.tenant_access_service import list_tenants_for_principal
 from app.utils.dependencies import get_current_tenant_admin, get_current_user, get_db
 from app.utils.response import success_response
@@ -145,6 +147,10 @@ async def send_unified_invitation(
     results: list[dict[str, str | bool]] = []
     successful = 0
 
+    # Phase 1 — sequential: DB/Redis prep only (existing-user + cooldown
+    # checks, invitation record + token). Must be sequential because it all
+    # shares one AsyncSession, which isn't safe for concurrent use.
+    to_send: list[tuple[str, PreparedInvite]] = []
     for e, tenant_id in invites:
         existing_user = await user.get_by_email(db, e)
         if existing_user:
@@ -165,7 +171,7 @@ async def send_unified_invitation(
             continue
 
         if payload.role_id == TENANT_ADMIN_ROLE_ID:
-            ok = await invitation_service.create_and_send(
+            prepared = await invitation_service.prepare_invite(
                 db,
                 tenant_id=None,
                 email=e,
@@ -173,7 +179,7 @@ async def send_unified_invitation(
                 enforce_tenant_user=False,
             )
         else:
-            ok = await invitation_service.create_and_send(
+            prepared = await invitation_service.prepare_invite(
                 db,
                 tenant_id=tenant_id,
                 email=e,
@@ -181,6 +187,29 @@ async def send_unified_invitation(
                 enforce_tenant_user=True,
             )
 
+        if prepared is None:
+            # Cooldown was set by a concurrent/prior request between our
+            # earlier check and now — treat consistently with the check above.
+            remaining = await redis_manager.get_invite_cooldown_remaining(e)
+            results.append(
+                {
+                    "email": e,
+                    "sent": False,
+                    "message": f"Please wait {remaining} seconds before requesting another invitation",
+                }
+            )
+            continue
+
+        to_send.append((e, prepared))
+
+    # Phase 2 — concurrent: the actual SMTP sends, which don't touch the DB
+    # session, so a slow batch of emails no longer serializes the request
+    # (and is far less likely to time out and trigger a client-side retry).
+    send_outcomes = await asyncio.gather(
+        *(invitation_service.send_prepared(prepared) for _, prepared in to_send)
+    )
+
+    for (e, _), ok in zip(to_send, send_outcomes, strict=True):
         if ok:
             successful += 1
             results.append({"email": e, "sent": True, "message": "Invitation sent"})

@@ -2,7 +2,9 @@
 Service to manage tenant user invitations: create, email, validate, accept.
 """
 
+import asyncio
 import secrets
+from dataclasses import dataclass
 from urllib.parse import quote_plus
 
 from sqlalchemy import select
@@ -15,8 +17,20 @@ from app.models.roles import Role
 from app.utils.email import send_email
 
 
+@dataclass
+class PreparedInvite:
+    """A DB/Redis-prepared invite, ready to email. Building this touches the
+    shared AsyncSession, so it must happen sequentially; sending the email
+    itself does not, so it can run concurrently across a batch."""
+
+    email: str
+    subject: str
+    html: str
+    text: str
+
+
 class InvitationService:
-    async def create_and_send(
+    async def prepare_invite(
         self,
         db: AsyncSession,
         *,
@@ -24,8 +38,12 @@ class InvitationService:
         email: str,
         role_id: int | None,
         enforce_tenant_user: bool = True,
-    ) -> bool:
-        """Create or resend an invitation.
+    ) -> PreparedInvite | None:
+        """Create/reuse the invitation record and token for `email`.
+
+        Does all the DB and cooldown work but does not send the email or set
+        the resend cooldown — call `send_prepared` for that. Returns None if
+        the email is currently on cooldown.
 
         When enforce_tenant_user=True (default), the stored role is always overridden to
         tenant_user regardless of role_id — used by tenant_admin bulk-invite flow.
@@ -33,7 +51,7 @@ class InvitationService:
         tenant_id=None means a tenant_admin invite (no single tenant assignment).
         """
         if await redis_manager.is_invite_on_cooldown(email):
-            return False
+            return None
 
         if enforce_tenant_user:
             res = await db.execute(select(Role.id).where(Role.name == "tenant_user"))
@@ -82,12 +100,42 @@ class InvitationService:
             f"Open this link to accept: {invite_link}\n"
             f"This invite expires in {settings.INVITATION_EXPIRE_DAYS} days."
         )
-        sent = send_email(email, subject, html, text)
+        return PreparedInvite(email=email, subject=subject, html=html, text=text)
+
+    async def send_prepared(self, prepared: PreparedInvite) -> bool:
+        """Send a prepared invite's email and, on success, start its resend
+        cooldown. `send_email` is blocking SMTP, so it runs in a worker
+        thread — safe to await concurrently across a batch via asyncio.gather,
+        unlike `prepare_invite` which touches the shared DB session."""
+        sent = await asyncio.to_thread(
+            send_email, prepared.email, prepared.subject, prepared.html, prepared.text
+        )
         if sent:
             await redis_manager.set_invite_cooldown(
-                email, settings.INVITATION_RESEND_COOLDOWN_SECONDS
+                prepared.email, settings.INVITATION_RESEND_COOLDOWN_SECONDS
             )
         return sent
+
+    async def create_and_send(
+        self,
+        db: AsyncSession,
+        *,
+        tenant_id: int | None,
+        email: str,
+        role_id: int | None,
+        enforce_tenant_user: bool = True,
+    ) -> bool:
+        """Convenience wrapper for single-invite call sites: prepare then send."""
+        prepared = await self.prepare_invite(
+            db,
+            tenant_id=tenant_id,
+            email=email,
+            role_id=role_id,
+            enforce_tenant_user=enforce_tenant_user,
+        )
+        if prepared is None:
+            return False
+        return await self.send_prepared(prepared)
 
     async def validate_token(self, db: AsyncSession, token: str) -> dict | None:
         """Return invite context if token is valid and not accepted and not expired."""
