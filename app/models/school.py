@@ -93,6 +93,18 @@ class School(BaseModel):
         cascade="all, delete-orphan",
         foreign_keys="SchoolScrapeJob.school_id",
     )
+    url_discovery = relationship(
+        "SchoolUrlDiscovery",
+        back_populates="school",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    url_candidates = relationship(
+        "SchoolUrlCandidate",
+        back_populates="school",
+        cascade="all, delete-orphan",
+        foreign_keys="SchoolUrlCandidate.school_id",
+    )
 
 
 class SchoolScrapeUrl(BaseModel):

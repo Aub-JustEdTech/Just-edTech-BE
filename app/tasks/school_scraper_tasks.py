@@ -28,6 +28,7 @@ from app.models.school import (
     SchoolScrapeJob,
     SchoolScrapeUrl,
     ScrapeRun,
+    ScrapedMedia,
 )
 from app.tasks.loop_utils import get_event_loop
 
@@ -487,7 +488,7 @@ async def _fetch_youtube_transcript(url: str) -> str:
 
 
 def _extract_text_from_document(raw: bytes, ext: str | None) -> str:
-    """Extract text from PDF/DOCX/XLSX bytes using the existing extractors."""
+    """Extract text from PDF/DOCX/PPTX/XLSX bytes using the existing extractors."""
     # Defer to the document processing service's extractors. Kept as a thin
     # adapter; the real extraction lives in app.services.document_pipeline.
     import io
@@ -503,6 +504,24 @@ def _extract_text_from_document(raw: bytes, ext: str | None) -> str:
 
         d = docx.Document(io.BytesIO(raw))
         return "\n".join(p.text for p in d.paragraphs)
+    if ext == "pptx":
+        from pptx import Presentation
+
+        presentation = Presentation(io.BytesIO(raw))
+        parts: list[str] = []
+        for slide in presentation.slides:
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    for paragraph in shape.text_frame.paragraphs:
+                        run_text = "".join(run.text for run in paragraph.runs)
+                        if run_text or paragraph.text:
+                            parts.append(run_text or paragraph.text)
+                if getattr(shape, "has_table", False):
+                    for row in shape.table.rows:
+                        for cell in row.cells:
+                            if cell.text:
+                                parts.append(cell.text)
+        return "\n".join(parts)
     # Fallback: treat as text.
     try:
         return raw.decode("utf-8", errors="ignore")
@@ -561,6 +580,10 @@ async def _create_document_and_enqueue(
         document_type="txt",
         processing_status=ProcessingStatus.PENDING,
         source_type="school_scraper",
+        # Propagate the content_hash from ScrapedMedia so the heatmap
+        # pipeline can dedupe and the doc-level classifier can skip
+        # already-classified docs on re-scrape.
+        content_hash=content_h,
         source_metadata={
             "scraped_media_id": sm.id,
             "school_id": sm.school_id,
@@ -584,13 +607,26 @@ async def _create_document_and_enqueue(
     sm.s3_key_text = s3_key_text
     if raw_bytes is not None:
         sm.size_bytes = len(raw_bytes)
+
+    # Create a processing job row so the pipeline can write progress/stage
+    # records (the modern pipeline requires job_id).
+    from app.models.processing_jobs import DocumentProcessingJob, JobStatus
+
+    job = DocumentProcessingJob(
+        document_id=doc.id,
+        status=JobStatus.PENDING,
+        processor_type=doc.document_type,
+    )
+    db.add(job)
     await db.commit()
 
-    # Enqueue the existing document processing pipeline.
+    # Enqueue the modern document processing pipeline (preserves page
+    # numbers, runs the heatmap doc-level classifier, and writes to the
+    # school_scraper-specific vector collection with token-mode chunks).
     try:
-        from app.tasks.document_tasks import process_document_task
+        from app.tasks.document_pipeline import process_document_pipeline
 
-        process_document_task.delay(document_id=doc.id)
+        process_document_pipeline.delay(doc.id, job.id)
     except Exception:  # noqa: BLE001
         logger.exception(
             "Failed to enqueue document processing for doc %s", doc.id

@@ -179,6 +179,30 @@ async def add_scrape_url(
     data: ScrapeUrlCreate,
     user_id: int | None,
 ) -> SchoolScrapeUrl:
+    # Idempotent: re-confirm an existing row for the same (school_id, url)
+    # instead of INSERTing a duplicate and tripping uq_scrape_url_school_url.
+    existing = (
+        await db.execute(
+            select(SchoolScrapeUrl).where(
+                SchoolScrapeUrl.school_id == school.id,
+                SchoolScrapeUrl.url == data.url,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is not None:
+        existing.crawl_depth = data.crawl_depth
+        existing.use_playwright = data.use_playwright
+        existing.confirmed_by_user_id = user_id
+        existing.confirmed_at = datetime.now(timezone.utc)
+        existing.is_active = True
+        await db.flush()
+        if data.is_primary or school.scrape_url_id is None:
+            school.scrape_url_id = existing.id
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+
     url = SchoolScrapeUrl(
         school_id=school.id,
         url=data.url,

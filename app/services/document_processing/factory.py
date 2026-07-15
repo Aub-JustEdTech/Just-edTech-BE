@@ -10,6 +10,7 @@ from app.services.document_processing.processors.markdown_processor import (
     MarkdownProcessor,
 )
 from app.services.document_processing.processors.pdf_processor import PDFProcessor
+from app.services.document_processing.processors.pptx_processor import PPTXProcessor
 from app.services.document_processing.processors.xlsx_processor import XLSXProcessor
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class ProcessorFactory:
         ".text": MarkdownProcessor,
         ".docx": DocxProcessor,
         ".doc": DocProcessor,
+        ".pptx": PPTXProcessor,
         ".xlsx": XLSXProcessor,
         ".xls": XLSXProcessor,
     }

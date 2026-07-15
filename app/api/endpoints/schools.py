@@ -16,6 +16,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.crud import school_url_discovery as discovery_crud
 from app.crud import schools as crud
 from app.models.school import School, SchoolScrapeJob, SchoolScrapeUrl
 from app.schemas.school_scraper import (
@@ -30,14 +32,16 @@ from app.schemas.schools import (
     SchoolScrapeJobOut,
     SchoolScrapeUrlOut,
     SchoolUpdate,
+    SchoolUrlCandidateOut,
+    SchoolUrlCandidatesOut,
+    ScrapedMediaListOut,
+    ScrapedMediaOut,
     ScrapeJobAck,
     ScrapeRunDetailOut,
     ScrapeRunListOut,
     ScrapeRunOut,
     ScrapeUrlCreate,
     ScrapeUrlUpdate,
-    ScrapedMediaListOut,
-    ScrapedMediaOut,
     TriggerRunRequest,
     TriggerSchoolScrapeRequest,
 )
@@ -85,7 +89,39 @@ async def _scrape_url_or_404(
     return scrape_url
 
 
-async def _enrich_school(db: AsyncSession, school) -> SchoolOut:
+    return scrape_url
+
+
+def _confirmed_scrape_url(school: School) -> str | None:
+    if not school.scrape_url_id:
+        return None
+    for scrape_url in school.scrape_urls:
+        if scrape_url.id == school.scrape_url_id and scrape_url.is_active:
+            return scrape_url.url
+    return None
+
+
+def _url_discovery_status(
+    school: School,
+    *,
+    candidate_count: int = 0,
+    error: str | None = None,
+) -> str:
+    if school.scrape_url_id:
+        return "confirmed"
+    if error:
+        return "error"
+    if candidate_count > 0:
+        return "discovered"
+    return "not_discovered"
+
+
+async def _enrich_school(
+    db: AsyncSession,
+    school: School,
+    *,
+    discovery_summary: dict[str, object] | None = None,
+) -> SchoolOut:
     """Build a SchoolOut with denormalized counts/status."""
     media_count = await crud.count_scraped_media(db, school.id)
     stmt = (
@@ -98,6 +134,19 @@ async def _enrich_school(db: AsyncSession, school) -> SchoolOut:
     out = SchoolOut.model_validate(school)
     out.scraped_media_count = media_count
     out.last_run_status = last_job.status if last_job else None
+    out.confirmed_scrape_url = _confirmed_scrape_url(school)
+
+    if discovery_summary is None:
+        discovery_summary = {}
+
+    candidate_count = int(discovery_summary.get("candidate_count") or 0)
+    error = discovery_summary.get("error")
+    out.url_candidate_count = candidate_count
+    out.url_discovery_status = _url_discovery_status(
+        school,
+        candidate_count=candidate_count,
+        error=str(error) if error else None,
+    )
     return out
 
 
@@ -129,7 +178,15 @@ async def list_schools(
         district_type=district_type,
         is_active=is_active,
     )
-    items = [await _enrich_school(db, s) for s in schools]
+    summaries = await discovery_crud.get_discovery_summaries(
+        db,
+        current_user.tenant_id,
+        [school.id for school in schools],
+    )
+    items = [
+        await _enrich_school(db, school, discovery_summary=summaries.get(school.id))
+        for school in schools
+    ]
     return SchoolListOut(items=items, total=total, skip=skip, limit=limit)
 
 
@@ -144,7 +201,12 @@ async def get_school(
     current_user: User = Depends(get_current_tenant_user),
 ) -> SchoolOut:
     school = await _school_or_404(db, current_user.tenant_id, school_id)
-    return await _enrich_school(db, school)
+    summaries = await discovery_crud.get_discovery_summaries(
+        db, current_user.tenant_id, [school.id]
+    )
+    return await _enrich_school(
+        db, school, discovery_summary=summaries.get(school.id)
+    )
 
 
 @router.post(
@@ -250,6 +312,66 @@ async def deactivate_scrape_url(
 
 
 # ---------------------------------------------------------------------------
+# Stored URL candidates
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/{school_id}/url-candidates",
+    response_model=SchoolUrlCandidatesOut,
+    summary="Get stored URL-discovery candidates for a school",
+)
+async def get_school_url_candidates(
+    school_id: int,
+    max_candidates: int = Query(
+        settings.SCHOOL_SCRAPER_MAX_CANDIDATES,
+        ge=1,
+        le=50,
+        description="Maximum number of deduplicated candidates to return.",
+    ),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+) -> SchoolUrlCandidatesOut:
+    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    discovery, candidates = await discovery_crud.list_candidates_for_school(
+        db,
+        current_user.tenant_id,
+        school.id,
+        max_candidates=max_candidates,
+    )
+
+    error = discovery.error if discovery else None
+    candidate_count = len(candidates)
+    status = _url_discovery_status(
+        school,
+        candidate_count=candidate_count,
+        error=error,
+    )
+
+    return SchoolUrlCandidatesOut(
+        school_id=school.id,
+        org_code=school.org_code,
+        name=school.name,
+        website=school.website,
+        discovery_method=discovery.discovery_method if discovery else None,
+        total_urls_scanned=discovery.total_urls_scanned if discovery else 0,
+        error=error,
+        url_discovery_status=status,
+        confirmed_scrape_url=_confirmed_scrape_url(school),
+        total_candidates=candidate_count,
+        candidates=[
+            SchoolUrlCandidateOut(
+                url=row.url,
+                matched_keywords=list(row.matched_keywords or []),
+                score=row.score,
+                rank=row.rank,
+            )
+            for row in candidates
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
 # Discovery (stateless)
 # ---------------------------------------------------------------------------
 
@@ -325,20 +447,24 @@ async def scrape_school_now(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No confirmed scrape URL configured for this school.",
         )
-    async with db.begin():
-        run = await crud.create_scrape_run(
-            db,
-            current_user.tenant_id,
-            triggered_by=f"manual:user:{current_user.id}",
-            total_schools=1,
-        )
-        job = await crud.create_scrape_job(
-            db,
-            run_id=run.id,
-            school_id=school.id,
-            scrape_url_id=scrape_url_id,
-        )
-    run_single_school_scrape.delay(job_id=job.id)
+    run = await crud.create_scrape_run(
+        db,
+        current_user.tenant_id,
+        triggered_by=f"manual:user:{current_user.id}",
+        total_schools=1,
+    )
+    job = await crud.create_scrape_job(
+        db,
+        run_id=run.id,
+        school_id=school.id,
+        scrape_url_id=scrape_url_id,
+    )
+    run_single_school_scrape.delay(
+        job_id=job.id,
+        school_id=school.id,
+        scrape_url_id=scrape_url_id,
+        tenant_id=current_user.tenant_id,
+    )
     return ScrapeJobAck(
         run_id=run.id,
         job_id=job.id,
@@ -360,12 +486,11 @@ async def trigger_full_cycle(
     from app.tasks.school_scraper_tasks import run_school_scrape_cycle
 
     only_active = (payload.only_active if payload else True)
-    async with db.begin():
-        run = await crud.create_scrape_run(
-            db,
-            current_user.tenant_id,
-            triggered_by=f"manual:user:{current_user.id}",
-        )
+    run = await crud.create_scrape_run(
+        db,
+        current_user.tenant_id,
+        triggered_by=f"manual:user:{current_user.id}",
+    )
     run_school_scrape_cycle.delay(run_id=run.id, only_active=only_active)
     return ScrapeJobAck(
         run_id=run.id,

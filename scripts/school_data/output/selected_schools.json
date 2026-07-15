@@ -1,0 +1,122 @@
+[
+{
+    "name": "Quabbin",
+    "org_code": "07530000",
+    "org_type_code": "5",
+    "website": "https://www.qrsd.org"
+},
+{
+    "name": "Wachusett",
+    "org_code": "07750000",
+    "org_type_code": "5",
+    "website": "https://www.wrsd.net"
+  },
+  {
+    "name": "Leicester",
+    "org_code": "01510000",
+    "org_type_code": "5",
+    "website": "https://www.leicester.k12.ma.us"
+  },
+  {
+    "name": "Ware",
+    "org_code": "03090000",
+    "org_type_code": "5",
+    "website": "https://www.wareps.org"
+  },
+  {
+    "name": "Wareham",
+    "org_code": "03100000",
+    "org_type_code": "5",
+    "website": "https://warehamps.schoolblocks.com"
+  },
+  {
+    "name": "Plymouth",
+    "org_code": "02390000",
+    "org_type_code": "5",
+    "website": "https://www.plymouth.k12.ma.us"
+  },
+  {
+    "name": "Bourne",
+    "org_code": "00360000",
+    "org_type_code": "5",
+    "website": "https://www.bourneps.org/"
+  },
+  {
+    "name": "Worcester",
+    "org_code": "03480000",
+    "org_type_code": "5",
+    "website": "https://www.worcesterschools.org"
+  },
+  {
+    "name": "Shutesbury",
+    "org_code": "02720000",
+    "org_type_code": "5",
+    "website": "https://www.union28.org"
+  },
+  {
+    "name": "Leominster",
+    "org_code": "01530000",
+    "org_type_code": "5",
+    "website": "https://www.leominsterps.org"
+  },
+  {
+    "name": "New Salem-Wendell",
+    "org_code": "07280000",
+    "org_type_code": "5",
+    "website": "https://www.union28.org"
+  },
+  {
+    "name": "Belchertown",
+    "org_code": "00240000",
+    "org_type_code": "5",
+    "website": "https://www.belchertownps.org"
+  },
+  {
+    "name": "Quaboag Regional",
+    "org_code": "07780000",
+    "org_type_code": "5",
+    "website": "https://www.quaboagrsd.org"
+  },
+  {
+    "name": "Palmer",
+    "org_code": "02270000",
+    "org_type_code": "5",
+    "website": "https://www.palmerschools.org"
+  },
+  {
+    "name": "Bristol County Agricultural",
+    "org_code": "09100000",
+    "org_type_code": "5",
+    "website": "https://www.bristolaggie.org"
+  },
+  {
+    "name": "Bristol-Plymouth Regional Vocational Technical",
+    "org_code": "08100000",
+    "org_type_code": "5",
+    "website": "https://www.bptech.org"
+  },
+  {
+    "name": "Brimfield",
+    "org_code": "00430000",
+    "org_type_code": "5",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Bridgewater-Raynham",
+    "org_code": "06250000",
+    "org_type_code": "5",
+    "website": "https://bridge-rayn.org"
+  },
+  {
+    "name": "Brewster",
+    "org_code": "00410000",
+    "org_type_code": "5",
+    "website": "http://nausetschools.org"
+  },
+  {
+    "name": "Bridge Boston Charter School (District)",
+    "org_code": "04170000",
+    "org_type_code": "5",
+    "website": "https://www.bridgebostoncs.org"
+  }
+]

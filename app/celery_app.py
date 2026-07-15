@@ -74,6 +74,27 @@ celery_app.conf.update(
             "schedule": crontab(hour=4, minute=0, day_of_month="1,15"),
             "options": {"expires": 6 * 3600},  # 6h
         },
+        # Heatmap batch classification lifecycle.
+        # Submit daily at 4 AM UTC (one hour before the scrape cycle so a
+        # fresh batch is in flight when new docs land). Poll every 15 min
+        # so completed batches are applied promptly.
+        "submit-pending-batch-classification": {
+            "task": "submit_pending_batch_classification",
+            "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
+            "options": {"expires": 3600},
+        },
+        "poll-batch-classification": {
+            "task": "poll_batch_classification",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+            "options": {"expires": 900},
+        },
+        # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
+        # to catch drift from failed set_payload calls or manual edits.
+        "reconcile-heatmap-aggregate": {
+            "task": "reconcile_heatmap_aggregate",
+            "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
+            "options": {"expires": 2 * 3600},
+        },
     },
 )
 

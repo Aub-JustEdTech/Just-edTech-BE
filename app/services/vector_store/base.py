@@ -90,6 +90,33 @@ class VectorStore(ABC):
         """
         pass
 
+    async def filter_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """
+        Scroll chunks by payload filter (no vector query).
+
+        Used by the heatmap citations path to retrieve all chunks for a
+        given (source_id, topic) without computing an embedding.
+
+        Args:
+            tenant_id: Tenant scope.
+            must_match: {field: value} — all must equal the value.
+            must_match_any: {field: [values]} — field must contain any.
+            limit: Max results.
+
+        Returns:
+            List of {id, text, metadata, score} dicts (score = 1.0
+            for payload-only matches).
+        """
+        # Default implementation: not supported. Subclasses override.
+        return []
+
     @abstractmethod
     async def update_metadata(
         self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int

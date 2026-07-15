@@ -13,12 +13,12 @@ import json
 import logging
 from typing import Any
 
-from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.documents import Document
 from app.services.embeddings.embedding_service import EmbeddingService
+from app.services.llm.client import get_async_openai_client, normalize_model_name
 
 logger = logging.getLogger(__name__)
 
@@ -66,13 +66,12 @@ class DocumentSummarizer:
     )
     """
 
-    def __init__(self, model: str = "gpt-4o-mini"):
-        self._model = model
-        self._client = (
-            AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            if settings.OPENAI_API_KEY
-            else None
-        )
+    def __init__(self, model: str = "openai/gpt-4o-mini"):
+        self._model = normalize_model_name(model)
+        try:
+            self._client = get_async_openai_client()
+        except ValueError:
+            self._client = None
         self._embedding_service = EmbeddingService()
 
     # ------------------------------------------------------------------
@@ -98,7 +97,7 @@ class DocumentSummarizer:
         """
         if not self._client:
             logger.warning(
-                f"[Doc {document_id}] OpenAI API key not configured – skipping summarisation."
+                f"[Doc {document_id}] LLM API key not configured – skipping summarisation."
             )
             return {}
 
@@ -197,7 +196,10 @@ class DocumentSummarizer:
         tenant_id: int,
     ) -> None:
         """Generate a summary embedding and store it in the summaries collection."""
-        from app.services.vector_store.factory import VectorStoreFactory, VectorStoreType
+        from app.services.vector_store.factory import (
+            VectorStoreFactory,
+            VectorStoreType,
+        )
 
         # Build a rich text for embedding: type + date + topics + summary.
         topics = parsed.get("key_topics") or []

@@ -7,9 +7,12 @@ and scraped media records.
 
 from datetime import date, datetime
 from typing import Literal
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+UrlDiscoveryStatus = Literal[
+    "not_discovered", "discovered", "error", "confirmed"
+]
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +84,9 @@ class SchoolOut(BaseModel):
     scrape_urls: list[SchoolScrapeUrlOut] = Field(default_factory=list)
     scraped_media_count: int = 0
     last_run_status: str | None = None
+    url_discovery_status: UrlDiscoveryStatus = "not_discovered"
+    url_candidate_count: int = 0
+    confirmed_scrape_url: str | None = None
 
 
 class SchoolListOut(BaseModel):
@@ -255,6 +261,31 @@ class DiscoverForSchoolRequest(BaseModel):
 
     max_candidates: int = 10
     use_playwright: bool = False
+
+
+class SchoolUrlCandidateOut(BaseModel):
+    """A single stored URL-discovery candidate."""
+
+    url: str
+    matched_keywords: list[str]
+    score: int
+    rank: int
+
+
+class SchoolUrlCandidatesOut(BaseModel):
+    """Stored URL-discovery results for one school district."""
+
+    school_id: int
+    org_code: str
+    name: str
+    website: str | None
+    discovery_method: str | None
+    total_urls_scanned: int
+    error: str | None
+    url_discovery_status: UrlDiscoveryStatus
+    confirmed_scrape_url: str | None
+    total_candidates: int
+    candidates: list[SchoolUrlCandidateOut] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------

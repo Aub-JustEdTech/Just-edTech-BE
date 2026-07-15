@@ -2,20 +2,19 @@
 
 import logging
 
-from openai import AsyncOpenAI
-
 from app.core.config import settings
+from app.services.llm.client import get_cached_async_openai_client, normalize_model_name
 
 logger = logging.getLogger(__name__)
 
-_async_client: AsyncOpenAI | None = None
-
-
-def _get_client() -> AsyncOpenAI:
-    global _async_client
-    if _async_client is None:
-        _async_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-    return _async_client
+_VALID_EMBEDDING_MODELS = {
+    "text-embedding-3-small",
+    "text-embedding-3-large",
+    "text-embedding-ada-002",
+    "openai/text-embedding-3-small",
+    "openai/text-embedding-3-large",
+    "openai/text-embedding-ada-002",
+}
 
 
 class EmbeddingService:
@@ -40,24 +39,18 @@ class EmbeddingService:
         if not texts:
             return []
 
-        model = model or settings.OPENAI_EMBEDDING_MODEL
+        model = normalize_model_name(model or settings.OPENAI_EMBEDDING_MODEL)
 
-        valid_models = [
-            "text-embedding-3-small",
-            "text-embedding-3-large",
-            "text-embedding-ada-002",
-        ]
-        
-        if model not in valid_models:
+        if model not in _VALID_EMBEDDING_MODELS:
             logger.warning(
                 f"Model '{model}' is not in the list of known valid models. "
-                f"Valid models: {', '.join(valid_models)}. "
+                f"Valid models: {', '.join(sorted(_VALID_EMBEDDING_MODELS))}. "
                 f"Attempting to use anyway..."
             )
 
         try:
             logger.info(f"Generating embeddings for {len(texts)} texts using model: {model}")
-            client = _get_client()
+            client = get_cached_async_openai_client()
             response = await client.embeddings.create(input=texts, model=model)
             embeddings = [item.embedding for item in response.data]
 
@@ -68,10 +61,10 @@ class EmbeddingService:
             error_msg = (
                 f"Error generating embeddings with model '{model}': {e}. "
                 f"Please verify that: "
-                f"1) The model name '{model}' is correct and available for your OpenAI API key, "
+                f"1) The model name '{model}' is correct and available for your API key, "
                 f"2) Your API key has access to this model, "
                 f"3) The model is not deprecated. "
-                f"Valid OpenAI embedding models: {', '.join(valid_models)}"
+                f"Known embedding models: {', '.join(sorted(_VALID_EMBEDDING_MODELS))}"
             )
             logger.error(error_msg, exc_info=True)
             raise ValueError(error_msg) from e

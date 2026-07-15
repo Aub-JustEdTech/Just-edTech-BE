@@ -155,6 +155,20 @@ class PipelineContext:
         self.embeddings: list[list[float]] = []
         self.chunk_metadatas: list[dict[str, Any]] = []
         self.stage_ids: dict[str, int] = {}  # Map stage name to stage_id
+        # Source provenance (e.g. 'school_scraper' for heatmap ingest docs).
+        # Used to gate heatmap-specific behavior: doc-level classification,
+        # token-mode chunking, and the 3-small embedding override.
+        self.source_type: str | None = None
+        # Heatmap-ingest doc-level classification output (entity_type,
+        # doc_kind, meeting_date). Populated by step2_6_classify_document
+        # for school_scraper docs only.
+        self.entity_type: str | None = None
+        self.doc_kind: str | None = None
+        self.doc_meeting_date: str | None = None
+        # Qdrant point IDs returned by step5_store_vectors (one per chunk).
+        # Used by step6_accumulate_batch to populate pending_classifications
+        # so the batch classifier can later set_payload on the right points.
+        self.qdrant_point_ids: list[str] = []
 
     def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for passing between tasks."""
@@ -173,6 +187,11 @@ class PipelineContext:
             "embeddings": self.embeddings,
             "chunk_metadatas": self.chunk_metadatas,
             "stage_ids": self.stage_ids,
+            "source_type": self.source_type,
+            "entity_type": self.entity_type,
+            "doc_kind": self.doc_kind,
+            "doc_meeting_date": self.doc_meeting_date,
+            "qdrant_point_ids": self.qdrant_point_ids,
         }
 
     @classmethod
@@ -194,6 +213,11 @@ class PipelineContext:
         ctx.embeddings = data.get("embeddings", [])
         ctx.chunk_metadatas = data.get("chunk_metadatas", [])
         ctx.stage_ids = data.get("stage_ids", {})
+        ctx.source_type = data.get("source_type")
+        ctx.entity_type = data.get("entity_type")
+        ctx.doc_kind = data.get("doc_kind")
+        ctx.doc_meeting_date = data.get("doc_meeting_date")
+        ctx.qdrant_point_ids = data.get("qdrant_point_ids", [])
         return ctx
 
 
@@ -292,6 +316,7 @@ async def _step1_download_async(ctx: PipelineContext, redis_tracker):
         ctx.doc_uuid = document.doc_id
         ctx.document_type = document.document_type
         ctx.s3_url = document.s3_url
+        ctx.source_type = document.source_type
 
         # Propagate source_metadata (e.g. school-scraper origin info) onto
         # the pipeline context so it flows through to the Qdrant payload.
@@ -610,6 +635,117 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
         )
 
 
+# ==================== Stage 2.6: Doc-level classification (heatmap) ===========
+
+
+@celery_app.task(name="pipeline.classify_document", bind=True, max_retries=2)
+def step2_6_classify_document(self, context_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Stage 2.6: Doc-level classification for heatmap-ingest documents.
+
+    Runs only when ctx.source_type == 'school_scraper'. Non-heatmap docs
+    skip this stage entirely (no LLM call, no DB writes).
+
+    Calls DocClassifier (one sync gpt-4o-mini call per doc) and writes the
+    resulting entity_type / doc_kind / meeting_date to the documents table
+    (the new columns added in the Phase 2 migration).
+
+    This stage is lenient: a failure logs a warning and lets the pipeline
+    continue — the doc just won't have doc-level labels, which only affects
+    the heatmap (not the RAG path).
+    """
+    ctx = PipelineContext.from_dict(context_dict)
+    redis_tracker = get_redis_tracker()
+    loop = get_event_loop()
+
+    # Feature gate: only school_scraper docs get classified.
+    if ctx.source_type != "school_scraper":
+        logger.debug(
+            f"[Doc {ctx.document_id}] Stage 2.6 skipped (source_type={ctx.source_type!r})"
+        )
+        return ctx.to_dict()
+
+    try:
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.6: Classifying document")
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="doc_classifying",
+            status="in_progress",
+            progress=42.0,
+        )
+        redis_tracker.update_stage(ctx.document_id, "doc_classifying", "in_progress")
+
+        loop.run_until_complete(_step2_6_classify_async(ctx, redis_tracker))
+
+        redis_tracker.update_stage(ctx.document_id, "doc_classifying", "completed")
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="doc_classifying",
+            status="completed",
+            progress=44.0,
+        )
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.6 completed")
+    except Exception as exc:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 2.6 (doc classify) failed – "
+            f"pipeline continues: {exc}",
+            exc_info=True,
+        )
+        redis_tracker.update_stage(ctx.document_id, "doc_classifying", "failed")
+        loop.run_until_complete(_mark_stage_failed(ctx, "doc_classifying", str(exc)))
+
+    return ctx.to_dict()
+
+
+async def _step2_6_classify_async(ctx: PipelineContext, redis_tracker) -> None:
+    """Async implementation of doc-level classification."""
+    from app.services.heatmap_ingest.doc_classifier import DocClassifier
+
+    async with AsyncSessionLocal() as db:
+        document = await db.get(Document, ctx.document_id)
+        if not document:
+            logger.warning(f"[Doc {ctx.document_id}] not found; skipping classification")
+            return
+
+        # Use the first ~6000 chars of extracted text for the LLM call.
+        first_page_text = (ctx.extracted_text or "")[:6000]
+        filename = document.name or ""
+
+        classifier = DocClassifier()
+        result = await classifier.classify(
+            filename=filename,
+            first_page_text=first_page_text,
+            source_metadata=document.source_metadata,
+        )
+
+        # Persist the new columns onto the documents row.
+        document.entity_type = result.entity_type
+        document.doc_kind = result.doc_kind
+        if result.meeting_date:
+            from datetime import date as _date
+
+            try:
+                document.meeting_date = _date.fromisoformat(result.meeting_date)
+            except ValueError:
+                logger.warning(
+                    f"[Doc {ctx.document_id}] LLM returned unparseable meeting_date "
+                    f"{result.meeting_date!r}; leaving null"
+                )
+
+        # Also stash on the context so step6_accumulate_batch can pass
+        # entity_type + meeting_date into the pending_classifications rows
+        # without re-querying the DB.
+        ctx.entity_type = result.entity_type
+        ctx.doc_kind = result.doc_kind
+        ctx.doc_meeting_date = result.meeting_date
+
+        await db.commit()
+        logger.info(
+            f"[Doc {ctx.document_id}] Classified as entity_type={result.entity_type}, "
+            f"doc_kind={result.doc_kind}, meeting_date={result.meeting_date}"
+        )
+
+
 # ==================== Stage 3: Chunk Text ====================
 
 
@@ -874,6 +1010,18 @@ async def _step4_embed_async(ctx: PipelineContext, redis_tracker):
                 f"Embedding model not configured for chatbot {chatbot_config_obj.id}"
             )
 
+        # Heatmap-ingest override: school_scraper docs use the configured
+        # heatmap embedding model (text-embedding-3-small by default)
+        # instead of the per-tenant chatbot config, so the heatmap vector
+        # space is uniform across tenants.
+        heatmap_model = getattr(settings, "HEATMAP_INGEST_EMBEDDING_MODEL", "")
+        if heatmap_model and ctx.source_type == "school_scraper":
+            embedding_model_name = heatmap_model
+            logger.info(
+                f"[Doc {ctx.document_id}] Heatmap override: using embedding "
+                f"model {embedding_model_name} for school_scraper doc"
+            )
+
         logger.info(
             f"[Doc {ctx.document_id}] Using embedding model: {embedding_model_name} "
             f"(provider: {embedding_config.get('provider', 'unknown')})"
@@ -1032,12 +1180,23 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
         vector_store = VectorStoreFactory.create(
             VectorStoreType(settings.VECTOR_STORE_TYPE)
         )
-        await vector_store.add_chunks(
-            document_id=ctx.doc_uuid,
-            chunks=ctx.chunks,
-            embeddings=ctx.embeddings,
-            metadatas=metadatas,
-        )
+        # Use add_chunks_returning_ids so we can capture the per-chunk
+        # Qdrant point IDs for the heatmap batch classifier (step6).
+        if hasattr(vector_store, "add_chunks_returning_ids"):
+            point_ids = await vector_store.add_chunks_returning_ids(
+                document_id=ctx.doc_uuid,
+                chunks=ctx.chunks,
+                embeddings=ctx.embeddings,
+                metadatas=metadatas,
+            )
+            ctx.qdrant_point_ids = point_ids
+        else:
+            await vector_store.add_chunks(
+                document_id=ctx.doc_uuid,
+                chunks=ctx.chunks,
+                embeddings=ctx.embeddings,
+                metadatas=metadatas,
+            )
 
         # Process images if available and if using Qdrant (for multimodal RAG)
         extracted_images = ctx.doc_metadata.get("extracted_images", [])
@@ -1078,6 +1237,122 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
             input_size=len(ctx.embeddings),
             output_size=len(ctx.chunks),
         )
+
+
+# ==================== Stage 6: Accumulate batch classification (heatmap) =====
+
+
+@celery_app.task(name="pipeline.accumulate_batch", bind=True, max_retries=2)
+def step6_accumulate_batch(self, context_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Stage 6: Append this document's chunks to pending_classifications.
+
+    Runs only when ctx.source_type == 'school_scraper'. Non-heatmap docs
+    skip this stage entirely.
+
+    After step5_store_vectors stored chunks in Qdrant and captured the
+    per-chunk point IDs, this stage writes one row per chunk to
+    pending_classifications. The daily submit task pulls rows with
+    status='pending' and builds a Batch API JSONL for classification.
+    """
+    ctx = PipelineContext.from_dict(context_dict)
+    redis_tracker = get_redis_tracker()
+    loop = get_event_loop()
+
+    if ctx.source_type != "school_scraper":
+        logger.debug(
+            f"[Doc {ctx.document_id}] Stage 6 skipped (source_type={ctx.source_type!r})"
+        )
+        return ctx.to_dict()
+
+    if not ctx.qdrant_point_ids:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 6 skipped (no qdrant_point_ids "
+            f"captured in step5)"
+        )
+        return ctx.to_dict()
+
+    try:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 6: Accumulating "
+            f"{len(ctx.qdrant_point_ids)} chunks for batch classification"
+        )
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="batch_accumulating",
+            status="in_progress",
+            progress=100.0,
+        )
+        redis_tracker.update_stage(
+            ctx.document_id, "batch_accumulating", "in_progress"
+        )
+
+        loop.run_until_complete(_step6_accumulate_async(ctx, redis_tracker))
+
+        redis_tracker.update_stage(
+            ctx.document_id, "batch_accumulating", "completed"
+        )
+        logger.info(f"[Doc {ctx.document_id}] Stage 6 completed")
+    except Exception as exc:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 6 (accumulate batch) failed – "
+            f"pipeline continues: {exc}",
+            exc_info=True,
+        )
+        redis_tracker.update_stage(
+            ctx.document_id, "batch_accumulating", "failed"
+        )
+        loop.run_until_complete(
+            _mark_stage_failed(ctx, "batch_accumulating", str(exc))
+        )
+
+    return ctx.to_dict()
+
+
+async def _step6_accumulate_async(ctx: PipelineContext, redis_tracker) -> None:
+    """Async implementation: insert pending_classifications rows."""
+    from app.models.pending_classification import PendingClassification
+
+    async with AsyncSessionLocal() as db:
+        # Parse the doc-level meeting_date (if any) into a date object.
+        meeting_date = None
+        if ctx.doc_meeting_date:
+            from datetime import date as _date
+
+            try:
+                meeting_date = _date.fromisoformat(ctx.doc_meeting_date)
+            except ValueError:
+                pass
+
+        rows: list[PendingClassification] = []
+        for i, (chunk_text, point_id) in enumerate(
+            zip(ctx.chunks, ctx.qdrant_point_ids)
+        ):
+            # Per-chunk page_number (if captured during chunking).
+            page_number = None
+            if ctx.chunk_metadatas and i < len(ctx.chunk_metadatas):
+                page_number = ctx.chunk_metadatas[i].get("page_number")
+
+            rows.append(
+                PendingClassification(
+                    document_id=ctx.document_id,
+                    qdrant_point_id=point_id,
+                    chunk_index=i,
+                    chunk_text=chunk_text,
+                    page_number=page_number,
+                    entity_type=ctx.entity_type,
+                    meeting_date=meeting_date,
+                    status="pending",
+                )
+            )
+
+        if rows:
+            db.add_all(rows)
+            await db.commit()
+            logger.info(
+                f"[Doc {ctx.document_id}] Inserted {len(rows)} "
+                "pending_classifications rows"
+            )
 
 
 # ==================== Image Processing ====================
@@ -1318,9 +1593,11 @@ def process_document_pipeline(
         step1_download_from_s3.s(ctx.to_dict()),
         step2_extract_text.s(),
         step2_5_summarize_document.s(),
+        step2_6_classify_document.s(),
         step3_chunk_text.s(),
         step4_generate_embeddings.s(),
         step5_store_vectors.s(),
+        step6_accumulate_batch.s(),
     )
 
     # Execute the pipeline asynchronously

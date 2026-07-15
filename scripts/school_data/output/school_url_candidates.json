@@ -1,0 +1,1421 @@
+[
+  {
+    "name": "Quabbin",
+    "org_code": "07530000",
+    "website": "https://www.qrsd.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 375,
+    "candidates": [
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes/school_committee_meeting_minutes",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes#content-wrapper",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes#mobile-nav",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes#ctl00_ContentPlaceHolder1_ctl04_linkLastNav",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes/",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes/school_committee_meeting_minutes/",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/UserFiles/Servers/Server_1223699/File/School%20Committee%20Documents/Meeting%20Minutes/25-26/April%2016.pdf",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/UserFiles/Servers/Server_1223699/File/School%20Committee%20Documents/Meeting%20Minutes/25-26/March%2012.pdf",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.qrsd.org/UserFiles/Servers/Server_1223699/File/School%20Committee%20Documents/Meeting%20Minutes/25-26/February%2012.pdf",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Wachusett",
+    "org_code": "07750000",
+    "website": "https://www.wrsd.net",
+    "discovery_method": "nav-crawl",
+    "total_urls_scanned": 90,
+    "candidates": [
+      {
+        "url": "https://www.wrsd.net/school-committee/agendas-minutes",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/agendas-minutes#fsPageContent",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/meeting-recordings",
+        "matched_keywords": [
+          "meeting",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/meeting-schedule",
+        "matched_keywords": [
+          "meeting",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/meeting-recordings#fsPageContent",
+        "matched_keywords": [
+          "meeting",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/meeting-schedule#fsPageContent",
+        "matched_keywords": [
+          "meeting",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/school-committee-members",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/policies",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.wrsd.net/school-committee/policies/series-1000-operations",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Leicester",
+    "org_code": "01510000",
+    "website": "https://www.leicester.k12.ma.us",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 144,
+    "candidates": [
+      {
+        "url": "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes#page",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes#mMenuCMS",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/news/what_s_new/tri-_board_meeting_presentation",
+        "matched_keywords": [
+          "meeting",
+          "board"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/news/what_s_new/tri-_board_meeting_presentation#page",
+        "matched_keywords": [
+          "meeting",
+          "board"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/news/what_s_new/tri-_board_meeting_presentation#mMenuCMS",
+        "matched_keywords": [
+          "meeting",
+          "board"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/about/lps_school_committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/departments/facilities_and_transportation/facilities_school_committee_policies",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/news/what_s_new/m_s_b_a_school_building_committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.leicester.k12.ma.us/school_committee_policies",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Ware",
+    "org_code": "03090000",
+    "website": "https://www.wareps.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 804,
+    "candidates": [
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas/2017-2018",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas/2016-2017",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas/2018-2019",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas#page",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas#mMenuCMS",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas#ctl00_ContentPlaceHolder1_ctl05_linkLastNav",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas/",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas/2017-2018/",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      },
+      {
+        "url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes/archived_meetings___agendas/2016-2017/",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "agenda",
+          "committee"
+        ],
+        "score": 5
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Wareham",
+    "org_code": "03100000",
+    "website": "https://warehamps.schoolblocks.com",
+    "discovery_method": "sitemap+nav-crawl",
+    "total_urls_scanned": 53,
+    "candidates": [],
+    "error": null
+  },
+  {
+    "name": "Plymouth",
+    "org_code": "02390000",
+    "website": "https://www.plymouth.k12.ma.us",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 579,
+    "candidates": [
+      {
+        "url": "https://www.plymouth.k12.ma.us/page/school-committee/",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/documents/district/human-resources/job-descriptions/school-committee-secretary/480176",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/documents/district/school-committee/480241",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/page/school-committee/#container",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/page/school-committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/documents/district/human-resources/job-descriptions/school-committee-secretary/480176#container",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/documents/district/school-committee/480241#container",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Bourne",
+    "org_code": "00360000",
+    "website": "https://www.bourneps.org/",
+    "discovery_method": "nav-crawl",
+    "total_urls_scanned": 285,
+    "candidates": [
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/b-school-board-governance-and-operations-2-174-2",
+        "matched_keywords": [
+          "board",
+          "governance",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-meetings-agendas-and-documents",
+        "matched_keywords": [
+          "meeting",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/b-school-board-governance-and-operations-2-174-2#fsPageContent",
+        "matched_keywords": [
+          "board",
+          "governance",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-meetings-agendas-and-documents#fsPageContent",
+        "matched_keywords": [
+          "meeting",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-minutes",
+        "matched_keywords": [
+          "minutes",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/sub-committee-minutes",
+        "matched_keywords": [
+          "minutes",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-minutes#fsPageContent",
+        "matched_keywords": [
+          "minutes",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bourneps.org/about-us/diversity-equity-and-inclusion-committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bourneps.org/about-us/school-wellness-advisory-committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-2-142-2",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Worcester",
+    "org_code": "03480000",
+    "website": "https://www.worcesterschools.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 1480,
+    "candidates": [
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/559835",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2024/638366",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2023/559836",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2022/559840",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2021/559843",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2020/559847",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2023/agendas/559837",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2023/minutes/559838",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2022/agendas/559841",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/2022/minutes/559842",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Shutesbury",
+    "org_code": "02720000",
+    "website": "https://www.union28.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 127,
+    "candidates": [
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2023",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2024",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2025",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2026",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p1",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p2",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p3",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p4",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p5",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Leominster",
+    "org_code": "01530000",
+    "website": "https://www.leominsterps.org",
+    "discovery_method": "none",
+    "total_urls_scanned": 0,
+    "candidates": [],
+    "error": null
+  },
+  {
+    "name": "New Salem-Wendell",
+    "org_code": "07280000",
+    "website": "https://www.union28.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 127,
+    "candidates": [
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2023",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2024",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2025",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2026",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p1",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p2",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p3",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p4",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes#mm-m0-p5",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Belchertown",
+    "org_code": "00240000",
+    "website": "https://www.belchertownps.org",
+    "discovery_method": "wp-sitemap",
+    "total_urls_scanned": 482,
+    "candidates": [
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/images/SC_Regular Session Agenda_072313.pdf",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "agenda",
+          "committee"
+        ],
+        "score": 4
+      },
+      {
+        "url": "https://www.belchertownps.org/curriculum-instruction-subcommittee-document-archives/",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/curriculum-instruction-subcommittee-document-archives/#main-content",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/curriculum-instruction-subcommittee-document-archives/#content",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/#main-content",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/#content",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/drive.google.com/drive/folders/0B8-_Xw5axLO1dGFSUWdmTlZRQnc",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/drive.google.com/drive/folders/0B-qPdFGKOHyfSzlWLTB0TlRBclE?usp=sharing",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives/drive.google.com/drive/folders/0B8-_Xw5axLO1amRkTmoxcHI0bjA?usp=sharing",
+        "matched_keywords": [
+          "archive",
+          "archives",
+          "committee"
+        ],
+        "score": 3
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Quaboag Regional",
+    "org_code": "07780000",
+    "website": "https://www.quaboagrsd.org",
+    "discovery_method": "nav-crawl",
+    "total_urls_scanned": 34,
+    "candidates": [
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fsPageContent",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-7913",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-7915",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-7917",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-7924",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-8757",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-7922",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee#fs-panel-8629",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Palmer",
+    "org_code": "02270000",
+    "website": "https://www.palmerschools.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 60,
+    "candidates": [
+      {
+        "url": "https://www.palmerschools.org/apps/video/",
+        "matched_keywords": [
+          "video"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.palmerschools.org/pdf/Accepted School Committee Goals 2024.pdf",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.palmerschools.org/pdf/Become a School Committee Member.pdf",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.palmerschools.org/pdf/Frequently Asked Questions About School Committee.pdf",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Bristol County Agricultural",
+    "org_code": "09100000",
+    "website": "https://www.bristolaggie.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 65,
+    "candidates": [
+      {
+        "url": "https://www.bristolaggie.org/page/board-of-trustees/",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bristolaggie.org/documents/board-of-trustees/606496",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bristolaggie.org/documents/vocational-departments/job-board-postings/597520",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bristolaggie.org/page/board-of-trustees/#container",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bristolaggie.org/documents/board-of-trustees/606496#container",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bristolaggie.org/documents/vocational-departments/job-board-postings/597520#container",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Bristol-Plymouth Regional Vocational Technical",
+    "org_code": "08100000",
+    "website": "https://www.bptech.org",
+    "discovery_method": "nav-crawl",
+    "total_urls_scanned": 168,
+    "candidates": [
+      {
+        "url": "https://www.bptech.org/about/school-committee/meeting-minutes-archive",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "committee"
+        ],
+        "score": 4
+      },
+      {
+        "url": "https://www.bptech.org/about/school-committee/meeting-minutes-archive#fsPageContent",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "archive",
+          "committee"
+        ],
+        "score": 4
+      },
+      {
+        "url": "https://www.bptech.org/about/school-committee/agenda",
+        "matched_keywords": [
+          "agenda",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bptech.org/about/school-council/meeting-minutes",
+        "matched_keywords": [
+          "meeting",
+          "minutes"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bptech.org/about/school-committee/agenda#fsPageContent",
+        "matched_keywords": [
+          "agenda",
+          "committee"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bptech.org/about/school-council/meeting-minutes#fsPageContent",
+        "matched_keywords": [
+          "meeting",
+          "minutes"
+        ],
+        "score": 2
+      },
+      {
+        "url": "https://www.bptech.org/about/school-committee",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bptech.org/about/school-committee/budget",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bptech.org/about/school-committee/annual-report",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.bptech.org/about/school-council/agenda",
+        "matched_keywords": [
+          "agenda"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Brimfield",
+    "org_code": "00430000",
+    "website": "https://www.tantasqua.org",
+    "discovery_method": "nav-crawl",
+    "total_urls_scanned": 38,
+    "candidates": [],
+    "error": null
+  },
+  {
+    "name": "Bridgewater-Raynham",
+    "org_code": "06250000",
+    "website": "https://bridge-rayn.org",
+    "discovery_method": "sitemap+nav-crawl",
+    "total_urls_scanned": 43,
+    "candidates": [],
+    "error": null
+  },
+  {
+    "name": "Brewster",
+    "org_code": "00410000",
+    "website": "http://nausetschools.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 273,
+    "candidates": [
+      {
+        "url": "https://www.nausetschools.org/page/regional-school-committee-agendas-minutes/",
+        "matched_keywords": [
+          "minutes",
+          "agenda",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.nausetschools.org/page/brewster-school-committee/",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/page/eastham-school-committee/",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/page/orleans-school-committee/",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/page/public-records/",
+        "matched_keywords": [
+          "records"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/page/wellfleet-school-committee/",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/page/joint-school-committee-union-54/",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/page/community-board/",
+        "matched_keywords": [
+          "board"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/documents/school-committees/581680",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      },
+      {
+        "url": "https://www.nausetschools.org/documents/school-committees/nauset-regional-school-district-&-union-#54/581681",
+        "matched_keywords": [
+          "committee"
+        ],
+        "score": 1
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "Bridge Boston Charter School (District)",
+    "org_code": "04170000",
+    "website": "https://www.bridgebostoncs.org",
+    "discovery_method": "sitemap",
+    "total_urls_scanned": 614,
+    "candidates": [
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/october-7-2020-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/september-23-2020-board-of-trustee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "board"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/may-15-2020-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/february-26-2020-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/january-14-2020-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/december-4-2019-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/october-21-2019-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/september-17-2020-finance-committee-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "committee"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/may-21-2020-foundation-board-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "board"
+        ],
+        "score": 3
+      },
+      {
+        "url": "https://www.bridgebostoncs.org/meetingminutes/march-4-2020-foundation-board-meeting",
+        "matched_keywords": [
+          "meeting",
+          "minutes",
+          "board"
+        ],
+        "score": 3
+      }
+    ],
+    "error": null
+  }
+]

@@ -5,7 +5,7 @@ Enhanced for document ingestion and processing.
 
 import enum
 
-from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text, TypeDecorator
+from sqlalchemy import BigInteger, Column, Date, ForeignKey, Integer, String, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM, JSONB
 from sqlalchemy.orm import relationship
 
@@ -87,6 +87,14 @@ class Document(BaseModel):
     summary = Column(Text, nullable=True)
     doc_category = Column(String(100), nullable=True, index=True)
     doc_date_range = Column(String(100), nullable=True)
+
+    # Heatmap-ingest extensions (populated by step2_6_classify_document for
+    # school_scraper docs). meeting_date promotes the source_metadata JSONB
+    # value to a real column so we can index/filter on it.
+    content_hash = Column(String(64), nullable=True, index=True)
+    entity_type = Column(String(64), nullable=True, index=True)
+    doc_kind = Column(String(64), nullable=True)
+    meeting_date = Column(Date, nullable=True, index=True)
 
     # Source tracking (populated by Box sync or other ingestors)
     source_id = Column(String(255), nullable=True, index=True)
