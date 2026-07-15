@@ -248,6 +248,10 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_S3_PREFIX: str = ""
     # Concurrency for per-school scrape sub-tasks within a single cycle.
     SCHOOL_SCRAPER_CYCLE_CONCURRENCY: int = 5
+    # Schema-driven crawler POC (experiment branch only). Model used by
+    # scripts/school_data/schema_crawl_poc; defaults to the heatmap doc
+    # classifier model when unset. Not used by SchoolScraperService.
+    SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
 
     # Email / SMTP
     SMTP_HOST: str | None = None
