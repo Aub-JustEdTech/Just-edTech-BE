@@ -204,6 +204,67 @@ class ScrapeJobAck(BaseModel):
 # Scraped media
 # ---------------------------------------------------------------------------
 
+# `ScrapedMedia.status` is a free-text column driven by the scraper task
+# (see app/tasks/school_scraper_tasks.py) with 7 raw values. The FE groups
+# these into 5 buckets for its status-chip filter; this map is the single
+# source of truth for that grouping so FE and BE never drift apart.
+ScrapedMediaStatusGroup = Literal[
+    "not_discovered", "discovered", "in_progress", "confirmed", "error"
+]
+
+STATUS_GROUP_MAP: dict[str, list[str]] = {
+    "not_discovered": ["pending"],
+    "discovered": ["discovered"],
+    "in_progress": ["downloading", "ingesting"],
+    "confirmed": ["completed"],
+    "error": ["failed", "skipped_duplicate"],
+}
+
+STATUS_GROUP_LABELS: dict[str, str] = {
+    "not_discovered": "Not discovered",
+    "discovered": "Discovered",
+    "in_progress": "In progress",
+    "confirmed": "Confirmed",
+    "error": "Error",
+}
+
+SCRAPED_MEDIA_SORT_FIELDS: dict[str, str] = {
+    "scraped_at": "Scraped date",
+    "original_name": "File name",
+    "size_bytes": "File size",
+    "status": "Status",
+}
+
+DATE_PRESETS: dict[str, str] = {
+    "today": "Today",
+    "this_month": "This month",
+    "last_month": "Last month",
+}
+
+
+class ScrapedMediaStatusOption(BaseModel):
+    value: str
+    label: str
+    raw_values: list[str]
+
+
+class SortFieldOption(BaseModel):
+    value: str
+    label: str
+
+
+class DatePresetOption(BaseModel):
+    value: str
+    label: str
+
+
+class ScrapedMediaFiltersOut(BaseModel):
+    """Filter metadata for the school-knowledge-base document list."""
+
+    statuses: list[ScrapedMediaStatusOption]
+    sort_fields: list[SortFieldOption]
+    date_presets: list[DatePresetOption]
+
 
 class ScrapedMediaOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

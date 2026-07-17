@@ -11,6 +11,7 @@ Provides:
 """
 
 import logging
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -24,20 +25,29 @@ from app.schemas.school_scraper import (
     DiscoverResponse,
 )
 from app.schemas.schools import (
+    DATE_PRESETS,
+    SCRAPED_MEDIA_SORT_FIELDS,
+    STATUS_GROUP_LABELS,
+    STATUS_GROUP_MAP,
+    DatePresetOption,
     SchoolCreate,
     SchoolListOut,
     SchoolOut,
     SchoolScrapeJobOut,
     SchoolScrapeUrlOut,
     SchoolUpdate,
+    ScrapedMediaFiltersOut,
+    ScrapedMediaListOut,
+    ScrapedMediaOut,
+    ScrapedMediaStatusGroup,
+    ScrapedMediaStatusOption,
     ScrapeJobAck,
     ScrapeRunDetailOut,
     ScrapeRunListOut,
     ScrapeRunOut,
     ScrapeUrlCreate,
     ScrapeUrlUpdate,
-    ScrapedMediaListOut,
-    ScrapedMediaOut,
+    SortFieldOption,
     TriggerRunRequest,
     TriggerSchoolScrapeRequest,
 )
@@ -424,26 +434,63 @@ async def get_scrape_run(
 
 
 @router.get(
+    "/scraped-media/filters",
+    response_model=ScrapedMediaFiltersOut,
+    summary="Filter metadata for the scraped-media list (statuses, sort fields, date presets)",
+)
+async def get_scraped_media_filters(
+    current_user: User = Depends(get_current_tenant_user),
+) -> ScrapedMediaFiltersOut:
+    return ScrapedMediaFiltersOut(
+        statuses=[
+            ScrapedMediaStatusOption(
+                value=group, label=STATUS_GROUP_LABELS[group], raw_values=raw_values
+            )
+            for group, raw_values in STATUS_GROUP_MAP.items()
+        ],
+        sort_fields=[
+            SortFieldOption(value=value, label=label)
+            for value, label in SCRAPED_MEDIA_SORT_FIELDS.items()
+        ],
+        date_presets=[
+            DatePresetOption(value=value, label=label)
+            for value, label in DATE_PRESETS.items()
+        ],
+    )
+
+
+@router.get(
     "/{school_id}/scraped-media",
     response_model=ScrapedMediaListOut,
     summary="List scraped media for a school",
 )
 async def list_scraped_media(
     school_id: int,
-    status_filter: str | None = Query(None, alias="status"),
+    status_filter: ScrapedMediaStatusGroup | None = Query(None, alias="status"),
     media_type: str | None = Query(None),
+    search: str | None = Query(None, description="original_name substring"),
+    date_from: date | None = Query(None, description="scraped_at >= (inclusive)"),
+    date_to: date | None = Query(None, description="scraped_at <= (inclusive)"),
+    sort: str = Query("scraped_at", description="One of: " + ", ".join(SCRAPED_MEDIA_SORT_FIELDS)),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_tenant_user),
 ) -> ScrapedMediaListOut:
     await _school_or_404(db, current_user.tenant_id, school_id)
+    raw_statuses = STATUS_GROUP_MAP.get(status_filter) if status_filter else None
     items, total = await crud.list_scraped_media(
         db,
         current_user.tenant_id,
         school_id=school_id,
-        status=status_filter,
+        statuses=raw_statuses,
         media_type=media_type,
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+        sort=sort,
+        order=order,
         skip=skip,
         limit=limit,
     )

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 from sqlalchemy import func, select
@@ -388,16 +388,37 @@ async def get_scraped_media_by_content_hash(
     return (await db.execute(stmt)).scalar_one_or_none()
 
 
+_SCRAPED_MEDIA_SORT_COLUMNS = {
+    "scraped_at": ScrapedMedia.scraped_at,
+    "original_name": ScrapedMedia.original_name,
+    "size_bytes": ScrapedMedia.size_bytes,
+    "status": ScrapedMedia.status,
+}
+
+
 async def list_scraped_media(
     db: AsyncSession,
     tenant_id: int,
     *,
     school_id: int | None = None,
-    status: str | None = None,
+    statuses: list[str] | None = None,
     media_type: str | None = None,
+    search: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sort: str = "scraped_at",
+    order: str = "desc",
     skip: int = 0,
     limit: int = 50,
 ) -> tuple[list[ScrapedMedia], int]:
+    """
+    Return (items, total_count) for scraped media, filtered per tenant.
+
+    `statuses` takes the raw ScrapedMedia.status values already resolved
+    from a FE status-group key (see schemas.schools.STATUS_GROUP_MAP) — this
+    function deals only in raw values so it stays reusable outside the
+    grouped-chip UI.
+    """
     stmt = select(ScrapedMedia).where(ScrapedMedia.tenant_id == tenant_id)
     count_stmt = select(func.count(ScrapedMedia.id)).where(
         ScrapedMedia.tenant_id == tenant_id
@@ -405,14 +426,28 @@ async def list_scraped_media(
     if school_id is not None:
         stmt = stmt.where(ScrapedMedia.school_id == school_id)
         count_stmt = count_stmt.where(ScrapedMedia.school_id == school_id)
-    if status:
-        stmt = stmt.where(ScrapedMedia.status == status)
-        count_stmt = count_stmt.where(ScrapedMedia.status == status)
+    if statuses:
+        stmt = stmt.where(ScrapedMedia.status.in_(statuses))
+        count_stmt = count_stmt.where(ScrapedMedia.status.in_(statuses))
     if media_type:
         stmt = stmt.where(ScrapedMedia.media_type == media_type)
         count_stmt = count_stmt.where(ScrapedMedia.media_type == media_type)
+    if search:
+        like = f"%{search}%"
+        stmt = stmt.where(ScrapedMedia.original_name.ilike(like))
+        count_stmt = count_stmt.where(ScrapedMedia.original_name.ilike(like))
+    if date_from is not None:
+        stmt = stmt.where(func.date(ScrapedMedia.scraped_at) >= date_from)
+        count_stmt = count_stmt.where(func.date(ScrapedMedia.scraped_at) >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(func.date(ScrapedMedia.scraped_at) <= date_to)
+        count_stmt = count_stmt.where(func.date(ScrapedMedia.scraped_at) <= date_to)
+
     total = (await db.execute(count_stmt)).scalar_one()
-    stmt = stmt.order_by(ScrapedMedia.scraped_at.desc()).offset(skip).limit(limit)
+
+    sort_column = _SCRAPED_MEDIA_SORT_COLUMNS.get(sort, ScrapedMedia.scraped_at)
+    sort_column = sort_column.desc() if order == "desc" else sort_column.asc()
+    stmt = stmt.order_by(sort_column).offset(skip).limit(limit)
     items = list((await db.execute(stmt)).scalars().all())
     return items, total
 
