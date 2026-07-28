@@ -24,13 +24,8 @@ from app.tasks.token_aggregation_tasks import (
     backfill_daily_token_usage_task,
 )
 
-# School scraper tasks (scraping queue)
-from app.tasks.school_scraper_tasks import (  # noqa: F401  (registers tasks)
-    ingest_scraped_media,
-    run_school_scrape_cycle,
-    run_school_scrape_cycle_for_tenants,
-    run_single_school_scrape,
-)
+# School scraper ingest task (scraping queue)
+from app.tasks.school_scraper_tasks import ingest_scraped_media  # noqa: F401
 
 # Heatmap batch classification tasks (default queue)
 from app.tasks.batch_classification_tasks import (  # noqa: F401
@@ -56,10 +51,7 @@ __all__ = [
     # Token aggregation
     "aggregate_daily_token_usage_task",
     "backfill_daily_token_usage_task",
-    # School scraper
-    "run_school_scrape_cycle",
-    "run_school_scrape_cycle_for_tenants",
-    "run_single_school_scrape",
+    # School scraper ingest
     "ingest_scraped_media",
     # Heatmap batch classification
     "submit_pending_batch_classification_task",

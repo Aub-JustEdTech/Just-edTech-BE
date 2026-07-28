@@ -233,10 +233,6 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
 
     # School scraper pipeline (knowledge base) settings.
-    # Master toggle for the biweekly Celery beat schedule. When False, the
-    # `scrape-schools-biweekly` entry is skipped (manual triggers via the
-    # API still work).
-    SCHOOL_SCRAPER_CRON_ENABLED: bool = True
     # Fetch YouTube transcripts via yt-dlp (no video download) when True.
     # When False, youtube media items are recorded but skipped at ingest.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
@@ -246,12 +242,31 @@ class Settings(BaseSettings):
     # S3 path prefix for scraped media. Final key layout is:
     #   {SCHOOL_SCRAPER_S3_PREFIX}tenants/{tenant_id}/schools/{org_code}/...
     SCHOOL_SCRAPER_S3_PREFIX: str = ""
-    # Concurrency for per-school scrape sub-tasks within a single cycle.
-    SCHOOL_SCRAPER_CYCLE_CONCURRENCY: int = 5
+    # Download-time year filter (download-time-only). Documents whose inferred
+    # year is not in this set are marked status="skipped_year" and not ingested.
+    # Discovery is unaffected — every URL is still walked.
+    SCHOOL_SCRAPER_ALLOWED_YEARS: list[int] = [2024, 2025, 2026]
+    # When True, docs where the year could not be inferred from URL/filename/
+    # page context are still downloaded+ingested. Flip to False once the
+    # inference helper is well-tested on all 20 districts.
+    SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR: bool = True
     # Schema-driven crawler POC (experiment branch only). Model used by
     # scripts/school_data/schema_crawl_poc; defaults to the heatmap doc
     # classifier model when unset. Not used by SchoolScraperService.
     SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    # Hybrid crawler ranking mode. "keyword" = existing SchoolScraperService
+    # discover_candidate_urls (default, unchanged behavior). "llm" = use the
+    # schema-driven crawler for discovery. "both" = run both and union the
+    # results. Switching back to "keyword" is a zero-code rollback.
+    SCHOOL_SCRAPER_RANKING_MODE: str = "keyword"  # keyword | llm | both
+    # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
+    SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 10
+    SCHOOL_SCRAPER_LLM_CONFIDENCE_THRESHOLD: float = 0.5
+    SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = True
+    # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
+    SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
+        "scripts/school_data/output/selected_schools_url_candidates_both.json"
+    )
 
     # Email / SMTP
     SMTP_HOST: str | None = None
@@ -295,6 +310,15 @@ class Settings(BaseSettings):
         Relative values should not depend on the current working directory at runtime.
         We resolve them relative to the repository root (two levels up from this file).
         """
+        if not v:
+            return v
+        if os.path.isabs(v):
+            return v
+        project_root = Path(__file__).resolve().parents[2]
+        return str((project_root / v).resolve())
+
+    @validator("SCHOOL_URL_CANDIDATES_JSON_PATH", pre=True, always=True)
+    def make_school_url_candidates_json_path_absolute(cls, v):
         if not v:
             return v
         if os.path.isabs(v):

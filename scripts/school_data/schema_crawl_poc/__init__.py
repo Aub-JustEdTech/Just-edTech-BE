@@ -1,23 +1,27 @@
 """
 Schema-driven school-site crawler POC.
 
-Experiment branch only. Mirrors the approach from
-https://noosphereanalytics.com/blog/posts/schema-driven-crawling-is-cheap-and-effective/
-
-Reuses app.services.llm.client and app.services.web_scraper.markdown_converter
-but does NOT modify any file in app/. The existing keyword-based
-SchoolScraperService remains untouched and remains the production default.
+Experiment branch only. The canonical implementation now lives in
+app/services/web_scraper/ (page_schemas, page_classifier, schema_driven_crawler).
+This package re-exports those symbols so the POC scripts (run_poc, compare)
+and the eval harness keep importing from the same place without drift.
 """
 
-from scripts.school_data.schema_crawl_poc.classifier import PageClassifier
-from scripts.school_data.schema_crawl_poc.crawler import SchemaDrivenCrawler
-from scripts.school_data.schema_crawl_poc.schemas import (
+from app.services.web_scraper.page_classifier import PageClassifier
+from app.services.web_scraper.page_schemas import (
+    DATA_TYPES,
     DataPageInfo,
     PossibleRelevantPage,
     RelevantPage,
 )
+from app.services.web_scraper.schema_driven_crawler import (
+    CrawlResult,
+    SchemaDrivenCrawler,
+)
 
 __all__ = [
+    "CrawlResult",
+    "DATA_TYPES",
     "DataPageInfo",
     "PageClassifier",
     "PossibleRelevantPage",

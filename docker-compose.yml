@@ -73,9 +73,10 @@ services:
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       - ./pyproject.toml:/app/pyproject.toml
-      # Mount data directories
+      # Mount data + scripts directories
       - temp_uploads:/app/temp_uploads
       - ./data:/app/data
+      - ./scripts:/app/scripts:ro
     deploy:
       resources:
         limits:
@@ -125,6 +126,7 @@ services:
     volumes:
       - temp_uploads:/app/temp_uploads
       - ./app:/app/app
+      - ./scripts:/app/scripts:ro
     command: >
       celery -A app.celery_app worker
       --loglevel=info
@@ -172,6 +174,7 @@ services:
     volumes:
       - temp_uploads:/app/temp_uploads
       - ./app:/app/app
+      - ./scripts:/app/scripts:ro
     command: >
       celery -A app.celery_app worker
       --loglevel=info

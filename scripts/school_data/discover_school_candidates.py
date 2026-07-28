@@ -44,14 +44,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.services.web_scraper.school_scraper_service import SchoolScraperService
+from app.services.web_scraper.discovery_dispatch import discover_with_ranking_mode
 
 DEFAULT_JSON_PATH = Path(__file__).parent / "output" / "selected_schools.json"
 DEFAULT_OUT_PATH = Path(__file__).parent / "output" / "school_url_candidates.json"
 
 
 async def discover_for_school(
-    svc: SchoolScraperService, record: dict[str, Any]
+    record: dict[str, Any],
+    *,
+    ranking_mode: str,
+    use_playwright: bool,
 ) -> dict[str, Any]:
     """Run candidate discovery for one school record."""
     name = (record.get("name") or "").strip()
@@ -65,6 +68,7 @@ async def discover_for_school(
         "discovery_method": None,
         "total_urls_scanned": 0,
         "candidates": [],
+        "ranking_mode": ranking_mode,
         "error": None,
     }
 
@@ -73,7 +77,11 @@ async def discover_for_school(
         return result
 
     try:
-        discovered = await svc.discover_candidate_urls(website)
+        discovered = await discover_with_ranking_mode(
+            website,
+            use_playwright=use_playwright,
+            ranking_mode=ranking_mode,
+        )
     except Exception as exc:  # noqa: BLE001
         result["error"] = f"{type(exc).__name__}: {exc}"
         return result
@@ -81,6 +89,7 @@ async def discover_for_school(
     result["discovery_method"] = discovered.get("discovery_method")
     result["total_urls_scanned"] = discovered.get("total_urls_scanned", 0)
     result["candidates"] = discovered.get("candidates", [])
+    result["ranking_mode"] = discovered.get("ranking_mode", ranking_mode)
     return result
 
 
@@ -89,6 +98,7 @@ async def run(
     out_path: Path,
     use_playwright: bool,
     concurrency: int,
+    ranking_mode: str,
 ) -> None:
     if not json_path.exists():
         print(f"Input JSON not found: {json_path}", file=sys.stderr)
@@ -104,19 +114,18 @@ async def run(
     print(f"  schools        : {len(records)}")
     print(f"  use_playwright : {use_playwright}")
     print(f"  concurrency    : {concurrency}")
+    print(f"  ranking_mode   : {ranking_mode}")
     print("=" * 60)
 
-    # One shared service per worker so the (expensive) Playwright browser
-    # is launched at most `concurrency` times and reused across schools.
     sem = asyncio.Semaphore(concurrency)
-    services: list[SchoolScraperService] = [
-        SchoolScraperService(use_playwright=use_playwright) for _ in range(concurrency)
-    ]
 
-    async def _worker(idx: int, record: dict[str, Any]) -> dict[str, Any]:
+    async def _worker(_idx: int, record: dict[str, Any]) -> dict[str, Any]:
         async with sem:
-            svc = services[idx % len(services)]
-            return await discover_for_school(svc, record)
+            return await discover_for_school(
+                record,
+                ranking_mode=ranking_mode,
+                use_playwright=use_playwright,
+            )
 
     tasks = [
         asyncio.create_task(_worker(i, rec), name=rec.get("name", f"school-{i}"))
@@ -139,9 +148,6 @@ async def run(
     # Restore original input order for a stable output file.
     order = {r.get("org_code"): i for i, r in enumerate(records)}
     results.sort(key=lambda r: order.get(r.get("org_code"), 0))
-
-    for svc in services:
-        await svc.close()
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
@@ -186,6 +192,13 @@ def main() -> None:
         default=3,
         help="Number of schools to scrape in parallel.",
     )
+    parser.add_argument(
+        "--ranking-mode",
+        type=str,
+        default="keyword",
+        choices=["keyword", "llm", "both"],
+        help="Discovery ranking mode: keyword (default), llm, or both.",
+    )
     args = parser.parse_args()
 
     try:
@@ -195,6 +208,7 @@ def main() -> None:
                 out_path=args.out,
                 use_playwright=args.use_playwright,
                 concurrency=args.concurrency,
+                ranking_mode=args.ranking_mode,
             )
         )
     except KeyboardInterrupt:

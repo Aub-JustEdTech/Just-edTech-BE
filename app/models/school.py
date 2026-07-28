@@ -1,11 +1,10 @@
 """
-School, scrape URL, scrape run, scrape job, and scraped media models.
+School, scrape URL, and scraped media models.
 
 These back the district-level school knowledge base: per-tenant MA school
 districts (seeded from scripts/school_data/output/school_names.json), their
-confirmed archive-page URLs to scrape every 14 days, run/job tracking for
-each cycle, and per-media-item records that link into the existing Document
-+ vector store pipeline with content-hash dedup.
+confirmed archive-page URLs, and per-media-item records that link into the
+existing Document + vector store pipeline with content-hash dedup.
 """
 
 from datetime import datetime, timezone
@@ -24,7 +23,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
@@ -40,8 +38,7 @@ class School(BaseModel):
 
     Seeded from scripts/school_data/output/school_names.json (396 MA
     districts). Scoped per-tenant via (tenant_id, org_code) uniqueness.
-    `last_scrapped_at` is denormalized for fast FE display and is updated
-    at the end of a successful scrape job for the school.
+    `last_scrapped_at` is denormalized for fast FE display.
     """
 
     __tablename__ = "schools"
@@ -87,24 +84,6 @@ class School(BaseModel):
         cascade="all, delete-orphan",
         foreign_keys="ScrapedMedia.school_id",
     )
-    scrape_jobs = relationship(
-        "SchoolScrapeJob",
-        back_populates="school",
-        cascade="all, delete-orphan",
-        foreign_keys="SchoolScrapeJob.school_id",
-    )
-    url_discovery = relationship(
-        "SchoolUrlDiscovery",
-        back_populates="school",
-        cascade="all, delete-orphan",
-        uselist=False,
-    )
-    url_candidates = relationship(
-        "SchoolUrlCandidate",
-        back_populates="school",
-        cascade="all, delete-orphan",
-        foreign_keys="SchoolUrlCandidate.school_id",
-    )
 
 
 class SchoolScrapeUrl(BaseModel):
@@ -138,92 +117,6 @@ class SchoolScrapeUrl(BaseModel):
         "School",
         back_populates="scrape_urls",
         foreign_keys=[school_id],
-    )
-    jobs = relationship(
-        "SchoolScrapeJob",
-        back_populates="scrape_url",
-        cascade="all, delete-orphan",
-        foreign_keys="SchoolScrapeJob.scrape_url_id",
-    )
-
-
-class ScrapeRun(BaseModel):
-    """One row per 14-day-cycle batch execution across all active schools."""
-
-    __tablename__ = "scrape_runs"
-
-    tenant_id = Column(
-        BigInteger,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    triggered_by = Column(String(32), nullable=False)
-    status = Column(String(16), default="pending", nullable=False, index=True)
-    started_at = Column(DateTime(timezone=True), nullable=True)
-    completed_at = Column(DateTime(timezone=True), nullable=True)
-    total_schools = Column(Integer, default=0, nullable=False)
-    schools_completed = Column(Integer, default=0, nullable=False)
-    schools_failed = Column(Integer, default=0, nullable=False)
-    schools_skipped = Column(Integer, default=0, nullable=False)
-    media_found = Column(Integer, default=0, nullable=False)
-    media_new = Column(Integer, default=0, nullable=False)
-    media_skipped_duplicate = Column(Integer, default=0, nullable=False)
-    error_summary = Column(JSONB, nullable=True)
-
-    tenant = relationship("Tenant", backref="scrape_runs")
-    jobs = relationship(
-        "SchoolScrapeJob",
-        back_populates="run",
-        cascade="all, delete-orphan",
-        foreign_keys="SchoolScrapeJob.run_id",
-    )
-
-
-class SchoolScrapeJob(BaseModel):
-    """One job per (school x scrape URL) within a ScrapeRun."""
-
-    __tablename__ = "school_scrape_jobs"
-
-    run_id = Column(
-        BigInteger,
-        ForeignKey("scrape_runs.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    school_id = Column(
-        BigInteger,
-        ForeignKey("schools.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    scrape_url_id = Column(
-        BigInteger,
-        ForeignKey("school_scrape_urls.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    status = Column(String(16), default="pending", nullable=False, index=True)
-    started_at = Column(DateTime(timezone=True), nullable=True)
-    completed_at = Column(DateTime(timezone=True), nullable=True)
-    pages_crawled = Column(Integer, default=0, nullable=False)
-    media_found = Column(Integer, default=0, nullable=False)
-    media_new = Column(Integer, default=0, nullable=False)
-    media_skipped_duplicate = Column(Integer, default=0, nullable=False)
-    error_message = Column(Text, nullable=True)
-    scrape_result = Column(JSONB, nullable=True)
-
-    run = relationship("ScrapeRun", back_populates="jobs", foreign_keys=[run_id])
-    school = relationship(
-        "School", back_populates="scrape_jobs", foreign_keys=[school_id]
-    )
-    scrape_url = relationship(
-        "SchoolScrapeUrl", back_populates="jobs", foreign_keys=[scrape_url_id]
-    )
-    scraped_media = relationship(
-        "ScrapedMedia",
-        back_populates="scrape_job",
-        foreign_keys="ScrapedMedia.scrape_job_id",
     )
 
 
@@ -259,16 +152,6 @@ class ScrapedMedia(BaseModel):
     school_org_code = Column(String(16), nullable=False, index=True)
     school_name = Column(String(512), nullable=True)
     district_type = Column(String(64), nullable=True)
-    scrape_job_id = Column(
-        BigInteger,
-        ForeignKey("school_scrape_jobs.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-    scrape_run_id = Column(
-        BigInteger,
-        ForeignKey("scrape_runs.id", ondelete="SET NULL"),
-        nullable=True,
-    )
 
     source_page_url = Column(Text, nullable=False)
     source_media_url = Column(Text, nullable=False)
@@ -280,6 +163,10 @@ class ScrapedMedia(BaseModel):
     original_name = Column(Text, nullable=True)
     document_type = Column(String(32), nullable=True)
     meeting_date = Column(Date, nullable=True)
+    # Inferred 4-digit year from URL/filename/page context. Populated even
+    # for status="skipped_year" rows so coverage can be audited without
+    # re-parsing URLs.
+    doc_year = Column(SmallInteger, nullable=True, index=True)
 
     s3_key_raw = Column(Text, nullable=True)
     s3_key_text = Column(Text, nullable=True)
@@ -304,10 +191,5 @@ class ScrapedMedia(BaseModel):
         "School",
         back_populates="scraped_media",
         foreign_keys=[school_id],
-    )
-    scrape_job = relationship(
-        "SchoolScrapeJob",
-        back_populates="scraped_media",
-        foreign_keys=[scrape_job_id],
     )
     document = relationship("Document", foreign_keys=[document_id])

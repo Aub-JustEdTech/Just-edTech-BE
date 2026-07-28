@@ -34,12 +34,12 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_KEYWORD = (
-    Path(__file__).resolve().parents[2] / "output" / "school_url_candidates.json"
+    Path(__file__).resolve().parents[1] / "output" / "school_url_candidates.json"
 )
 DEFAULT_SCHEMA = (
-    Path(__file__).resolve().parents[2] / "output" / "schema_crawl_results.json"
+    Path(__file__).resolve().parents[1] / "output" / "schema_crawl_results.json"
 )
-DEFAULT_OUT = Path(__file__).resolve().parents[2] / "output" / "schema_vs_keyword.md"
+DEFAULT_OUT = Path(__file__).resolve().parents[1] / "output" / "schema_vs_keyword.md"
 
 
 def _normalize(url: str) -> str:

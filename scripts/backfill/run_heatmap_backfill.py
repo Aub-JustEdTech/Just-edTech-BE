@@ -88,39 +88,20 @@ async def verify_charter_mapping(tenant_id: int) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Step 2: Trigger scrape cycle
+# Step 2: Scrape cycle (removed — use offline scripts + --skip-scrape)
 # ---------------------------------------------------------------------------
 
 
 def trigger_scrape_cycle(tenant_id: int) -> dict:
-    """Kick off a scrape cycle for the tenant (non-blocking)."""
-    from app.crud import schools as crud
-    from app.tasks.school_scraper_tasks import run_school_scrape_cycle
+    """Scrape cycles are no longer dispatched via Celery.
 
-    # The task takes (run_id, tenant_id, only_active). We let it create
-    # the ScrapeRun internally by calling .delay with a fresh run.
-    # Actually the task signature is (self, run_id, tenant_id, only_active)
-    # — we need to create the run first. Use the for_tenants entrypoint
-    # which is simpler but runs across all tenants; for a single tenant
-    # we call run_school_scrape_cycle directly.
-
-    async def _create_run():
-        async with AsyncSessionLocal() as db:
-            run = await crud.create_scrape_run(
-                db,
-                tenant_id=tenant_id,
-                triggered_by="heatmap_backfill",
-            )
-            return run.id
-
-    run_id = asyncio.get_event_loop().run_until_complete(_create_run())
-    async_result = run_school_scrape_cycle.delay(
-        run_id=run_id, tenant_id=tenant_id, only_active=True
+    Run discovery/scrape offline (scripts/school_data/) then pass
+    --skip-scrape to this backfill orchestrator.
+    """
+    raise RuntimeError(
+        "Automated scrape cycles were removed. Run scraping via "
+        "scripts/school_data/ and re-run with --skip-scrape."
     )
-    logger.info(
-        f"[2/6] Triggered scrape cycle (run_id={run_id}, task_id={async_result.id})"
-    )
-    return {"run_id": run_id, "task_id": async_result.id}
 
 
 # ---------------------------------------------------------------------------
@@ -431,11 +412,15 @@ async def main(argv: list[str] | None = None) -> int:
         await print_summary(args.tenant_id)
         return 0
 
-    # Step 2: Trigger scrape cycle.
+    # Step 2: Scrape (offline only via scripts/school_data/).
     if not args.skip_scrape:
-        trigger_scrape_cycle(args.tenant_id)
+        logger.warning(
+            "[2/6] Automated scrape cycles were removed. Run scraping via "
+            "scripts/school_data/, then pass --skip-scrape. Continuing to "
+            "poll existing scraped media..."
+        )
     else:
-        logger.info("[2/6] Skipping scrape cycle (--skip-scrape)")
+        logger.info("[2/6] Skipping scrape step (--skip-scrape)")
 
     # Step 3: Poll ingest progress.
     if not args.no_wait:

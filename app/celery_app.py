@@ -32,12 +32,6 @@ celery_app.conf.update(
     # Task routing
     task_routes={
         "app.tasks.document_tasks.process_document_task": {"queue": "documents"},
-        "app.tasks.school_scraper_tasks.run_school_scrape_cycle": {
-            "queue": "scraping"
-        },
-        "app.tasks.school_scraper_tasks.run_single_school_scrape": {
-            "queue": "scraping"
-        },
         "app.tasks.school_scraper_tasks.ingest_scraped_media": {
             "queue": "scraping"
         },
@@ -68,16 +62,9 @@ celery_app.conf.update(
                 "expires": 7200,  # Task expires after 2 hours if not picked up
             },
         },
-        "scrape-schools-biweekly": {
-            "task": "app.tasks.school_scraper_tasks.run_school_scrape_cycle_for_tenants",
-            # Run on the 1st and 15th of each month at 4:00 AM UTC (~14-day cadence).
-            "schedule": crontab(hour=4, minute=0, day_of_month="1,15"),
-            "options": {"expires": 6 * 3600},  # 6h
-        },
         # Heatmap batch classification lifecycle.
-        # Submit daily at 4 AM UTC (one hour before the scrape cycle so a
-        # fresh batch is in flight when new docs land). Poll every 15 min
-        # so completed batches are applied promptly.
+        # Submit daily at 4 AM UTC. Poll every 15 min so completed batches
+        # are applied promptly.
         "submit-pending-batch-classification": {
             "task": "submit_pending_batch_classification",
             "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC

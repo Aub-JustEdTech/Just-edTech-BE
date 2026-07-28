@@ -33,10 +33,10 @@ from scripts.school_data.schema_crawl_poc.classifier import PageClassifier
 from scripts.school_data.schema_crawl_poc.crawler import SchemaDrivenCrawler
 
 DEFAULT_JSON_PATH = (
-    Path(__file__).resolve().parents[2] / "output" / "selected_schools.json"
+    Path(__file__).resolve().parents[1] / "output" / "selected_schools.json"
 )
 DEFAULT_OUT_PATH = (
-    Path(__file__).resolve().parents[2] / "output" / "schema_crawl_results.json"
+    Path(__file__).resolve().parents[1] / "output" / "schema_crawl_results.json"
 )
 
 logger = logging.getLogger("schema_crawl_poc")
@@ -87,19 +87,41 @@ async def run(
     concurrency: int,
     include_archival: bool,
     model: str | None,
+    limit: int | None,
+    offset: int,
 ) -> None:
     if not json_path.exists():
         print(f"Input JSON not found: {json_path}", file=sys.stderr)
         sys.exit(1)
 
     with json_path.open("r", encoding="utf-8") as f:
-        records = json.load(f)
+        all_records = json.load(f)
+
+    # Apply --offset / --limit so we can run a slice of the schools
+    # (e.g. first 20) without creating a separate JSON file.
+    total_available = len(all_records)
+    if offset < 0:
+        print(f"--offset must be >= 0, got {offset}", file=sys.stderr)
+        sys.exit(1)
+    if offset >= total_available:
+        print(
+            f"--offset {offset} is past end of input "
+            f"(only {total_available} schools available)",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    records = all_records[offset:]
+    if limit is not None and limit > 0:
+        records = records[:limit]
 
     print("=" * 70)
     print("Just-EdTech Schema-Driven Crawler POC")
     print(f"  input              : {json_path}")
     print(f"  output             : {out_path}")
-    print(f"  schools            : {len(records)}")
+    print(
+        f"  schools            : {len(records)} "
+        f"(offset={offset}, limit={limit or 'all'}, total_available={total_available})"
+    )
     print(f"  max_pages/school   : {max_pages}")
     print(f"  confidence >=      : {confidence_threshold}")
     print(f"  include archival   : {include_archival}")
@@ -189,9 +211,26 @@ def main() -> None:
         help="Override the LLM model (default: settings.HEATMAP_INGEST_DOC_CLASSIFIER_MODEL).",
     )
     parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Process only the first N schools (after --offset). "
+        "Useful for a quick 20-school trial without splitting the JSON.",
+    )
+    parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Skip the first N schools before applying --limit (default 0).",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable debug logging."
     )
     args = parser.parse_args()
+
+    if args.limit is not None and args.limit <= 0:
+        print("--limit must be a positive integer (or omit for all).", file=sys.stderr)
+        sys.exit(1)
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -208,6 +247,8 @@ def main() -> None:
                 concurrency=args.concurrency,
                 include_archival=args.include_archival,
                 model=args.model,
+                limit=args.limit,
+                offset=args.offset,
             )
         )
     except KeyboardInterrupt:

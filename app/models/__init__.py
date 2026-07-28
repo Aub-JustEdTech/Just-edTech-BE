@@ -30,11 +30,8 @@ from app.models.roles import Role
 from app.models.school import (
     School,
     SchoolScrapeUrl,
-    ScrapeRun,
-    SchoolScrapeJob,
     ScrapedMedia,
 )
-from app.models.school_url_discovery import SchoolUrlCandidate, SchoolUrlDiscovery
 from app.models.signups import Signup
 from app.models.chatbot_configs import ChatbotConfig, PerformanceMetric
 from app.models.image_captions import ImageCaption
@@ -77,11 +74,7 @@ __all__ = [
     "UserTenantAccess",
     "School",
     "SchoolScrapeUrl",
-    "ScrapeRun",
-    "SchoolScrapeJob",
     "ScrapedMedia",
-    "SchoolUrlDiscovery",
-    "SchoolUrlCandidate",
     "CharterDistrictMapping",
     "BatchClassificationJob",
     "PendingClassification",
