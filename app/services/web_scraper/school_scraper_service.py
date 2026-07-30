@@ -58,6 +58,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Matches YouTube URLs anywhere in raw HTML or a JS payload, so embeds hidden
+# in lazy-load attributes (data-src) are still discovered. Validation of the
+# video ID itself is left to extract_youtube_id.
+_YOUTUBE_IN_TEXT_PATTERN = re.compile(
+    r"https?://(?:www\.|m\.)?"
+    r"(?:youtube(?:-nocookie)?\.com/(?:watch\?[^\s\"'<>\\]*v=[A-Za-z0-9_-]{11}"
+    r"|embed/[A-Za-z0-9_-]{11}|v/[A-Za-z0-9_-]{11}"
+    r"|live/[A-Za-z0-9_-]{11}|shorts/[A-Za-z0-9_-]{11})"
+    r"|youtu\.be/[A-Za-z0-9_-]{11})",
+    re.IGNORECASE,
+)
+
 # User-Agent for HTTP requests.
 #
 # Some school-district sites (notably WordPress installs behind Wordfence /
@@ -604,6 +616,70 @@ class SchoolScraperService:
             }
         )
 
+    def _append_youtube_media(
+        self,
+        media_files: list[dict],
+        seen_media: set[str],
+        *,
+        url: str,
+        page_url: str,
+        name: str | None = None,
+    ) -> bool:
+        """Append ``url`` as a YouTube item if it is one. Returns True if it was.
+
+        A sibling of ``_append_media_url`` rather than a branch inside it,
+        because that method's ``if not matched_ext: return`` is unconditional
+        and YouTube URLs have no file extension.
+
+        Dedup is on the CANONICAL url, so the same video linked as
+        ``youtu.be/X``, ``/embed/X`` and ``watch?v=X&t=90`` collapses to one
+        item — which is what stops us paying three times for one meeting.
+        """
+        from app.services.transcription.youtube import canonical_youtube_url
+
+        canonical = canonical_youtube_url(url)
+        if not canonical:
+            return False
+        if canonical in seen_media:
+            return True
+
+        seen_media.add(canonical)
+        media_files.append(
+            {
+                "name": name or canonical,
+                "url": canonical,
+                # No extension exists for a YouTube video. Downstream
+                # consumers must treat file_extension as nullable.
+                "file_extension": None,
+                "media_type": "youtube",
+                "size_bytes": None,
+                "source_page_url": page_url,
+            }
+        )
+        return True
+
+    def _extract_youtube_from_text(
+        self,
+        text: str,
+        page_url: str,
+        seen_media: set[str],
+        media_files: list[dict],
+    ) -> None:
+        """Catch YouTube embeds in lazy-load attrs and JS payloads.
+
+        Many CMS themes put the real embed in ``data-src`` and only promote it
+        to ``src`` client-side, so the parsed DOM never shows it.
+        """
+        if not text:
+            return
+        for match in _YOUTUBE_IN_TEXT_PATTERN.finditer(text):
+            self._append_youtube_media(
+                media_files,
+                seen_media,
+                url=match.group(0),
+                page_url=page_url,
+            )
+
     def _extract_media_urls_from_text(
         self,
         text: str,
@@ -617,6 +693,8 @@ class SchoolScraperService:
         """Find absolute media URLs embedded in HTML or JSON script payloads."""
         if not text:
             return
+
+        self._extract_youtube_from_text(text, page_url, seen_media, media_files)
 
         pattern = self._media_url_pattern(all_ext)
         for match in pattern.finditer(text):
@@ -754,6 +832,10 @@ class SchoolScraperService:
             ("source", "src"),
             ("video", "src"),
             ("audio", "src"),
+            # School sites embed board-meeting recordings as YouTube iframes.
+            # Without these two, every such video is invisible to discovery.
+            ("iframe", "src"),
+            ("embed", "src"),
         ]
 
         for tag_name, attr in _tag_attrs:
@@ -765,6 +847,17 @@ class SchoolScraperService:
                 full_url = urljoin(page_url, raw)
                 parsed = urlparse(full_url)
                 path_lower = parsed.path.lower()
+
+                # YouTube URLs carry no file extension, so they must be
+                # matched before the extension gate below rejects them.
+                if self._append_youtube_media(
+                    media_files,
+                    seen_media,
+                    url=full_url,
+                    page_url=page_url,
+                    name=(elem.get("title") if tag_name in ("iframe", "embed") else None),
+                ):
+                    continue
 
                 filename_hint: str | None = None
                 if tag_name == "a":
