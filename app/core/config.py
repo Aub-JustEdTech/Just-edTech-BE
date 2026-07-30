@@ -261,8 +261,10 @@ class Settings(BaseSettings):
     # Fetch YouTube transcripts via yt-dlp (no video download) when True.
     # When False, youtube media items are recorded but skipped at ingest.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
-    # Transcribe audio/video via Whisper. When False, audio/video media
-    # items are recorded and archived to S3 but no transcript is embedded.
+    # Master switch for audio/video transcription. When False, audio/video
+    # media items are recorded but no transcript is produced. Named "WHISPER"
+    # for backwards compatibility with deployed .env files; the provider is
+    # now AssemblyAI (see ASSEMBLYAI_* below).
     SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED: bool = True
     # S3 path prefix for scraped media. Final key layout is:
     #   {SCHOOL_SCRAPER_S3_PREFIX}tenants/{tenant_id}/schools/{org_code}/...
@@ -292,6 +294,83 @@ class Settings(BaseSettings):
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"
     )
+
+    # --- Transcription: AssemblyAI ---
+    ASSEMBLYAI_API_KEY: str = ""
+    # US endpoint. Target market is Massachusetts + California; no US state
+    # law requires in-state processing. Only revisit for EU tenants.
+    ASSEMBLYAI_BASE_URL: str = "https://api.assemblyai.com"
+    # Ordered AVAILABILITY fallback: try each model until one is accepted.
+    # NO keyterms_prompt / word_boost / custom_spelling is ever sent.
+    ASSEMBLYAI_SPEECH_MODELS: list[str] = ["universal-3-5-pro", "universal-2"]
+    # Speaker diarization is a hard requirement for board-meeting transcripts.
+    ASSEMBLYAI_SPEAKER_LABELS: bool = True
+    ASSEMBLYAI_LANGUAGE_CODE: str = "en"
+    ASSEMBLYAI_POLL_INTERVAL_SECONDS: int = 15
+    # Must stay under the SMALLEST Celery soft limit that could apply, so the
+    # task is never killed mid-poll AFTER paying for transcription:
+    #   celery_app.conf task_soft_time_limit = 3000s  (global default)
+    #   celery-scraper --soft-time-limit      = 6000s  (its own queue)
+    # 2400s leaves 600s of headroom under the global 3000s. Ample in practice:
+    # transcription runs at ~1.1s per minute of audio, so even a 300-minute
+    # recording (the duration cap) completes in ~330s.
+    ASSEMBLYAI_POLL_TIMEOUT_SECONDS: int = 2400
+
+    # --- Transcription: audio handling ---
+    # "url_direct" (DEFAULT): hand the media URL to AssemblyAI, which fetches
+    #   it itself. No download, no ffmpeg, no temp disk, ~0 CPU. The duration
+    #   cap is still enforced first via a remote ffprobe header read (~1.5s).
+    # "preprocess": download -> ffmpeg denoise -> upload. Fallback for URLs
+    #   AssemblyAI cannot reach, or if measurement shows denoising helps.
+    TRANSCRIPTION_AUDIO_MODE: str = "url_direct"
+    TRANSCRIPTION_FFMPEG_PATH: str = "ffmpeg"
+    TRANSCRIPTION_FFPROBE_PATH: str = "ffprobe"
+    TRANSCRIPTION_FFPROBE_TIMEOUT_SECONDS: int = 30
+    TRANSCRIPTION_SAMPLE_RATE_HZ: int = 16000
+    TRANSCRIPTION_HIGHPASS_HZ: int = 80
+    TRANSCRIPTION_DENOISE_ENABLED: bool = True
+    # LINEAR gain only. Never loudnorm/dynaudnorm — compression lifts
+    # background noise more than speech and measurably LOWERS SNR.
+    TRANSCRIPTION_GAIN_DB: float = 0.0
+    TRANSCRIPTION_FFMPEG_TIMEOUT_SECONDS: int = 1800
+    # Transcript chunking. Chunks are packed on utterance boundaries and a
+    # single segment is never split, so start_ms/end_ms stay exact.
+    TRANSCRIPTION_CHUNK_TARGET_SECONDS: int = 90
+    TRANSCRIPTION_CHUNK_MAX_CHARS: int = 4000
+
+    # --- Transcription: caps / cost control ---
+    SCHOOL_SCRAPER_MEDIA_MAX_DOWNLOAD_MB: int = 1024
+    SCHOOL_SCRAPER_MEDIA_MAX_DURATION_MINUTES: int = 300
+    # Relative on purpose: the validator below resolves it against the project
+    # root, which is /app in the container and the repo directory locally. An
+    # absolute "/app/..." default cannot be created outside Docker.
+    SCHOOL_SCRAPER_MEDIA_TEMP_DIR: str = "./temp_uploads/media"
+    # Skip files with no audio stream. School CMS templates ship decorative
+    # video loops with no audio track at all; providers bill per audio-hour
+    # submitted regardless, so without this the template layer of every
+    # school website becomes a recurring charge returning nothing.
+    SCHOOL_SCRAPER_MEDIA_REQUIRE_AUDIO: bool = True
+    # Floor in seconds. DISABLED by default (0), deliberately: duration is a
+    # poor proxy for "not a meeting". The clip that motivated a floor turned
+    # out to be 28s of DIGITAL SILENCE (-91 dB across its whole length), so
+    # the real defect was silence, not brevity — and a floor would also drop
+    # genuine short content such as a 40s public statement. Skipping it saves
+    # ~$0.002 per file, which does not justify that risk. Enable only with a
+    # threshold derived from measured data.
+    SCHOOL_SCRAPER_MEDIA_MIN_DURATION_SECONDS: int = 0
+
+    # --- Transcription: YouTube ---
+    # Captions (manual OR auto) are always free. Only a video with NO
+    # captions at all ever reaches paid transcription.
+    SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED: bool = True
+    SCHOOL_SCRAPER_YOUTUBE_SUBTITLE_LANGS: list[str] = ["en", "en-US", "en-GB"]
+    # youtube-transcript-api raises IpBlocked when YouTube rate-limits a
+    # datacenter IP. Set a residential/rotating proxy here if that happens.
+    SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
+    # yt-dlp is used ONLY to fetch audio for videos with no captions.
+    # A Netscape cookies.txt defeats "Sign in to confirm you're not a bot".
+    SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
+    SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS: int = 900
 
     # Email / SMTP
     SMTP_HOST: str | None = None
@@ -344,6 +423,25 @@ class Settings(BaseSettings):
 
     @validator("SCHOOL_URL_CANDIDATES_JSON_PATH", pre=True, always=True)
     def make_school_url_candidates_json_path_absolute(cls, v):
+        if not v:
+            return v
+        if os.path.isabs(v):
+            return v
+        project_root = Path(__file__).resolve().parents[2]
+        return str((project_root / v).resolve())
+
+    @validator("TRANSCRIPTION_AUDIO_MODE", pre=True, always=True)
+    def validate_transcription_audio_mode(cls, v):
+        """Reject unknown modes at startup rather than at first transcription."""
+        allowed = {"url_direct", "preprocess"}
+        if v not in allowed:
+            raise ValueError(
+                f"TRANSCRIPTION_AUDIO_MODE must be one of {sorted(allowed)}, got {v!r}"
+            )
+        return v
+
+    @validator("SCHOOL_SCRAPER_MEDIA_TEMP_DIR", pre=True, always=True)
+    def make_media_temp_dir_absolute(cls, v):
         if not v:
             return v
         if os.path.isabs(v):
