@@ -157,6 +157,17 @@ class Settings(BaseSettings):
         ".xlsx",
         ".xls",
     ]
+    # Media accepted for storage. These are transcribed, not text-extracted, so
+    # they are kept separate from ALLOWED_DOCUMENT_TYPES — there is no document
+    # processor for them. Extensions are matched lowercased, so ".WAV" is fine.
+    ALLOWED_MEDIA_TYPES: list[str] = [
+        ".mp3",
+        ".mp4",
+        ".wav",
+        ".m4a",
+        ".webm",
+        ".mov",
+    ]
     TEMP_UPLOAD_DIR: str = "./temp_uploads"
     IMAGE_STORAGE_DIR: str = "./data/images"
     ENABLE_IMAGE_EXTRACTION: bool = False
