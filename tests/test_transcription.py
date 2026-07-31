@@ -298,10 +298,34 @@ def test_is_empty():
     assert TranscriptResult(source="x", text="hi").is_empty is False
 
 
-def test_plain_text_includes_timestamps_and_speakers():
-    text = _sample_result().to_plain_text()
+def test_text_document_includes_timestamps_and_speakers():
+    text = _sample_result().to_text_document()
     assert "00:15:54" in text
     assert "Speaker A" in text
+
+
+def test_text_document_round_trips_losslessly():
+    """The text file is the ONLY stored artifact — anything it drops is gone.
+
+    Guards the full write/read cycle at millisecond precision, including both
+    utterance ends and the document-level header fields.
+    """
+    original = _sample_result()
+    original.source_size_bytes = 184_320_000
+    restored = TranscriptResult.from_text_document(original.to_text_document())
+
+    assert restored.source == original.source
+    assert restored.language == original.language
+    assert restored.speech_model == original.speech_model
+    assert restored.duration_seconds == original.duration_seconds
+    assert restored.source_size_bytes == 184_320_000
+
+    assert len(restored.segments) == len(original.segments)
+    for before, after in zip(original.segments, restored.segments, strict=True):
+        assert after.start_ms == before.start_ms
+        assert after.end_ms == before.end_ms
+        assert after.speaker == before.speaker
+        assert after.text == before.text
 
 
 # ---------------------------------------------------------------------------

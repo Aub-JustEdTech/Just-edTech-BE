@@ -24,15 +24,28 @@ from app.services.transcription.schemas import (
 )
 
 
-def _write_envelope(tmp_path: Path, segments, **kwargs) -> str:
-    result = TranscriptResult(
+def _result(segments, **kwargs) -> TranscriptResult:
+    return TranscriptResult(
         source=kwargs.pop("source", SOURCE_ASSEMBLYAI),
         text=" ".join(s.text for s in segments),
         segments=segments,
         **kwargs,
     )
+
+
+def _write_transcript(tmp_path: Path, segments, **kwargs) -> str:
+    """Write the stored text format — what the pipeline actually reads."""
     path = tmp_path / "transcript.transcript"
-    path.write_text(json.dumps(result.to_envelope()), encoding="utf-8")
+    path.write_text(_result(segments, **kwargs).to_text_document(), encoding="utf-8")
+    return str(path)
+
+
+def _write_legacy_envelope(tmp_path: Path, segments, **kwargs) -> str:
+    """Write the pre-v2 JSON envelope, to prove old transcripts stay readable."""
+    path = tmp_path / "legacy.transcript"
+    path.write_text(
+        json.dumps(_result(segments, **kwargs).to_envelope()), encoding="utf-8"
+    )
     return str(path)
 
 
@@ -86,7 +99,7 @@ def test_factory_error_lists_supported_types():
 
 
 def test_extract_text_returns_flat_prose_without_timestamps(tmp_path):
-    path = _write_envelope(tmp_path, _segments(3))
+    path = _write_transcript(tmp_path, _segments(3))
     text = TranscriptProcessor().extract_text(path)
     assert "Utterance number 0." in text
     # Timestamps must NOT be inlined — they would be embedded and degrade
@@ -96,7 +109,7 @@ def test_extract_text_returns_flat_prose_without_timestamps(tmp_path):
 
 
 def test_extract_metadata_carries_provenance(tmp_path):
-    path = _write_envelope(
+    path = _write_transcript(
         tmp_path,
         _segments(4),
         language="en",
@@ -111,12 +124,70 @@ def test_extract_metadata_carries_provenance(tmp_path):
 
 
 def test_validate(tmp_path):
-    good = _write_envelope(tmp_path, _segments(1))
+    good = _write_transcript(tmp_path, _segments(1))
     assert TranscriptProcessor().validate(good) is True
 
-    bad = tmp_path / "broken.transcript"
-    bad.write_text("not json at all", encoding="utf-8")
-    assert TranscriptProcessor().validate(str(bad)) is False
+    # An empty file is the real corruption case. Text parsing is lenient by
+    # design, so "does it parse" cannot be the test: a caption-only transcript
+    # legitimately has no timestamp lines.
+    empty = tmp_path / "empty.transcript"
+    empty.write_text("   \n\n", encoding="utf-8")
+    assert TranscriptProcessor().validate(str(empty)) is False
+
+
+def test_validate_accepts_untimed_transcript(tmp_path):
+    """Captions without cue times are a transcript, not a broken file."""
+    untimed = tmp_path / "untimed.transcript"
+    untimed.write_text("just the words, no timestamps", encoding="utf-8")
+    assert TranscriptProcessor().validate(str(untimed)) is True
+
+
+# ---------------------------------------------------------------------------
+# Stored text format — the artifact chunking reads
+# ---------------------------------------------------------------------------
+
+
+def test_text_format_round_trip_is_millisecond_exact(tmp_path):
+    """Both ends of every utterance survive a write/read cycle exactly.
+
+    Storing only the start would force the reader to infer each end from the
+    next line's start, swallowing inter-utterance silence and leaving the final
+    utterance without an end.
+    """
+    segments = [
+        TranscriptSegment(0, 7143, "Good evening.", "A"),
+        TranscriptSegment(7143, 12500, "The vote is: 5 to 2.", "B"),
+        TranscriptSegment(3_661_001, 3_670_999, "Over an hour in.", None),
+    ]
+    path = _write_transcript(tmp_path, segments, language="en", duration_seconds=3671)
+    parsed = TranscriptProcessor()._load(path)
+
+    assert [(s.start_ms, s.end_ms, s.speaker) for s in parsed.segments] == [
+        (0, 7143, "A"),
+        (7143, 12500, "B"),
+        (3_661_001, 3_670_999, None),
+    ]
+    # A colon inside speech must not be mistaken for the speaker delimiter.
+    assert parsed.segments[1].text == "The vote is: 5 to 2."
+    assert parsed.language == "en"
+    assert parsed.duration_seconds == 3671
+
+
+def test_text_format_is_human_readable(tmp_path):
+    path = _write_transcript(tmp_path, _segments(2))
+    body = Path(path).read_text(encoding="utf-8")
+    assert "[00:00:00.000 - 00:00:10.000] Speaker A: Utterance number 0." in body
+
+
+def test_legacy_json_envelope_is_still_readable(tmp_path):
+    """Transcripts stored before v2 must not need re-transcribing."""
+    segments = _segments(12)
+    path = _write_legacy_envelope(tmp_path, segments, language="en")
+    chunks = TranscriptProcessor().chunk_transcript(path)
+
+    assert chunks
+    assert chunks[0]["start_ms"] == segments[0].start_ms
+    assert chunks[-1]["end_ms"] == segments[-1].end_ms
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +197,7 @@ def test_validate(tmp_path):
 
 def test_chunk_never_splits_a_segment(tmp_path):
     segments = _segments(40)
-    path = _write_envelope(tmp_path, segments)
+    path = _write_transcript(tmp_path, segments)
     chunks = TranscriptProcessor().chunk_transcript(path)
 
     assert chunks
@@ -139,7 +210,7 @@ def test_chunk_never_splits_a_segment(tmp_path):
 
 
 def test_chunk_boundaries_are_monotonic_and_contiguous(tmp_path):
-    path = _write_envelope(tmp_path, _segments(40))
+    path = _write_transcript(tmp_path, _segments(40))
     chunks = TranscriptProcessor().chunk_transcript(path)
 
     for chunk in chunks:
@@ -150,7 +221,7 @@ def test_chunk_boundaries_are_monotonic_and_contiguous(tmp_path):
 
 def test_chunk_covers_every_segment_exactly_once(tmp_path):
     segments = _segments(37)
-    path = _write_envelope(tmp_path, segments)
+    path = _write_transcript(tmp_path, segments)
     chunks = TranscriptProcessor().chunk_transcript(path)
 
     assert chunks[0]["start_ms"] == segments[0].start_ms
@@ -163,7 +234,7 @@ def test_chunk_covers_every_segment_exactly_once(tmp_path):
 
 def test_chunk_respects_target_duration(tmp_path):
     """Chunks close near the target, never wildly beyond it."""
-    path = _write_envelope(tmp_path, _segments(60, seconds_each=10))
+    path = _write_transcript(tmp_path, _segments(60, seconds_each=10))
     chunks = TranscriptProcessor().chunk_transcript(path)
 
     target_ms = settings.TRANSCRIPTION_CHUNK_TARGET_SECONDS * 1000
@@ -174,7 +245,7 @@ def test_chunk_respects_target_duration(tmp_path):
 
 
 def test_chunk_records_speakers_present_in_the_chunk(tmp_path):
-    path = _write_envelope(tmp_path, _segments(10))
+    path = _write_transcript(tmp_path, _segments(10))
     chunks = TranscriptProcessor().chunk_transcript(path)
     assert any(c["speaker"] for c in chunks)
 
@@ -184,7 +255,7 @@ def test_chunk_handles_speakerless_youtube_segments(tmp_path):
         TranscriptSegment(i * 5000, (i + 1) * 5000, f"caption {i}", None)
         for i in range(12)
     ]
-    path = _write_envelope(tmp_path, segments, source="youtube_captions")
+    path = _write_transcript(tmp_path, segments, source="youtube_captions")
     chunks = TranscriptProcessor().chunk_transcript(path)
 
     assert chunks
@@ -194,7 +265,7 @@ def test_chunk_handles_speakerless_youtube_segments(tmp_path):
 
 
 def test_chunk_of_empty_transcript_is_empty(tmp_path):
-    path = _write_envelope(tmp_path, [])
+    path = _write_transcript(tmp_path, [])
     assert TranscriptProcessor().chunk_transcript(path) == []
 
 
@@ -202,7 +273,7 @@ def test_single_oversized_segment_still_produces_one_chunk(tmp_path):
     """A segment longer than the target is emitted whole, not dropped."""
     long_text = "word " * 3000
     segments = [TranscriptSegment(0, 600_000, long_text.strip(), "A")]
-    path = _write_envelope(tmp_path, segments)
+    path = _write_transcript(tmp_path, segments)
     chunks = TranscriptProcessor().chunk_transcript(path)
 
     assert len(chunks) == 1

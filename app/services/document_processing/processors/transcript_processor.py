@@ -1,4 +1,4 @@
-"""Transcript processor — reads the JSON envelope, chunks on utterances.
+"""Transcript processor — reads the stored text transcript, chunks on utterances.
 
 ``extract_text`` returns the flat prose so summarisation and classification
 see clean text with no timestamp noise embedded in it. ``chunk_transcript``
@@ -8,6 +8,12 @@ produces the chunks that actually get embedded, each carrying the exact
 The invariant that matters: **a segment is never split across chunks.**
 Splitting mid-utterance would make a chunk's timestamps approximate, and an
 approximate timestamp is a citation that jumps to the wrong moment.
+
+The transcript arrives as the single ``.txt`` artifact written by the
+transcription service (see ``TranscriptResult.to_text_document``), with
+timestamps and speaker labels in each line prefix. Which processor runs is
+decided by ``Document.document_type`` (``.transcript``), not by the S3 object's
+name — so the stored file being a ``.txt`` changes nothing about routing.
 """
 
 from __future__ import annotations
@@ -24,15 +30,28 @@ logger = logging.getLogger(__name__)
 
 
 class TranscriptProcessor(DocumentProcessor):
-    """Process transcript envelopes produced by the transcription service."""
+    """Process transcripts produced by the transcription service."""
 
     supported_extensions = [".transcript"]
-    supported_mime_types = ["application/json"]
+    supported_mime_types = ["text/plain"]
 
     def _load(self, file_path: str) -> TranscriptResult:
         with open(file_path, encoding="utf-8") as fh:
-            envelope = json.load(fh)
-        return TranscriptResult.from_envelope(envelope)
+            raw = fh.read()
+
+        # Transcripts written before the text format was introduced are JSON
+        # envelopes. Sniffing the first character keeps them re-processable
+        # without a bulk S3 rewrite — re-transcribing them would mean paying
+        # for words we already have. Remove once no .json transcripts remain.
+        if raw.lstrip().startswith("{"):
+            try:
+                return TranscriptResult.from_envelope(json.loads(raw))
+            except json.JSONDecodeError:
+                # A text transcript whose first utterance happens to start with
+                # "{" — fall through and parse it as text.
+                logger.debug("Leading '{' was not valid JSON; parsing as text")
+
+        return TranscriptResult.from_text_document(raw)
 
     def extract_text(self, file_path: str) -> str:
         """Flat prose — no timestamps, no speaker prefixes."""
@@ -67,11 +86,19 @@ class TranscriptProcessor(DocumentProcessor):
             return {}
 
     def validate(self, file_path: str) -> bool:
+        """A transcript is valid when it carries content.
+
+        Text parsing is deliberately lenient, so "does it parse" is no longer a
+        useful question — almost anything parses. It cannot be stricter than
+        this either: a caption-only transcript legitimately has no timestamp
+        lines, so absence of segments is not corruption. An empty or
+        whitespace-only file is, and that is the case worth catching.
+        """
         try:
-            self._load(file_path)
-            return True
+            result = self._load(file_path)
         except Exception:
             return False
+        return bool(result.segments) or bool(result.text.strip())
 
     def chunk_transcript(self, file_path: str) -> list[dict[str, Any]]:
         """Pack consecutive segments into chunks on utterance boundaries.

@@ -187,9 +187,12 @@ def write_transcript_files(
         "=" * 72,
         "",
     ]
+    # The provenance header above is prepended for human inspection only. The
+    # `.txt` the pipeline actually consumes is written by the ingest tasks, not
+    # here — this script dumps local copies for eyeballing a scrape.
     txt_path = base / f"{basename}.txt"
     txt_path.write_text(
-        "\n".join(header) + result.to_plain_text() + "\n", encoding="utf-8"
+        "\n".join(header) + result.to_text_document(), encoding="utf-8"
     )
 
     return {"json": str(json_path), "txt": str(txt_path)}

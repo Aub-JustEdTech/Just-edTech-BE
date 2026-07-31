@@ -13,7 +13,6 @@ Cost model, cheapest gate first:
 
 from __future__ import annotations
 
-import json
 import logging
 import shutil
 import tempfile
@@ -427,17 +426,13 @@ async def _create_document_and_enqueue(
     )
 
     if payload.transcript is not None:
-        # The Document object is the JSON envelope, so timestamps and speaker
-        # labels survive into chunking. See TranscriptProcessor.
+        # One text artifact. Timestamps and speaker labels live in each line's
+        # prefix, so both survive into chunking. See TranscriptProcessor.
         document_type = ".transcript"
-        s3_key_text = f"{key_prefix}/transcript.json"
-        body = json.dumps(payload.transcript.to_envelope(), ensure_ascii=False)
-        s3_url_text = await s3.upload_file_object(body.encode("utf-8"), s3_key_text)
-
-        # Human-readable copy alongside it. Never the only artifact.
-        await s3.upload_file_object(
-            payload.transcript.to_plain_text().encode("utf-8"),
-            f"{key_prefix}/transcript.txt",
+        s3_key_text = f"{key_prefix}/transcript.txt"
+        s3_url_text = await s3.upload_file_object(
+            payload.transcript.to_text_document().encode("utf-8"),
+            s3_key_text,
         )
     else:
         # Leading dot is required: the pipeline builds "{uuid}{document_type}"
