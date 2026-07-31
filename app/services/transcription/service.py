@@ -75,7 +75,7 @@ class TranscriptionService:
             return probe
 
         # 1. No audio stream at all — nothing to transcribe.
-        if settings.SCHOOL_SCRAPER_MEDIA_REQUIRE_AUDIO and not probe.has_audio:
+        if settings.transcription_require_audio and not probe.has_audio:
             raise MediaHasNoAudioError(
                 f"{path_or_url} has no audio stream "
                 f"(video={probe.has_video}, duration={probe.duration_seconds}s)"
@@ -96,18 +96,18 @@ class TranscriptionService:
         label: str, duration: int, audio_codec: str | None = None
     ) -> None:
         """Length gates, shared by the URL and downloaded-file paths."""
-        floor = settings.SCHOOL_SCRAPER_MEDIA_MIN_DURATION_SECONDS
+        floor = settings.transcription_min_duration_seconds
         if floor and duration < floor:
             raise MediaTooShortError(
                 f"{label} is {duration}s, below the {floor}s floor "
                 f"(codec={audio_codec})"
             )
 
-        cap_seconds = settings.SCHOOL_SCRAPER_MEDIA_MAX_DURATION_MINUTES * 60
+        cap_seconds = settings.transcription_max_duration_minutes * 60
         if duration > cap_seconds:
             raise MediaTooLongError(
                 f"{label} is {duration}s, cap is {cap_seconds}s "
-                f"({settings.SCHOOL_SCRAPER_MEDIA_MAX_DURATION_MINUTES} min)"
+                f"({settings.transcription_max_duration_minutes} min)"
             )
 
     async def transcribe_youtube(
@@ -125,11 +125,11 @@ class TranscriptionService:
             return result
 
         # No captions. Everything below this line costs money.
-        if not settings.SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED:
+        if not settings.transcription_youtube_audio_fallback_enabled:
             raise NoTranscriptAvailableError(
                 f"No captions for {url} and the audio fallback is disabled"
             )
-        if not settings.SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED:
+        if not settings.transcription_enabled:
             raise NoTranscriptAvailableError(
                 f"No captions for {url} and transcription is disabled"
             )
@@ -177,7 +177,7 @@ class TranscriptionService:
         fetches the media itself. Under ``preprocess`` the file is downloaded
         and conditioned first.
         """
-        if not settings.SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED:
+        if not settings.transcription_enabled:
             raise NoTranscriptAvailableError(
                 f"Transcription is disabled; skipping {url}"
             )

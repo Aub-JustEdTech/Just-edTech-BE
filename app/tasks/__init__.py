@@ -18,6 +18,11 @@ from app.tasks.document_pipeline import (
 )
 from app.tasks.document_tasks import process_document_task
 
+# Media transcription — runs BEFORE the pipeline for audio/video/links
+from app.tasks.media_transcription_tasks import (  # noqa: F401
+    transcribe_media_task,
+)
+
 # Token aggregation + billing tasks
 from app.tasks.token_aggregation_tasks import (
     aggregate_daily_token_usage_task,
@@ -51,6 +56,8 @@ __all__ = [
     "step3_chunk_text",
     "step4_generate_embeddings",
     "step5_store_vectors",
+    # Media transcription
+    "transcribe_media_task",
     # Token aggregation
     "aggregate_daily_token_usage_task",
     "backfill_daily_token_usage_task",

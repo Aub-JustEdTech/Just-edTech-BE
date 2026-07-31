@@ -8,6 +8,7 @@ Provides:
 """
 
 import logging
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -16,6 +17,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud import schools as crud
 from app.models.school import School, SchoolScrapeUrl
 from app.schemas.schools import (
+    DATE_PRESETS,
+    SORT_FIELDS,
+    STATUS_GROUP_LABELS,
+    STATUS_GROUP_RAW_VALUES,
+    DatePresetOption,
     SchoolCreate,
     SchoolCandidateReviewListOut,
     SchoolCandidateReviewOut,
@@ -23,10 +29,14 @@ from app.schemas.schools import (
     SchoolOut,
     SchoolScrapeUrlOut,
     SchoolUpdate,
+    ScrapedMediaFiltersOut,
     ScrapedMediaListOut,
     ScrapedMediaOut,
+    ScrapedMediaStatusGroup,
+    ScrapedMediaStatusOption,
     ScrapeUrlCreate,
     ScrapeUrlUpdate,
+    SortFieldOption,
 )
 from app.services import school_scrape_url_confirmation_service as confirmation_service
 from app.schemas.users import User
@@ -186,6 +196,38 @@ async def list_scrape_url_candidates(
         limit=limit,
         added_count=added_count,
         not_added_count=not_added_count,
+    )
+
+
+@router.get(
+    "/scraped-media/filters",
+    response_model=ScrapedMediaFiltersOut,
+    summary="Filter/sort options for the scraped-media list (School Browser)",
+)
+async def get_scraped_media_filters(
+    tenant_id: int = Depends(get_effective_tenant_id),
+) -> ScrapedMediaFiltersOut:
+    """Static filter metadata for the School Browser's scraped-media list.
+
+    Kept as its own endpoint (rather than hardcoded on the FE) so the status
+    grouping / sort fields / date presets have one source of truth — see
+    STATUS_GROUP_RAW_VALUES, SORT_FIELDS, DATE_PRESETS in app/schemas/schools.py.
+    """
+    return ScrapedMediaFiltersOut(
+        statuses=[
+            ScrapedMediaStatusOption(
+                value=group,
+                label=STATUS_GROUP_LABELS[group],
+                raw_values=raw_values,
+            )
+            for group, raw_values in STATUS_GROUP_RAW_VALUES.items()
+        ],
+        sort_fields=[
+            SortFieldOption(value=value, label=label) for value, label in SORT_FIELDS
+        ],
+        date_presets=[
+            DatePresetOption(value=value, label=label) for value, label in DATE_PRESETS
+        ],
     )
 
 
@@ -367,20 +409,33 @@ async def deactivate_scrape_url(
 )
 async def list_scraped_media(
     school_id: int,
-    status_filter: str | None = Query(None, alias="status"),
+    status_filter: ScrapedMediaStatusGroup | None = Query(None, alias="status"),
     media_type: str | None = Query(None),
+    search: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    sort: str = Query("scraped_at"),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_effective_tenant_id),
 ) -> ScrapedMediaListOut:
     await _school_or_404(db, tenant_id, school_id)
+    status_values = (
+        STATUS_GROUP_RAW_VALUES.get(status_filter) if status_filter else None
+    )
     items, total = await crud.list_scraped_media(
         db,
         tenant_id,
         school_id=school_id,
-        status=status_filter,
+        status_values=status_values,
         media_type=media_type,
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+        sort=sort,
+        order=order,
         skip=skip,
         limit=limit,
     )

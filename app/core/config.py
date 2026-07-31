@@ -168,6 +168,10 @@ class Settings(BaseSettings):
         ".webm",
         ".mov",
     ]
+    # Media gets its own ceiling. MAX_FILE_SIZE_MB is sized for documents and
+    # an hour of video is an order of magnitude past it. Uploads stream
+    # straight to S3, so this bounds storage and spend, not memory.
+    MAX_MEDIA_FILE_SIZE_MB: int = 500
     TEMP_UPLOAD_DIR: str = "./temp_uploads"
     IMAGE_STORAGE_DIR: str = "./data/images"
     ENABLE_IMAGE_EXTRACTION: bool = False
@@ -383,6 +387,35 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
     SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS: int = 900
 
+    # --- Transcription: neutral gate names ---
+    # The gates above were written when the scraper was the only caller, so
+    # they carry SCHOOL_SCRAPER_ names. Tenant uploads use the same gates, and
+    # firing a paid API under a scraper-named flag is how a limit gets raised
+    # for one caller and silently raised for the other too.
+    #
+    # These override the legacy names when set. Left as None (the default)
+    # every deployed .env keeps working unchanged — resolution happens in the
+    # `transcription_*` properties below, which is what all callers read.
+    TRANSCRIPTION_ENABLED: bool | None = None
+    TRANSCRIPTION_MAX_DURATION_MINUTES: int | None = None
+    TRANSCRIPTION_MIN_DURATION_SECONDS: int | None = None
+    TRANSCRIPTION_REQUIRE_AUDIO: bool | None = None
+    TRANSCRIPTION_YOUTUBE_ENABLED: bool | None = None
+    TRANSCRIPTION_YOUTUBE_AUDIO_FALLBACK_ENABLED: bool | None = None
+
+    # --- Media ingest: tenant uploads and pasted links ---
+    MEDIA_INGEST_TEMP_DIR: str = "./temp_uploads/media_ingest"
+    # How long the presigned URL handed to the transcription provider stays
+    # valid. Must outlast the provider's own fetch + queue wait, not just the
+    # request: AssemblyAI downloads the media itself under url_direct.
+    MEDIA_INGEST_PRESIGN_EXPIRY_SECONDS: int = 7200
+    # Per-tenant monthly transcription budget, in minutes of billable audio.
+    # Free YouTube captions never count against it. 0 disables the cap.
+    TENANT_MEDIA_MONTHLY_MINUTES_LIMIT: int = 600
+    # Used only to report spend in usage records; not a billing source of
+    # truth. Keep in step with the AssemblyAI contract.
+    TRANSCRIPTION_COST_PER_AUDIO_HOUR_USD: float = 0.23
+
     # Email / SMTP
     SMTP_HOST: str | None = None
     SMTP_PORT: int | None = None
@@ -509,6 +542,46 @@ class Settings(BaseSettings):
         if self.POSTGRES_SSLMODE:
             return f"{base}?sslmode={self.POSTGRES_SSLMODE}"
         return base
+
+    # --- Transcription gate resolution ---
+    # Every caller reads these, never the raw settings, so the scraper and
+    # tenant uploads can never end up on different values by accident.
+
+    @property
+    def transcription_enabled(self) -> bool:
+        if self.TRANSCRIPTION_ENABLED is not None:
+            return self.TRANSCRIPTION_ENABLED
+        return self.SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED
+
+    @property
+    def transcription_max_duration_minutes(self) -> int:
+        if self.TRANSCRIPTION_MAX_DURATION_MINUTES is not None:
+            return self.TRANSCRIPTION_MAX_DURATION_MINUTES
+        return self.SCHOOL_SCRAPER_MEDIA_MAX_DURATION_MINUTES
+
+    @property
+    def transcription_min_duration_seconds(self) -> int:
+        if self.TRANSCRIPTION_MIN_DURATION_SECONDS is not None:
+            return self.TRANSCRIPTION_MIN_DURATION_SECONDS
+        return self.SCHOOL_SCRAPER_MEDIA_MIN_DURATION_SECONDS
+
+    @property
+    def transcription_require_audio(self) -> bool:
+        if self.TRANSCRIPTION_REQUIRE_AUDIO is not None:
+            return self.TRANSCRIPTION_REQUIRE_AUDIO
+        return self.SCHOOL_SCRAPER_MEDIA_REQUIRE_AUDIO
+
+    @property
+    def transcription_youtube_enabled(self) -> bool:
+        if self.TRANSCRIPTION_YOUTUBE_ENABLED is not None:
+            return self.TRANSCRIPTION_YOUTUBE_ENABLED
+        return self.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED
+
+    @property
+    def transcription_youtube_audio_fallback_enabled(self) -> bool:
+        if self.TRANSCRIPTION_YOUTUBE_AUDIO_FALLBACK_ENABLED is not None:
+            return self.TRANSCRIPTION_YOUTUBE_AUDIO_FALLBACK_ENABLED
+        return self.SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED
 
     @property
     def REDIS_URL(self) -> str:

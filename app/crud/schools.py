@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
-from sqlalchemy import func, select
+from sqlalchemy import asc, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -420,13 +420,26 @@ async def bulk_create_scraped_media(
     return created, skipped
 
 
+_SCRAPED_MEDIA_SORT_COLUMNS = {
+    "scraped_at": ScrapedMedia.scraped_at,
+    "original_name": ScrapedMedia.original_name,
+    "size_bytes": ScrapedMedia.size_bytes,
+    "status": ScrapedMedia.status,
+}
+
+
 async def list_scraped_media(
     db: AsyncSession,
     tenant_id: int,
     *,
     school_id: int | None = None,
-    status: str | None = None,
+    status_values: list[str] | None = None,
     media_type: str | None = None,
+    search: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sort: str = "scraped_at",
+    order: str = "desc",
     skip: int = 0,
     limit: int = 50,
 ) -> tuple[list[ScrapedMedia], int]:
@@ -437,14 +450,32 @@ async def list_scraped_media(
     if school_id is not None:
         stmt = stmt.where(ScrapedMedia.school_id == school_id)
         count_stmt = count_stmt.where(ScrapedMedia.school_id == school_id)
-    if status:
-        stmt = stmt.where(ScrapedMedia.status == status)
-        count_stmt = count_stmt.where(ScrapedMedia.status == status)
+    if status_values:
+        stmt = stmt.where(ScrapedMedia.status.in_(status_values))
+        count_stmt = count_stmt.where(ScrapedMedia.status.in_(status_values))
     if media_type:
         stmt = stmt.where(ScrapedMedia.media_type == media_type)
         count_stmt = count_stmt.where(ScrapedMedia.media_type == media_type)
+    if search:
+        term = f"%{search}%"
+        search_clause = or_(
+            ScrapedMedia.original_name.ilike(term),
+            ScrapedMedia.source_media_url.ilike(term),
+        )
+        stmt = stmt.where(search_clause)
+        count_stmt = count_stmt.where(search_clause)
+    if date_from is not None:
+        stmt = stmt.where(func.date(ScrapedMedia.scraped_at) >= date_from)
+        count_stmt = count_stmt.where(func.date(ScrapedMedia.scraped_at) >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(func.date(ScrapedMedia.scraped_at) <= date_to)
+        count_stmt = count_stmt.where(func.date(ScrapedMedia.scraped_at) <= date_to)
+
     total = (await db.execute(count_stmt)).scalar_one()
-    stmt = stmt.order_by(ScrapedMedia.scraped_at.desc()).offset(skip).limit(limit)
+
+    sort_column = _SCRAPED_MEDIA_SORT_COLUMNS.get(sort, ScrapedMedia.scraped_at)
+    direction = asc if order == "asc" else desc
+    stmt = stmt.order_by(direction(sort_column)).offset(skip).limit(limit)
     items = list((await db.execute(stmt)).scalars().all())
     return items, total
 

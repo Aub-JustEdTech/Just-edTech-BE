@@ -38,6 +38,11 @@ celery_app.conf.update(
         "app.tasks.school_scraper_tasks.sweep_school_media": {
             "queue": "scraping"
         },
+        # Transcription is minutes-long and I/O-bound — the same workload shape
+        # the scraping queue already carries, and that queue runs with a 6000s
+        # soft limit. The documents queue is sized for second-scale parses; a
+        # long provider poll parked there would starve ordinary uploads.
+        "pipeline.transcribe_media": {"queue": "scraping"},
     },
     # Retry settings
     task_acks_late=True,  # Acknowledge after task completion

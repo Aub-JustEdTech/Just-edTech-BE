@@ -17,6 +17,7 @@ from app.models.feedback import Feedback
 from app.models.heatmap_aggregate import HeatmapAggregate
 from app.models.invitations import Invitation
 from app.models.llm_models import LLMModel
+from app.models.media_transcription_usage import MediaTranscriptionUsage
 from app.models.monitoring import Monitoring
 from app.models.monthly_billing import MonthlyBilling
 from app.models.pending_classification import PendingClassification
@@ -79,4 +80,5 @@ __all__ = [
     "BatchClassificationJob",
     "PendingClassification",
     "HeatmapAggregate",
+    "MediaTranscriptionUsage",
 ]
