@@ -9,6 +9,7 @@ drill-down per single district. Reads directly from the vector store
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 from typing import Any
@@ -55,6 +56,11 @@ _TOPIC_TAGS_FIELD = "topic_tags"
 # write `school_id`. `district_name` is indexed as a KEYWORD payload
 # field, so equality filters on it are fast.
 _DISTRICT_NAME_FIELD = "district_name"
+
+# Upper bound on in-flight Qdrant `count` calls when resolving the per-category
+# breakdown. Counts are cheap but each is a round trip, so a modest fan-out
+# keeps the request responsive without hammering the vector store.
+_COUNT_CONCURRENCY = 8
 
 
 class HeatmapEngineService:
@@ -104,6 +110,7 @@ class HeatmapEngineService:
         categories: list[TopicCategory],
         state: str = "MA",
         include_zero: bool = True,
+        breakdown: bool = False,
     ) -> DistrictCountResponse:
         """
         Return one `DistrictCountItem` per active school for the tenant.
@@ -114,6 +121,11 @@ class HeatmapEngineService:
         `topic_tags` categories (or all categories if none are supplied).
         MA has ~280 districts, so ~280 count calls is well within
         sub-second budgets.
+
+        With `breakdown=True` each data-bearing district additionally gets
+        `top_category` / `top_category_count` — the highest-counting of the
+        selected categories. This costs extra counts, so it is opt-in; see
+        `_resolve_top_categories` for how they are kept down.
         """
         vector_store = self._get_vector_store()
 
@@ -145,6 +157,14 @@ class HeatmapEngineService:
             )
             total_chunks += count
 
+        if breakdown:
+            await self._resolve_top_categories(
+                items,
+                tenant_id=tenant_id,
+                timeframe=timeframe,
+                categories=categories,
+            )
+
         # Sort: charter first (drives the map), then by chunk_count desc.
         items.sort(
             key=lambda i: (
@@ -159,6 +179,85 @@ class HeatmapEngineService:
             total_districts=len(items),
             total_chunks=total_chunks,
             districts=items,
+        )
+
+    async def _resolve_top_categories(
+        self,
+        items: list[DistrictCountItem],
+        *,
+        tenant_id: int,
+        timeframe: TimeframePreset,
+        categories: list[TopicCategory],
+    ) -> None:
+        """
+        Fill `top_category` / `top_category_count` on `items`, in place.
+
+        Requires one extra count per (district, selected category). Three
+        cuts keep that bounded:
+
+        1. Districts with `chunk_count == 0` are skipped — nothing to rank.
+        2. A single selected category needs no counts at all: it is the only
+           candidate, and `chunk_count` is already its count.
+        3. Per-category counts can never exceed the district's combined
+           `chunk_count`, so once a category ties that total it cannot be
+           beaten and the remaining categories are skipped.
+
+        The probes that survive run concurrently, capped at
+        `_COUNT_CONCURRENCY`.
+
+        Note we cannot prune on "the remaining categories can't catch up":
+        `topic_tags` is an array, so one chunk may carry several categories
+        and the per-category counts can sum above `chunk_count`. Only the
+        saturation bound in (3) is sound.
+        """
+        selected = list(categories) if categories else list(TopicCategory)
+        active = [item for item in items if item.chunk_count > 0]
+        if not active:
+            return
+
+        if len(selected) == 1:
+            for item in active:
+                item.top_category = selected[0]
+                item.top_category_count = item.chunk_count
+            return
+
+        vector_store = self._get_vector_store()
+        semaphore = asyncio.Semaphore(_COUNT_CONCURRENCY)
+        probe_calls = 0
+
+        async def _resolve(item: DistrictCountItem) -> None:
+            nonlocal probe_calls
+            async with semaphore:
+                top_category: TopicCategory | None = None
+                top_count = 0
+                # Iterate in `selected` order so ties settle deterministically
+                # on the earliest-declared category (strict `>` below).
+                for category in selected:
+                    fragments = self._build_filter_fragments(
+                        district_name=item.district_name,
+                        timeframe=timeframe,
+                        categories=[category],
+                    )
+                    count = await vector_store.count_chunks(
+                        tenant_id=tenant_id,
+                        **fragments,
+                    )
+                    probe_calls += 1
+                    if count > top_count:
+                        top_category, top_count = category, count
+                    if top_count >= item.chunk_count:
+                        break
+
+                item.top_category = top_category
+                item.top_category_count = top_count
+
+        await asyncio.gather(*(_resolve(item) for item in active))
+
+        logger.info(
+            f"heatmap breakdown tenant={tenant_id} "
+            f"timeframe={timeframe.value} "
+            f"categories={[c.value for c in selected]} "
+            f"active_districts={len(active)} probe_calls={probe_calls}"
         )
 
     async def get_district_citations(
@@ -289,13 +388,17 @@ class HeatmapEngineService:
         if not valid:
             return {}
         rows = (
-            await db.execute(
-                select(Document).where(
-                    Document.tenant_id == tenant_id,
-                    Document.doc_id.in_(valid),
+            (
+                await db.execute(
+                    select(Document).where(
+                        Document.tenant_id == tenant_id,
+                        Document.doc_id.in_(valid),
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return {doc.doc_id: doc for doc in rows if doc.doc_id}
 
     @staticmethod
@@ -357,9 +460,7 @@ class HeatmapEngineService:
                 )
                 result[doc_id] = url
             except Exception as exc:
-                logger.warning(
-                    f"Failed to presign S3 URL for doc_id={doc_id}: {exc}"
-                )
+                logger.warning(f"Failed to presign S3 URL for doc_id={doc_id}: {exc}")
         return result
 
     @staticmethod
@@ -394,22 +495,16 @@ class HeatmapEngineService:
         if doc_id and docs_by_id and doc_id in docs_by_id:
             source_meta = docs_by_id[doc_id].source_metadata or {}
         source_url = (
-            meta.get("source_media_url")
-            or source_meta.get("source_media_url")
-            or ""
+            meta.get("source_media_url") or source_meta.get("source_media_url") or ""
         )
         source_page_url = (
-            meta.get("source_page_url")
-            or source_meta.get("source_page_url")
-            or ""
+            meta.get("source_page_url") or source_meta.get("source_page_url") or ""
         )
 
         return EngineCitationItem(
             document_id=doc_id,
             document_title=(
-                meta.get("document_name")
-                or meta.get("school_name")
-                or "Untitled"
+                meta.get("document_name") or meta.get("school_name") or "Untitled"
             ),
             date=meta.get("meeting_date"),
             snippet=snippet,
@@ -440,9 +535,7 @@ class HeatmapEngineService:
             "page": page,
             "page_size": page_size,
             "total": total,
-            "total_pages": (
-                max(1, math.ceil(total / page_size)) if page_size else 1
-            ),
+            "total_pages": (max(1, math.ceil(total / page_size)) if page_size else 1),
         }
 
 

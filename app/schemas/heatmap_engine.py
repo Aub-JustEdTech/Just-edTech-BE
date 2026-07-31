@@ -42,7 +42,15 @@ class DistrictCountItem(BaseModel):
     district_name: str
     district_type: Literal["public", "charter"] = "public"
     state: str
+    # Chunks matching ALL selected categories combined. Because `topic_tags`
+    # is an array, one chunk can match several categories, so this is <= the
+    # sum of the per-category counts (never equal to their sum).
     chunk_count: int
+    # Only populated when the request passes `breakdown=true`. `top_category`
+    # is the highest-counting of the selected categories for this district;
+    # it stays None for districts with no matching chunks.
+    top_category: TopicCategory | None = None
+    top_category_count: int = 0
 
 
 class DistrictCountResponse(BaseModel):

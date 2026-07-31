@@ -35,6 +35,7 @@ async def list_district_counts(
     categories: list[TopicCategory] = Query(default=_DEFAULT_CATEGORIES),
     state: str = "MA",
     include_zero: bool = True,
+    breakdown: bool = False,
     current_user: User = Depends(get_current_user),
 ):
     """Return chunk-instance counts per district for the given filters.
@@ -44,6 +45,12 @@ async def list_district_counts(
     filter to one or more categories; pass an empty `categories` to
     select all.
 
+    Pass `breakdown=true` to additionally populate `top_category` and
+    `top_category_count` on each district with data — the highest-counting
+    of the selected categories. This costs extra vector-store counts, so it
+    is off by default and intended for the report export rather than the
+    map view.
+
     Each district is identified by `org_code`.
     """
     response = await heatmap_engine_service.count_by_district(
@@ -52,6 +59,7 @@ async def list_district_counts(
         categories=categories,
         state=state,
         include_zero=include_zero,
+        breakdown=breakdown,
     )
     return success_response(data=response.model_dump(mode="json"))
 
