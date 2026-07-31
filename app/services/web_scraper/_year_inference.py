@@ -33,12 +33,37 @@ from urllib.parse import urlparse
 # surrounded by other digits (so `12345` won't match).
 _YEAR_RE = re.compile(r"(?<!\d)(20\d{2})(?!\d)")
 
+# US-style short dates in filenames: 03-16-26, 4-6-26, 03/16/26, 7-10-2025
+# Captures a trailing 2-digit or 4-digit year after a month-day prefix.
+_SHORT_DATE_YEAR_RE = re.compile(
+    r"(?<!\d)(?:0?[1-9]|1[0-2])[-/.](?:0?[1-9]|[12]\d|3[01])[-/.](20\d{2}|\d{2})(?!\d)"
+)
+
+
+def _year_from_short_date(text: str) -> int | None:
+    """Infer year from ``MM-DD-YY`` / ``M-D-YYYY`` style date fragments."""
+    years: list[int] = []
+    for m in _SHORT_DATE_YEAR_RE.finditer(text or ""):
+        raw = m.group(1)
+        if len(raw) == 4:
+            years.append(int(raw))
+            continue
+        yy = int(raw)
+        # School docs are 2000s; map 00-99 → 2000-2099.
+        years.append(2000 + yy)
+    if not years:
+        return None
+    return min(years)
+
 
 def _earliest_year(text: str) -> int | None:
     """Return the smallest 4-digit 20xx year in ``text``, or None."""
     years = [int(m.group(1)) for m in _YEAR_RE.finditer(text or "")]
     if not years:
-        return None
+        return _year_from_short_date(text)
+    short = _year_from_short_date(text)
+    if short is not None:
+        years.append(short)
     return min(years)
 
 

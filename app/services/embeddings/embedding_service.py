@@ -16,6 +16,38 @@ _VALID_EMBEDDING_MODELS = {
     "openai/text-embedding-ada-002",
 }
 
+# OpenRouter caps embedding requests at 300k tokens; stay under with headroom.
+_EMBEDDING_MAX_TOKENS_PER_REQUEST = 250_000
+_EMBEDDING_MAX_TEXTS_PER_REQUEST = 128
+
+
+def _estimate_tokens(text: str) -> int:
+    return max(1, len(text) // 4)
+
+
+def _batch_texts_for_embedding(texts: list[str]) -> list[list[str]]:
+    """Split texts so each embedding API call stays within provider token limits."""
+    batches: list[list[str]] = []
+    current: list[str] = []
+    current_tokens = 0
+
+    for text in texts:
+        text_tokens = _estimate_tokens(text)
+        would_exceed_tokens = (
+            current_tokens + text_tokens > _EMBEDDING_MAX_TOKENS_PER_REQUEST
+        )
+        would_exceed_count = len(current) >= _EMBEDDING_MAX_TEXTS_PER_REQUEST
+        if current and (would_exceed_tokens or would_exceed_count):
+            batches.append(current)
+            current = []
+            current_tokens = 0
+        current.append(text)
+        current_tokens += text_tokens
+
+    if current:
+        batches.append(current)
+    return batches
+
 
 class EmbeddingService:
     """Service for generating text embeddings"""
@@ -49,10 +81,22 @@ class EmbeddingService:
             )
 
         try:
-            logger.info(f"Generating embeddings for {len(texts)} texts using model: {model}")
+            batches = _batch_texts_for_embedding(texts)
+            logger.info(
+                f"Generating embeddings for {len(texts)} texts "
+                f"in {len(batches)} batch(es) using model: {model}"
+            )
             client = get_cached_async_openai_client()
-            response = await client.embeddings.create(input=texts, model=model)
-            embeddings = [item.embedding for item in response.data]
+            embeddings: list[list[float]] = []
+            for batch_idx, batch in enumerate(batches, start=1):
+                logger.debug(
+                    "Embedding batch %s/%s (%s texts)",
+                    batch_idx,
+                    len(batches),
+                    len(batch),
+                )
+                response = await client.embeddings.create(input=batch, model=model)
+                embeddings.extend(item.embedding for item in response.data)
 
             logger.info(f"Generated {len(embeddings)} embeddings using {model}")
             return embeddings

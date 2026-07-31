@@ -12,7 +12,7 @@ meetings that hit the topic for that school.
 
 from datetime import date
 
-from sqlalchemy import BigInteger, Column, Date, ForeignKey, Index, Integer, String
+from sqlalchemy import BigInteger, Column, Date, ForeignKey, Identity, Index, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models.base import BaseModel
@@ -26,6 +26,11 @@ class HeatmapAggregate(BaseModel):
         # Composite PK via a single PK constraint declared below.
         Index("ix_heatmap_aggregate_topic", "topic"),
     )
+
+    # Override BaseModel.id: surrogate Identity column, NOT part of the PK.
+    # The table PK is (source_id, topic). Without this override SQLAlchemy
+    # omits `id` on INSERT and Postgres rejects the NULL.
+    id = Column(BigInteger, Identity(), nullable=False)
 
     source_id = Column(
         BigInteger,

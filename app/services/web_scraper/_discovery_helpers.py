@@ -44,6 +44,9 @@ _JS_RENDER_SIGNALS: tuple[str, ...] = (
     "ccms-contentelement",   # Catapult CMS generic content element wrapper
     "apptegy.net",           # Apptegy / Thrillshare CMS (Nuxt SSR)
     "thrillshare.com",       # Apptegy document CDN / API host
+    "sharpschool.com",       # SharpSchool / Blackboard CMS
+    "ContentItemModern",     # SharpSchool document explorer scripts
+    'id="documentList"',     # SharpSchool ContentItem folder widget
 )
 
 # Type alias: an async callable that takes a URL and returns the response body

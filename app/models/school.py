@@ -55,6 +55,10 @@ class School(BaseModel):
     org_code = Column(String(16), nullable=False, index=True)
     name = Column(String(512), nullable=False)
     district_type = Column(String(64), nullable=False)
+    # 2-letter state abbreviation. Drives which vocabulary pack applies
+    # during heatmap ingest classification (see vocabulary_packs.loader).
+    # Seeded 'MA' for the initial 396-district corpus.
+    state = Column(String(2), nullable=False, server_default="MA", index=True)
     website = Column(Text, nullable=True)
     last_scrapped_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)

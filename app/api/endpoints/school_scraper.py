@@ -23,11 +23,14 @@ from app.schemas.school_scraper import (
     ScrapeMediaRequest,
     ScrapeMediaResponse,
 )
+from app.schemas.users import User
 from app.services.web_scraper.discovery_dispatch import discover_with_ranking_mode
 from app.services.web_scraper.school_scraper_service import SchoolScraperService
-from app.core.config import settings
-from app.schemas.users import User
-from app.utils.dependencies import get_current_tenant_admin, get_current_tenant_user, get_db
+from app.utils.dependencies import (
+    get_current_tenant_admin,
+    get_current_tenant_user,
+    get_db,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -240,10 +243,9 @@ async def backfill_years(
     Optionally scope to a single school via `school_id`.
     """
     from app.crud.schools import list_skipped_year_media, update_scraped_media
-    from app.services.web_scraper._year_inference import infer_doc_year
+    from app.services.web_scraper.year_filter import evaluate_media_year
     from app.tasks.school_scraper_tasks import ingest_scraped_media
 
-    allowed = set(settings.SCHOOL_SCRAPER_ALLOWED_YEARS)
     rows = await list_skipped_year_media(
         db,
         tenant_id=current_user.tenant_id,
@@ -253,16 +255,13 @@ async def backfill_years(
     enqueued = 0
     skipped = 0
     for sm in rows:
-        inferred = infer_doc_year(
+        inferred, in_range, _reason = evaluate_media_year(
             url=sm.source_media_url,
             filename=sm.original_name,
             source_page_url=sm.source_page_url,
         )
         if inferred is not None:
             sm.doc_year = inferred
-        in_range = inferred is None and settings.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR
-        if inferred is not None and inferred in allowed:
-            in_range = True
         if not in_range:
             skipped += 1
             continue

@@ -186,6 +186,7 @@ class QdrantStore(VectorStore):
             "document_type",
             "school_org_code",
             "school_name",
+            "school_id",
             "district_type",
             "document_type",
             "source_page_url",
@@ -238,6 +239,34 @@ class QdrantStore(VectorStore):
         # Qdrant indexes array payloads with the same KEYWORD schema so
         # `topics contains 'sex_education'` queries are fast.
         for field in ("topics", "action_types", "subtopics"):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
+        # Heatmap V1 metadata fields (spec: Heatmap Ingest Metadata v1).
+        # Doc-level denorm + per-chunk keyword flags + placeholders for the
+        # batch classifier output. Indexed as KEYWORD so payload pre-filter
+        # queries on state / district_name / school_year / etc. are fast.
+        v1_keyword_fields = (
+            "state",
+            "district_name",
+            "school_year",
+            "quarter_month",
+            "meeting_doc_type",
+            "meeting_body",
+            "document_quality",
+            "action_stage",
+            "keyword_flags",
+            "topic_tags",
+            "speakers",
+        )
+        for field in v1_keyword_fields:
             try:
                 await asyncio.to_thread(
                     self.client.create_payload_index,
@@ -551,12 +580,88 @@ class QdrantStore(VectorStore):
             logger.error(f"Error getting document chunks: {e}", exc_info=True)
             return []
 
+    def _build_payload_filter(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+    ) -> models.Filter:
+        """
+        Build a Qdrant `Filter` from the engine-style filter fragments.
+
+        - `must_match`: `{field: value}` → FieldCondition(MatchValue)
+        - `must_match_any`: `{field: [values]}` → FieldCondition(MatchAny)
+        - `nested_match_any`: `{array_field: [values]}` where the array
+          holds objects — translates to a NestedCondition with a
+          `MatchAny` on the nested `category`-like field. Concretely
+          used for `topic_tags` (list of `{category, subtopic}` objects)
+          where the key is the array field name and the values are the
+          `category` strings to match.
+        """
+        must_conditions: list[models.FieldCondition] = [
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value=tenant_id),
+            )
+        ]
+
+        for field, value in (must_match or {}).items():
+            if value is None:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    match=models.MatchValue(value=value),
+                )
+            )
+
+        for field, values in (must_match_any or {}).items():
+            if not values:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        # Nested array-of-objects filter (e.g. topic_tags[].category).
+        # Each key maps to a nested field; we match any object whose
+        # `category` sub-field is in the provided values.
+        nested_conditions: list[models.NestedCondition] = []
+        for nested_field, values in (nested_match_any or {}).items():
+            if not values:
+                continue
+            nested_conditions.append(
+                models.NestedCondition(
+                    nested=models.Nested(
+                        key=nested_field,
+                        filter=models.Filter(
+                            must=[
+                                models.FieldCondition(
+                                    key="category",
+                                    match=models.MatchAny(any=list(values)),
+                                )
+                            ]
+                        ),
+                    )
+                )
+            )
+
+        return models.Filter(
+            must=must_conditions,
+            should=nested_conditions or None,
+        )
+
     async def filter_chunks(
         self,
         tenant_id: int,
         *,
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """
@@ -568,32 +673,12 @@ class QdrantStore(VectorStore):
         try:
             collection_name = self._get_collection_name(tenant_id)
 
-            must_conditions = [
-                models.FieldCondition(
-                    key="tenant_id",
-                    match=models.MatchValue(value=tenant_id),
-                )
-            ]
-            for field, value in (must_match or {}).items():
-                if value is None:
-                    continue
-                must_conditions.append(
-                    models.FieldCondition(
-                        key=field,
-                        match=models.MatchValue(value=value),
-                    )
-                )
-            for field, values in (must_match_any or {}).items():
-                if not values:
-                    continue
-                must_conditions.append(
-                    models.FieldCondition(
-                        key=field,
-                        match=models.MatchAny(any=list(values)),
-                    )
-                )
-
-            scroll_filter = models.Filter(must=must_conditions)
+            scroll_filter = self._build_payload_filter(
+                tenant_id,
+                must_match=must_match,
+                must_match_any=must_match_any,
+                nested_match_any=nested_match_any,
+            )
 
             try:
                 await asyncio.to_thread(self.client.get_collection, collection_name)
@@ -640,13 +725,66 @@ class QdrantStore(VectorStore):
 
             logger.info(
                 f"filter_chunks: {len(collected)} chunks for tenant {tenant_id} "
-                f"(must_match={must_match}, must_match_any={must_match_any})"
+                f"(must_match={must_match}, must_match_any={must_match_any}, "
+                f"nested_match_any={nested_match_any})"
             )
             return collected[:limit]
 
         except Exception as e:
             logger.error(f"Error filtering chunks in Qdrant: {e}", exc_info=True)
             return []
+
+    async def count_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+    ) -> int:
+        """
+        Count chunks matching a payload filter using Qdrant's native count.
+
+        Far cheaper than `filter_chunks` + `len()` for the Heatmap Engine,
+        which counts chunk instances per district without materializing
+        the chunks themselves.
+        """
+        try:
+            collection_name = self._get_collection_name(tenant_id)
+
+            count_filter = self._build_payload_filter(
+                tenant_id,
+                must_match=must_match,
+                must_match_any=must_match_any,
+                nested_match_any=nested_match_any,
+            )
+
+            try:
+                await asyncio.to_thread(self.client.get_collection, collection_name)
+            except Exception:
+                logger.debug(
+                    f"Qdrant collection {collection_name} does not exist; "
+                    f"returning 0 count"
+                )
+                return 0
+
+            result = await asyncio.to_thread(
+                self.client.count,
+                collection_name=collection_name,
+                count_filter=count_filter,
+                exact=True,
+            )
+            count = int(result.count)
+            logger.info(
+                f"count_chunks: {count} chunks for tenant {tenant_id} "
+                f"(must_match={must_match}, must_match_any={must_match_any}, "
+                f"nested_match_any={nested_match_any})"
+            )
+            return count
+
+        except Exception as e:
+            logger.error(f"Error counting chunks in Qdrant: {e}", exc_info=True)
+            return 0
 
     async def update_metadata(
         self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int

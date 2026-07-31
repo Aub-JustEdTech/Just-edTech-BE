@@ -27,6 +27,8 @@ from pydantic import ValidationError
 from app.core.config import settings
 from app.services.heatmap_ingest.taxonomy import (
     ENTITY_TYPES,
+    MEETING_BODIES,
+    MEETING_DOC_TYPES,
     DocClassification,
 )
 from app.services.llm.client import (
@@ -121,6 +123,16 @@ Given a document's filename and the first ~6000 characters of extracted text, re
 
 - meeting_date: ISO date string (YYYY-MM-DD) if a meeting date is unambiguously stated or implied by the filename/text, else null.
 
+- meeting_doc_type: ONE of
+  "Minutes", "Agenda", "Agenda Attachment", "Public Comment Transcript",
+  "Policy Document", "Presentation Slide"
+  or null if it cannot be determined.
+
+- meeting_body: ONE of
+  "Full Board", "Curriculum Subcommittee", "Policy Subcommittee",
+  "Public Hearing", "Special Meeting"
+  or null if it cannot be determined.
+
 Return ONLY the JSON object. No prose, no markdown fences."""
 
 
@@ -145,8 +157,22 @@ def _doc_response_format_schema() -> dict[str, Any]:
                     "meeting_date": {
                         "type": ["string", "null"],
                     },
+                    "meeting_doc_type": {
+                        "type": ["string", "null"],
+                        "enum": [None, *list(MEETING_DOC_TYPES)],
+                    },
+                    "meeting_body": {
+                        "type": ["string", "null"],
+                        "enum": [None, *list(MEETING_BODIES)],
+                    },
                 },
-                "required": ["entity_type", "doc_kind", "meeting_date"],
+                "required": [
+                    "entity_type",
+                    "doc_kind",
+                    "meeting_date",
+                    "meeting_doc_type",
+                    "meeting_body",
+                ],
             },
         },
     }
@@ -211,10 +237,22 @@ class DocClassifier:
                 f"Doc classifier returned non-JSON for {filename!r}: {exc}. Raw: {raw!r}"
             )
             # Fall back to a permissive default so the pipeline can continue.
-            payload = {"entity_type": "board_minutes", "doc_kind": "other", "meeting_date": regex_date}
+            payload = {
+                "entity_type": "board_minutes",
+                "doc_kind": "other",
+                "meeting_date": regex_date,
+                "meeting_doc_type": None,
+                "meeting_body": None,
+            }
         except Exception as exc:
             logger.error(f"Doc classifier LLM call failed for {filename!r}: {exc}", exc_info=True)
-            payload = {"entity_type": "board_minutes", "doc_kind": "other", "meeting_date": regex_date}
+            payload = {
+                "entity_type": "board_minutes",
+                "doc_kind": "other",
+                "meeting_date": regex_date,
+                "meeting_doc_type": None,
+                "meeting_body": None,
+            }
 
         # 3. Prefer the regex date over the LLM date when both are present,
         #    because regex is more reliable on well-formed filenames.
@@ -232,6 +270,8 @@ class DocClassifier:
                 entity_type="board_minutes",
                 doc_kind="other",
                 meeting_date=regex_date,
+                meeting_doc_type=None,
+                meeting_body=None,
             )
 
     @staticmethod

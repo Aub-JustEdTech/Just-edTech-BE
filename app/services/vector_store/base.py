@@ -96,6 +96,7 @@ class VectorStore(ABC):
         *,
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """
@@ -108,6 +109,12 @@ class VectorStore(ABC):
             tenant_id: Tenant scope.
             must_match: {field: value} — all must equal the value.
             must_match_any: {field: [values]} — field must contain any.
+            nested_match_any: {nested_array_field: [values]} — applies a
+                nested-object filter where the array field contains an
+                object whose values match. Used for `topic_tags` (a list
+                of `{category, subtopic}` objects). Only one nested value
+                per field is supported here; pass multiple keys for
+                multiple nested fields.
             limit: Max results.
 
         Returns:
@@ -116,6 +123,40 @@ class VectorStore(ABC):
         """
         # Default implementation: not supported. Subclasses override.
         return []
+
+    async def count_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+    ) -> int:
+        """
+        Count chunks matching a payload filter (no vector query, no scroll).
+
+        Used by the Heatmap Generation Engine to count chunk instances per
+        district without materializing the chunks. Implementations should
+        prefer the vector store's native count API where available.
+
+        Args:
+            tenant_id: Tenant scope.
+            must_match: {field: value} — all must equal the value.
+            must_match_any: {field: [values]} — field must contain any.
+            nested_match_any: same semantics as `filter_chunks`.
+
+        Returns:
+            Number of matching chunks (0 on missing collection or error).
+        """
+        # Default implementation: fall back to filter_chunks + len.
+        chunks = await self.filter_chunks(
+            tenant_id,
+            must_match=must_match,
+            must_match_any=must_match_any,
+            nested_match_any=nested_match_any,
+            limit=100_000,
+        )
+        return len(chunks)
 
     @abstractmethod
     async def update_metadata(

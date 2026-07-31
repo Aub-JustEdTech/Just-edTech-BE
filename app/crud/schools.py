@@ -33,12 +33,20 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_url(url: str) -> str:
-    """Normalize a URL for stable hashing (strip query, fragment, trailing slash)."""
+    """Normalize a URL for stable hashing.
+
+    Strips fragment and trailing slash. Keeps the query string — many CMS
+    download endpoints (e.g. SharpSchool ``GetFile.ashx?key=...``) encode the
+    document identity only in the query, so dropping it collapses every file
+    on a site into one hash.
+    """
     parts = urlsplit(url.strip())
     path = parts.path or ""
     if path.endswith("/") and len(path) > 1:
         path = path.rstrip("/")
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, "", ""))
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
+    )
 
 
 def url_hash(url: str) -> str:

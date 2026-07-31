@@ -141,8 +141,8 @@ async def feed_finalised_scrape_urls(json_path: Path, dry_run: bool) -> dict:
                 school,
                 ScrapeUrlCreate(
                     url=url,
-                    crawl_depth=1,
-                    use_playwright=False,
+                    crawl_depth=2,
+                    use_playwright=True,
                     is_primary=True,
                 ),
                 user_id=None,

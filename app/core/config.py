@@ -118,6 +118,14 @@ class Settings(BaseSettings):
     # reading heatmap_aggregate + Qdrant. Useful for local dev without a
     # populated vector store. Default False (use real data).
     HEATMAP_USE_SAMPLE_DATA: bool = False
+    # Per-chunk contextual augmentation (Anthropic-style "contextual
+    # retrieval"). One LLM call per chunk, full source doc as reference,
+    # generates a short situating context prepended before embedding.
+    # Disabled by default; flip to True to enable the step2_7 stage for
+    # school_scraper docs.
+    HEATMAP_CONTEXT_ENABLED: bool = True
+    HEATMAP_CONTEXT_MODEL: str = "openai/gpt-4o-mini"
+    HEATMAP_CONTEXT_MAX_CONCURRENCY: int = 5
 
     # LangSmith Configuration
     LANGSMITH_TRACING: bool = False
@@ -153,6 +161,17 @@ class Settings(BaseSettings):
     IMAGE_STORAGE_DIR: str = "./data/images"
     ENABLE_IMAGE_EXTRACTION: bool = False
 
+    # OCR fallback for scanned / image-only PDFs (Phase 1: Tesseract).
+    # When digital text extraction yields fewer than OCR_MIN_CHARS_THRESHOLD
+    # characters, empty/sparse pages are rendered and OCR'd.
+    ENABLE_OCR: bool = False
+    OCR_PROVIDER: str = "tesseract"
+    OCR_MIN_CHARS_THRESHOLD: int = 50
+    OCR_DPI: int = 150
+    OCR_MAX_PAGES: int = 100
+    OCR_LANGUAGES: str = "eng"
+    OCR_TIMEOUT_SECONDS: int = 300
+
     # Bulk upload limits
     BULK_UPLOAD_MAX_FILES: int = 10
 
@@ -182,11 +201,15 @@ class Settings(BaseSettings):
 
     # School Scraper Configuration
     SCHOOL_SCRAPER_USE_PLAYWRIGHT: bool = False
-    # User-Agent used by the school scraper for HTTP requests.
-    # Default is a curl-style UA because many school-district sites
-    # (WordPress + Wordfence/Cloudflare WAFs) block `python-httpx/*` and
-    # bot-like UAs with 403, while allowing `curl/*` / `okhttp/*`.
-    SCHOOL_SCRAPER_USER_AGENT: str = "curl/8.5.0"
+    # User-Agent used by the school scraper for HTTP + Playwright requests.
+    # Prefer a browser-like UA: eSchoolView / Blackboard / Drive embeds often
+    # reject curl-style UAs. Override via env to ``curl/8.5.0`` if a site's
+    # Wordfence/Cloudflare WAF blocks Chrome UAs instead.
+    SCHOOL_SCRAPER_USER_AGENT: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
     # Path to a system-installed Chromium binary (e.g. /usr/bin/chromium).
     # Set via env in Docker images that apt-install Chromium instead of
     # letting Playwright download its own copy. Left unset for local dev,
@@ -221,6 +244,8 @@ class Settings(BaseSettings):
         ".pdf",
         ".docx",
         ".doc",
+        ".txt",
+        ".text",
         ".xlsx",
         ".xls",
         ".pptx",
@@ -242,14 +267,14 @@ class Settings(BaseSettings):
     # S3 path prefix for scraped media. Final key layout is:
     #   {SCHOOL_SCRAPER_S3_PREFIX}tenants/{tenant_id}/schools/{org_code}/...
     SCHOOL_SCRAPER_S3_PREFIX: str = ""
-    # Download-time year filter (download-time-only). Documents whose inferred
-    # year is not in this set are marked status="skipped_year" and not ingested.
-    # Discovery is unaffected — every URL is still walked.
-    SCHOOL_SCRAPER_ALLOWED_YEARS: list[int] = [2024, 2025, 2026]
-    # When True, docs where the year could not be inferred from URL/filename/
-    # page context are still downloaded+ingested. Flip to False once the
-    # inference helper is well-tested on all 20 districts.
-    SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR: bool = True
+    # Year filter applied at crawl, persistence, download, and post-classification.
+    # Documents whose inferred calendar year is not in this set are skipped.
+    SCHOOL_SCRAPER_ALLOWED_YEARS: list[int] = [2023, 2024, 2025, 2026]
+    # When False, media with no inferrable year from URL/filename/page context
+    # are not crawled, stored, downloaded, or embedded. Unknown-year docs that
+    # slip through are rejected after LLM classification if meeting_date is
+    # missing or outside SCHOOL_SCRAPER_ALLOWED_YEARS.
+    SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR: bool = False
     # Schema-driven crawler POC (experiment branch only). Model used by
     # scripts/school_data/schema_crawl_poc; defaults to the heatmap doc
     # classifier model when unset. Not used by SchoolScraperService.

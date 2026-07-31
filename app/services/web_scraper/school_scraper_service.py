@@ -26,7 +26,6 @@ Two-step flow:
 import json
 import logging
 import re
-import xml.etree.ElementTree as ET
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin, urlparse
 
@@ -35,12 +34,23 @@ from bs4 import BeautifulSoup
 
 from app.core.config import settings
 from app.services.web_scraper._discovery_helpers import (
-    _JS_RENDER_SIGNALS,
     collect_urls_from_nav as _collect_urls_from_nav_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
     collect_urls_from_sitemap as _collect_urls_from_sitemap_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
     get_sitemap_url_from_robots as _get_sitemap_url_from_robots_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
     html_needs_playwright as _html_needs_playwright_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
     parse_sitemap_xml as _parse_sitemap_xml_helper,
+)
+from app.services.web_scraper.year_filter import (
+    filter_media_files,
+    should_crawl_page_url,
 )
 
 if TYPE_CHECKING:
@@ -166,20 +176,96 @@ class SchoolScraperService:
         fire continuous background pings that prevent networkidle from being
         reached within the configured timeout.
         """
+        html, _media = await self._fetch_rendered_with_interactions(
+            url, wait_until=wait_until, expand_document_folders=False
+        )
+        return html
+
+    async def _fetch_rendered_with_interactions(
+        self,
+        url: str,
+        *,
+        wait_until: str = "load",
+        expand_document_folders: bool = True,
+    ) -> tuple[str | None, list[dict]]:
+        """
+        Render ``url`` in Playwright and optionally expand CMS folder widgets.
+
+        Returns ``(html, extra_media)`` where ``extra_media`` are document
+        dicts discovered by clicking/opening SharpSchool folder explorers
+        (same-URL widgets that never expose PDFs in the initial DOM).
+        """
         if not self._browser:
-            return await self._fetch_text(url)
+            return await self._fetch_text(url), []
+
+        from app.services.web_scraper.playwright_interactions import (
+            expand_sharpschool_document_list,
+            extract_google_drive_folder_media,
+            extract_google_sheets_embed_media,
+            looks_like_sharpschool_document_list,
+        )
+
         try:
-            page = await self._browser.new_page()
+            page = await self._browser.new_page(
+                user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+            )
             try:
                 await page.goto(
                     url,
                     wait_until=wait_until,
                     timeout=self.timeout * 1000,
                 )
+                # Sheets embeds need a beat to populate iframe frames.
+                try:
+                    await page.wait_for_timeout(2500)
+                except Exception:  # noqa: BLE001
+                    pass
                 html = await page.content()
+                extra_media: list[dict] = []
+
+                if expand_document_folders:
+                    if looks_like_sharpschool_document_list(html or ""):
+                        extra_media.extend(
+                            await expand_sharpschool_document_list(
+                                page,
+                                page_url=url,
+                                timeout_ms=self.timeout * 1000,
+                            )
+                        )
+                        try:
+                            html = await page.content()
+                        except Exception:  # noqa: BLE001
+                            pass
+
+                    # Leominster-style Drive folder iframes (list rendered off-page).
+                    drive_media = await extract_google_drive_folder_media(
+                        html or "",
+                        page_url=url,
+                        fetch_text=self._fetch_text,
+                    )
+                    extra_media.extend(drive_media)
+
+                    # Brewster/Nauset-style Google Sheets agenda/minutes tables.
+                    sheet_media = await extract_google_sheets_embed_media(
+                        page,
+                        page_url=url,
+                        settle_ms=1000,
+                    )
+                    extra_media.extend(sheet_media)
+
+                # Dedupe extra media by URL.
+                seen: set[str] = set()
+                unique_extra: list[dict] = []
+                for m in extra_media:
+                    u = m.get("url")
+                    if not u or u in seen:
+                        continue
+                    seen.add(u)
+                    unique_extra.append(m)
+
+                return html, unique_extra
             finally:
                 await page.close()
-            return html
         except Exception as exc:
             logger.debug(
                 "Playwright render failed for %s (%s): %s — falling back to httpx",
@@ -187,7 +273,7 @@ class SchoolScraperService:
                 type(exc).__name__,
                 exc,
             )
-            return await self._fetch_text(url)
+            return await self._fetch_text(url), []
 
     @staticmethod
     def _html_needs_playwright(html: str) -> bool:
@@ -436,13 +522,20 @@ class SchoolScraperService:
         """
         Return the first configured extension that matches ``path_lower`` or,
         when provided, ``filename_hint`` (e.g. Finalsite ``data-file-name``).
+
+        SharpSchool ``GetFile.ashx`` download endpoints have no file extension
+        in the path; treat them as documents (prefer hint, else ``.pdf``).
         """
         matched = next((e for e in all_ext if path_lower.endswith(e)), None)
         if matched:
             return matched
         if filename_hint:
             hint_lower = filename_hint.lower()
-            return next((e for e in all_ext if hint_lower.endswith(e)), None)
+            matched = next((e for e in all_ext if hint_lower.endswith(e)), None)
+            if matched:
+                return matched
+        if "getfile.ashx" in path_lower:
+            return ".pdf" if ".pdf" in all_ext or not all_ext else next(iter(all_ext))
         return None
 
     @staticmethod
@@ -755,7 +848,9 @@ class SchoolScraperService:
           auto-detected on a previous page in this crawl): fetch with
           Playwright directly so JS-injected content (e.g. Catapult/Finalsite
           CMS document-listing widgets that populate hidden containers via
-          jQuery after page load) is present in the returned HTML.
+          jQuery after page load) is present in the returned HTML. SharpSchool
+          ``#documentList`` folder explorers are expanded automatically so
+          documents behind same-URL folder clicks (GetFile.ashx) are collected.
         - No browser yet: fetch with plain httpx first; if the raw HTML
           contains known JS-framework/CMS fingerprints, launch Playwright
           automatically, re-fetch the page, and reuse the browser for all
@@ -777,29 +872,46 @@ class SchoolScraperService:
 
         while queue:
             current_url, depth = queue.pop(0)
+            extra_media: list[dict] = []
 
             if self._browser:
-                html = await self._fetch_text_rendered(current_url)
+                html, extra_media = await self._fetch_rendered_with_interactions(
+                    current_url, expand_document_folders=True
+                )
             else:
                 html = await self._fetch_text(current_url)
                 if html and self._html_needs_playwright(html):
                     await self._ensure_playwright()
-                    rendered = await self._fetch_text_rendered(current_url)
+                    rendered, extra_media = await self._fetch_rendered_with_interactions(
+                        current_url, expand_document_folders=True
+                    )
                     if rendered:
                         html = rendered
 
-            if not html:
+            if not html and not extra_media:
                 continue
 
             pages_crawled += 1
-            media, sub_pages = self._extract_media_from_page(
-                html, current_url, video_ext, audio_ext, doc_ext
-            )
-            all_media.extend(media)
+            if html:
+                media, sub_pages = self._extract_media_from_page(
+                    html, current_url, video_ext, audio_ext, doc_ext
+                )
+                all_media.extend(filter_media_files(media))
+            else:
+                sub_pages = []
+
+            if extra_media:
+                all_media.extend(filter_media_files(extra_media))
 
             if depth < crawl_depth:
                 for sub_url in sub_pages:
                     if sub_url not in visited and pages_crawled < max_pages:
+                        if not should_crawl_page_url(sub_url):
+                            logger.debug(
+                                "Skipping out-of-range archive sub-page: %s",
+                                sub_url,
+                            )
+                            continue
                         visited.add(sub_url)
                         queue.append((sub_url, depth + 1))
 

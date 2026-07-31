@@ -96,6 +96,26 @@ class Document(BaseModel):
     doc_kind = Column(String(64), nullable=True)
     meeting_date = Column(Date, nullable=True, index=True)
 
+    # Heatmap-ingest V1 metadata (see plan: Heatmap Ingest Metadata v1).
+    # Doc-level denormalized fields propagated from School + source_metadata
+    # + DocClassifier output, also mirrored onto every Qdrant chunk payload
+    # for payload pre-filtering and facet exploration.
+    state = Column(String(2), nullable=True, index=True)
+    district_name = Column(String(512), nullable=True, index=True)
+    school_year = Column(String(9), nullable=True, index=True)  # e.g. "2023-2024"
+    quarter_month = Column(String(7), nullable=True, index=True)  # e.g. "2024-03"
+    # Distinct from the file-extension document_type above. Populated by
+    # DocClassifier with one of the meeting_doc_type enum values (Minutes,
+    # Agenda, Agenda Attachment, Public Comment Transcript, Policy Document,
+    # Presentation Slide).
+    meeting_doc_type = Column(String(64), nullable=True, index=True)
+    meeting_body = Column(String(128), nullable=True, index=True)
+    # V1: default clean_digital for all docs. Real OCR-confidence detection
+    # is deferred; the field is in place so the schema is forward-compatible.
+    document_quality = Column(
+        String(32), nullable=False, server_default="clean_digital", index=True
+    )
+
     # Source tracking (populated by Box sync or other ingestors)
     source_id = Column(String(255), nullable=True, index=True)
     source_type = Column(String(50), nullable=True, index=True)

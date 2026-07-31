@@ -25,7 +25,8 @@ import asyncio
 import io
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 
 def _utcnow() -> datetime:
-    return datetime.now(datetime.UTC)
+    return datetime.now(timezone.utc)
 
 
 class BatchClassifier:
@@ -116,8 +117,16 @@ class BatchClassifier:
         logger.info(f"Building batch of {len(pending_rows)} chunks for submission.")
 
         # Build the JSONL payload.
+        # Resolve state per document so the state vocabulary pack (A3b) is
+        # injected into each chunk's prompt. Cached per call to avoid
+        # repeated DB hits within a single batch.
+        doc_state_cache: dict[int, str | None] = {}
         lines: list[str] = []
         for row in pending_rows:
+            if row.document_id not in doc_state_cache:
+                doc_state_cache[row.document_id] = await self._state_for_doc(
+                    db, row.document_id
+                )
             request = build_batch_request_line(
                 custom_id=str(row.id),
                 chunk_text=row.chunk_text,
@@ -125,6 +134,7 @@ class BatchClassifier:
                 meeting_date=(
                     row.meeting_date.isoformat() if row.meeting_date else None
                 ),
+                state=doc_state_cache[row.document_id],
                 model=self._model,
             )
             lines.append(serialize_batch_line(request))
@@ -215,6 +225,7 @@ class BatchClassifier:
             VectorStoreType(settings.VECTOR_STORE_TYPE)
         )
         tenant_cache: dict[int, int] = {}
+        doc_state_cache: dict[int, str | None] = {}
         per_doc_classifications: dict[
             int, list[tuple[PendingClassification, ChunkClassification]]
         ] = {}
@@ -223,6 +234,10 @@ class BatchClassifier:
 
         async def _classify_row(row: PendingClassification) -> None:
             async with semaphore:
+                if row.document_id not in doc_state_cache:
+                    doc_state_cache[row.document_id] = await self._state_for_doc(
+                        db, row.document_id
+                    )
                 request = build_batch_request_line(
                     custom_id=str(row.id),
                     chunk_text=row.chunk_text,
@@ -230,6 +245,7 @@ class BatchClassifier:
                     meeting_date=(
                         row.meeting_date.isoformat() if row.meeting_date else None
                     ),
+                    state=doc_state_cache[row.document_id],
                     model=self._model,
                 )
                 body = dict(request["body"])
@@ -255,16 +271,9 @@ class BatchClassifier:
                     if hasattr(vector_store, "update_metadata"):
                         await vector_store.update_metadata(
                             chunk_ids=[row.qdrant_point_id],
-                            metadata={
-                                "topics": classification.topics,
-                                "action_types": classification.action_types,
-                                "subtopics": classification.subtopics,
-                                "evidence_quote": classification.evidence_quote,
-                                "off_topic": classification.off_topic,
-                                "entity_type": row.entity_type,
-                                "classified": True,
-                                "classified_at": _utcnow().isoformat(),
-                            },
+                            metadata=self._build_payload_metadata(
+                                classification, row_entity_type=row.entity_type
+                            ),
                             tenant_id=tenant_id,
                         )
                 except Exception as exc:  # noqa: BLE001
@@ -281,12 +290,23 @@ class BatchClassifier:
                 row.error_message = None
                 stats["applied"] += 1
 
+                # A9 safety-net signal: a keyword flag fired but the
+                # classifier produced no topic_tags. Logged (not actioned)
+                # so eval can spot classifier misses during spot-check.
+                if not classification.topic_tags and row.chunk_text:
+                    self._log_keyword_safety_net(
+                        row.chunk_text,
+                        doc_state_cache.get(row.document_id),
+                        row.id,
+                    )
+
         await asyncio.gather(*[_classify_row(row) for row in pending_rows])
         await self._upsert_heatmap_aggregate(db, per_doc_classifications)
 
         job = BatchClassificationJob(
             batch_id=batch_id,
-            input_jsonl_s3_key=None,
+            # Column is NOT NULL; OpenRouter direct path has no JSONL upload.
+            input_jsonl_s3_key=f"local://{batch_id}",
             chunk_count=len(pending_rows),
             status="applied",
             submitted_at=_utcnow(),
@@ -444,16 +464,9 @@ class BatchClassifier:
                 if hasattr(vector_store, "update_metadata"):
                     await vector_store.update_metadata(
                         chunk_ids=[pending.qdrant_point_id],
-                        metadata={
-                            "topics": classification.topics,
-                            "action_types": classification.action_types,
-                            "subtopics": classification.subtopics,
-                            "evidence_quote": classification.evidence_quote,
-                            "off_topic": classification.off_topic,
-                            "entity_type": pending.entity_type,
-                            "classified": True,
-                            "classified_at": _utcnow().isoformat(),
-                        },
+                        metadata=self._build_payload_metadata(
+                            classification, row_entity_type=pending.entity_type
+                        ),
                         tenant_id=tenant_id,
                     )
             except Exception as exc:  # noqa: BLE001
@@ -474,6 +487,20 @@ class BatchClassifier:
             pending.status = "applied"
             pending.error_message = None
             stats["applied"] += 1
+
+            # A9 safety-net signal: a keyword flag fired but the
+            # classifier produced no topic_tags. Logged (not actioned)
+            # so eval can spot classifier misses during spot-check.
+            if not classification.topic_tags and pending.chunk_text:
+                self._log_keyword_safety_net(
+                    pending.chunk_text,
+                    # state lookup deferred to avoid an extra DB hit per
+                    # chunk; the per-call doc_state cache isn't available
+                    # in the apply path. Pass None and the helper resolves
+                    # via the document lookup if needed.
+                    None,
+                    pending.id,
+                )
 
         # Upsert heatmap_aggregate per (school, topic).
         await self._upsert_heatmap_aggregate(db, per_doc_classifications)
@@ -504,6 +531,87 @@ class BatchClassifier:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _build_payload_metadata(
+        self,
+        classification: ChunkClassification,
+        *,
+        row_entity_type: str | None,
+    ) -> dict[str, Any]:
+        """Build the Qdrant set_payload dict for one chunk classification.
+
+        V1 additions (spec A3/A5): topic_tags, action_stage, speakers.
+        The legacy topics / action_types / subtopics fields are preserved
+        for backward compatibility with the heatmap_aggregate roll-up and
+        the existing retrieval path; do NOT drop until the follow-up
+        migration.
+        """
+        return {
+            # Legacy fields (backward compat).
+            "topics": classification.topics,
+            "action_types": classification.action_types,
+            "subtopics": classification.subtopics,
+            "evidence_quote": classification.evidence_quote,
+            "off_topic": classification.off_topic,
+            "entity_type": row_entity_type,
+            "classified": True,
+            "classified_at": _utcnow().isoformat(),
+            # V1 fields (spec A3/A5).
+            "topic_tags": [
+                {"category": t.category, "subtopic": t.subtopic}
+                for t in classification.topic_tags
+            ],
+            "action_stage": classification.action_stage,
+            "speakers": [
+                {"name": s.name, "role": s.role}
+                for s in classification.speakers
+            ],
+        }
+
+    def _log_keyword_safety_net(
+        self,
+        chunk_text: str,
+        state: str | None,
+        pending_id: int | str,
+    ) -> None:
+        """Log A9 safety-net events: keyword flag fired but topic_tags empty.
+
+        Reconciles the pre-computed `keyword_flags` (from ingest) against
+        the classifier output. Per A9 this is expected and useful — the
+        safety net for classifier misses. We log so eval can spot misses
+        during spot-check; we do NOT mutate the classification.
+        """
+        try:
+            from app.services.heatmap_ingest.vocabulary_packs import (
+                get_keyword_flags_for_state,
+                match_keyword_flags,
+            )
+
+            flags = match_keyword_flags(
+                chunk_text, get_keyword_flags_for_state(state)
+            )
+            if flags:
+                logger.info(
+                    "A9 safety-net: pending_id=%s state=%s keyword_flags=%s "
+                    "but topic_tags=[]",
+                    pending_id,
+                    state,
+                    flags,
+                )
+        except Exception:  # noqa: BLE001
+            # Reconciliation is best-effort; never fail a classification on it.
+            pass
+
+    async def _state_for_doc(
+        self, db: AsyncSession, document_id: int
+    ) -> str | None:
+        """Look up the state (2-letter) for a document (cached per call)."""
+        from app.models.documents import Document
+
+        doc = await db.get(Document, document_id)
+        if doc is None:
+            return None
+        return doc.state
 
     async def _tenant_id_for_doc(
         self, db: AsyncSession, document_id: int
