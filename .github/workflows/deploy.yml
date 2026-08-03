@@ -1,0 +1,331 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or Tag"
+        required: true
+        default: "main"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+
+      ###########################################################
+      # Checkout
+      ###########################################################
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      ###########################################################
+      # AWS Login
+      ###########################################################
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      ###########################################################
+      # Login ECR
+      ###########################################################
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      ###########################################################
+      # Buildx
+      ###########################################################
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      ###########################################################
+      # Build & Push ARM64 Image
+      ###########################################################
+
+      - name: Build & Push Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/arm64
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:latest
+
+      ###########################################################
+      # Generate .env.prod
+      ###########################################################
+
+      - name: Generate .env.prod
+        run: |
+          cat > .env.prod <<EOF
+          ECR_IMAGE=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+          AWS_REGION=${{ vars.AWS_REGION }}
+          AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
+
+          POSTGRES_SERVER=${{ vars.POSTGRES_SERVER }}
+          POSTGRES_DB=${{ vars.POSTGRES_DB }}
+          POSTGRES_USER=${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ vars.POSTGRES_PASSWORD }}
+
+          LLM_API_PROVIDER=${{ vars.LLM_API_PROVIDER }}
+          OPENROUTER_API_KEY=${{ vars.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL=${{ vars.OPENROUTER_BASE_URL }}
+          OPENROUTER_HTTP_REFERER=${{ vars.OPENROUTER_HTTP_REFERER }}
+          OPENROUTER_APP_NAME=${{ vars.OPENROUTER_APP_NAME }}
+
+          OPENAI_API_KEY=${{ vars.OPENAI_API_KEY }}
+          OPENAI_EMBEDDING_MODEL=${{ vars.OPENAI_EMBEDDING_MODEL }}
+
+          ACCESS_TOKEN_EXPIRE_MINUTES=${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
+          REFRESH_TOKEN_EXPIRE_DAYS=${{ vars.REFRESH_TOKEN_EXPIRE_DAYS }}
+          ALGORITHM=${{ vars.ALGORITHM }}
+
+          FRONTEND_BASE_URL=${{ vars.FRONTEND_BASE_URL }}
+          BACKEND_CORS_ORIGINS=${{ vars.BACKEND_CORS_ORIGINS }}
+
+          SMTP_HOST=${{ vars.SMTP_HOST }}
+          SMTP_PORT=${{ vars.SMTP_PORT }}
+          SMTP_USER=${{ vars.SMTP_USER }}
+          SMTP_PASSWORD=${{ vars.SMTP_PASSWORD }}
+          SMTP_FROM=${{ vars.SMTP_FROM }}
+
+          EMAIL_VERIFICATION_EXPIRE_HOURS=${{ vars.EMAIL_VERIFICATION_EXPIRE_HOURS }}
+
+          S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}
+          S3_REGION=${{ vars.S3_REGION }}
+
+          VECTOR_STORE_TYPE=${{ vars.VECTOR_STORE_TYPE }}
+          VECTOR_DB_PATH=${{ vars.VECTOR_DB_PATH }}
+          CHROMA_COLLECTION_PREFIX=${{ vars.CHROMA_COLLECTION_PREFIX }}
+          CHROMA_PERSIST_DIR=${{ vars.CHROMA_PERSIST_DIR }}
+
+          CHUNK_SIZE=${{ vars.CHUNK_SIZE }}
+          CHUNK_OVERLAP=${{ vars.CHUNK_OVERLAP }}
+
+          MAX_TOKENS=${{ vars.MAX_TOKENS }}
+          MAX_FILE_SIZE_MB=${{ vars.MAX_FILE_SIZE_MB }}
+
+          ALLOWED_DOCUMENT_TYPES=${{ vars.ALLOWED_DOCUMENT_TYPES }}
+
+          DEFAULT_ROLE_ID=${{ vars.DEFAULT_ROLE_ID }}
+          DEFAULT_TENANT_ID=${{ vars.DEFAULT_TENANT_ID }}
+
+          TEMP_UPLOAD_DIR=${{ vars.TEMP_UPLOAD_DIR }}
+
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+
+          EOF
+
+      ###########################################################
+      # Show env (masked)
+      ###########################################################
+
+      - name: Verify .env.prod
+        run: |
+          sed \
+            -e 's/AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=********/' \
+            -e 's/AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=********/' \
+            -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
+            -e 's/SMTP_PASSWORD=.*/SMTP_PASSWORD=********/' \
+            -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
+            .env.prod
+
+      ###########################################################
+      # Copy .env
+      ###########################################################
+
+      - name: Copy Environment File
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: ".env.prod"
+          target: "${{ vars.APP_DIRECTORY }}"
+          overwrite: true
+
+      ###########################################################
+      # Get ECR Login Password
+      ###########################################################
+
+      - name: Generate ECR Login Password
+        id: ecr
+        run: |
+
+          PASSWORD=$(aws ecr get-login-password --region "${{ vars.AWS_REGION }}")
+
+          echo "::add-mask::$PASSWORD"
+
+          {
+            echo "password<<EOF"
+            printf '%s\n' "$PASSWORD"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      ###########################################################
+      # Deploy
+      ###########################################################
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          ECR_PASSWORD: ${{ steps.ecr.outputs.password }}
+          REF: ${{ github.event.inputs.ref }}
+
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY,ECR_PASSWORD,REF
+
+          script: |
+
+            set -e
+
+            cd ${{ vars.APP_DIRECTORY }}
+
+            echo "======================================="
+            echo "Updating Repository"
+            echo "======================================="
+
+            git fetch origin
+
+            git checkout $REF
+
+            git pull origin $REF
+
+            echo
+            echo "======================================="
+            echo "Docker Login"
+            echo "======================================="
+
+            printf '%s' "$ECR_PASSWORD" | docker login \
+              --username AWS \
+              --password-stdin \
+              ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+            echo
+            echo "======================================="
+            echo "Using Image"
+            echo "======================================="
+
+            cd /home/ubuntu/justedtech
+            
+            grep ECR_IMAGE .env.prod
+
+            echo
+            echo "Pulling Images..."
+            echo
+            
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              pull
+
+            echo
+            echo "Stopping Containers..."
+            echo
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              down
+
+            echo
+            echo "Starting Containers..."
+            echo
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              up -d
+
+            echo
+            sleep 30
+
+            docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              ps
+
+            echo
+            echo "Health Check"
+
+            API=$(docker compose \
+              --env-file .env.prod \
+              -f docker-compose.prod.yml \
+              ps -q api)
+
+            STATUS=$(docker inspect \
+              --format='{{.State.Health.Status}}' \
+              $API)
+
+            echo "API STATUS = $STATUS"
+
+            if [ "$STATUS" != "healthy" ]; then
+
+                echo
+                echo "Deployment Failed"
+
+                docker compose \
+                  --env-file .env.prod \
+                  -f docker-compose.prod.yml \
+                  logs --tail=300
+
+                exit 1
+
+            fi
+
+            echo
+            echo "Cleaning Docker"
+
+            docker image prune -af
+
+            docker system prune -f
+
+      ###########################################################
+      # Summary
+      ###########################################################
+
+      - name: Deployment Summary
+        run: |
+
+          echo "## Backend Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository** : ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch** : ${{ github.event.inputs.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image** : ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**EC2** : ${{ vars.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status** : ✅ Success" >> $GITHUB_STEP_SUMMARY

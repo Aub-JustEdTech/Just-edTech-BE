@@ -92,6 +92,11 @@ jobs:
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
+          LLM_API_PROVIDER=${{ vars.LLM_API_PROVIDER }}
+          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL=${{ vars.OPENROUTER_BASE_URL }}
+          OPENROUTER_HTTP_REFERER=${{ vars.OPENROUTER_HTTP_REFERER }}
+          OPENROUTER_APP_NAME=${{ vars.OPENROUTER_APP_NAME }}
           OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
           AWS_REGION=${{ vars.AWS_REGION }}
           AWS_BUCKET=${{ secrets.AWS_BUCKET }}

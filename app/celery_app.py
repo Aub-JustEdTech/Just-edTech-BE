@@ -32,6 +32,9 @@ celery_app.conf.update(
     # Task routing
     task_routes={
         "app.tasks.document_tasks.process_document_task": {"queue": "documents"},
+        "app.tasks.school_scraper_tasks.ingest_scraped_media": {
+            "queue": "scraping"
+        },
     },
     # Retry settings
     task_acks_late=True,  # Acknowledge after task completion
@@ -58,6 +61,26 @@ celery_app.conf.update(
             "options": {
                 "expires": 7200,  # Task expires after 2 hours if not picked up
             },
+        },
+        # Heatmap batch classification lifecycle.
+        # Submit daily at 4 AM UTC. Poll every 15 min so completed batches
+        # are applied promptly.
+        "submit-pending-batch-classification": {
+            "task": "submit_pending_batch_classification",
+            "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
+            "options": {"expires": 3600},
+        },
+        "poll-batch-classification": {
+            "task": "poll_batch_classification",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+            "options": {"expires": 900},
+        },
+        # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
+        # to catch drift from failed set_payload calls or manual edits.
+        "reconcile-heatmap-aggregate": {
+            "task": "reconcile_heatmap_aggregate",
+            "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
+            "options": {"expires": 2 * 3600},
         },
     },
 )

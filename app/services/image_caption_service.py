@@ -4,12 +4,8 @@ Image caption service using GPT-4o vision for generating context-aware captions.
 
 import base64
 import logging
-from pathlib import Path
-from typing import Any
 
-from openai import AsyncOpenAI
-
-from app.core.config import settings
+from app.services.llm.client import get_async_openai_client, normalize_model_name
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +15,11 @@ class ImageCaptionService:
 
     def __init__(self):
         """Initialize the image caption service"""
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-        if not self.client:
-            logger.warning("OpenAI API key not configured. Image captioning will be disabled.")
+        try:
+            self.client = get_async_openai_client()
+        except ValueError:
+            self.client = None
+            logger.warning("LLM API key not configured. Image captioning will be disabled.")
 
     async def generate_caption(
         self,
@@ -77,7 +75,7 @@ Generate a detailed caption that captures both visual content and contextual mea
 
             # Call GPT-4o vision
             response = await self.client.chat.completions.create(
-                model="gpt-4o",
+                model=normalize_model_name("openai/gpt-4o"),
                 messages=[
                     {
                         "role": "user",

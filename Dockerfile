@@ -47,11 +47,17 @@ FROM python:3.12.11-slim AS production
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH="/app"
+    PYTHONPATH="/app" \
+    # Use the apt-installed system Chromium below instead of Playwright's own
+    # downloaded browser — no ~150MB browser download on every image build.
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/usr/bin/chromium"
 
 WORKDIR /app
 
-# Runtime dependencies only
+# Runtime dependencies only.
+# `chromium` pulls in all the shared libs Playwright/Chromium needs
+# (libnss3, libatk, libgtk, etc.) via normal apt dependency resolution —
+# no separate `playwright install-deps`/`playwright install` download step.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -65,6 +71,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     shared-mime-info \
     fontconfig \
     fonts-dejavu-core \
+    chromium \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

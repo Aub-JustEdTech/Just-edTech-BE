@@ -94,7 +94,7 @@ class ChatbotConfigService:
         return {
             "model": chat_model.name
             if chat_model
-            else settings.OPENAI_EMBEDDING_MODEL.replace("text-embedding", "gpt"),
+            else settings.CHATBOT_DEFAULT_CHAT_MODEL,
             "temperature": temperature,
             "max_tokens": chat_max_tokens,
             "system_prompt": system_prompt,

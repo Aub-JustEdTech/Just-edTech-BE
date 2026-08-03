@@ -34,7 +34,7 @@ services:
       - redis_data:/data
 
     healthcheck:
-      test: ["CMD","redis-cli","ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,7 +55,7 @@ services:
       - qdrant_data:/qdrant/storage
 
     healthcheck:
-      test: ["CMD","wget","--spider","-q","http://localhost:6333/healthz"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:6333/healthz"]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -65,8 +65,8 @@ services:
   ##################################################
   api:
     image: ${ECR_IMAGE}
+    pull_policy: always
     container_name: just-edtech-api
-
     restart: unless-stopped
 
     env_file:
@@ -107,14 +107,21 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
 
   ##################################################
   # Celery Worker
   ##################################################
   celery-worker:
     image: ${ECR_IMAGE}
+    pull_policy: always
     container_name: celery-worker
-
     restart: unless-stopped
 
     env_file:
@@ -144,6 +151,96 @@ services:
       --max-tasks-per-child=1000
       --time-limit=3600
       --soft-time-limit=3000
+      -Q celery,documents
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+
+  ##################################################
+  # Celery Scraper Worker
+  # Dedicated to the `scraping` queue: Playwright, media downloads,
+  # yt-dlp transcripts, Whisper transcription. Single-concurrency to keep
+  # memory bounded; raise via replicas rather than --concurrency.
+  ##################################################
+
+  celery-scraper:
+    image: ${ECR_IMAGE}
+    pull_policy: always
+
+    container_name: celery-scraper
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QDRANT_URL: http://qdrant:6333
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+    volumes:
+      - temp_uploads:/app/temp_uploads
+
+    command: >
+      celery
+      -A app.celery_app
+      worker
+      --loglevel=info
+      --concurrency=1
+      --max-tasks-per-child=100
+      --time-limit=7200
+      --soft-time-limit=6000
+      -Q scraping
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G
+
+  ##################################################
+  # Celery Beat - Periodic Task Scheduler
+  # Fires the biweekly school scrape cycle + daily/monthly aggregations.
+  # Scale horizontally only with a distributed beat scheduler (e.g. redbeat);
+  # keep replicas=1 to avoid duplicate periodic task firing.
+  ##################################################
+
+  celery-beat:
+    image: ${ECR_IMAGE}
+    pull_policy: always
+
+    container_name: celery-beat
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QDRANT_URL: http://qdrant:6333
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+    command: >
+      celery
+      -A app.celery_app
+      beat
+      --loglevel=info
+      --pidfile=/tmp/celerybeat.pid
 
 volumes:
   redis_data:

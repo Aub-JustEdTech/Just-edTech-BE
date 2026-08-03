@@ -1,0 +1,122 @@
+[
+    {
+        "name": "Quabbin",
+        "org_code": "07530000",
+        "website": "https://www.qrsd.org",
+      "correct_URL":"https://www.qrsd.org/cms/One.aspx?portalId=1223783&pageId=6694465&portletInstanceId=154600"
+    },
+    {
+        "name": "Wachusett",
+        "org_code": "07750000",
+        "website": "https://www.wrsd.net",
+    "correct _URL":"https://www.wrsd.net/school-committee/agendas-minutes"
+     },
+      {
+        "name": "Leicester",
+        "org_code": "01510000",
+        "website": "https://www.leicester.k12.ma.us",
+    "correct_URL":"https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes"
+      },
+      {
+        "name": "Ware",
+        "org_code": "03090000",
+        "website": "https://www.wareps.org",
+    "correct_URL":"https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes"
+      },
+      {
+        "name": "Wareham",
+        "org_code": "03100000",
+        "website": "https://warehamps.schoolblocks.com",
+    "correct_URL":"https://warehamps.org/en-US/archived-agendas-meeting-packets-5ca3fbb1"
+      },
+      {
+        "name": "Plymouth",
+        "org_code": "02390000",
+        "website": "https://www.plymouth.k12.ma.us",
+    "correct_URL":" https://www.plymouth.k12.ma.us/page/school-committee"
+      },
+      {
+        "name": "Bourne",
+        "org_code": "00360000",
+        "website": "https://www.bourneps.org/",
+    "correct_URL":"https://www.bourneps.org/our-school-committee/school-committee-minutes"
+      },
+      {
+        "name": "Worcester",
+        "org_code": "03480000",
+        "website": "https://www.worcesterschools.org",
+    "correct_URL":"https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/559835"
+      },
+      {
+        "name": "Shutesbury",
+        "org_code": "02720000",
+        "website": "https://www.union28.org",
+    "correct_URL":"https://www.union28.org/joint_supervisory_committee/meeting_minutes"
+      },
+      {
+        "name": "Leominster",
+        "org_code": "01530000",
+        "website": "https://www.leominsterps.org",
+    "correct_URL":"https://www.leominsterps.org/district/school-committee"
+      },
+      {
+        "name": "New Salem-Wendell",
+        "org_code": "07280000",
+        "website": "https://www.union28.org",
+    "correct_URL":"https://www.union28.org/joint_supervisory_committee/meeting_minutes"
+      },
+      {
+        "name": "Belchertown",
+        "org_code": "00240000",
+        "website": "https://www.belchertownps.org",
+    "correct_URL":"https://www.belchertownps.org/school-committee-document-archives/"
+      },
+      {
+        "name": "Quaboag Regional",
+        "org_code": "07780000",
+        "website": "https://www.quaboagrsd.org",        
+    "correct_URL":"https://www.quaboagrsd.org/district-depts/school-committee"
+      },
+      {
+        "name": "Palmer",
+        "org_code": "02270000",
+        "website": "https://www.palmerschools.org",
+    "correct_URL":"https://www.palmerschools.org/apps/pages/index.jsp?uREC_ID=293361&type=d"
+      },
+      {
+        "name": "Bristol County Agricultural",
+        "org_code": "09100000",
+        "website": "https://www.bristolaggie.org",
+    "correct_URL":"https://www.bristolaggie.org/page/board-of-trustees/"
+      },
+      {
+        "name": "Bristol-Plymouth Regional Vocational Technical",
+        "org_code": "08100000",
+        "website": "https://www.bptech.org",
+    "correct_URL":"https://www.bptech.org/about/school-committee/meeting-minutes-archive"
+      },
+      {
+        "name": "Brimfield",
+        "org_code": "00430000",
+        "website": "https://www.tantasqua.org",
+    "correct_URL":"https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3615137&type=d&pREC_ID=2409146"
+      },
+      {
+        "name": "Bridgewater-Raynham",
+        "org_code": "06250000",
+        "website": "https://bridge-rayn.org",
+    "correct_URL":"https://bridge-rayn.org/en-US/school-committee-8c4f9a98/meeting-minutes-9945763c"
+      },
+      {
+        "name": "Brewster",
+        "org_code": "00410000",
+        "website": "http://nausetschools.org",
+    "correct_URL":"https://www.nausetschools.org/page/regional-school-committee-agendas-minutes"
+      },
+      {
+        "name": "Bridge Boston Charter School (District)",
+        "org_code": "04170000",
+        "website": "https://www.bridgebostoncs.org",
+    "correct_URL":"https://www.bridgebostoncs.org/meetingminutes/october-7-2020-finance-committee-meeting"
+      }
+    ]
