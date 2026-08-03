@@ -1,13 +1,11 @@
 """
 Pydantic schemas for the school scraping knowledge base endpoints.
 
-Covers: schools CRUD, scrape URL configuration, scrape run/job tracking,
-and scraped media records.
+Covers: schools CRUD, scrape URL configuration, and scraped media records.
 """
 
 from datetime import date, datetime
 from typing import Literal
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -80,7 +78,8 @@ class SchoolOut(BaseModel):
     updated_at: datetime
     scrape_urls: list[SchoolScrapeUrlOut] = Field(default_factory=list)
     scraped_media_count: int = 0
-    last_run_status: str | None = None
+    has_confirmed_scrape_url: bool = False
+    confirmed_scrape_url: str | None = None
 
 
 class SchoolListOut(BaseModel):
@@ -120,87 +119,6 @@ class ScrapeUrlUpdate(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Scrape runs & jobs
-# ---------------------------------------------------------------------------
-
-
-class ScrapeRunOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    tenant_id: int
-    triggered_by: str
-    status: str
-    started_at: datetime | None
-    completed_at: datetime | None
-    total_schools: int
-    schools_completed: int
-    schools_failed: int
-    schools_skipped: int
-    media_found: int
-    media_new: int
-    media_skipped_duplicate: int
-    error_summary: dict | None
-    created_at: datetime
-    updated_at: datetime
-
-
-class ScrapeRunListOut(BaseModel):
-    items: list[ScrapeRunOut]
-    total: int
-    skip: int
-    limit: int
-
-
-class SchoolScrapeJobOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    run_id: int
-    school_id: int
-    scrape_url_id: int
-    status: str
-    started_at: datetime | None
-    completed_at: datetime | None
-    pages_crawled: int
-    media_found: int
-    media_new: int
-    media_skipped_duplicate: int
-    error_message: str | None
-    scrape_result: dict | None
-    created_at: datetime
-    updated_at: datetime
-
-
-class ScrapeRunDetailOut(ScrapeRunOut):
-    jobs: list[SchoolScrapeJobOut] = Field(default_factory=list)
-
-
-class TriggerRunRequest(BaseModel):
-    """Manually trigger a full scrape cycle for a tenant."""
-
-    only_active: bool = True
-
-
-class TriggerSchoolScrapeRequest(BaseModel):
-    """Manually trigger a scrape for a single school."""
-
-    scrape_url_id: int | None = Field(
-        None,
-        description="Defaults to the school's primary scrape_url_id.",
-    )
-
-
-class ScrapeJobAck(BaseModel):
-    """Acknowledgement returned when a scrape is enqueued."""
-
-    run_id: int
-    job_id: int | None
-    status: str
-    message: str
-
-
-# ---------------------------------------------------------------------------
 # Scraped media
 # ---------------------------------------------------------------------------
 
@@ -214,8 +132,6 @@ class ScrapedMediaOut(BaseModel):
     school_org_code: str
     school_name: str | None
     district_type: str | None
-    scrape_job_id: int | None
-    scrape_run_id: int | None
     source_page_url: str
     source_media_url: str
     url_hash: str
@@ -225,6 +141,7 @@ class ScrapedMediaOut(BaseModel):
     original_name: str | None
     document_type: str | None
     meeting_date: date | None
+    doc_year: int | None = None
     s3_key_raw: str | None
     s3_key_text: str | None
     size_bytes: int | None
@@ -245,20 +162,55 @@ class ScrapedMediaListOut(BaseModel):
     limit: int
 
 
-# ---------------------------------------------------------------------------
-# Discovery (stateless — for one-time FE confirmation only)
-# ---------------------------------------------------------------------------
-
-
-class DiscoverForSchoolRequest(BaseModel):
-    """Run URL discovery against a school's website."""
-
-    max_candidates: int = 10
-    use_playwright: bool = False
-
-
-# ---------------------------------------------------------------------------
-# Webhook / chat consumer passthrough (unused placeholder kept for parity)
-# ---------------------------------------------------------------------------
-
 MediaTypeLiteral = Literal["video", "audio", "document", "youtube"]
+
+ConfirmationStatusFilter = Literal["added", "not_added"]
+
+
+# ---------------------------------------------------------------------------
+# Scrape URL confirmation (JSON-backed candidates)
+# ---------------------------------------------------------------------------
+
+
+CandidateSource = Literal["discovered", "manual"]
+
+
+class ScrapeUrlCandidateOut(BaseModel):
+    """One ranked candidate URL (discovered JSON and/or manually added)."""
+
+    rank: int
+    url: str
+    score: int
+    matched_keywords: list[str] = Field(default_factory=list)
+    data_type: str | None = None
+    is_archive: bool = False
+    data_years_available: list[int] = Field(default_factory=list)
+    source: CandidateSource = "discovered"
+    is_selected: bool = False
+    scrape_url_id: int | None = None
+
+
+class SchoolCandidateReviewOut(BaseModel):
+    """School row merged with JSON discovery candidates and DB confirm state."""
+
+    school_id: int | None = None
+    org_code: str
+    name: str
+    website: str | None = None
+    in_database: bool = False
+    has_confirmed_scrape_url: bool = False
+    confirmed_scrape_url: str | None = None
+    confirmed_scrape_url_id: int | None = None
+    discovery_method: str | None = None
+    total_urls_scanned: int = 0
+    total_candidates: int = 0
+    candidates: list[ScrapeUrlCandidateOut] = Field(default_factory=list)
+
+
+class SchoolCandidateReviewListOut(BaseModel):
+    items: list[SchoolCandidateReviewOut]
+    total: int
+    skip: int
+    limit: int
+    added_count: int
+    not_added_count: int

@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     CHATBOT_DEFAULT_SYSTEM_PROMPT: str = (
         "You are a helpful assistant that answers using the organization's knowledge base."
     )
-    CHATBOT_DEFAULT_CHAT_MODEL: str = "gpt-4o-mini"
+    CHATBOT_DEFAULT_CHAT_MODEL: str = "openai/gpt-4o-mini"
     CHATBOT_DEFAULT_CHAT_TEMPERATURE: float = 0.7
     CHATBOT_DEFAULT_RAG_TOP_K: int = 3
     CHATBOT_DEFAULT_RAG_MAX_HISTORY: int = 25
@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     CHATBOT_ENABLE_PROMPT_SUGGESTIONS: bool = True
     CHATBOT_DEFAULT_OPENAI_TIMEOUT_S: int = 30
     CHATBOT_DEFAULT_SEARCH_TYPE: str = "similarity"
-    
+
     # Multimodal RAG Configuration
     CHATBOT_DEFAULT_ENABLE_MULTIMODAL: bool = True
     CHATBOT_DEFAULT_MAX_IMAGES: int = 2
@@ -86,9 +86,46 @@ class Settings(BaseSettings):
     PINECONE_ENVIRONMENT: str | None = None
     WEAVIATE_URL: str | None = None
 
-    # OpenAI API (API_KEY must be set in .env)
+    # LLM API provider: "openrouter" (default) or "openai"
+    LLM_API_PROVIDER: str = "openrouter"
+    # OpenRouter (primary when LLM_API_PROVIDER=openrouter)
+    OPENROUTER_API_KEY: str | None = None
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_HTTP_REFERER: str = "http://localhost:8000"
+    OPENROUTER_APP_NAME: str = "Just-EdTech"
+    # Concurrency for heatmap chunk classification when OpenRouter's Batch API
+    # is unavailable (direct chat-completions path).
+    OPENROUTER_BATCH_CONCURRENCY: int = 10
+    # Legacy OpenAI direct API (used when LLM_API_PROVIDER=openai, or as
+    # fallback key when OPENROUTER_API_KEY is unset).
     OPENAI_API_KEY: str | None = None
-    OPENAI_EMBEDDING_MODEL: str = "text-embedding-ada-002"
+    OPENAI_EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
+
+    # Heatmap ingestion overrides. When non-empty, school_scraper-sourced
+    # documents use this embedding model + token-mode chunking regardless of
+    # the per-tenant chatbot config. Empty = fall back to tenant config.
+    HEATMAP_INGEST_EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
+    HEATMAP_INGEST_CHUNK_SIZE: int = 500
+    HEATMAP_INGEST_CHUNK_OVERLAP: int = 100
+    # Doc-level (entity_type/doc_kind/meeting_date) and chunk-level
+    # (topics/action_types) classifier settings.
+    HEATMAP_INGEST_DOC_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    # Max chunks per OpenAI Batch API submission. The API caps at 50,000
+    # requests per batch; we use a smaller default to keep batches quick.
+    HEATMAP_INGEST_BATCH_SIZE: int = 50_000
+    # When True, the heatmap service returns canned sample data instead of
+    # reading heatmap_aggregate + Qdrant. Useful for local dev without a
+    # populated vector store. Default False (use real data).
+    HEATMAP_USE_SAMPLE_DATA: bool = False
+    # Per-chunk contextual augmentation (Anthropic-style "contextual
+    # retrieval"). One LLM call per chunk, full source doc as reference,
+    # generates a short situating context prepended before embedding.
+    # Disabled by default; flip to True to enable the step2_7 stage for
+    # school_scraper docs.
+    HEATMAP_CONTEXT_ENABLED: bool = True
+    HEATMAP_CONTEXT_MODEL: str = "openai/gpt-4o-mini"
+    HEATMAP_CONTEXT_MAX_CONCURRENCY: int = 5
 
     # LangSmith Configuration
     LANGSMITH_TRACING: bool = False
@@ -124,6 +161,17 @@ class Settings(BaseSettings):
     IMAGE_STORAGE_DIR: str = "./data/images"
     ENABLE_IMAGE_EXTRACTION: bool = False
 
+    # OCR fallback for scanned / image-only PDFs (Phase 1: Tesseract).
+    # When digital text extraction yields fewer than OCR_MIN_CHARS_THRESHOLD
+    # characters, empty/sparse pages are rendered and OCR'd.
+    ENABLE_OCR: bool = False
+    OCR_PROVIDER: str = "tesseract"
+    OCR_MIN_CHARS_THRESHOLD: int = 50
+    OCR_DPI: int = 150
+    OCR_MAX_PAGES: int = 100
+    OCR_LANGUAGES: str = "eng"
+    OCR_TIMEOUT_SECONDS: int = 300
+
     # Bulk upload limits
     BULK_UPLOAD_MAX_FILES: int = 10
 
@@ -153,11 +201,15 @@ class Settings(BaseSettings):
 
     # School Scraper Configuration
     SCHOOL_SCRAPER_USE_PLAYWRIGHT: bool = False
-    # User-Agent used by the school scraper for HTTP requests.
-    # Default is a curl-style UA because many school-district sites
-    # (WordPress + Wordfence/Cloudflare WAFs) block `python-httpx/*` and
-    # bot-like UAs with 403, while allowing `curl/*` / `okhttp/*`.
-    SCHOOL_SCRAPER_USER_AGENT: str = "curl/8.5.0"
+    # User-Agent used by the school scraper for HTTP + Playwright requests.
+    # Prefer a browser-like UA: eSchoolView / Blackboard / Drive embeds often
+    # reject curl-style UAs. Override via env to ``curl/8.5.0`` if a site's
+    # Wordfence/Cloudflare WAF blocks Chrome UAs instead.
+    SCHOOL_SCRAPER_USER_AGENT: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
     # Path to a system-installed Chromium binary (e.g. /usr/bin/chromium).
     # Set via env in Docker images that apt-install Chromium instead of
     # letting Playwright download its own copy. Left unset for local dev,
@@ -192,6 +244,8 @@ class Settings(BaseSettings):
         ".pdf",
         ".docx",
         ".doc",
+        ".txt",
+        ".text",
         ".xlsx",
         ".xls",
         ".pptx",
@@ -204,10 +258,6 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
 
     # School scraper pipeline (knowledge base) settings.
-    # Master toggle for the biweekly Celery beat schedule. When False, the
-    # `scrape-schools-biweekly` entry is skipped (manual triggers via the
-    # API still work).
-    SCHOOL_SCRAPER_CRON_ENABLED: bool = True
     # Fetch YouTube transcripts via yt-dlp (no video download) when True.
     # When False, youtube media items are recorded but skipped at ingest.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
@@ -217,8 +267,31 @@ class Settings(BaseSettings):
     # S3 path prefix for scraped media. Final key layout is:
     #   {SCHOOL_SCRAPER_S3_PREFIX}tenants/{tenant_id}/schools/{org_code}/...
     SCHOOL_SCRAPER_S3_PREFIX: str = ""
-    # Concurrency for per-school scrape sub-tasks within a single cycle.
-    SCHOOL_SCRAPER_CYCLE_CONCURRENCY: int = 5
+    # Year filter applied at crawl, persistence, download, and post-classification.
+    # Documents whose inferred calendar year is not in this set are skipped.
+    SCHOOL_SCRAPER_ALLOWED_YEARS: list[int] = [2023, 2024, 2025, 2026]
+    # When False, media with no inferrable year from URL/filename/page context
+    # are not crawled, stored, downloaded, or embedded. Unknown-year docs that
+    # slip through are rejected after LLM classification if meeting_date is
+    # missing or outside SCHOOL_SCRAPER_ALLOWED_YEARS.
+    SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR: bool = False
+    # Schema-driven crawler POC (experiment branch only). Model used by
+    # scripts/school_data/schema_crawl_poc; defaults to the heatmap doc
+    # classifier model when unset. Not used by SchoolScraperService.
+    SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    # Hybrid crawler ranking mode. "keyword" = existing SchoolScraperService
+    # discover_candidate_urls (default, unchanged behavior). "llm" = use the
+    # schema-driven crawler for discovery. "both" = run both and union the
+    # results. Switching back to "keyword" is a zero-code rollback.
+    SCHOOL_SCRAPER_RANKING_MODE: str = "keyword"  # keyword | llm | both
+    # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
+    SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 10
+    SCHOOL_SCRAPER_LLM_CONFIDENCE_THRESHOLD: float = 0.5
+    SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = True
+    # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
+    SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
+        "scripts/school_data/output/selected_schools_url_candidates_both.json"
+    )
 
     # Email / SMTP
     SMTP_HOST: str | None = None
@@ -269,6 +342,15 @@ class Settings(BaseSettings):
         project_root = Path(__file__).resolve().parents[2]
         return str((project_root / v).resolve())
 
+    @validator("SCHOOL_URL_CANDIDATES_JSON_PATH", pre=True, always=True)
+    def make_school_url_candidates_json_path_absolute(cls, v):
+        if not v:
+            return v
+        if os.path.isabs(v):
+            return v
+        project_root = Path(__file__).resolve().parents[2]
+        return str((project_root / v).resolve())
+
     @validator("TEMP_UPLOAD_DIR", pre=True, always=True)
     def make_temp_upload_dir_absolute(cls, v):
         """Ensure TEMP_UPLOAD_DIR is an absolute path resolved from project root.
@@ -282,6 +364,20 @@ class Settings(BaseSettings):
             return v
         project_root = Path(__file__).resolve().parents[2]
         return str((project_root / v).resolve())
+
+    @property
+    def llm_api_key(self) -> str | None:
+        """API key for the configured LLM provider."""
+        if self.LLM_API_PROVIDER == "openrouter":
+            return self.OPENROUTER_API_KEY or self.OPENAI_API_KEY
+        return self.OPENAI_API_KEY
+
+    @property
+    def llm_api_base_url(self) -> str | None:
+        """Base URL for the configured LLM provider (None = OpenAI default)."""
+        if self.LLM_API_PROVIDER == "openrouter":
+            return self.OPENROUTER_BASE_URL
+        return None
 
     @property
     def DATABASE_URL(self) -> str:

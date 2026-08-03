@@ -1,0 +1,853 @@
+{
+  "count": 49,
+  "chunks": [
+    {
+      "id": "0af8e913-5c68-489f-814d-45a87adee1e5",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 89,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "no person shall be excluded from or discriminated against in employment, or admission to a public school of the District, or in obtaining the advantages, privileges, and courses of study",
+      "text_preview": "rtment of Education, or both.    The Quabbin Regional School District\u2019s policy of non-discrimination will extend to students,  staff, the general public, and individuals with whom "
+    },
+    {
+      "id": "0c289317-f4d8-4703-a58d-cb276fcd8174",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 284,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "no person shall be excluded from or discriminated against in employment, or admission to a public school of the District, or in obtaining the advantages, privileges, and courses of study",
+      "text_preview": "ation, or both.  The Quabbin Regional School District\u2019s policy of non-discrimination will extend to students,  staff, the general public, and individuals with whom it does business"
+    },
+    {
+      "id": "23f2d4b5-95a7-4dfc-b81d-aca79cf88394",
+      "document_id": "school-03090000-4959ecb9607e1de3ef245bba85857aa5b9f1a47a859d7c7c461779167a66e1b1",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "2545a2f5-bf53-46b8-86fc-66ba30c2bbbe",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 88,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Harassment prohibited by the district includes...gender identity, sexual orientation",
+      "text_preview": "POLICY STATEMENT  Harassment of students by other students will not be tolerated in the Palmer Public Schools. This policy is in  effect while students are on school grounds, schoo"
+    },
+    {
+      "id": "2923dc59-fea2-4e65-be80-9c6889146973",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 277,
+      "topics": [
+        "lgbtq_student_rights"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "the Quabbin Regional School District will act promptly to eliminate the conduct and will impose developmentally-appropriate disciplinary, restorative, and/or corrective action.",
+      "text_preview": "t and  retaliation, or other violations of civil rights, pursuant to our detailed response protocol. Where  it is determined that discrimination or harassment has occurred, the Qua"
+    },
+    {
+      "id": "2b71f84c-7c78-4a07-9a2e-c2f139f13100",
+      "document_id": "school-03090000-3c655bba547ceed7e1e7a072c9bb00128cd6492e2c06040bf24a26afea920d99",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "2df68646-fbde-4321-bf08-75e904be4039",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 38,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Such discrimination includes, but is not limited to, verbal and physical attacks on students directed at their racial, ethnic or religious background, or their disability, and any form of sexual harassment.",
+      "text_preview": "eligious creed, national origin, ancestry, generation, gender identity, sexual orientation, disability or  handicap. Such discrimination includes, but is not limited to, verbal and"
+    },
+    {
+      "id": "2e81ecd7-ed98-4d5a-9f74-15f6a5d8c428",
+      "document_id": "school-03090000-b3070612a5e7eb0be5f9a8ed80f6937812062d7308febea665d7e05f87559f13",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "310c8f56-d853-4b3f-87a7-f062c8f24c3e",
+      "document_id": "school-02270000-587a0cc7af21c55f54589266e98b23409a03272bcb0043e966ceb6f6867160f8",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 59,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "no person shall be discriminated against in admission to a public school... on account of race, color, sex, religion, national origin, gender identity, disability or sexual orientation.",
+      "text_preview": "RELATIONSHIP TO OTHER LAWS  Consistent with state and federal laws, and the policies of the school or district, no person shall be discriminated against in admission to a public  s"
+    },
+    {
+      "id": "32cabd81-dda5-49e1-a430-468fb59a964e",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 278,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "The Quabbin Regional School District does not exclude from participation, deny the benefits... on the basis of race*, color, sex, sexual orientation, gender identity...",
+      "text_preview": "s/Acts/2022/Chapter117  CROSS REF.:  AC, Non-Discrimination Policy Including Harassment and Retaliation  SOURCE:  MASC - September 2022     File: AC  NON-DISCRIMINATION AND HARASSM"
+    },
+    {
+      "id": "32f22a56-9ed5-408a-a144-1ec94d7468bb",
+      "document_id": "school-03090000-98361b378d83e08a5ef8e67266db69d0fbe5c26ad706ca6b3666a06cbd9634b0",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "3438aee6-de49-4500-9503-3b0e098946b4",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 76,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Each student, regardless of race, color, sex, national origin, religion, disability, sexual orientation, gender identity, homelessness, limited English proficiency or limited English-speaking ability, shall have equal rights of access to courses of study...",
+      "text_preview": "be done on the basis of sex,  color, race, religion, disability, sexual orientation, gender identity, homelessness, limited English  proficiency or national origin.    (4)  Each st"
+    },
+    {
+      "id": "343fd4b0-d139-4528-ba1d-579ee0259c40",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 279,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "discriminate against, individuals on the basis of race*, color, sex, sexual orientation, gender identity, religion, disability, age, genetic information...",
+      "text_preview": "or otherwise discriminate against, individuals on the basis  of race*, color, sex, sexual orientation, gender identity, religion, disability, age, genetic  information, active mili"
+    },
+    {
+      "id": "35885913-5bb1-477b-981f-e1c87c4c9c08",
+      "document_id": "school-03090000-d391d80dc06d95fa54db96fb7817d72e295c4550c4a7cb41d0c2d0282297a1ff",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "38ec2293-606b-45ef-a0c8-c5df92690f5e",
+      "document_id": "school-02270000-587a0cc7af21c55f54589266e98b23409a03272bcb0043e966ceb6f6867160f8",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 60,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Certain students may be more vulnerable to becoming a target of bullying or harassment based on actual or perceived differentiating characteristics, including... gender identity or expression; physical appearance; pregnant or parenting status; sexual orientation...",
+      "text_preview": "ion  under M.G.L. c. 71, \u00a7\u00a7 37H or 37H\u00bd, other applicable laws, or local school or district policies in response to violent, harmful, or disruptive behavior,  regardless of whether"
+    },
+    {
+      "id": "3b2ac482-8e7f-4e8e-af21-d531b408a77d",
+      "document_id": "school-03090000-c643342633da93ce846b84bb4b01e5b612ce8ac2e0714fd86813afd66179764b",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "439658ff-339c-4fec-8dd3-c52e7c9f1859",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 90,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "discriminated against because of their race, color, sex, gender identity, religion, national origin, sexual orientation, homelessness, disability, or immigration status",
+      "text_preview": "crimination, harassment and retaliation under the  protected classes identified in this policy.  If an individual is interested in filing a complaint that  they have been discrimin"
+    },
+    {
+      "id": "49f6330f-ed2f-4ba9-996f-fd0b08818a6b",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 37,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Students have the right to be free from discrimination based upon race, color, religious creed, national origin, ancestry, generation, gender identity, sexual orientation, disability or handicap.",
+      "text_preview": "e by the appropriate administrator, a  long-term suspension and referral to law enforcement agencies may be recommended (See  12     Massachusetts General Law, Chapter 266, Section"
+    },
+    {
+      "id": "540949aa-93ec-489e-86a8-5fe7679e912b",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 285,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "discriminated against because of their race, color, sex, gender identity, religion, national origin, sexual orientation",
+      "text_preview": "ckground, national origin, or any other category protected by state or federal law in  the administration of its educational and employment policies, or in its programs and activit"
+    },
+    {
+      "id": "5a32ee65-6c30-46c3-8da0-6a4f6a22fd4a",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 70,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "All public schools in the Commonwealth shall admit students without regard to race, color, sex, religion, disability, sexual orientation, gender identity, homelessness, limited English proficiency or national origin.",
+      "text_preview": "iency or national origin.    School Admissions    (1)  All public schools in the Commonwealth shall admit students without regard to race, color, sex,  religion, disability, sexual"
+    },
+    {
+      "id": "679c34d9-8b7c-4615-9c74-9abd2fb81a82",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 144,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "The Palmer Public Schools reaffirms that it does not discriminate on the basis of race, color, religion, national origin, sex, gender identity, disability, homelessness, or sexual orientation",
+      "text_preview": "defines individualized objectives for a student  found to have a disability as defined by federal regulations.  The IEP must be tailored to the individual student\u2019s  needs and will"
+    },
+    {
+      "id": "7438091a-db6d-4e74-bd9d-54990dbf0453",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 66,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "No child shall be excluded from or discriminated against in admission to a public school... on account of race, color, sex, disability, economic status, political party, age, handicap, gender identity, religion, national origin, sexual orientation...",
+      "text_preview": "p, gender identity, religion, national origin, sexual orientation, physical and  intellectual difference, limited English proficiency, homelessness, pregnancy or pregnancy related "
+    },
+    {
+      "id": "77ff2024-8c03-4854-b6de-058c53531560",
+      "document_id": "school-03090000-77a663032ceb3adcf01f73d13e0958571e7063e64a1f73ae0f69bd79223d3eae",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual  orientation, gender"
+    },
+    {
+      "id": "7cdcde1d-0a9a-4802-b874-0c992b520065",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 282,
+      "topics": [
+        "lgbtq_student_rights"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "school environment free of harassment based on race, color, religion, national origin, gender, sexual orientation, gender identity",
+      "text_preview": "school environment free of  harassment based on race, color, religion, national origin, gender, sexual orientation, gender  identity, homelessness, pregnancy or pregnancy status, a"
+    },
+    {
+      "id": "94d5591d-3d1f-4a95-99c1-681fee853aee",
+      "document_id": "school-07280000-073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 6,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "ARMS is going through a very disturbing situation with guidance counselors and leadership possibly grossly mistreating trans and queer students",
+      "text_preview": "enda awhile ago in part to help facilitate discussion amongst SC members to become aware of and address issues  that might be affecting several schools. That discussion will inform"
+    },
+    {
+      "id": "9af4f178-8016-4d24-a1f0-fe322252f931",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 74,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Each and every course of study offered by a public school shall be open and available to students regardless of race, color, sex, religion, disability, sexual orientation, gender identity...",
+      "text_preview": ": MASC    LEGAL REFS.:   M.G.L. 15:1G; 76:1; 76:5; 76:15; 76:15A  603 CMR 26:01; 26:02; 26:03       File: JF-E-2    SCHOOL ADMISSIONS      Admission to Course of Study    (1)  Each"
+    },
+    {
+      "id": "9c509f46-4778-4da2-9efa-52ea1684d251",
+      "document_id": "school-03090000-e3087071fbb381df2a544fa9f71c5978fb2e6c82f95da7c823ebcbbddf2d3888",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "a5104a92-a901-4eff-a1b7-b0c4d4f92aa5",
+      "document_id": "school-03480000-aae88cd5b5ed664a31d6184c28f9f5ffb51e34de1af41bcfc6b0973a1faf9ea3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 5,
+      "topics": [
+        "sex_education",
+        "parental_rights"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "update on the Worcester Public Schools opt-in and opt-out options regarding the sex education curriculum",
+      "text_preview": "income, English language and special Ed   - accepted students Sept  \u25cf\u200b To consider a review of the Chapter 74 programs in the comprehensive high  schools including enrollment proce"
+    },
+    {
+      "id": "a746b3c4-f6a7-43b6-a076-fc4e4b9d3022",
+      "document_id": "school-02720000-073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 7,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "we need to continue to work to address transphobia and homophobia in our schools.",
+      "text_preview": "ors and leadership possibly grossly mistreating trans and queer  students when they came for help with bullying. These students are most at risk in such situations, and we need to "
+    },
+    {
+      "id": "aa416d42-afd8-4179-a0e7-c6c83d87e881",
+      "document_id": "school-00360000-9378e562ff0d6b290ecc2e8671d6700b92afd2eeb11fe400675e27345bb97cbd",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 3,
+      "topics": [
+        "lgbtq_student_rights"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Mr. Fraser says to let kids be kids and if they seek knowledge to let them do that on their own with no pressure from the committee.",
+      "text_preview": "accepted gay  peers even though sometimes there was harassment and that back then kids kept things private and had their own lives.  He says these days doctors are brought in to te"
+    },
+    {
+      "id": "af87c667-4e9a-4767-abef-c64350306e57",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 69,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "equal enjoyment of the opportunities, advantages, privileges and courses of study at such schools without regard to race, color, sex, religion, disability, sexual orientation, gender identity",
+      "text_preview": "gated to insure the right of access to the public schools of the  Commonwealth and the equal enjoyment of the opportunities, advantages, privileges and courses  of study at such sc"
+    },
+    {
+      "id": "afc4b217-54a0-4b7a-95ec-06ae3cf571f1",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 13,
+      "topics": [
+        "lgbtq_student_rights"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "75.7% for LBGT students",
+      "text_preview": "a parent or caregiver \u25cb 29% of US youth reported that a parent or other adult in their home lost a job \u25cb 11% of US you reported they experienced physical abuse by a parent or careg"
+    },
+    {
+      "id": "b4a8f1f3-ecb6-4a68-b5a2-daca49d3663f",
+      "document_id": "school-03090000-569af34e8d7f42c01ea19970518c49327a4004124f070bb54445cf575014b327",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "b63952c1-32dc-4f94-a3d8-0ee45652dd5c",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 73,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "All students, regardless of race, color, sex, gender identity, religion, national origin, sexual orientation, disability, or homelessness, have equal access to the general education program.",
+      "text_preview": "2  Addition of homelessness  Addition of limited English  proficiency  Addition of bullet (7)   File: JF-E-1    (6)  Nothing in 603 CMR 26.00 shall be construed as to control the i"
+    },
+    {
+      "id": "b8419b0e-9059-4d0f-b107-7d5c1763481e",
+      "document_id": "school-07280000-073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 7,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "we need to continue to work to address transphobia and homophobia in our schools.",
+      "text_preview": "ors and leadership possibly grossly mistreating trans and queer  students when they came for help with bullying. These students are most at risk in such situations, and we need to "
+    },
+    {
+      "id": "b8a66c43-646b-4dd2-a3cd-b59f35d1be44",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 281,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "The Quabbin Regional School District does not tolerate discrimination against students, parents, employees or the general public on the basis of race, color, national origin, sex, sexual orientation, gender identity...",
+      "text_preview": "nefits or adverse consequences that those decisions might have on the human  relations. aspects of all segments of society.   6.  Initiating a process of reviewing policies and pra"
+    },
+    {
+      "id": "c090fcbc-2ee2-4cc1-b1df-ca7a110dd68e",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 145,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "on race, color, religion, national origin, sex, gender identity, disability, religion or sexual orientation",
+      "text_preview": "on race, color,  religion, national  origin, sex, gender identity, disability, religion or  sexual orientation, as referenced in M.G.L.  Chapter 76, Section 5; Place of Attendance;"
+    },
+    {
+      "id": "c0be206a-57c5-43c2-bd75-3f47bee0db1a",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 132,
+      "topics": [
+        "sex_education"
+      ],
+      "subtopics": [
+        "curriculum_change"
+      ],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Discussion of one's sexual activities; and Sexual violence, including rape, sexual assault, sexual battery, sexual abuse and sexual coercion",
+      "text_preview": "oral references to sexual conduct, gossip regarding one's sex life;  comment on an individual's body, comment about an individual's sexual activity, deficiencies, or  prowess;  \u2022\u00a0 "
+    },
+    {
+      "id": "c2b06114-3c60-4c49-9007-54a6c36b6f49",
+      "document_id": "school-03090000-9e177cf93ab262db1519a4594c08631b050ce517c750d0b0693f4d5799c42009",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "c3eb0745-ed30-4d91-b325-d4e2579ce9ae",
+      "document_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 272,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Harassment prohibited by the District includes, but is not limited to, harassment on the basis race*, color, sex, sexual orientation, gender identity, religion, disability, age",
+      "text_preview": "nts by other students, employees, vendors and other third parties will not  be tolerated in the Quabbin Regional School District.  The alleged harassment must involve  conduct that"
+    },
+    {
+      "id": "c606716c-8a32-4ae1-bd8c-3c34c7a232f2",
+      "document_id": "school-06250000-9779cc37e306336dae15e62b3affd63ad343459d37794f7b9651f9d8ab927124",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 8,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "GSA stands for Gender-Sexuality-Alliance.",
+      "text_preview": "a total of 10 podium  places, including two #1 spots at the 170 and 182 weight class.   \u25cf BR girl\u2019s gymnastics team had a dominating season, going undefeated and taking home their "
+    },
+    {
+      "id": "c7b5cbe7-1137-4a86-97c4-5bad82702205",
+      "document_id": "school-02270000-587a0cc7af21c55f54589266e98b23409a03272bcb0043e966ceb6f6867160f8",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 61,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Palmer Public Schools does not exclude from participation, deny the benefits... on the basis of race, color, sex, sexual orientation, gender identity...",
+      "text_preview": "all students are free from harassment and discrimination. Palmer Public Schools does not exclude  from participation, deny the benefits of Palmer Public Schools from or otherwise d"
+    },
+    {
+      "id": "cc2a233a-0fa6-411b-93a1-6715169f5cf0",
+      "document_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 80,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity",
+        "parental_rights"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Extracurricular activities or clubs sponsored by the school do not exclude students on the basis of race, sex, gender identity, color, religion, national origin, sexual orientation, disability, or homelessness.",
+      "text_preview": "xtracurricular activities sponsored by the district are nondiscriminatory in that:  a.\u200b The school provides equal opportunity for all students to participate in intramural and inte"
+    },
+    {
+      "id": "d4e96c94-9e2a-4421-b5e4-ba093c1ffaa0",
+      "document_id": "school-03090000-567ff230f7f48f12f9cc0d1314889f967af1aec1b1786c8afe82909ceae9747b",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 0,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity",
+      "text_preview": "It is the policy of the Ware Public Schools not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity,  disability, sexual orientation, gender"
+    },
+    {
+      "id": "edde3013-a629-4b5c-bc18-92d48fd7f753",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 87,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "The Quabbin Regional School District does not tolerate discrimination against students, parents, employees or the general public on the basis of race, color, national origin, sex, sexual orientation, gender identity...",
+      "text_preview": "e greatest extent possible the objectives of this statement.    The Quabbin Regional School District does not tolerate discrimination against students, parents,  employees or the g"
+    },
+    {
+      "id": "ee7d638f-7bf8-4817-bbb4-d630351f50bf",
+      "document_id": "school-02720000-073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 6,
+      "topics": [
+        "lgbtq_student_rights",
+        "transgender_policy",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "ARMS is going through a very disturbing situation with guidance counselors and leadership possibly grossly mistreating trans and queer students",
+      "text_preview": "enda awhile ago in part to help facilitate discussion amongst SC members to become aware of and address issues  that might be affecting several schools. That discussion will inform"
+    },
+    {
+      "id": "f009925f-8c27-4312-a04f-1d7dd7099ed0",
+      "document_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 81,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "No student shall be denied the opportunity in any implied or explicit manner to participate in an extracurricular activity because of... sexual orientation, gender identity...",
+      "text_preview": "l. No school shall sponsor or participate in the  organization of outside extracurricular activities conducted at such schools which restrict  students\u2019 participation on the basis "
+    },
+    {
+      "id": "f3e06c82-4184-4b1a-9391-bec5f2aec729",
+      "document_id": "school-02720000-9f4385fb32d6a36f9526323588ded2174126aa8667f40c28930bbb784696ad30",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 20,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Hearing directly from students is different from reading in a book or reading some policy.",
+      "text_preview": "n relation to DEI. Does it go far enough? Is it really what it  says it is? In my office, we oversee Power School and we have to report to the state in certain ways, but  we follow"
+    },
+    {
+      "id": "fef79dea-ffde-4c6f-a06d-3efb0107a5b1",
+      "document_id": "school-07280000-9f4385fb32d6a36f9526323588ded2174126aa8667f40c28930bbb784696ad30",
+      "school_id": null,
+      "source_id": null,
+      "chunk_index": 20,
+      "topics": [
+        "lgbtq_student_rights",
+        "gender_identity"
+      ],
+      "subtopics": [],
+      "action_types": [],
+      "off_topic": false,
+      "classified": true,
+      "evidence_quote": "Hearing directly from students is different from reading in a book or reading some policy.",
+      "text_preview": "n relation to DEI. Does it go far enough? Is it really what it  says it is? In my office, we oversee Power School and we have to report to the state in certain ways, but  we follow"
+    }
+  ]
+}

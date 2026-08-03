@@ -26,7 +26,6 @@ Two-step flow:
 import json
 import logging
 import re
-import xml.etree.ElementTree as ET
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin, urlparse
 
@@ -34,13 +33,30 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.core.config import settings
+from app.services.web_scraper._discovery_helpers import (
+    collect_urls_from_nav as _collect_urls_from_nav_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
+    collect_urls_from_sitemap as _collect_urls_from_sitemap_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
+    get_sitemap_url_from_robots as _get_sitemap_url_from_robots_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
+    html_needs_playwright as _html_needs_playwright_helper,
+)
+from app.services.web_scraper._discovery_helpers import (
+    parse_sitemap_xml as _parse_sitemap_xml_helper,
+)
+from app.services.web_scraper.year_filter import (
+    filter_media_files,
+    should_crawl_page_url,
+)
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, Playwright
 
 logger = logging.getLogger(__name__)
-
-_SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
 
 # User-Agent for HTTP requests.
 #
@@ -56,27 +72,10 @@ _SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9"
 # specific site requires something different.
 _DEFAULT_USER_AGENT: str = "curl/8.5.0"
 
-# HTML fingerprints that indicate JavaScript-rendered navigation.
-# When any of these strings appear in the raw httpx response body, the
-# in-page navigation (sidebars, section menus, etc.) is likely injected by
-# client-side JS and httpx alone will miss links.  The follow-up crawl will
-# automatically switch to a Playwright browser for the affected site.
-_JS_RENDER_SIGNALS: tuple[str, ...] = (
-    "finalsitestatic.com",   # Finalsite CMS  (e.g. Boston Public Schools)
-    'id="__next"',           # Next.js
-    'id="__nuxt"',           # Nuxt.js
-    'ng-version="',          # Angular
-    "data-reactroot",        # React (legacy attr)
-    "_next/static/",         # Next.js static asset path
-    "__nuxt_island",         # Nuxt.js islands
-    "blackboard.com/",       # Blackboard LMS
-    "eschoolsolutions.com",  # eSchool Solutions CMS
-    "ccms_documentlinklisting",  # Catapult CMS "Document Link Listing" widget
-    "catapultcms.com",       # Catapult CMS (edu2.catapultcms.com utilities)
-    "ccms-contentelement",   # Catapult CMS generic content element wrapper
-    "apptegy.net",           # Apptegy / Thrillshare CMS (Nuxt SSR)
-    "thrillshare.com",       # Apptegy document CDN / API host
-)
+# _JS_RENDER_SIGNALS and the sitemap/nav/robots helpers now live in
+# app/services/web_scraper/_discovery_helpers.py (shared with the schema
+# crawler). Re-exported here for any external code that imported the constant
+# from this module.
 
 
 class SchoolScraperService:
@@ -177,20 +176,96 @@ class SchoolScraperService:
         fire continuous background pings that prevent networkidle from being
         reached within the configured timeout.
         """
+        html, _media = await self._fetch_rendered_with_interactions(
+            url, wait_until=wait_until, expand_document_folders=False
+        )
+        return html
+
+    async def _fetch_rendered_with_interactions(
+        self,
+        url: str,
+        *,
+        wait_until: str = "load",
+        expand_document_folders: bool = True,
+    ) -> tuple[str | None, list[dict]]:
+        """
+        Render ``url`` in Playwright and optionally expand CMS folder widgets.
+
+        Returns ``(html, extra_media)`` where ``extra_media`` are document
+        dicts discovered by clicking/opening SharpSchool folder explorers
+        (same-URL widgets that never expose PDFs in the initial DOM).
+        """
         if not self._browser:
-            return await self._fetch_text(url)
+            return await self._fetch_text(url), []
+
+        from app.services.web_scraper.playwright_interactions import (
+            expand_sharpschool_document_list,
+            extract_google_drive_folder_media,
+            extract_google_sheets_embed_media,
+            looks_like_sharpschool_document_list,
+        )
+
         try:
-            page = await self._browser.new_page()
+            page = await self._browser.new_page(
+                user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+            )
             try:
                 await page.goto(
                     url,
                     wait_until=wait_until,
                     timeout=self.timeout * 1000,
                 )
+                # Sheets embeds need a beat to populate iframe frames.
+                try:
+                    await page.wait_for_timeout(2500)
+                except Exception:  # noqa: BLE001
+                    pass
                 html = await page.content()
+                extra_media: list[dict] = []
+
+                if expand_document_folders:
+                    if looks_like_sharpschool_document_list(html or ""):
+                        extra_media.extend(
+                            await expand_sharpschool_document_list(
+                                page,
+                                page_url=url,
+                                timeout_ms=self.timeout * 1000,
+                            )
+                        )
+                        try:
+                            html = await page.content()
+                        except Exception:  # noqa: BLE001
+                            pass
+
+                    # Leominster-style Drive folder iframes (list rendered off-page).
+                    drive_media = await extract_google_drive_folder_media(
+                        html or "",
+                        page_url=url,
+                        fetch_text=self._fetch_text,
+                    )
+                    extra_media.extend(drive_media)
+
+                    # Brewster/Nauset-style Google Sheets agenda/minutes tables.
+                    sheet_media = await extract_google_sheets_embed_media(
+                        page,
+                        page_url=url,
+                        settle_ms=1000,
+                    )
+                    extra_media.extend(sheet_media)
+
+                # Dedupe extra media by URL.
+                seen: set[str] = set()
+                unique_extra: list[dict] = []
+                for m in extra_media:
+                    u = m.get("url")
+                    if not u or u in seen:
+                        continue
+                    seen.add(u)
+                    unique_extra.append(m)
+
+                return html, unique_extra
             finally:
                 await page.close()
-            return html
         except Exception as exc:
             logger.debug(
                 "Playwright render failed for %s (%s): %s — falling back to httpx",
@@ -198,20 +273,12 @@ class SchoolScraperService:
                 type(exc).__name__,
                 exc,
             )
-            return await self._fetch_text(url)
+            return await self._fetch_text(url), []
 
     @staticmethod
     def _html_needs_playwright(html: str) -> bool:
-        """
-        Return True when the raw HTML contains fingerprints of a JavaScript-heavy
-        CMS or SPA framework whose navigation is injected client-side.
-
-        Checked against _JS_RENDER_SIGNALS (case-sensitive substring match —
-        the signals are lowercase/mixed-case literals that appear verbatim in
-        real pages, so a full lower() pass is unnecessary and avoids false
-        positives on content text).
-        """
-        return any(signal in html for signal in _JS_RENDER_SIGNALS)
+        """Delegate to the shared helper (kept as a method for backwards compat)."""
+        return _html_needs_playwright_helper(html)
 
     async def _ensure_playwright(self) -> None:
         """
@@ -231,122 +298,35 @@ class SchoolScraperService:
         )
 
     # ------------------------------------------------------------------
-    # Sitemap helpers
+    # Sitemap helpers (delegate to app.services.web_scraper._discovery_helpers)
     # ------------------------------------------------------------------
 
     @staticmethod
     def _parse_sitemap_xml(xml_text: str) -> tuple[list[str], list[str]]:
-        """
-        Parse a sitemap XML string.
-
-        Returns:
-            (page_urls, child_sitemap_urls) — child_sitemap_urls is non-empty
-            only when the document is a <sitemapindex>.
-        """
-        page_urls: list[str] = []
-        child_sitemaps: list[str] = []
-
-        try:
-            root = ET.fromstring(xml_text)
-        except ET.ParseError as exc:
-            logger.debug("XML parse error: %s", exc)
-            return page_urls, child_sitemaps
-
-        # Strip namespace prefix to get bare tag name
-        tag = root.tag.split("}")[-1] if "}" in root.tag else root.tag
-        ns = {"sm": _SITEMAP_NS}
-
-        if tag == "sitemapindex":
-            for sitemap_elem in root.findall("sm:sitemap", ns):
-                loc = sitemap_elem.findtext("sm:loc", namespaces=ns)
-                if loc:
-                    child_sitemaps.append(loc.strip())
-        elif tag == "urlset":
-            for url_elem in root.findall("sm:url", ns):
-                loc = url_elem.findtext("sm:loc", namespaces=ns)
-                if loc:
-                    page_urls.append(loc.strip())
-
-        return page_urls, child_sitemaps
+        """Delegate to the shared parser (kept as a method for backwards compat)."""
+        return _parse_sitemap_xml_helper(xml_text)
 
     async def _collect_urls_from_sitemap(self, sitemap_url: str) -> list[str]:
-        """
-        Fetch a sitemap URL and recursively fetch any child sitemaps
-        (one extra level for sitemap-index files).
-        """
-        all_urls: list[str] = []
-        xml_text = await self._fetch_text(sitemap_url)
-        if not xml_text:
-            return all_urls
-
-        page_urls, child_sitemaps = self._parse_sitemap_xml(xml_text)
-        all_urls.extend(page_urls)
-
-        for child_url in child_sitemaps:
-            child_text = await self._fetch_text(child_url)
-            if child_text:
-                child_page_urls, _ = self._parse_sitemap_xml(child_text)
-                all_urls.extend(child_page_urls)
-
-        return all_urls
+        """Delegate to the shared collector, passing the service's httpx fetch."""
+        return await _collect_urls_from_sitemap_helper(sitemap_url, self._fetch_text)
 
     async def _get_sitemap_url_from_robots(self, base_url: str) -> str | None:
-        """Inspect robots.txt for a `Sitemap:` directive."""
-        robots_text = await self._fetch_text(f"{base_url}/robots.txt")
-        if not robots_text:
-            return None
-        for line in robots_text.splitlines():
-            if line.lower().startswith("sitemap:"):
-                return line.split(":", 1)[1].strip()
-        return None
+        """Delegate to the shared robots parser, passing the service's httpx fetch."""
+        return await _get_sitemap_url_from_robots_helper(base_url, self._fetch_text)
 
     # ------------------------------------------------------------------
-    # Nav-crawl fallback
+    # Nav-crawl fallback (delegate to the shared collector)
     # ------------------------------------------------------------------
 
     async def _collect_urls_from_nav(self, base_url: str) -> list[str]:
-        """
-        Fetch the homepage and extract same-domain links found inside
-        <nav> / <header> / <ul> elements, then fall back to all <a> tags.
-
-        Fetch strategy:
-        - Browser already available (pre-launched or previously auto-detected):
-          use Playwright directly so that JS-rendered navigation menus (e.g.
-          Finalsite CMS, Next.js, Angular) are visible in the returned HTML.
-        - No browser yet: fetch with plain httpx; if the raw HTML contains known
-          JS-framework fingerprints, launch Playwright automatically and re-fetch.
-        """
-        if self._browser:
-            html = await self._fetch_text_rendered(base_url)
-        else:
-            html = await self._fetch_text(base_url)
-            if html and self._html_needs_playwright(html):
-                await self._ensure_playwright()
-                rendered = await self._fetch_text_rendered(base_url)
-                if rendered:
-                    html = rendered
-
-        if not html:
-            return []
-
-        soup = BeautifulSoup(html, "html.parser")
-        parsed_base = urlparse(base_url)
-        base_domain = parsed_base.netloc
-
-        seen: set[str] = set()
-        urls: list[str] = []
-
-        containers = soup.find_all(["nav", "header", "ul"]) or [soup]
-        for container in containers:
-            for a_tag in container.find_all("a", href=True):
-                href = str(a_tag["href"]).strip()
-                full_url = urljoin(base_url, href)
-                parsed = urlparse(full_url)
-                if parsed.netloc == base_domain and full_url not in seen:
-                    seen.add(full_url)
-                    urls.append(full_url)
-
-        return urls
+        """Delegate to the shared nav collector with this service's Playwright state."""
+        return await _collect_urls_from_nav_helper(
+            base_url,
+            self._fetch_text,
+            fetch_text_rendered=self._fetch_text_rendered,
+            ensure_playwright=self._ensure_playwright,
+            has_browser=bool(self._browser),
+        )
 
     # ------------------------------------------------------------------
     # Candidate follow-up crawl
@@ -542,13 +522,20 @@ class SchoolScraperService:
         """
         Return the first configured extension that matches ``path_lower`` or,
         when provided, ``filename_hint`` (e.g. Finalsite ``data-file-name``).
+
+        SharpSchool ``GetFile.ashx`` download endpoints have no file extension
+        in the path; treat them as documents (prefer hint, else ``.pdf``).
         """
         matched = next((e for e in all_ext if path_lower.endswith(e)), None)
         if matched:
             return matched
         if filename_hint:
             hint_lower = filename_hint.lower()
-            return next((e for e in all_ext if hint_lower.endswith(e)), None)
+            matched = next((e for e in all_ext if hint_lower.endswith(e)), None)
+            if matched:
+                return matched
+        if "getfile.ashx" in path_lower:
+            return ".pdf" if ".pdf" in all_ext or not all_ext else next(iter(all_ext))
         return None
 
     @staticmethod
@@ -861,7 +848,9 @@ class SchoolScraperService:
           auto-detected on a previous page in this crawl): fetch with
           Playwright directly so JS-injected content (e.g. Catapult/Finalsite
           CMS document-listing widgets that populate hidden containers via
-          jQuery after page load) is present in the returned HTML.
+          jQuery after page load) is present in the returned HTML. SharpSchool
+          ``#documentList`` folder explorers are expanded automatically so
+          documents behind same-URL folder clicks (GetFile.ashx) are collected.
         - No browser yet: fetch with plain httpx first; if the raw HTML
           contains known JS-framework/CMS fingerprints, launch Playwright
           automatically, re-fetch the page, and reuse the browser for all
@@ -883,29 +872,46 @@ class SchoolScraperService:
 
         while queue:
             current_url, depth = queue.pop(0)
+            extra_media: list[dict] = []
 
             if self._browser:
-                html = await self._fetch_text_rendered(current_url)
+                html, extra_media = await self._fetch_rendered_with_interactions(
+                    current_url, expand_document_folders=True
+                )
             else:
                 html = await self._fetch_text(current_url)
                 if html and self._html_needs_playwright(html):
                     await self._ensure_playwright()
-                    rendered = await self._fetch_text_rendered(current_url)
+                    rendered, extra_media = await self._fetch_rendered_with_interactions(
+                        current_url, expand_document_folders=True
+                    )
                     if rendered:
                         html = rendered
 
-            if not html:
+            if not html and not extra_media:
                 continue
 
             pages_crawled += 1
-            media, sub_pages = self._extract_media_from_page(
-                html, current_url, video_ext, audio_ext, doc_ext
-            )
-            all_media.extend(media)
+            if html:
+                media, sub_pages = self._extract_media_from_page(
+                    html, current_url, video_ext, audio_ext, doc_ext
+                )
+                all_media.extend(filter_media_files(media))
+            else:
+                sub_pages = []
+
+            if extra_media:
+                all_media.extend(filter_media_files(extra_media))
 
             if depth < crawl_depth:
                 for sub_url in sub_pages:
                     if sub_url not in visited and pages_crawled < max_pages:
+                        if not should_crawl_page_url(sub_url):
+                            logger.debug(
+                                "Skipping out-of-range archive sub-page: %s",
+                                sub_url,
+                            )
+                            continue
                         visited.add(sub_url)
                         queue.append((sub_url, depth + 1))
 

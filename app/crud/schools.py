@@ -1,7 +1,7 @@
 """
 CRUD operations for the school scraping knowledge base.
 
-Covers schools, confirmed scrape URLs, scrape runs/jobs, and scraped media.
+Covers schools, confirmed scrape URLs, and scraped media.
 Functions are async and use the shared AsyncSession from `app.db.connector`.
 """
 
@@ -16,13 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.school import (
-    School,
-    SchoolScrapeJob,
-    SchoolScrapeUrl,
-    ScrapedMedia,
-    ScrapeRun,
-)
+from app.models.school import School, SchoolScrapeUrl, ScrapedMedia
 from app.schemas.schools import (
     SchoolCreate,
     SchoolUpdate,
@@ -39,12 +33,20 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_url(url: str) -> str:
-    """Normalize a URL for stable hashing (strip query, fragment, trailing slash)."""
+    """Normalize a URL for stable hashing.
+
+    Strips fragment and trailing slash. Keeps the query string — many CMS
+    download endpoints (e.g. SharpSchool ``GetFile.ashx?key=...``) encode the
+    document identity only in the query, so dropping it collapses every file
+    on a site into one hash.
+    """
     parts = urlsplit(url.strip())
     path = parts.path or ""
     if path.endswith("/") and len(path) > 1:
         path = path.rstrip("/")
-    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, "", ""))
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
+    )
 
 
 def url_hash(url: str) -> str:
@@ -122,6 +124,21 @@ async def get_school_by_org_code(
     return (await db.execute(stmt)).scalar_one_or_none()
 
 
+async def list_schools_by_org_codes(
+    db: AsyncSession, tenant_id: int, org_codes: list[str]
+) -> dict[str, School]:
+    """Return schools keyed by org_code for the given codes in this tenant."""
+    if not org_codes:
+        return {}
+    stmt = (
+        select(School)
+        .options(selectinload(School.scrape_urls))
+        .where(School.tenant_id == tenant_id, School.org_code.in_(org_codes))
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+    return {school.org_code: school for school in rows}
+
+
 async def create_school(
     db: AsyncSession, tenant_id: int, data: SchoolCreate
 ) -> School:
@@ -179,6 +196,32 @@ async def add_scrape_url(
     data: ScrapeUrlCreate,
     user_id: int | None,
 ) -> SchoolScrapeUrl:
+    # Idempotent: re-confirm an existing row for the same (school_id, url)
+    # instead of INSERTing a duplicate and tripping uq_scrape_url_school_url.
+    existing = (
+        await db.execute(
+            select(SchoolScrapeUrl).where(
+                SchoolScrapeUrl.school_id == school.id,
+                SchoolScrapeUrl.url == data.url,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is not None:
+        existing.crawl_depth = data.crawl_depth
+        existing.use_playwright = data.use_playwright
+        existing.confirmed_by_user_id = user_id
+        existing.confirmed_at = datetime.now(timezone.utc)
+        existing.is_active = True
+        await db.flush()
+        # Only promote when explicitly requested — adding a manual candidate
+        # must not silently become the primary scrape URL.
+        if data.is_primary:
+            school.scrape_url_id = existing.id
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+
     url = SchoolScrapeUrl(
         school_id=school.id,
         url=data.url,
@@ -190,7 +233,7 @@ async def add_scrape_url(
     )
     db.add(url)
     await db.flush()
-    if data.is_primary or school.scrape_url_id is None:
+    if data.is_primary:
         school.scrape_url_id = url.id
     await db.commit()
     await db.refresh(url)
@@ -227,140 +270,12 @@ async def deactivate_scrape_url(
     return scrape_url
 
 
-# ---------------------------------------------------------------------------
-# Scrape runs & jobs
-# ---------------------------------------------------------------------------
-
-
-async def create_scrape_run(
-    db: AsyncSession,
-    tenant_id: int,
-    *,
-    triggered_by: str,
-    total_schools: int = 0,
-) -> ScrapeRun:
-    run = ScrapeRun(
-        tenant_id=tenant_id,
-        triggered_by=triggered_by,
-        status="pending",
-        started_at=datetime.now(timezone.utc),
-        total_schools=total_schools,
-    )
-    db.add(run)
+async def clear_primary_scrape_url(db: AsyncSession, school: School) -> School:
+    """Unset the school's primary scrape URL without deactivating stored rows."""
+    school.scrape_url_id = None
     await db.commit()
-    await db.refresh(run)
-    return run
-
-
-async def get_scrape_run(
-    db: AsyncSession, tenant_id: int, run_id: int
-) -> ScrapeRun | None:
-    stmt = (
-        select(ScrapeRun)
-        .options(selectinload(ScrapeRun.jobs))
-        .where(ScrapeRun.id == run_id, ScrapeRun.tenant_id == tenant_id)
-    )
-    return (await db.execute(stmt)).scalar_one_or_none()
-
-
-async def list_scrape_runs(
-    db: AsyncSession,
-    tenant_id: int,
-    *,
-    skip: int = 0,
-    limit: int = 20,
-) -> tuple[list[ScrapeRun], int]:
-    stmt = select(ScrapeRun).where(ScrapeRun.tenant_id == tenant_id)
-    count_stmt = select(func.count(ScrapeRun.id)).where(
-        ScrapeRun.tenant_id == tenant_id
-    )
-    total = (await db.execute(count_stmt)).scalar_one()
-    stmt = stmt.order_by(ScrapeRun.created_at.desc()).offset(skip).limit(limit)
-    items = list((await db.execute(stmt)).scalars().all())
-    return items, total
-
-
-async def finalize_scrape_run(
-    db: AsyncSession,
-    run_id: int,
-    *,
-    status: str,
-    error_summary: dict | None = None,
-) -> ScrapeRun | None:
-    run = await db.get(ScrapeRun, run_id)
-    if not run:
-        return None
-    run.status = status
-    run.completed_at = datetime.now(timezone.utc)
-    if error_summary is not None:
-        run.error_summary = error_summary
-    await db.commit()
-    await db.refresh(run)
-    return run
-
-
-async def aggregate_run_counts(db: AsyncSession, run_id: int) -> ScrapeRun | None:
-    """Recompute run-level counts from its jobs."""
-    run = await db.get(ScrapeRun, run_id)
-    if not run:
-        return None
-    jobs = (
-        await db.execute(
-            select(SchoolScrapeJob).where(SchoolScrapeJob.run_id == run_id)
-        )
-    ).scalars().all()
-
-    run.schools_completed = sum(1 for j in jobs if j.status == "completed")
-    run.schools_failed = sum(1 for j in jobs if j.status == "failed")
-    run.schools_skipped = sum(1 for j in jobs if j.status == "skipped")
-    run.media_found = sum(j.media_found for j in jobs)
-    run.media_new = sum(j.media_new for j in jobs)
-    run.media_skipped_duplicate = sum(j.media_skipped_duplicate for j in jobs)
-
-    if run.schools_failed == 0 and run.schools_skipped == run.total_schools:
-        run.status = "completed"
-    elif run.schools_completed + run.schools_skipped == run.total_schools:
-        run.status = "partial" if run.schools_failed > 0 else "completed"
-    elif all(j.status in ("completed", "failed", "skipped") for j in jobs):
-        run.status = "failed" if run.schools_completed == 0 else "partial"
-    run.completed_at = datetime.now(timezone.utc)
-    await db.commit()
-    await db.refresh(run)
-    return run
-
-
-async def create_scrape_job(
-    db: AsyncSession,
-    *,
-    run_id: int,
-    school_id: int,
-    scrape_url_id: int,
-) -> SchoolScrapeJob:
-    job = SchoolScrapeJob(
-        run_id=run_id,
-        school_id=school_id,
-        scrape_url_id=scrape_url_id,
-        status="pending",
-    )
-    db.add(job)
-    await db.commit()
-    await db.refresh(job)
-    return job
-
-
-async def get_scrape_job(db: AsyncSession, job_id: int) -> SchoolScrapeJob | None:
-    return await db.get(SchoolScrapeJob, job_id)
-
-
-async def list_jobs_for_run(
-    db: AsyncSession, run_id: int
-) -> list[SchoolScrapeJob]:
-    stmt = (
-        select(SchoolScrapeJob)
-        .where(SchoolScrapeJob.run_id == run_id)
-        .order_by(SchoolScrapeJob.id.asc())
-    )
-    return list((await db.execute(stmt)).scalars().all())
+    await db.refresh(school)
+    return school
 
 
 # ---------------------------------------------------------------------------
@@ -424,6 +339,26 @@ async def count_scraped_media(
         ScrapedMedia.school_id == school_id
     )
     return (await db.execute(stmt)).scalar_one()
+
+
+async def list_skipped_year_media(
+    db: AsyncSession,
+    tenant_id: int | None = None,
+    school_id: int | None = None,
+) -> list[ScrapedMedia]:
+    """Return all scraped_media rows with status='skipped_year'.
+
+    Used by the backfill-years endpoint to re-evaluate rows against a
+    widened SCHOOL_SCRAPER_ALLOWED_YEARS set without re-crawling the site.
+    Optionally scoped to a single school or tenant.
+    """
+    stmt = select(ScrapedMedia).where(ScrapedMedia.status == "skipped_year")
+    if tenant_id is not None:
+        stmt = stmt.where(ScrapedMedia.tenant_id == tenant_id)
+    if school_id is not None:
+        stmt = stmt.where(ScrapedMedia.school_id == school_id)
+    stmt = stmt.order_by(ScrapedMedia.id.asc())
+    return list((await db.execute(stmt)).scalars().all())
 
 
 async def update_scraped_media(

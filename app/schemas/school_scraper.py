@@ -34,11 +34,19 @@ class DiscoverRequest(BaseModel):
 
 
 class CandidateUrl(BaseModel):
-    """A single candidate URL that matched meeting-related keywords."""
+    """A single candidate URL that matched meeting-related keywords.
+
+    The schema-crawler fields (data_type, is_archive, data_years_available)
+    are populated only when SCHOOL_SCRAPER_RANKING_MODE is `llm` or `both`;
+    the keyword path leaves them at their defaults (None / False / []).
+    """
 
     url: str
     matched_keywords: list[str]
     score: int
+    data_type: str | None = None
+    is_archive: bool = False
+    data_years_available: list[int] = []
 
 
 class DiscoverResponse(BaseModel):
@@ -49,6 +57,9 @@ class DiscoverResponse(BaseModel):
     total_urls_scanned: int
     total_candidates: int
     candidates: list[CandidateUrl]
+    # Which ranking mode produced these candidates. Mirrors the
+    # SCHOOL_SCRAPER_RANKING_MODE setting: "keyword" (default), "llm", or "both".
+    ranking_mode: str = "keyword"
 
 
 class ScrapeMediaRequest(BaseModel):
@@ -90,3 +101,26 @@ class ScrapeMediaResponse(BaseModel):
     total_media_found: int
     media_type_summary: MediaTypeSummary
     media_files: list[MediaFileResult]
+
+
+class BackfillYearsRequest(BaseModel):
+    """Request body for the year-filter backfill endpoint.
+
+    Re-evaluates scraped_media rows previously marked status='skipped_year'
+    against the current SCHOOL_SCRAPER_ALLOWED_YEARS set and re-queues any
+    that now fall in range. Optional school_id scopes to a single school.
+    """
+
+    school_id: int | None = Field(
+        None,
+        description="Scope to a single school. Omit to backfill all schools "
+        "in the caller's tenant.",
+    )
+
+
+class BackfillYearsResponse(BaseModel):
+    """Response from the year-filter backfill endpoint."""
+
+    enqueued: int
+    skipped: int
+    message: str

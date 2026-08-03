@@ -68,7 +68,7 @@ All responses are wrapped via `success_response()` / `error_response()` from `ap
 | `/documents` | `documents.py` | Document upload and management |
 | `/conversations` | `conversations.py` | Chat conversation sessions |
 | `/rag` | `rag.py` | RAG query endpoint |
-| `/heatmap` | `heatmap.py` | District/county heatmap + citations |
+| `/heatmap/engine` | `heatmap_engine.py` | District topic-tag counts + citations |
 | `/analytics` | `analytics.py` | Usage analytics |
 | `/token-usage` | `daily_token_usage.py` | Per-tenant daily token stats |
 | `/billing` | `monthly_billing.py` | Monthly billing aggregation |

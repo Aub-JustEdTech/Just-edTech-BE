@@ -72,6 +72,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     fontconfig \
     fonts-dejavu-core \
     chromium \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user

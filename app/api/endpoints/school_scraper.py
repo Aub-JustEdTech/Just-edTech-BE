@@ -9,9 +9,12 @@ Two-step workflow:
 import logging
 
 import httpx
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.school_scraper import (
+    BackfillYearsRequest,
+    BackfillYearsResponse,
     CandidateUrl,
     DiscoverRequest,
     DiscoverResponse,
@@ -20,10 +23,14 @@ from app.schemas.school_scraper import (
     ScrapeMediaRequest,
     ScrapeMediaResponse,
 )
-from app.services.web_scraper.school_scraper_service import SchoolScraperService
-from app.utils.dependencies import get_current_tenant_user
 from app.schemas.users import User
-from fastapi import Depends
+from app.services.web_scraper.discovery_dispatch import discover_with_ranking_mode
+from app.services.web_scraper.school_scraper_service import SchoolScraperService
+from app.utils.dependencies import (
+    get_current_tenant_admin,
+    get_current_tenant_user,
+    get_db,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -65,34 +72,37 @@ async def discover_urls(
       -d '{"base_url": "https://www.akfcs.org"}'
     ```
     """
-    async with SchoolScraperService(use_playwright=request.use_playwright) as scraper:
-        try:
-            result = await scraper.discover_candidate_urls(
-                base_url=request.base_url,
-                max_candidates=request.max_candidates,
-            )
-        except httpx.TimeoutException:
-            raise HTTPException(
-                status_code=status.HTTP_408_REQUEST_TIMEOUT,
-                detail=f"Request timed out while accessing {request.base_url}",
-            )
-        except httpx.NetworkError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Network error while accessing {request.base_url}: {exc}",
-            )
-        except Exception as exc:
-            logger.exception("Unexpected error during URL discovery for %s", request.base_url)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error: {exc}",
-            )
+    try:
+        result = await discover_with_ranking_mode(
+            base_url=request.base_url,
+            max_candidates=request.max_candidates,
+            use_playwright=request.use_playwright,
+        )
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=status.HTTP_408_REQUEST_TIMEOUT,
+            detail=f"Request timed out while accessing {request.base_url}",
+        )
+    except httpx.NetworkError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Network error while accessing {request.base_url}: {exc}",
+        )
+    except Exception as exc:
+        logger.exception("Unexpected error during URL discovery for %s", request.base_url)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {exc}",
+        )
 
     candidates = [
         CandidateUrl(
             url=c["url"],
-            matched_keywords=c["matched_keywords"],
-            score=c["score"],
+            matched_keywords=c.get("matched_keywords", []),
+            score=c.get("score", 0),
+            data_type=c.get("data_type"),
+            is_archive=c.get("is_archive", False),
+            data_years_available=c.get("data_years_available", []),
         )
         for c in result["candidates"]
     ]
@@ -103,6 +113,7 @@ async def discover_urls(
         total_urls_scanned=result["total_urls_scanned"],
         total_candidates=len(candidates),
         candidates=candidates,
+        ranking_mode=result.get("ranking_mode", "keyword"),
     )
 
 
@@ -205,4 +216,64 @@ async def scrape_media(
         total_media_found=len(media_files),
         media_type_summary=MediaTypeSummary(**type_counts),
         media_files=media_files,
+    )
+
+
+@router.post(
+    "/backfill-years",
+    response_model=BackfillYearsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Re-evaluate skipped_year scraped media against the current allowed-years set (admin)",
+)
+async def backfill_years(
+    payload: BackfillYearsRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+) -> BackfillYearsResponse:
+    """Re-queue scraped_media rows previously skipped by the year filter.
+
+    After widening `SCHOOL_SCRAPER_ALLOWED_YEARS` (e.g. adding 2023),
+    call this endpoint to re-evaluate every `status='skipped_year'` row
+    without re-crawling the source site. Each row's `doc_year` is
+    re-inferred from its URL/filename/page context; rows whose inferred
+    year is now in the allowed set (or whose year could not be inferred
+    and `SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR=True`) are flipped back
+    to `status='discovered'` and re-enqueued for ingestion.
+
+    Optionally scope to a single school via `school_id`.
+    """
+    from app.crud.schools import list_skipped_year_media, update_scraped_media
+    from app.services.web_scraper.year_filter import evaluate_media_year
+    from app.tasks.school_scraper_tasks import ingest_scraped_media
+
+    rows = await list_skipped_year_media(
+        db,
+        tenant_id=current_user.tenant_id,
+        school_id=payload.school_id,
+    )
+
+    enqueued = 0
+    skipped = 0
+    for sm in rows:
+        inferred, in_range, _reason = evaluate_media_year(
+            url=sm.source_media_url,
+            filename=sm.original_name,
+            source_page_url=sm.source_page_url,
+        )
+        if inferred is not None:
+            sm.doc_year = inferred
+        if not in_range:
+            skipped += 1
+            continue
+        await update_scraped_media(db, sm.id, status="discovered", doc_year=inferred)
+        ingest_scraped_media.delay(scraped_media_id=sm.id)
+        enqueued += 1
+
+    return BackfillYearsResponse(
+        enqueued=enqueued,
+        skipped=skipped,
+        message=(
+            f"Re-evaluated {len(rows)} skipped_year rows: "
+            f"{enqueued} re-queued, {skipped} still out of range."
+        ),
     )

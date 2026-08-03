@@ -1,0 +1,828 @@
+{
+  "total_matching_chunks": 52,
+  "unique_documents": 22,
+  "unique_pdf_urls": 20,
+  "pdfs": [
+    {
+      "district": "Bourne",
+      "org_code": "00360000",
+      "document_name": "School Committee Meeting Minutes 03/05/2025",
+      "meeting_date": "2025-03-05",
+      "meeting_doc_type": "Minutes",
+      "pdf_url": "https://www.bourneps.org/fs/resource-manager/view/19da6a8c-62e4-4208-b575-83cc008d5f09",
+      "source_page_url": "https://www.bourneps.org/our-school-committee/school-committee-minutes",
+      "db_document_id": 124,
+      "doc_id": "school-00360000-9378e562ff0d6b290ecc2e8671d6700b92afd2eeb11fe400675e27345bb97cbd",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/00360000/document/9378e562ff0d6b290ecc2e8671d6700b92afd2eeb11fe400675e27345bb97cbd/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "aa416d42-afd8-4179-a0e7-c6c83d87e881",
+          "chunk_index": 3,
+          "topics": [
+            "lgbtq_student_rights"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Mr. Fraser says to let kids be kids and if they seek knowledge to let them do that on their own with no pressure from the committee."
+        }
+      ]
+    },
+    {
+      "district": "Bridgewater-Raynham",
+      "org_code": "06250000",
+      "document_name": "B. February 15, 2023.pdf",
+      "meeting_date": "2023-02-15",
+      "meeting_doc_type": "Minutes",
+      "pdf_url": "https://drive.google.com/uc?export=download&id=1XsB4op34MmNWkUp6Jf0JKXW2fohx6NzR",
+      "source_page_url": "https://bridge-rayn.org/en-US/school-committee-8c4f9a98/meeting-minutes-9945763c",
+      "db_document_id": 603,
+      "doc_id": "school-06250000-9779cc37e306336dae15e62b3affd63ad343459d37794f7b9651f9d8ab927124",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/06250000/document/9779cc37e306336dae15e62b3affd63ad343459d37794f7b9651f9d8ab927124/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "c606716c-8a32-4ae1-bd8c-3c34c7a232f2",
+          "chunk_index": 8,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "GSA stands for Gender-Sexuality-Alliance."
+        }
+      ]
+    },
+    {
+      "district": "New Salem-Wendell",
+      "org_code": "07280000",
+      "document_name": "Joint Supervisory Committee May 15, 2023",
+      "meeting_date": "2023-05-15",
+      "meeting_doc_type": "Minutes",
+      "pdf_url": "https://www.union28.org/UserFiles/Servers/Server_3147554/File/JSC FInal Minutes23_05_15.pdf",
+      "source_page_url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2023",
+      "db_document_id": 182,
+      "doc_id": "school-07280000-073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/07280000/document/073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd/transcript.txt",
+      "matching_chunk_count": 4,
+      "matching_chunks": [
+        {
+          "chunk_id": "94d5591d-3d1f-4a95-99c1-681fee853aee",
+          "chunk_index": 6,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "ARMS is going through a very disturbing situation with guidance counselors and leadership possibly grossly mistreating trans and queer students"
+        },
+        {
+          "chunk_id": "b8419b0e-9059-4d0f-b107-7d5c1763481e",
+          "chunk_index": 7,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "we need to continue to work to address transphobia and homophobia in our schools."
+        },
+        {
+          "chunk_id": "a746b3c4-f6a7-43b6-a076-fc4e4b9d3022",
+          "chunk_index": 7,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "we need to continue to work to address transphobia and homophobia in our schools."
+        },
+        {
+          "chunk_id": "ee7d638f-7bf8-4817-bbb4-d630351f50bf",
+          "chunk_index": 6,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "ARMS is going through a very disturbing situation with guidance counselors and leadership possibly grossly mistreating trans and queer students"
+        }
+      ],
+      "also_ingested_as": [
+        {
+          "district": "Shutesbury",
+          "org_code": "02720000",
+          "doc_id": "school-02720000-073bac594609f2c3f8fc0d818613627504024f7d2e1d53bd5aa34aed4dacd8bd",
+          "db_document_id": 174
+        }
+      ]
+    },
+    {
+      "district": "Palmer",
+      "org_code": "02270000",
+      "document_name": "Anti-Bullying Implementation Plan",
+      "meeting_date": "2024-10-23",
+      "meeting_doc_type": "Policy Document",
+      "pdf_url": "https://www.palmerschools.org/pdf/Bully Intervention and Prevention Plan 2023.pdf",
+      "source_page_url": "https://www.palmerschools.org/apps/pages/index.jsp?uREC_ID=293361&type=d",
+      "db_document_id": 526,
+      "doc_id": "school-02270000-587a0cc7af21c55f54589266e98b23409a03272bcb0043e966ceb6f6867160f8",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/02270000/document/587a0cc7af21c55f54589266e98b23409a03272bcb0043e966ceb6f6867160f8/transcript.txt",
+      "matching_chunk_count": 3,
+      "matching_chunks": [
+        {
+          "chunk_id": "310c8f56-d853-4b3f-87a7-f062c8f24c3e",
+          "chunk_index": 59,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "no person shall be discriminated against in admission to a public school... on account of race, color, sex, religion, national origin, gender identity, disability or sexual orientation."
+        },
+        {
+          "chunk_id": "38ec2293-606b-45ef-a0c8-c5df92690f5e",
+          "chunk_index": 60,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Certain students may be more vulnerable to becoming a target of bullying or harassment based on actual or perceived differentiating characteristics, including... gender identity or expression; physical appearance; pregnant or parenting status; sexual orientation..."
+        },
+        {
+          "chunk_id": "c7b5cbe7-1137-4a86-97c4-5bad82702205",
+          "chunk_index": 61,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Palmer Public Schools does not exclude from participation, deny the benefits... on the basis of race, color, sex, sexual orientation, gender identity..."
+        }
+      ]
+    },
+    {
+      "district": "Palmer",
+      "org_code": "02270000",
+      "document_name": "English",
+      "meeting_date": "2025-08-20",
+      "meeting_doc_type": "Policy Document",
+      "pdf_url": "https://www.palmerschools.org/pdf/District Handbook for 2025-2026.pdf",
+      "source_page_url": "https://www.palmerschools.org/apps/pages/index.jsp?uREC_ID=293361&type=d",
+      "db_document_id": 530,
+      "doc_id": "school-02270000-c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/02270000/document/c8e226374062cbc8d3eab6fe23a73ae79d6b76f9c09869547d324e16efa8b6e7/transcript.txt",
+      "matching_chunk_count": 7,
+      "matching_chunks": [
+        {
+          "chunk_id": "2545a2f5-bf53-46b8-86fc-66ba30c2bbbe",
+          "chunk_index": 88,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Harassment prohibited by the district includes...gender identity, sexual orientation"
+        },
+        {
+          "chunk_id": "2df68646-fbde-4321-bf08-75e904be4039",
+          "chunk_index": 38,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Such discrimination includes, but is not limited to, verbal and physical attacks on students directed at their racial, ethnic or religious background, or their disability, and any form of sexual harassment."
+        },
+        {
+          "chunk_id": "49f6330f-ed2f-4ba9-996f-fd0b08818a6b",
+          "chunk_index": 37,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Students have the right to be free from discrimination based upon race, color, religious creed, national origin, ancestry, generation, gender identity, sexual orientation, disability or handicap."
+        },
+        {
+          "chunk_id": "679c34d9-8b7c-4615-9c74-9abd2fb81a82",
+          "chunk_index": 144,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "The Palmer Public Schools reaffirms that it does not discriminate on the basis of race, color, religion, national origin, sex, gender identity, disability, homelessness, or sexual orientation"
+        },
+        {
+          "chunk_id": "c090fcbc-2ee2-4cc1-b1df-ca7a110dd68e",
+          "chunk_index": 145,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "on race, color, religion, national origin, sex, gender identity, disability, religion or sexual orientation"
+        },
+        {
+          "chunk_id": "c0be206a-57c5-43c2-bd75-3f47bee0db1a",
+          "chunk_index": 132,
+          "topics": [
+            "sex_education"
+          ],
+          "subtopics": [
+            "curriculum_change"
+          ],
+          "evidence_quote": "Discussion of one's sexual activities; and Sexual violence, including rape, sexual assault, sexual battery, sexual abuse and sexual coercion"
+        },
+        {
+          "chunk_id": "cc2a233a-0fa6-411b-93a1-6715169f5cf0",
+          "chunk_index": 80,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity",
+            "parental_rights"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Extracurricular activities or clubs sponsored by the school do not exclude students on the basis of race, sex, gender identity, color, religion, national origin, sexual orientation, disability, or homelessness."
+        }
+      ]
+    },
+    {
+      "district": "Quabbin",
+      "org_code": "07530000",
+      "document_name": "Minutes 11.10.22",
+      "meeting_date": "2022-11-10",
+      "meeting_doc_type": "Minutes",
+      "pdf_url": "https://www.qrsd.org/UserFiles/Servers/Server_1223699/File/School Committee Documents/Meeting Minutes/22-23/SC Minutes 11-10-22.pdf",
+      "source_page_url": "https://www.qrsd.org/cms/One.aspx?portalId=1223783&pageId=6694465&portletInstanceId=154600",
+      "db_document_id": 92,
+      "doc_id": "school-07530000-497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/07530000/document/497efb45edadc75b48095f615e8284ec2aed809ee4778299bec9638f70e35bc3/transcript.txt",
+      "matching_chunk_count": 11,
+      "matching_chunks": [
+        {
+          "chunk_id": "0af8e913-5c68-489f-814d-45a87adee1e5",
+          "chunk_index": 89,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "no person shall be excluded from or discriminated against in employment, or admission to a public school of the District, or in obtaining the advantages, privileges, and courses of study"
+        },
+        {
+          "chunk_id": "3438aee6-de49-4500-9503-3b0e098946b4",
+          "chunk_index": 76,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Each student, regardless of race, color, sex, national origin, religion, disability, sexual orientation, gender identity, homelessness, limited English proficiency or limited English-speaking ability, shall have equal rights of access to courses of study..."
+        },
+        {
+          "chunk_id": "439658ff-339c-4fec-8dd3-c52e7c9f1859",
+          "chunk_index": 90,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "discriminated against because of their race, color, sex, gender identity, religion, national origin, sexual orientation, homelessness, disability, or immigration status"
+        },
+        {
+          "chunk_id": "5a32ee65-6c30-46c3-8da0-6a4f6a22fd4a",
+          "chunk_index": 70,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "All public schools in the Commonwealth shall admit students without regard to race, color, sex, religion, disability, sexual orientation, gender identity, homelessness, limited English proficiency or national origin."
+        },
+        {
+          "chunk_id": "7438091a-db6d-4e74-bd9d-54990dbf0453",
+          "chunk_index": 66,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "No child shall be excluded from or discriminated against in admission to a public school... on account of race, color, sex, disability, economic status, political party, age, handicap, gender identity, religion, national origin, sexual orientation..."
+        },
+        {
+          "chunk_id": "9af4f178-8016-4d24-a1f0-fe322252f931",
+          "chunk_index": 74,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Each and every course of study offered by a public school shall be open and available to students regardless of race, color, sex, religion, disability, sexual orientation, gender identity..."
+        },
+        {
+          "chunk_id": "af87c667-4e9a-4767-abef-c64350306e57",
+          "chunk_index": 69,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "equal enjoyment of the opportunities, advantages, privileges and courses of study at such schools without regard to race, color, sex, religion, disability, sexual orientation, gender identity"
+        },
+        {
+          "chunk_id": "afc4b217-54a0-4b7a-95ec-06ae3cf571f1",
+          "chunk_index": 13,
+          "topics": [
+            "lgbtq_student_rights"
+          ],
+          "subtopics": [],
+          "evidence_quote": "75.7% for LBGT students"
+        },
+        {
+          "chunk_id": "b63952c1-32dc-4f94-a3d8-0ee45652dd5c",
+          "chunk_index": 73,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "All students, regardless of race, color, sex, gender identity, religion, national origin, sexual orientation, disability, or homelessness, have equal access to the general education program."
+        },
+        {
+          "chunk_id": "edde3013-a629-4b5c-bc18-92d48fd7f753",
+          "chunk_index": 87,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "The Quabbin Regional School District does not tolerate discrimination against students, parents, employees or the general public on the basis of race, color, national origin, sex, sexual orientation, gender identity..."
+        },
+        {
+          "chunk_id": "f009925f-8c27-4312-a04f-1d7dd7099ed0",
+          "chunk_index": 81,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "No student shall be denied the opportunity in any implied or explicit manner to participate in an extracurricular activity because of... sexual orientation, gender identity..."
+        }
+      ]
+    },
+    {
+      "district": "Quabbin",
+      "org_code": "07530000",
+      "document_name": "Minutes 12.14.23",
+      "meeting_date": "2023-12-14",
+      "meeting_doc_type": "Minutes",
+      "pdf_url": "https://www.qrsd.org/UserFiles/Servers/Server_1223699/File/School Committee Documents/Meeting Minutes/23-24/SC Minutes 12-14-23.pdf",
+      "source_page_url": "https://www.qrsd.org/cms/One.aspx?portalId=1223783&pageId=6694465&portletInstanceId=154600",
+      "db_document_id": 85,
+      "doc_id": "school-07530000-adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/07530000/document/adc17da5af15130b98db631d51b208b16934eea94ef37fda7892e5da9cc5be28/transcript.txt",
+      "matching_chunk_count": 8,
+      "matching_chunks": [
+        {
+          "chunk_id": "0c289317-f4d8-4703-a58d-cb276fcd8174",
+          "chunk_index": 284,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "no person shall be excluded from or discriminated against in employment, or admission to a public school of the District, or in obtaining the advantages, privileges, and courses of study"
+        },
+        {
+          "chunk_id": "2923dc59-fea2-4e65-be80-9c6889146973",
+          "chunk_index": 277,
+          "topics": [
+            "lgbtq_student_rights"
+          ],
+          "subtopics": [],
+          "evidence_quote": "the Quabbin Regional School District will act promptly to eliminate the conduct and will impose developmentally-appropriate disciplinary, restorative, and/or corrective action."
+        },
+        {
+          "chunk_id": "32cabd81-dda5-49e1-a430-468fb59a964e",
+          "chunk_index": 278,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "The Quabbin Regional School District does not exclude from participation, deny the benefits... on the basis of race*, color, sex, sexual orientation, gender identity..."
+        },
+        {
+          "chunk_id": "343fd4b0-d139-4528-ba1d-579ee0259c40",
+          "chunk_index": 279,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "discriminate against, individuals on the basis of race*, color, sex, sexual orientation, gender identity, religion, disability, age, genetic information..."
+        },
+        {
+          "chunk_id": "540949aa-93ec-489e-86a8-5fe7679e912b",
+          "chunk_index": 285,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "discriminated against because of their race, color, sex, gender identity, religion, national origin, sexual orientation"
+        },
+        {
+          "chunk_id": "7cdcde1d-0a9a-4802-b874-0c992b520065",
+          "chunk_index": 282,
+          "topics": [
+            "lgbtq_student_rights"
+          ],
+          "subtopics": [],
+          "evidence_quote": "school environment free of harassment based on race, color, religion, national origin, gender, sexual orientation, gender identity"
+        },
+        {
+          "chunk_id": "b8a66c43-646b-4dd2-a3cd-b59f35d1be44",
+          "chunk_index": 281,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "The Quabbin Regional School District does not tolerate discrimination against students, parents, employees or the general public on the basis of race, color, national origin, sex, sexual orientation, gender identity..."
+        },
+        {
+          "chunk_id": "c3eb0745-ed30-4d91-b325-d4e2579ce9ae",
+          "chunk_index": 272,
+          "topics": [
+            "lgbtq_student_rights",
+            "transgender_policy",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Harassment prohibited by the District includes, but is not limited to, harassment on the basis race*, color, sex, sexual orientation, gender identity, religion, disability, age"
+        }
+      ]
+    },
+    {
+      "district": "Shutesbury",
+      "org_code": "02720000",
+      "document_name": "Joint Supervisory Committee February 16, 2024 minutes",
+      "meeting_date": "2024-02-16",
+      "meeting_doc_type": "Minutes",
+      "pdf_url": "https://www.union28.org/UserFiles/Servers/Server_3147554/File/JSC_FINAL_Minutes 24_2_16.pdf",
+      "source_page_url": "https://www.union28.org/joint_supervisory_committee/meeting_minutes/minutes_2024",
+      "db_document_id": 171,
+      "doc_id": "school-02720000-9f4385fb32d6a36f9526323588ded2174126aa8667f40c28930bbb784696ad30",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/02720000/document/9f4385fb32d6a36f9526323588ded2174126aa8667f40c28930bbb784696ad30/transcript.txt",
+      "matching_chunk_count": 2,
+      "matching_chunks": [
+        {
+          "chunk_id": "f3e06c82-4184-4b1a-9391-bec5f2aec729",
+          "chunk_index": 20,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Hearing directly from students is different from reading in a book or reading some policy."
+        },
+        {
+          "chunk_id": "fef79dea-ffde-4c6f-a06d-3efb0107a5b1",
+          "chunk_index": 20,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "Hearing directly from students is different from reading in a book or reading some policy."
+        }
+      ],
+      "also_ingested_as": [
+        {
+          "district": "New Salem-Wendell",
+          "org_code": "07280000",
+          "doc_id": "school-07280000-9f4385fb32d6a36f9526323588ded2174126aa8667f40c28930bbb784696ad30",
+          "db_document_id": 112
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2023-07-05_Agenda_Regular_Business",
+      "meeting_date": "2023-07-05",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=E0E3BNu6",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 616,
+      "doc_id": "school-03090000-98361b378d83e08a5ef8e67266db69d0fbe5c26ad706ca6b3666a06cbd9634b0",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/98361b378d83e08a5ef8e67266db69d0fbe5c26ad706ca6b3666a06cbd9634b0/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "32f22a56-9ed5-408a-a144-1ec94d7468bb",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2023-07-19_Agenda_Regular_Business",
+      "meeting_date": "2023-07-19",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=xd03BA0m",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 620,
+      "doc_id": "school-03090000-569af34e8d7f42c01ea19970518c49327a4004124f070bb54445cf575014b327",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/569af34e8d7f42c01ea19970518c49327a4004124f070bb54445cf575014b327/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "b4a8f1f3-ecb6-4a68-b5a2-daca49d3663f",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2023-07-26_Agenda_Regular_Business",
+      "meeting_date": "2023-07-26",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=7HE4BCuK",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 622,
+      "doc_id": "school-03090000-9e177cf93ab262db1519a4594c08631b050ce517c750d0b0693f4d5799c42009",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/9e177cf93ab262db1519a4594c08631b050ce517c750d0b0693f4d5799c42009/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "c2b06114-3c60-4c49-9007-54a6c36b6f49",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2023-08-02_Agenda_Regular_Business",
+      "meeting_date": "2023-08-02",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=9pQ4BDFv",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 624,
+      "doc_id": "school-03090000-3c655bba547ceed7e1e7a072c9bb00128cd6492e2c06040bf24a26afea920d99",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/3c655bba547ceed7e1e7a072c9bb00128cd6492e2c06040bf24a26afea920d99/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "2b71f84c-7c78-4a07-9a2e-c2f139f13100",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2024-07-01_Agenda_Regular_Business",
+      "meeting_date": "2024-07-01",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=zkg%2fBA6z",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 626,
+      "doc_id": "school-03090000-d391d80dc06d95fa54db96fb7817d72e295c4550c4a7cb41d0c2d0282297a1ff",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/d391d80dc06d95fa54db96fb7817d72e295c4550c4a7cb41d0c2d0282297a1ff/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "35885913-5bb1-477b-981f-e1c87c4c9c08",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2024-08-06_Policy_Sub-Committee_Meeting",
+      "meeting_date": "2024-08-06",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=U1BABOyr",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 629,
+      "doc_id": "school-03090000-77a663032ceb3adcf01f73d13e0958571e7063e64a1f73ae0f69bd79223d3eae",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/77a663032ceb3adcf01f73d13e0958571e7063e64a1f73ae0f69bd79223d3eae/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "77ff2024-8c03-4854-b6de-058c53531560",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2024-08-28_Agenda_Regular_Business",
+      "meeting_date": "2024-08-28",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=HCZBBKLd",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 633,
+      "doc_id": "school-03090000-567ff230f7f48f12f9cc0d1314889f967af1aec1b1786c8afe82909ceae9747b",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/567ff230f7f48f12f9cc0d1314889f967af1aec1b1786c8afe82909ceae9747b/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "d4e96c94-9e2a-4421-b5e4-ba093c1ffaa0",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2024-09-11_Agenda_Regular_Business",
+      "meeting_date": "2024-09-11",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=jxZCBDLt",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 635,
+      "doc_id": "school-03090000-c643342633da93ce846b84bb4b01e5b612ce8ac2e0714fd86813afd66179764b",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/c643342633da93ce846b84bb4b01e5b612ce8ac2e0714fd86813afd66179764b/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "3b2ac482-8e7f-4e8e-af21-d531b408a77d",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2025-07-23_Agenda_Regular_Business",
+      "meeting_date": "2025-07-23",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=R5FUBOxq",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 638,
+      "doc_id": "school-03090000-4959ecb9607e1de3ef245bba85857aa5b9f1a47a859d7c7c461779167a66e1b1",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/4959ecb9607e1de3ef245bba85857aa5b9f1a47a859d7c7c461779167a66e1b1/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "23f2d4b5-95a7-4dfc-b81d-aca79cf88394",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2025-07-30_Agenda_Regular_Business",
+      "meeting_date": "2025-07-30",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=IcdUBIo8",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 640,
+      "doc_id": "school-03090000-b3070612a5e7eb0be5f9a8ed80f6937812062d7308febea665d7e05f87559f13",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/b3070612a5e7eb0be5f9a8ed80f6937812062d7308febea665d7e05f87559f13/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "2e81ecd7-ed98-4d5a-9f74-15f6a5d8c428",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Ware",
+      "org_code": "03090000",
+      "document_name": "2025-08-07_Agenda_Regular_Business",
+      "meeting_date": "2025-08-07",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://www.wareps.org/common/pages/GetFile.ashx?key=dv5UBN0F",
+      "source_page_url": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes",
+      "db_document_id": 642,
+      "doc_id": "school-03090000-e3087071fbb381df2a544fa9f71c5978fb2e6c82f95da7c823ebcbbddf2d3888",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03090000/document/e3087071fbb381df2a544fa9f71c5978fb2e6c82f95da7c823ebcbbddf2d3888/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "9c509f46-4778-4da2-9efa-52ea1684d251",
+          "chunk_index": 0,
+          "topics": [
+            "lgbtq_student_rights",
+            "gender_identity"
+          ],
+          "subtopics": [],
+          "evidence_quote": "not to discriminate on the basis of age, sex, race, color, religion, national origin, ethnicity, disability, sexual orientation, gender identity"
+        }
+      ]
+    },
+    {
+      "district": "Worcester",
+      "org_code": "03480000",
+      "document_name": "6_13_25_TLSS_Outstanding_Items_.pdf",
+      "meeting_date": "2024-11-24",
+      "meeting_doc_type": "Agenda",
+      "pdf_url": "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/4512/Wps/42ac995f-7145-421e-a9e3-ef112c8413ed/6_13_25_TLSS_Outstanding_Items_.pdf?disposition=inline",
+      "source_page_url": "https://www.worcesterschools.org/documents/school-committee/agenda-and-minutes/559835",
+      "db_document_id": 186,
+      "doc_id": "school-03480000-aae88cd5b5ed664a31d6184c28f9f5ffb51e34de1af41bcfc6b0973a1faf9ea3",
+      "s3_transcript": "s3://just-edtech-artifacts/tenants/2/schools/03480000/document/aae88cd5b5ed664a31d6184c28f9f5ffb51e34de1af41bcfc6b0973a1faf9ea3/transcript.txt",
+      "matching_chunk_count": 1,
+      "matching_chunks": [
+        {
+          "chunk_id": "a5104a92-a901-4eff-a1b7-b0c4d4f92aa5",
+          "chunk_index": 5,
+          "topics": [
+            "sex_education",
+            "parental_rights"
+          ],
+          "subtopics": [],
+          "evidence_quote": "update on the Worcester Public Schools opt-in and opt-out options regarding the sex education curriculum"
+        }
+      ]
+    }
+  ]
+}

@@ -186,6 +186,7 @@ class QdrantStore(VectorStore):
             "document_type",
             "school_org_code",
             "school_name",
+            "school_id",
             "district_type",
             "document_type",
             "source_page_url",
@@ -217,6 +218,65 @@ class QdrantStore(VectorStore):
             except Exception:
                 pass
 
+        # Heatmap-ingest classification fields. These are written by the
+        # batch classifier after a Batch API run completes (see
+        # app/services/heatmap_ingest/batch_classifier.py).
+        for field in (
+            "entity_type",
+            "classified",
+        ):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
+        # Multi-label array fields (topics, action_types, subtopics) —
+        # Qdrant indexes array payloads with the same KEYWORD schema so
+        # `topics contains 'sex_education'` queries are fast.
+        for field in ("topics", "action_types", "subtopics"):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
+        # Heatmap V1 metadata fields (spec: Heatmap Ingest Metadata v1).
+        # Doc-level denorm + per-chunk keyword flags + placeholders for the
+        # batch classifier output. Indexed as KEYWORD so payload pre-filter
+        # queries on state / district_name / school_year / etc. are fast.
+        v1_keyword_fields = (
+            "state",
+            "district_name",
+            "school_year",
+            "quarter_month",
+            "meeting_doc_type",
+            "meeting_body",
+            "document_quality",
+            "action_stage",
+            "keyword_flags",
+            "topic_tags",
+            "speakers",
+        )
+        for field in v1_keyword_fields:
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
     async def add_chunks(
         self,
         document_id: str,
@@ -225,20 +285,39 @@ class QdrantStore(VectorStore):
         metadatas: list[dict[str, Any]],
     ) -> bool:
         """Store chunks in Qdrant"""
+        point_ids = await self.add_chunks_returning_ids(
+            document_id, chunks, embeddings, metadatas
+        )
+        return bool(point_ids)
+
+    async def add_chunks_returning_ids(
+        self,
+        document_id: str,
+        chunks: list[str],
+        embeddings: list[list[float]],
+        metadatas: list[dict[str, Any]],
+    ) -> list[str]:
+        """
+        Store chunks in Qdrant and return the list of generated point IDs.
+
+        Used by the heatmap ingest pipeline (step6_accumulate_batch) which
+        needs the per-chunk point IDs to write pending_classifications rows
+        and later apply batch results via set_payload.
+        """
         try:
             if not chunks or not embeddings or not metadatas:
                 logger.warning("Empty chunks, embeddings, or metadatas provided")
-                return False
+                return []
 
             if len(chunks) != len(embeddings) != len(metadatas):
                 logger.error("Mismatch in lengths of chunks, embeddings, and metadatas")
-                return False
+                return []
 
             # Get tenant_id from first metadata
             tenant_id = metadatas[0].get("tenant_id")
             if not tenant_id:
                 logger.error("tenant_id not found in metadata")
-                return False
+                return []
 
             vector_size = len(embeddings[0]) if embeddings else 1536
             collection_name = await self._get_or_create_collection(tenant_id, vector_size)
@@ -246,6 +325,7 @@ class QdrantStore(VectorStore):
             # Prepare points for Qdrant
             # Use dict format for better compatibility with older server versions
             points = []
+            point_ids: list[str] = []
             for i, (chunk, embedding, metadata) in enumerate(
                 zip(chunks, embeddings, metadatas)
             ):
@@ -253,6 +333,7 @@ class QdrantStore(VectorStore):
                 # Qdrant only accepts unsigned integers or valid UUIDs
                 # We generate a unique UUID4 for each chunk
                 point_id = str(uuid.uuid4())
+                point_ids.append(point_id)
 
                 # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
                 # Qdrant payload can contain: str, int, float, bool, list, dict
@@ -303,11 +384,11 @@ class QdrantStore(VectorStore):
             logger.info(
                 f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
             )
-            return True
+            return point_ids
 
         except Exception as e:
             logger.error(f"Error adding chunks to Qdrant: {e}", exc_info=True)
-            return False
+            return []
 
     async def search(
         self,
@@ -498,6 +579,212 @@ class QdrantStore(VectorStore):
         except Exception as e:
             logger.error(f"Error getting document chunks: {e}", exc_info=True)
             return []
+
+    def _build_payload_filter(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+    ) -> models.Filter:
+        """
+        Build a Qdrant `Filter` from the engine-style filter fragments.
+
+        - `must_match`: `{field: value}` → FieldCondition(MatchValue)
+        - `must_match_any`: `{field: [values]}` → FieldCondition(MatchAny)
+        - `nested_match_any`: `{array_field: [values]}` where the array
+          holds objects — translates to a NestedCondition with a
+          `MatchAny` on the nested `category`-like field. Concretely
+          used for `topic_tags` (list of `{category, subtopic}` objects)
+          where the key is the array field name and the values are the
+          `category` strings to match.
+        """
+        must_conditions: list[models.FieldCondition] = [
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value=tenant_id),
+            )
+        ]
+
+        for field, value in (must_match or {}).items():
+            if value is None:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    match=models.MatchValue(value=value),
+                )
+            )
+
+        for field, values in (must_match_any or {}).items():
+            if not values:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        # Nested array-of-objects filter (e.g. topic_tags[].category).
+        # Each key maps to a nested field; we match any object whose
+        # `category` sub-field is in the provided values.
+        nested_conditions: list[models.NestedCondition] = []
+        for nested_field, values in (nested_match_any or {}).items():
+            if not values:
+                continue
+            nested_conditions.append(
+                models.NestedCondition(
+                    nested=models.Nested(
+                        key=nested_field,
+                        filter=models.Filter(
+                            must=[
+                                models.FieldCondition(
+                                    key="category",
+                                    match=models.MatchAny(any=list(values)),
+                                )
+                            ]
+                        ),
+                    )
+                )
+            )
+
+        return models.Filter(
+            must=must_conditions,
+            should=nested_conditions or None,
+        )
+
+    async def filter_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """
+        Scroll chunks by payload filter (no vector query).
+
+        Used by the heatmap citations path: retrieve all chunks for a
+        given (source_id, topic) without computing an embedding.
+        """
+        try:
+            collection_name = self._get_collection_name(tenant_id)
+
+            scroll_filter = self._build_payload_filter(
+                tenant_id,
+                must_match=must_match,
+                must_match_any=must_match_any,
+                nested_match_any=nested_match_any,
+            )
+
+            try:
+                await asyncio.to_thread(self.client.get_collection, collection_name)
+            except Exception:
+                logger.debug(
+                    f"Qdrant collection {collection_name} does not exist; "
+                    f"returning empty filter_chunks result"
+                )
+                return []
+
+            collected: list[dict[str, Any]] = []
+            offset = None
+            # Qdrant scroll caps at 10000 per call; loop until we hit limit.
+            page_size = min(limit, 10000)
+            while len(collected) < limit:
+                batch, next_offset = await asyncio.to_thread(
+                    self.client.scroll,
+                    collection_name=collection_name,
+                    scroll_filter=scroll_filter,
+                    limit=page_size,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+                if not batch:
+                    break
+                for point in batch:
+                    payload = point.payload or {}
+                    collected.append(
+                        {
+                            "id": str(point.id),
+                            "text": payload.get("text", ""),
+                            "metadata": {
+                                k: v for k, v in payload.items() if k != "text"
+                            },
+                            "score": 1.0,
+                        }
+                    )
+                    if len(collected) >= limit:
+                        break
+                if next_offset is None:
+                    break
+                offset = next_offset
+
+            logger.info(
+                f"filter_chunks: {len(collected)} chunks for tenant {tenant_id} "
+                f"(must_match={must_match}, must_match_any={must_match_any}, "
+                f"nested_match_any={nested_match_any})"
+            )
+            return collected[:limit]
+
+        except Exception as e:
+            logger.error(f"Error filtering chunks in Qdrant: {e}", exc_info=True)
+            return []
+
+    async def count_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+    ) -> int:
+        """
+        Count chunks matching a payload filter using Qdrant's native count.
+
+        Far cheaper than `filter_chunks` + `len()` for the Heatmap Engine,
+        which counts chunk instances per district without materializing
+        the chunks themselves.
+        """
+        try:
+            collection_name = self._get_collection_name(tenant_id)
+
+            count_filter = self._build_payload_filter(
+                tenant_id,
+                must_match=must_match,
+                must_match_any=must_match_any,
+                nested_match_any=nested_match_any,
+            )
+
+            try:
+                await asyncio.to_thread(self.client.get_collection, collection_name)
+            except Exception:
+                logger.debug(
+                    f"Qdrant collection {collection_name} does not exist; "
+                    f"returning 0 count"
+                )
+                return 0
+
+            result = await asyncio.to_thread(
+                self.client.count,
+                collection_name=collection_name,
+                count_filter=count_filter,
+                exact=True,
+            )
+            count = int(result.count)
+            logger.info(
+                f"count_chunks: {count} chunks for tenant {tenant_id} "
+                f"(must_match={must_match}, must_match_any={must_match_any}, "
+                f"nested_match_any={nested_match_any})"
+            )
+            return count
+
+        except Exception as e:
+            logger.error(f"Error counting chunks in Qdrant: {e}", exc_info=True)
+            return 0
 
     async def update_metadata(
         self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int
