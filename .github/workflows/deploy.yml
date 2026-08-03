@@ -78,16 +78,18 @@ jobs:
       # Generate .env.prod
       ###########################################################
 
-      - name: Generate .env.prod
-        run: |
-          cat > .env.prod <<EOF
-          ECR_IMAGE=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+      # - name: Generate .env.prod
+      #   run: |
+      #     cat > .env.prod <<EOF
+      #     ECR_IMAGE=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
-          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-          AWS_REGION=${{ vars.AWS_REGION }}
-          AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
+      #     SECRET_KEY=${{ vars.SECRET_KEY }}
+
+      #     AWS_REGION=${{ vars.AWS_REGION }}
+      #     AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
 
           POSTGRES_SERVER=${{ vars.POSTGRES_SERVER }}
           POSTGRES_DB=${{ vars.POSTGRES_DB }}
@@ -100,77 +102,77 @@ jobs:
           OPENROUTER_HTTP_REFERER=${{ vars.OPENROUTER_HTTP_REFERER }}
           OPENROUTER_APP_NAME=${{ vars.OPENROUTER_APP_NAME }}
 
-          OPENAI_API_KEY=${{ vars.OPENAI_API_KEY }}
-          OPENAI_EMBEDDING_MODEL=${{ vars.OPENAI_EMBEDDING_MODEL }}
+      #     OPENAI_API_KEY=${{ vars.OPENAI_API_KEY }}
+      #     OPENAI_EMBEDDING_MODEL=${{ vars.OPENAI_EMBEDDING_MODEL }}
 
-          ACCESS_TOKEN_EXPIRE_MINUTES=${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
-          REFRESH_TOKEN_EXPIRE_DAYS=${{ vars.REFRESH_TOKEN_EXPIRE_DAYS }}
-          ALGORITHM=${{ vars.ALGORITHM }}
+      #     ACCESS_TOKEN_EXPIRE_MINUTES=${{ vars.ACCESS_TOKEN_EXPIRE_MINUTES }}
+      #     REFRESH_TOKEN_EXPIRE_DAYS=${{ vars.REFRESH_TOKEN_EXPIRE_DAYS }}
+      #     ALGORITHM=${{ vars.ALGORITHM }}
 
-          FRONTEND_BASE_URL=${{ vars.FRONTEND_BASE_URL }}
-          BACKEND_CORS_ORIGINS=${{ vars.BACKEND_CORS_ORIGINS }}
+      #     FRONTEND_BASE_URL=${{ vars.FRONTEND_BASE_URL }}
+      #     BACKEND_CORS_ORIGINS=${{ vars.BACKEND_CORS_ORIGINS }}
 
-          SMTP_HOST=${{ vars.SMTP_HOST }}
-          SMTP_PORT=${{ vars.SMTP_PORT }}
-          SMTP_USER=${{ vars.SMTP_USER }}
-          SMTP_PASSWORD=${{ vars.SMTP_PASSWORD }}
-          SMTP_FROM=${{ vars.SMTP_FROM }}
+      #     SMTP_HOST=${{ vars.SMTP_HOST }}
+      #     SMTP_PORT=${{ vars.SMTP_PORT }}
+      #     SMTP_USER=${{ vars.SMTP_USER }}
+      #     SMTP_PASSWORD=${{ vars.SMTP_PASSWORD }}
+      #     SMTP_FROM=${{ vars.SMTP_FROM }}
 
-          EMAIL_VERIFICATION_EXPIRE_HOURS=${{ vars.EMAIL_VERIFICATION_EXPIRE_HOURS }}
+      #     EMAIL_VERIFICATION_EXPIRE_HOURS=${{ vars.EMAIL_VERIFICATION_EXPIRE_HOURS }}
 
-          S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}
-          S3_REGION=${{ vars.S3_REGION }}
+      #     S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}
+      #     S3_REGION=${{ vars.S3_REGION }}
 
-          VECTOR_STORE_TYPE=${{ vars.VECTOR_STORE_TYPE }}
-          VECTOR_DB_PATH=${{ vars.VECTOR_DB_PATH }}
-          CHROMA_COLLECTION_PREFIX=${{ vars.CHROMA_COLLECTION_PREFIX }}
-          CHROMA_PERSIST_DIR=${{ vars.CHROMA_PERSIST_DIR }}
+      #     VECTOR_STORE_TYPE=${{ vars.VECTOR_STORE_TYPE }}
+      #     VECTOR_DB_PATH=${{ vars.VECTOR_DB_PATH }}
+      #     CHROMA_COLLECTION_PREFIX=${{ vars.CHROMA_COLLECTION_PREFIX }}
+      #     CHROMA_PERSIST_DIR=${{ vars.CHROMA_PERSIST_DIR }}
 
-          CHUNK_SIZE=${{ vars.CHUNK_SIZE }}
-          CHUNK_OVERLAP=${{ vars.CHUNK_OVERLAP }}
+      #     CHUNK_SIZE=${{ vars.CHUNK_SIZE }}
+      #     CHUNK_OVERLAP=${{ vars.CHUNK_OVERLAP }}
 
-          MAX_TOKENS=${{ vars.MAX_TOKENS }}
-          MAX_FILE_SIZE_MB=${{ vars.MAX_FILE_SIZE_MB }}
+      #     MAX_TOKENS=${{ vars.MAX_TOKENS }}
+      #     MAX_FILE_SIZE_MB=${{ vars.MAX_FILE_SIZE_MB }}
 
-          ALLOWED_DOCUMENT_TYPES=${{ vars.ALLOWED_DOCUMENT_TYPES }}
+      #     ALLOWED_DOCUMENT_TYPES=${{ vars.ALLOWED_DOCUMENT_TYPES }}
 
-          DEFAULT_ROLE_ID=${{ vars.DEFAULT_ROLE_ID }}
-          DEFAULT_TENANT_ID=${{ vars.DEFAULT_TENANT_ID }}
+      #     DEFAULT_ROLE_ID=${{ vars.DEFAULT_ROLE_ID }}
+      #     DEFAULT_TENANT_ID=${{ vars.DEFAULT_TENANT_ID }}
 
-          TEMP_UPLOAD_DIR=${{ vars.TEMP_UPLOAD_DIR }}
+      #     TEMP_UPLOAD_DIR=${{ vars.TEMP_UPLOAD_DIR }}
 
-          REDIS_HOST=redis
-          REDIS_PORT=6379
+      #     REDIS_HOST=redis
+      #     REDIS_PORT=6379
 
-          EOF
+      #     EOF
 
       ###########################################################
       # Show env (masked)
       ###########################################################
 
-      - name: Verify .env.prod
-        run: |
-          sed \
-            -e 's/AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=********/' \
-            -e 's/AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=********/' \
-            -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
-            -e 's/SMTP_PASSWORD=.*/SMTP_PASSWORD=********/' \
-            -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
-            .env.prod
+      # - name: Verify .env.prod
+      #   run: |
+      #     sed \
+      #       -e 's/AWS_ACCESS_KEY_ID=.*/AWS_ACCESS_KEY_ID=********/' \
+      #       -e 's/AWS_SECRET_ACCESS_KEY=.*/AWS_SECRET_ACCESS_KEY=********/' \
+      #       -e 's/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=********/' \
+      #       -e 's/SMTP_PASSWORD=.*/SMTP_PASSWORD=********/' \
+      #       -e 's/OPENAI_API_KEY=.*/OPENAI_API_KEY=********/' \
+      #       .env.prod
 
       ###########################################################
       # Copy .env
       ###########################################################
 
-      - name: Copy Environment File
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ vars.EC2_HOST }}
-          username: ${{ vars.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: ".env.prod"
-          target: "${{ vars.APP_DIRECTORY }}"
-          overwrite: true
+      # - name: Copy Environment File
+      #   uses: appleboy/scp-action@v1
+      #   with:
+      #     host: ${{ vars.EC2_HOST }}
+      #     username: ${{ vars.EC2_USER }}
+      #     key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+      #     source: ".env.prod"
+      #     target: "${{ vars.APP_DIRECTORY }}"
+      #     overwrite: true
 
       ###########################################################
       # Get ECR Login Password
@@ -203,12 +205,14 @@ jobs:
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           ECR_PASSWORD: ${{ steps.ecr.outputs.password }}
           REF: ${{ github.event.inputs.ref }}
+          IMAGE_TAG: ${{ github.sha }}
+          
 
         with:
           host: ${{ vars.EC2_HOST }}
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY,ECR_PASSWORD,REF
+          envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY,ECR_PASSWORD,REF,IMAGE_TAG
 
           script: |
 
@@ -228,6 +232,28 @@ jobs:
 
             echo
             echo "======================================="
+            echo "Fetching secrets from AWS Secrets Manager..."
+            echo "======================================="
+
+            aws secretsmanager get-secret-value \
+            --secret-id justedtech-prod-secrets \
+            --query SecretString \
+            --output text \
+            | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' \
+            > .env.prod
+
+            echo "ECR_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:${IMAGE_TAG}" >> .env.prod
+
+            echo ".env.prod created successfully"
+
+            echo "===================="
+            cat .env.prod
+            echo "===================="
+
+             
+
+            echo
+            echo "======================================="
             echo "Docker Login"
             echo "======================================="
 
@@ -242,8 +268,6 @@ jobs:
             echo "======================================="
 
             cd /home/ubuntu/justedtech
-            
-            grep ECR_IMAGE .env.prod
 
             echo
             echo "Pulling Images..."

@@ -64,6 +64,7 @@ services:
   # FastAPI
   ##################################################
   api:
+    # image: 940031346406.dkr.ecr.us-west-1.amazonaws.com/justedtech-prod-be
     image: ${ECR_IMAGE}
     pull_policy: always
     container_name: just-edtech-api
@@ -200,6 +201,13 @@ services:
       --time-limit=7200
       --soft-time-limit=6000
       -Q scraping
+
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
     deploy:
       resources:
