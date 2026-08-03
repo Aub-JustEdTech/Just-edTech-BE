@@ -1,12 +1,25 @@
-"""
-Celery task for ingesting scraped media into the document pipeline.
+"""Celery tasks for ingesting scraped media into the document pipeline.
 
 Scrape orchestration (discovery, run/job tracking) is handled offline via
-scripts; this module only covers download/transcribe → Document → vectors.
+scripts; this module covers materialize (download or transcribe) -> Document
+-> vectors, plus the batch sweep that walks confirmed school URLs.
+
+Cost model, cheapest gate first:
+
+* documents (PDF/DOCX/PPTX) — downloaded and text-extracted locally, free;
+* YouTube with captions — captions fetched, free;
+* everything else — AssemblyAI at ~$0.23/audio-hour, capped by duration.
 """
 
+from __future__ import annotations
+
+import json
 import logging
+import shutil
+import tempfile
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,20 +27,51 @@ from app.celery_app import celery_app
 from app.core.config import settings
 from app.db.connector import AsyncSessionLocal
 from app.models.school import ScrapedMedia
+from app.services.transcription.exceptions import (
+    TerminalTranscriptionError,
+)
+from app.services.transcription.schemas import TranscriptResult
 from app.tasks.loop_utils import get_event_loop
 
 logger = logging.getLogger(__name__)
+
+# Media types that go down the transcription path rather than text extraction.
+AV_MEDIA_TYPES = ("audio", "video", "youtube")
+
+
+@dataclass(slots=True)
+class MediaPayload:
+    """What materializing one ScrapedMedia produced."""
+
+    text: str = ""
+    transcript: TranscriptResult | None = None
+    content_hash: str | None = None
+    size_bytes: int | None = None
+    duration_seconds: int | None = None
+    raw_bytes: bytes | None = None
+    extra_metadata: dict = field(default_factory=dict)
 
 
 @celery_app.task(
     name="app.tasks.school_scraper_tasks.ingest_scraped_media",
     bind=True,
-    max_retries=2,
+    max_retries=3,
 )
 def ingest_scraped_media(self, scraped_media_id: int):
-    """Download/transcribe a scraped media item and ingest into the doc pipeline."""
-    loop = get_event_loop()
-    return loop.run_until_complete(_ingest_scraped_media_async(scraped_media_id))
+    """Download/transcribe a scraped media item and ingest into the pipeline."""
+    try:
+        loop = get_event_loop()
+        return loop.run_until_complete(_ingest_scraped_media_async(scraped_media_id))
+    except TerminalTranscriptionError:
+        # Already recorded as a status by the async impl; retrying is pointless.
+        raise
+    except Exception as exc:
+        logger.error(
+            "ingest_scraped_media failed for %s: %s", scraped_media_id, str(exc)
+        )
+        raise self.retry(
+            exc=exc, countdown=60 * (2**self.request.retries)
+        ) from exc
 
 
 async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
@@ -40,6 +84,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
     async with AsyncSessionLocal() as db:
         sm = await db.get(ScrapedMedia, scraped_media_id)
         if not sm:
+            logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
 
         inferred_year, should_process, skip_reason = evaluate_media_year(
@@ -63,77 +108,224 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
 
         await update_scraped_media(db, sm.id, status="downloading")
 
-        try:
-            raw_bytes, text_content, content_h = await _fetch_media_payload(sm)
-        except Exception as exc:  # noqa: BLE001
-            logger.exception(
-                "Ingest failed for scraped_media %s", scraped_media_id
-            )
+        # Year gate runs before any download or spend.
+        inferred_year = infer_doc_year(
+            url=sm.source_media_url,
+            filename=sm.original_name,
+            source_page_url=sm.source_page_url,
+        )
+        allowed_years = set(settings.SCHOOL_SCRAPER_ALLOWED_YEARS)
+        if inferred_year is not None and inferred_year not in allowed_years:
             await update_scraped_media(
                 db,
                 sm.id,
-                status="failed",
-                error_message=str(exc),
+                status="skipped_year",
+                doc_year=inferred_year,
+                error_message=f"year={inferred_year} not in {sorted(allowed_years)}",
             )
-            raise
-
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "skipped_year",
+                "doc_year": inferred_year,
+            }
+        if (
+            inferred_year is None
+            and not settings.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR
+        ):
+            await update_scraped_media(
+                db,
+                sm.id,
+                status="skipped_year",
+                doc_year=None,
+                error_message="year could not be inferred",
+            )
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "skipped_year",
+                "doc_year": None,
+            }
         if inferred_year is not None:
             sm.doc_year = inferred_year
             await db.flush()
 
-        if content_h:
-            existing = await get_scraped_media_by_content_hash(db, sm.school_id, content_h)
-            if existing and existing.id != sm.id:
+        # Temp dir is load-bearing: celery-scraper shares the temp_uploads
+        # volume with the documents worker, so a leaked multi-GB file takes
+        # down both. Always cleaned, even on failure.
+        Path(settings.SCHOOL_SCRAPER_MEDIA_TEMP_DIR).mkdir(parents=True, exist_ok=True)
+        workdir = Path(
+            tempfile.mkdtemp(dir=settings.SCHOOL_SCRAPER_MEDIA_TEMP_DIR)
+        )
+
+        try:
+            try:
+                payload = await _materialize_media(sm, workdir)
+            except TerminalTranscriptionError as exc:
+                # Deterministic: retrying re-does identical work and fails the
+                # same way. Record and return WITHOUT raising.
+                logger.warning(
+                    "Terminal failure for scraped_media %s (%s): %s",
+                    scraped_media_id,
+                    exc.status,
+                    exc,
+                )
                 await update_scraped_media(
                     db,
                     sm.id,
-                    status="skipped_duplicate",
-                    content_hash=content_h,
+                    status=exc.status,
+                    error_message=str(exc),
                 )
                 return {
                     "scraped_media_id": scraped_media_id,
-                    "status": "skipped_duplicate",
+                    "status": exc.status,
+                }
+            except Exception as exc:
+                logger.exception("Ingest failed for scraped_media %s", scraped_media_id)
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="failed",
+                    error_message=str(exc),
+                )
+                raise
+
+            # An empty transcript must not create a Document: stage 2 raises
+            # on empty text, which would strand the Document in PROCESSING.
+            if not payload.text.strip():
+                logger.warning(
+                    "Empty transcript for scraped_media %s; not creating a Document",
+                    scraped_media_id,
+                )
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="no_transcript",
+                    error_message="transcript was empty",
+                )
+                return {
+                    "scraped_media_id": scraped_media_id,
+                    "status": "no_transcript",
                 }
 
-        await update_scraped_media(
-            db,
-            sm.id,
-            status="ingesting",
-            content_hash=content_h,
-        )
+            content_h = payload.content_hash
+            if content_h:
+                existing = await get_scraped_media_by_content_hash(
+                    db, sm.school_id, content_h
+                )
+                if existing and existing.id != sm.id:
+                    await update_scraped_media(
+                        db,
+                        sm.id,
+                        status="skipped_duplicate",
+                        content_hash=content_h,
+                    )
+                    return {
+                        "scraped_media_id": scraped_media_id,
+                        "status": "skipped_duplicate",
+                    }
 
-        document_id = await _create_document_and_enqueue(
-            db, sm, raw_bytes, text_content, content_h
-        )
+            await update_scraped_media(
+                db,
+                sm.id,
+                status="ingesting",
+                content_hash=content_h,
+            )
 
-        await update_scraped_media(
-            db,
-            sm.id,
-            status="completed",
-            document_id=document_id,
-            ingested_at=datetime.now(timezone.utc),
-        )
-        return {
-            "scraped_media_id": scraped_media_id,
-            "status": "completed",
-            "document_id": document_id,
-        }
+            # Everything past this point runs AFTER transcription has already
+            # been paid for. An S3 or DB failure here must NOT propagate to the
+            # wrapper's self.retry(), or the retry re-transcribes and re-bills
+            # the same media up to three more times. Record and stop.
+            try:
+                document_id = await _create_document_and_enqueue(db, sm, payload)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception(
+                    "Persisting the transcript failed for scraped_media %s AFTER "
+                    "transcription was paid for; not retrying to avoid re-billing",
+                    scraped_media_id,
+                )
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="failed",
+                    error_message=f"post-transcription persist failed: {exc}",
+                    duration_seconds=payload.duration_seconds,
+                    size_bytes=payload.size_bytes,
+                )
+                return {
+                    "scraped_media_id": scraped_media_id,
+                    "status": "failed",
+                    "error": "post-transcription persist failed",
+                }
+
+            await update_scraped_media(
+                db,
+                sm.id,
+                status="completed",
+                document_id=document_id,
+                duration_seconds=payload.duration_seconds,
+                size_bytes=payload.size_bytes,
+                ingested_at=datetime.now(timezone.utc),
+            )
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "completed",
+                "document_id": document_id,
+            }
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
 
 
-async def _fetch_media_payload(sm):
-    """Return (raw_bytes, text_content, content_hash) for a ScrapedMedia item."""
+async def _materialize_media(sm, workdir: Path) -> MediaPayload:
+    """Produce text (and, for A/V, a transcript) for one ScrapedMedia item."""
     import hashlib
 
     import httpx
 
+    from app.services.transcription.service import transcription_service
+    from app.services.transcription.youtube import extract_youtube_id
+
+    # --- YouTube: captions first, always free ---
     if sm.media_type == "youtube":
         if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
-            raise RuntimeError(
-                "YouTube transcript disabled (SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED=False)"
+            from app.services.transcription.exceptions import (
+                NoTranscriptAvailableError,
             )
-        text = await _fetch_youtube_transcript(sm.source_media_url)
-        return None, text, None
 
+            raise NoTranscriptAvailableError(
+                "YouTube transcripts are disabled "
+                "(SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED=False)"
+            )
+
+        transcript = await transcription_service.transcribe_youtube(
+            sm.source_media_url, workdir=workdir
+        )
+        video_id = extract_youtube_id(sm.source_media_url) or sm.source_media_url
+        return MediaPayload(
+            text=transcript.text,
+            transcript=transcript,
+            # Reuses the existing content_hash column and its unique
+            # constraint, so the same video embedded on three pages ingests
+            # once — with no schema change.
+            content_hash=hashlib.sha256(f"youtube:{video_id}".encode()).hexdigest(),
+            duration_seconds=transcript.duration_seconds,
+            size_bytes=transcript.source_size_bytes,
+        )
+
+    # --- Audio / video: the only path that can cost money ---
+    if sm.media_type in ("audio", "video"):
+        transcript = await transcription_service.transcribe_media_url(
+            sm.source_media_url, workdir=workdir
+        )
+        return MediaPayload(
+            text=transcript.text,
+            transcript=transcript,
+            duration_seconds=transcript.duration_seconds,
+            # Read from the container header during the pre-spend probe, so
+            # this is populated even under url_direct where nothing is
+            # downloaded.
+            size_bytes=transcript.source_size_bytes,
+        )
+
+    # --- Documents: unchanged. Small, fast, already working. ---
     async with httpx.AsyncClient(
         timeout=settings.WEB_SCRAPER_TIMEOUT_SECONDS,
         headers={"User-Agent": settings.SCHOOL_SCRAPER_USER_AGENT},
@@ -143,48 +335,12 @@ async def _fetch_media_payload(sm):
         resp.raise_for_status()
         raw = resp.content
 
-    content_h = hashlib.sha256(raw).hexdigest()
-
-    if sm.media_type == "document":
-        text = _extract_text_from_document(raw, sm.file_extension)
-    else:
-        if not settings.SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED:
-            text = ""
-        else:
-            text = await _transcribe_media(raw, sm.file_extension)
-
-    return raw, text, content_h
-
-
-async def _fetch_youtube_transcript(url: str) -> str:
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore
-    except ImportError as exc:  # pragma: no cover
-        raise RuntimeError(
-            "yt-dlp is not installed; cannot fetch YouTube transcript"
-        ) from exc
-
-    import asyncio
-
-    def _fetch() -> str:
-        opts = {
-            "writesubtitles": True,
-            "writeautomaticsub": True,
-            "skip_download": True,
-            "subtitleslangs": ["en"],
-            "subtitlesformat": "vtt",
-            "quiet": True,
-        }
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            subs = (info or {}).get("subtitles") or {}
-            auto_subs = (info or {}).get("automatic_captions") or {}
-            track = subs.get("en") or auto_subs.get("en") or []
-            if not track:
-                return ""
-            return str(track[0].get("ext", ""))
-
-    return await asyncio.to_thread(_fetch)
+    return MediaPayload(
+        text=_extract_text_from_document(raw, sm.file_extension),
+        content_hash=hashlib.sha256(raw).hexdigest(),
+        size_bytes=len(raw),
+        raw_bytes=raw,
+    )
 
 
 def _extract_text_from_document(raw: bytes, ext: str | None) -> str:
@@ -239,21 +395,23 @@ def _extract_text_from_document(raw: bytes, ext: str | None) -> str:
         return ""
 
 
-async def _transcribe_media(raw: bytes, ext: str | None) -> str:
-    logger.warning(
-        "Whisper transcription not yet wired; returning empty transcript for %s bytes",
-        len(raw),
+def _get_s3_manager():
+    from app.utils.s3 import S3Manager
+
+    return S3Manager(
+        bucket_name=settings.S3_BUCKET_NAME,
+        region_name=settings.S3_REGION,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )
-    return ""
 
 
 async def _create_document_and_enqueue(
     db: AsyncSession,
     sm,
-    raw_bytes: bytes | None,
-    text_content: str,
-    content_h: str | None,
+    payload: MediaPayload,
 ) -> int | None:
+    """Persist the artifacts, create the Document, enqueue the pipeline."""
     from app.models.documents import Document, ProcessingStatus
     from app.models.school import School
     from app.utils.school_calendar import (
@@ -261,67 +419,59 @@ async def _create_document_and_enqueue(
         derive_school_year,
     )
 
-    s3_key_text = (
+    s3 = _get_s3_manager()
+    key_prefix = (
+        f"{settings.SCHOOL_SCRAPER_S3_PREFIX}"
         f"tenants/{sm.tenant_id}/schools/{sm.school_org_code}/"
-        f"{sm.media_type}/{content_h or sm.url_hash}/transcript.txt"
+        f"{sm.media_type}/{payload.content_hash or sm.url_hash}"
     )
-    s3_url_text = await _upload_text_to_s3(s3_key_text, text_content)
 
-    s3_key_raw = None
-    file_ext = (sm.file_extension or "bin").lstrip(".").lower()
-    if raw_bytes is not None:
-        s3_key_raw = (
-            f"tenants/{sm.tenant_id}/schools/{sm.school_org_code}/"
-            f"{sm.media_type}/{content_h}/{sm.original_name or f'file.{file_ext}'}"
+    if payload.transcript is not None:
+        # The Document object is the JSON envelope, so timestamps and speaker
+        # labels survive into chunking. See TranscriptProcessor.
+        document_type = ".transcript"
+        s3_key_text = f"{key_prefix}/transcript.json"
+        body = json.dumps(payload.transcript.to_envelope(), ensure_ascii=False)
+        s3_url_text = await s3.upload_file_object(body.encode("utf-8"), s3_key_text)
+
+        # Human-readable copy alongside it. Never the only artifact.
+        await s3.upload_file_object(
+            payload.transcript.to_plain_text().encode("utf-8"),
+            f"{key_prefix}/transcript.txt",
         )
-        await _upload_raw_to_s3(s3_key_raw, raw_bytes)
-
-    # Prefer the raw binary for document types so the pipeline (including OCR)
-    # can process the real file. Audio/video stay on transcript.txt.
-    _RAW_DOC_EXTS = {"pdf", "docx", "doc", "pptx", "xlsx", "xls"}
-    use_raw_document = (
-        sm.media_type == "document"
-        and s3_key_raw is not None
-        and file_ext in _RAW_DOC_EXTS
-    )
-    if use_raw_document:
-        doc_s3_url = f"s3://{settings.S3_BUCKET_NAME}/{s3_key_raw}"
-        doc_type = f".{file_ext}"
     else:
-        doc_s3_url = s3_url_text
-        doc_type = ".txt"
+        # Leading dot is required: the pipeline builds "{uuid}{document_type}"
+        # and ProcessorFactory keys on Path(...).suffix.
+        document_type = ".txt"
+        s3_key_text = f"{key_prefix}/transcript.txt"
+        s3_url_text = await s3.upload_file_object(
+            payload.text.encode("utf-8"), s3_key_text
+        )
 
-    # Resolve the school's state (2-letter abbreviation) so it can be
-    # denormalized onto the Document row + source_metadata. Falls back to
-    # 'MA' if the school row is missing (V1 corpus is MA-only).
-    school = await db.get(School, sm.school_id)
-    state = (school.state if school else None) or "MA"
+    # Raw archive exists only for documents, which are downloaded anyway.
+    # Under TRANSCRIPTION_AUDIO_MODE=url_direct the worker never holds the
+    # audio/video bytes — AssemblyAI fetches the URL itself — so there is
+    # nothing to archive. That is the documented trade-off of url_direct;
+    # source_media_url remains the pointer to playable media.
+    s3_key_raw = None
+    if payload.raw_bytes is not None:
+        ext = (sm.file_extension or "bin").lstrip(".")
+        s3_key_raw = f"{key_prefix}/{sm.original_name or f'file.{ext}'}"
+        await s3.upload_file_object(payload.raw_bytes, s3_key_raw)
 
-    # Derive school_year + quarter_month from the scraped meeting_date if
-    # present. DocClassifier (step 2.6) may overwrite meeting_date from the
-    # LLM and re-derive these; setting them now means non-LLM paths still
-    # have correct values.
-    school_year: str | None = None
-    quarter_month: str | None = None
-    if sm.meeting_date:
-        school_year = derive_school_year(sm.meeting_date)
-        quarter_month = derive_quarter_month(sm.meeting_date)
-
+    transcript = payload.transcript
     doc = Document(
         name=sm.original_name or sm.source_media_url,
-        doc_id=f"school-{sm.school_org_code}-{content_h or sm.url_hash[:16]}",
-        s3_url=doc_s3_url,
+        doc_id=(
+            f"school-{sm.school_org_code}-"
+            f"{payload.content_hash or sm.url_hash[:16]}"
+        ),
+        s3_url=s3_url_text,
         tenant_id=sm.tenant_id,
-        document_type=doc_type,
+        document_type=document_type,
         processing_status=ProcessingStatus.PENDING,
         source_type="school_scraper",
-        content_hash=content_h,
-        # Heatmap V1 doc-level denorm (spec: Heatmap Ingest Metadata v1).
-        state=state,
-        district_name=sm.school_name,
-        school_year=school_year,
-        quarter_month=quarter_month,
-        meeting_date=sm.meeting_date,
+        content_hash=payload.content_hash,
         source_metadata={
             "scraped_media_id": sm.id,
             "school_id": sm.school_id,
@@ -338,6 +488,12 @@ async def _create_document_and_enqueue(
             "quarter_month": quarter_month,
             "doc_year": sm.doc_year,
             "scraped_at": sm.scraped_at.isoformat() if sm.scraped_at else None,
+            # Provenance needed to resolve a citation back to playable media.
+            "transcript_source": transcript.source if transcript else None,
+            "speech_model": transcript.speech_model if transcript else None,
+            "caption_kind": transcript.caption_kind if transcript else None,
+            "duration_seconds": payload.duration_seconds,
+            "s3_key_raw": s3_key_raw,
         },
     )
     db.add(doc)
@@ -345,8 +501,8 @@ async def _create_document_and_enqueue(
 
     sm.s3_key_raw = s3_key_raw
     sm.s3_key_text = s3_key_text
-    if raw_bytes is not None:
-        sm.size_bytes = len(raw_bytes)
+    if payload.size_bytes is not None:
+        sm.size_bytes = payload.size_bytes
 
     from app.models.processing_jobs import DocumentProcessingJob, JobStatus
 
@@ -363,50 +519,118 @@ async def _create_document_and_enqueue(
 
         process_document_pipeline.delay(doc.id, job.id)
     except Exception:  # noqa: BLE001
-        logger.exception(
-            "Failed to enqueue document processing for doc %s", doc.id
-        )
+        logger.exception("Failed to enqueue document processing for doc %s", doc.id)
 
     return doc.id
 
 
-async def _upload_text_to_s3(key: str, text: str) -> str:
+@celery_app.task(
+    name="app.tasks.school_scraper_tasks.sweep_school_media",
+    bind=True,
+    max_retries=3,
+)
+def sweep_school_media(self, school_ids: list[int] | None = None) -> dict:
+    """Walk confirmed school URLs, persist what is found, enqueue only new rows.
+
+    Deliberately NOT in beat_schedule: run it manually and confirm the
+    created/skipped counts look right before letting it fire unattended
+    against several hundred district sites.
+    """
     try:
-        import aioboto3
-    except ImportError:  # pragma: no cover
-        return f"s3://{settings.S3_BUCKET_NAME}/{key}"
+        loop = get_event_loop()
+        return loop.run_until_complete(_sweep_school_media_async(school_ids))
+    except Exception as exc:
+        logger.error("sweep_school_media failed: %s", str(exc))
+        raise self.retry(
+            exc=exc, countdown=60 * (2**self.request.retries)
+        ) from exc
 
-    session = aioboto3.Session()
-    async with session.client(
-        "s3",
-        region_name=settings.S3_REGION,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    ) as s3:
-        await s3.put_object(
-            Bucket=settings.S3_BUCKET_NAME,
-            Key=key,
-            Body=text.encode("utf-8"),
-            ContentType="text/plain",
+
+async def _sweep_school_media_async(school_ids: list[int] | None) -> dict:
+    from sqlalchemy import select
+
+    from app.crud.schools import bulk_create_scraped_media
+    from app.models.school import School, SchoolScrapeUrl
+    from app.services.web_scraper.school_scraper_service import SchoolScraperService
+
+    totals = {
+        "schools": 0,
+        "found": 0,
+        "created": 0,
+        "skipped": 0,
+        "enqueued": 0,
+        "av_found": 0,
+        "documents_found": 0,
+        # Counted separately so a run of all-zeros cannot be mistaken for
+        # "nothing new was published".
+        "scrape_failures": 0,
+    }
+    failed_urls: list[str] = []
+
+    async with AsyncSessionLocal() as db:
+        stmt = select(SchoolScrapeUrl).where(SchoolScrapeUrl.is_active.is_(True))
+        if school_ids:
+            stmt = stmt.where(SchoolScrapeUrl.school_id.in_(school_ids))
+        scrape_urls = (await db.execute(stmt)).scalars().all()
+
+        # `async with` matters twice: it closes the httpx client and any
+        # auto-launched Chromium (otherwise leaked per sweep), and its
+        # __aenter__ pre-launches the browser so it is reused across all
+        # districts instead of relaunched per site.
+        async with SchoolScraperService() as service:
+            for scrape_url in scrape_urls:
+                school = await db.get(School, scrape_url.school_id)
+                if not school:
+                    continue
+                totals["schools"] += 1
+
+                try:
+                    result = await service.scrape_media_files(
+                        page_url=scrape_url.url,
+                        crawl_depth=scrape_url.crawl_depth,
+                    )
+                except Exception:
+                    # One unreachable district must not abort the sweep, but it
+                    # must be visible: a silent skip looks identical to a site
+                    # with no new meetings.
+                    logger.exception("Sweep scrape failed for %s", scrape_url.url)
+                    totals["scrape_failures"] += 1
+                    failed_urls.append(scrape_url.url)
+                    continue
+
+                media_files = result.get("media_files", [])
+                totals["found"] += len(media_files)
+                for media in media_files:
+                    media_type = media.get("media_type")
+                    if media_type in AV_MEDIA_TYPES:
+                        totals["av_found"] += 1
+                    elif media_type == "document":
+                        totals["documents_found"] += 1
+
+                if not media_files:
+                    continue
+
+                rows, skipped = await bulk_create_scraped_media(
+                    db,
+                    school=school,
+                    source_page_url=scrape_url.url,
+                    media_files=media_files,
+                )
+                totals["created"] += len(rows)
+                totals["skipped"] += skipped
+
+                # Enqueue ONLY newly created rows. This is what stops a
+                # re-crawl from re-paying for the whole corpus, and it is safe
+                # here because bulk_create_scraped_media has committed.
+                for row in rows:
+                    ingest_scraped_media.delay(row.id)
+                    totals["enqueued"] += 1
+
+    if failed_urls:
+        logger.warning(
+            "sweep_school_media: %s district(s) could not be scraped: %s",
+            len(failed_urls),
+            failed_urls,
         )
-    return f"s3://{settings.S3_BUCKET_NAME}/{key}"
-
-
-async def _upload_raw_to_s3(key: str, raw: bytes) -> None:
-    try:
-        import aioboto3
-    except ImportError:  # pragma: no cover
-        return
-
-    session = aioboto3.Session()
-    async with session.client(
-        "s3",
-        region_name=settings.S3_REGION,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    ) as s3:
-        await s3.put_object(
-            Bucket=settings.S3_BUCKET_NAME,
-            Key=key,
-            Body=raw,
-        )
+    logger.info("sweep_school_media finished: %s", totals)
+    return totals

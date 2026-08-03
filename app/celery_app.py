@@ -35,6 +35,9 @@ celery_app.conf.update(
         "app.tasks.school_scraper_tasks.ingest_scraped_media": {
             "queue": "scraping"
         },
+        "app.tasks.school_scraper_tasks.sweep_school_media": {
+            "queue": "scraping"
+        },
     },
     # Retry settings
     task_acks_late=True,  # Acknowledge after task completion

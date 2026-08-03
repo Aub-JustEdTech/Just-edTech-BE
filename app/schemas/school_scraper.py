@@ -2,9 +2,11 @@
 Pydantic schemas for the generalised school website scraper endpoints.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import BaseModel, Field, field_validator
+
+from app.schemas.schools import MediaTypeLiteral
 
 
 class DiscoverRequest(BaseModel):
@@ -67,6 +69,17 @@ class ScrapeMediaRequest(BaseModel):
 
     url: str
     crawl_depth: int = 1
+    school_id: int | None = Field(
+        None,
+        description="School to attach discovered media to. Required when "
+        "persist=True.",
+    )
+    persist: bool = Field(
+        False,
+        description="When True, save discovered media to scraped_media and "
+        "enqueue ingestion for newly created rows only. Defaults to False so "
+        "the existing preview-only contract is unchanged.",
+    )
 
     @field_validator("crawl_depth")
     @classmethod
@@ -79,8 +92,9 @@ class MediaFileResult(BaseModel):
 
     name: str | None
     url: str
-    file_extension: str
-    media_type: Literal["video", "audio", "document"]
+    # Nullable: a YouTube video has no file extension.
+    file_extension: str | None = None
+    media_type: MediaTypeLiteral
     size_bytes: int | None
     source_page_url: str
 
@@ -91,6 +105,7 @@ class MediaTypeSummary(BaseModel):
     video: int = 0
     audio: int = 0
     document: int = 0
+    youtube: int = 0
 
 
 class ScrapeMediaResponse(BaseModel):
@@ -101,6 +116,11 @@ class ScrapeMediaResponse(BaseModel):
     total_media_found: int
     media_type_summary: MediaTypeSummary
     media_files: list[MediaFileResult]
+    # Populated only when persist=True; zero on a preview call.
+    persisted: int = 0
+    skipped_duplicates: int = 0
+    enqueued: int = 0
+    scraped_media_ids: list[int] = Field(default_factory=list)
 
 
 class BackfillYearsRequest(BaseModel):
