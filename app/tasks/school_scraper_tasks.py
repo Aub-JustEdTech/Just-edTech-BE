@@ -107,42 +107,6 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
 
         await update_scraped_media(db, sm.id, status="downloading")
 
-        # Year gate runs before any download or spend.
-        inferred_year = infer_doc_year(
-            url=sm.source_media_url,
-            filename=sm.original_name,
-            source_page_url=sm.source_page_url,
-        )
-        allowed_years = set(settings.SCHOOL_SCRAPER_ALLOWED_YEARS)
-        if inferred_year is not None and inferred_year not in allowed_years:
-            await update_scraped_media(
-                db,
-                sm.id,
-                status="skipped_year",
-                doc_year=inferred_year,
-                error_message=f"year={inferred_year} not in {sorted(allowed_years)}",
-            )
-            return {
-                "scraped_media_id": scraped_media_id,
-                "status": "skipped_year",
-                "doc_year": inferred_year,
-            }
-        if (
-            inferred_year is None
-            and not settings.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR
-        ):
-            await update_scraped_media(
-                db,
-                sm.id,
-                status="skipped_year",
-                doc_year=None,
-                error_message="year could not be inferred",
-            )
-            return {
-                "scraped_media_id": scraped_media_id,
-                "status": "skipped_year",
-                "doc_year": None,
-            }
         if inferred_year is not None:
             sm.doc_year = inferred_year
             await db.flush()
@@ -454,6 +418,39 @@ async def _create_document_and_enqueue(
         s3_key_raw = f"{key_prefix}/{sm.original_name or f'file.{ext}'}"
         await s3.upload_file_object(payload.raw_bytes, s3_key_raw)
 
+    # Prefer the raw binary for document types so the pipeline (including OCR)
+    # can process the real file instead of our own no-OCR local extraction.
+    # Audio/video/YouTube stay on the transcript text artifact.
+    _RAW_DOC_EXTS = {"pdf", "docx", "doc", "pptx", "xlsx", "xls"}
+    file_ext = (sm.file_extension or "bin").lstrip(".").lower()
+    use_raw_document = (
+        sm.media_type == "document"
+        and s3_key_raw is not None
+        and file_ext in _RAW_DOC_EXTS
+    )
+    if use_raw_document:
+        doc_s3_url = f"s3://{settings.S3_BUCKET_NAME}/{s3_key_raw}"
+        doc_type = f".{file_ext}"
+    else:
+        doc_s3_url = s3_url_text
+        doc_type = document_type
+
+    # Resolve the school's state (2-letter abbreviation) so it can be
+    # denormalized onto the Document row + source_metadata. Falls back to
+    # 'MA' if the school row is missing (V1 corpus is MA-only).
+    school = await db.get(School, sm.school_id)
+    state = (school.state if school else None) or "MA"
+
+    # Derive school_year + quarter_month from the scraped meeting_date if
+    # present. DocClassifier (step 2.6) may overwrite meeting_date from the
+    # LLM and re-derive these; setting them now means non-LLM paths still
+    # have correct values.
+    school_year: str | None = None
+    quarter_month: str | None = None
+    if sm.meeting_date:
+        school_year = derive_school_year(sm.meeting_date)
+        quarter_month = derive_quarter_month(sm.meeting_date)
+
     transcript = payload.transcript
     doc = Document(
         name=sm.original_name or sm.source_media_url,
@@ -461,12 +458,18 @@ async def _create_document_and_enqueue(
             f"school-{sm.school_org_code}-"
             f"{payload.content_hash or sm.url_hash[:16]}"
         ),
-        s3_url=s3_url_text,
+        s3_url=doc_s3_url,
         tenant_id=sm.tenant_id,
-        document_type=document_type,
+        document_type=doc_type,
         processing_status=ProcessingStatus.PENDING,
         source_type="school_scraper",
         content_hash=payload.content_hash,
+        # Heatmap V1 doc-level denorm (spec: Heatmap Ingest Metadata v1).
+        state=state,
+        district_name=sm.school_name,
+        school_year=school_year,
+        quarter_month=quarter_month,
+        meeting_date=sm.meeting_date,
         source_metadata={
             "scraped_media_id": sm.id,
             "school_id": sm.school_id,
