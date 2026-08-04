@@ -111,6 +111,8 @@ class Settings(BaseSettings):
     # (topics/action_types) classifier settings.
     HEATMAP_INGEST_DOC_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
     HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    # Document summarizer (app/services/document_processing/summarizer.py).
+    DOCUMENT_SUMMARIZER_MODEL: str = "openai/gpt-4o-mini"
     # Max chunks per OpenAI Batch API submission. The API caps at 50,000
     # requests per batch; we use a smaller default to keep batches quick.
     HEATMAP_INGEST_BATCH_SIZE: int = 50_000

@@ -850,12 +850,25 @@ class SchoolScraperService:
 
                 # YouTube URLs carry no file extension, so they must be
                 # matched before the extension gate below rejects them.
+                #
+                # The URL itself never carries a year (youtube.com/watch?v=...),
+                # so nearby text is the only cheap source the year filter can
+                # infer a date from — link text for <a>, else the iframe/embed's
+                # title, else its parent element's text (meeting listings
+                # commonly wrap the embed and its date label in one container).
+                if tag_name == "a":
+                    yt_name = elem.get_text(strip=True) or None
+                else:
+                    yt_name = elem.get("title") or None
+                    if not yt_name and elem.parent:
+                        yt_name = elem.parent.get_text(" ", strip=True)[:200] or None
+
                 if self._append_youtube_media(
                     media_files,
                     seen_media,
                     url=full_url,
                     page_url=page_url,
-                    name=(elem.get("title") if tag_name in ("iframe", "embed") else None),
+                    name=yt_name,
                 ):
                     continue
 

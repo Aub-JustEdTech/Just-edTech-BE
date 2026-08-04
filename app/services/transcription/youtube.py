@@ -305,6 +305,41 @@ def _ytdlp_options() -> dict[str, object]:
     return opts
 
 
+async def fetch_youtube_upload_year(url: str) -> int | None:
+    """Video upload year from YouTube's metadata — no bytes transferred.
+
+    Last-resort fallback for the download-time year filter. A YouTube URL
+    never carries a year itself (``youtube.com/watch?v=...``), so on a page
+    that isn't year-organized and has no dateable link text nearby, the
+    filter would otherwise skip every video regardless of its real upload
+    date. Only worth calling once URL/filename/page-context inference has
+    already failed, since it costs a metadata round-trip per video.
+
+    Returns None if the metadata cannot be read.
+    """
+    try:
+        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
+    except ImportError:  # pragma: no cover
+        return None
+
+    def _extract() -> int | None:
+        with YoutubeDL(_ytdlp_options()) as ydl:
+            info = ydl.extract_info(url, download=False) or {}
+        upload_date = info.get("upload_date")  # "YYYYMMDD" string, or None
+        if isinstance(upload_date, str) and upload_date[:4].isdigit():
+            return int(upload_date[:4])
+        return None
+
+    try:
+        return await asyncio.wait_for(
+            asyncio.to_thread(_extract),
+            timeout=settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
+        )
+    except Exception as exc:  # noqa: BLE001 — advisory only, never fatal
+        logger.warning("Could not read YouTube upload date for %s: %s", url, exc)
+        return None
+
+
 async def probe_youtube_duration(url: str) -> int | None:
     """Duration in seconds from YouTube's metadata — no bytes transferred.
 

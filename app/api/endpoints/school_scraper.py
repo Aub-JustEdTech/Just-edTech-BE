@@ -297,7 +297,7 @@ async def backfill_years(
     Optionally scope to a single school via `school_id`.
     """
     from app.crud.schools import list_skipped_year_media, update_scraped_media
-    from app.services.web_scraper.year_filter import evaluate_media_year
+    from app.services.web_scraper.year_filter import evaluate_media_year_async
     from app.tasks.school_scraper_tasks import ingest_scraped_media
 
     rows = await list_skipped_year_media(
@@ -309,7 +309,7 @@ async def backfill_years(
     enqueued = 0
     skipped = 0
     for sm in rows:
-        inferred, in_range, _reason = evaluate_media_year(
+        inferred, in_range, _reason = await evaluate_media_year_async(
             url=sm.source_media_url,
             filename=sm.original_name,
             source_page_url=sm.source_page_url,

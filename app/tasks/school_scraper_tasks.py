@@ -78,7 +78,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         get_scraped_media_by_content_hash,
         update_scraped_media,
     )
-    from app.services.web_scraper.year_filter import evaluate_media_year
+    from app.services.web_scraper.year_filter import evaluate_media_year_async
 
     async with AsyncSessionLocal() as db:
         sm = await db.get(ScrapedMedia, scraped_media_id)
@@ -86,7 +86,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
             logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
 
-        inferred_year, should_process, skip_reason = evaluate_media_year(
+        inferred_year, should_process, skip_reason = await evaluate_media_year_async(
             url=sm.source_media_url,
             filename=sm.original_name,
             source_page_url=sm.source_page_url,
