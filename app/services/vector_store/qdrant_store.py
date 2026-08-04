@@ -205,9 +205,41 @@ class QdrantStore(VectorStore):
                 # Already exists or field not present yet; either way, ignore.
                 pass
 
-        # datetime / date-like fields stored as strings — index as keyword
-        # since we store ISO strings, not Qdrant datetime values.
-        for field in ("meeting_date", "scraped_at"):
+        # `meeting_date` is indexed as DATETIME (not KEYWORD) so the heatmap
+        # engine's custom date-range filter can use a native Qdrant `Range`
+        # condition. Stored values are still plain ISO date strings
+        # ("YYYY-MM-DD") written at ingest time — Qdrant parses those as
+        # midnight UTC, which compares correctly against the RFC3339 bounds
+        # built in `heatmap_engine/timeframe.py`.
+        for field in ("meeting_date",):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.DATETIME,
+                )
+            except Exception:
+                # Most likely the field already has the legacy KEYWORD index
+                # from before this change — drop and recreate so range
+                # queries work instead of silently swallowing the mismatch.
+                try:
+                    await asyncio.to_thread(
+                        self.client.delete_payload_index,
+                        collection_name=collection_name,
+                        field_name=field,
+                    )
+                    await asyncio.to_thread(
+                        self.client.create_payload_index,
+                        collection_name=collection_name,
+                        field_name=field,
+                        field_schema=models.PayloadSchemaType.DATETIME,
+                    )
+                except Exception:
+                    pass
+
+        # `scraped_at` has no range-filter use case today — keep it KEYWORD.
+        for field in ("scraped_at",):
             try:
                 await asyncio.to_thread(
                     self.client.create_payload_index,
@@ -587,6 +619,7 @@ class QdrantStore(VectorStore):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
     ) -> models.Filter:
         """
         Build a Qdrant `Filter` from the engine-style filter fragments.
@@ -599,6 +632,10 @@ class QdrantStore(VectorStore):
           used for `topic_tags` (list of `{category, subtopic}` objects)
           where the key is the array field name and the values are the
           `category` strings to match.
+        - `range_match`: `{field: {"gte": iso, "lte": iso}}` → FieldCondition
+          with a `DatetimeRange`. Requires the field to have a `DATETIME`
+          payload index (see `_ensure_payload_indexes`); used by the
+          heatmap engine's custom date-range filter on `meeting_date`.
         """
         must_conditions: list[models.FieldCondition] = [
             models.FieldCondition(
@@ -624,6 +661,19 @@ class QdrantStore(VectorStore):
                 models.FieldCondition(
                     key=field,
                     match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        for field, bounds in (range_match or {}).items():
+            if not bounds:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    range=models.DatetimeRange(
+                        gte=bounds.get("gte"),
+                        lte=bounds.get("lte"),
+                    ),
                 )
             )
 
@@ -662,6 +712,7 @@ class QdrantStore(VectorStore):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """
@@ -678,6 +729,7 @@ class QdrantStore(VectorStore):
                 must_match=must_match,
                 must_match_any=must_match_any,
                 nested_match_any=nested_match_any,
+                range_match=range_match,
             )
 
             try:
@@ -741,6 +793,7 @@ class QdrantStore(VectorStore):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
     ) -> int:
         """
         Count chunks matching a payload filter using Qdrant's native count.
@@ -757,6 +810,7 @@ class QdrantStore(VectorStore):
                 must_match=must_match,
                 must_match_any=must_match_any,
                 nested_match_any=nested_match_any,
+                range_match=range_match,
             )
 
             try:
