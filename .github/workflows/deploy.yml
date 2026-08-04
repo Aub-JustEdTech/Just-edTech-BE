@@ -141,6 +141,16 @@ jobs:
 
           REDIS_HOST=redis
           REDIS_PORT=6379
+          
+          SCHOOL_SCRAPER_ALLOWED_YEARS=${{ vars.SCHOOL_SCRAPER_ALLOWED_YEARS }}
+          SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR=${{ VARS.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR }}
+          ENABLE_OCR=${{ vars.ENABLE_OCR }}
+          OCR_PROVIDER=${{ vars.OCR_PROVIDER }}
+          OCR_MIN_CHARS_THRESHOLD=${{ vars.OCR_MIN_CHARS_THRESHOLD }}
+          OCR_DPI=${{ vars.OCR_DPI }}
+          OCR_MAX_PAGES=${{ vars.OCR_MAX_PAGES }}
+          OCR_LANGUAGES=${{ vars.OCR_LANGUAGES }}
+          OCR_TIMEOUT_SECONDS=${{ vars.OCR_TIMEOUT_SECONDS }}
 
           EOF
 
