@@ -157,6 +157,27 @@ def filter_media_files(media_files: list[dict]) -> list[dict]:
     return kept
 
 
+async def filter_media_files_async(media_files: list[dict]) -> list[dict]:
+    """Like :func:`filter_media_files`, with the metadata-fetch fallback.
+
+    This is the filter ``scrape_media_files`` applies before a caller ever
+    sees the media list, so it is the one that actually matters: a YouTube
+    link or dateless direct-media link dropped here never reaches the
+    per-item re-checks in ``run_scrape_districts.py`` / the ingest task,
+    because by then it's already gone.
+    """
+    kept: list[dict] = []
+    for media in media_files:
+        _, should_process, _ = await evaluate_media_year_async(
+            url=media["url"],
+            filename=media.get("name"),
+            source_page_url=media.get("source_page_url"),
+        )
+        if should_process:
+            kept.append(media)
+    return kept
+
+
 def is_meeting_date_in_range(meeting_date: date | None) -> bool:
     """Return True when ``meeting_date`` falls in an allowed calendar year."""
     if meeting_date is None:

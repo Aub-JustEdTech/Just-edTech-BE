@@ -49,7 +49,7 @@ from app.services.web_scraper._discovery_helpers import (
     parse_sitemap_xml as _parse_sitemap_xml_helper,
 )
 from app.services.web_scraper.year_filter import (
-    filter_media_files,
+    filter_media_files_async,
     should_crawl_page_url,
 )
 
@@ -1002,12 +1002,12 @@ class SchoolScraperService:
                 media, sub_pages = self._extract_media_from_page(
                     html, current_url, video_ext, audio_ext, doc_ext
                 )
-                all_media.extend(filter_media_files(media))
+                all_media.extend(await filter_media_files_async(media))
             else:
                 sub_pages = []
 
             if extra_media:
-                all_media.extend(filter_media_files(extra_media))
+                all_media.extend(await filter_media_files_async(extra_media))
 
             if depth < crawl_depth:
                 for sub_url in sub_pages:

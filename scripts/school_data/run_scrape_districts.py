@@ -47,6 +47,8 @@ DEFAULT_JSON_PATH = (
 def _classify_media_type(reported: str | None, ext: str | None) -> str:
     if reported == "document":
         return "document"
+    if reported == "youtube":
+        return "youtube"
     if reported in ("video", "audio"):
         if ext and "youtube" in ext.lower():
             return "youtube"
