@@ -195,10 +195,15 @@ async def _scrape_one_school(
                 status="discovered",
             )
             db.add(sm)
-            await db.flush()
+            await db.commit()
             result["media_new"] += 1
 
             if enqueue:
+                # Commit above (not just flush) matters: the Celery worker
+                # opens its own DB connection and won't see a merely-flushed
+                # row from this session, so an enqueue before commit races
+                # the worker into "ScrapedMedia not found" — a silent,
+                # non-retried no-op, not a task failure.
                 ingest_scraped_media.delay(scraped_media_id=sm.id)
                 result["enqueue_count"] += 1
 
