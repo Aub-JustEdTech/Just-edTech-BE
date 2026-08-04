@@ -116,6 +116,33 @@ def is_youtube_url(url: str) -> bool:
     return extract_youtube_id(url) is not None
 
 
+async def fetch_youtube_title(url: str) -> str | None:
+    """The video's real title, via YouTube's oEmbed endpoint — no API key.
+
+    A bare video URL never carries a title, so without this every YouTube
+    item's display name (and therefore its searchability in the Knowledge
+    Base) defaults to the raw URL — unlike a PDF, whose filename already is
+    a real title. Called only when page-context anchor text didn't already
+    supply a name; oEmbed is a single lightweight JSON GET, not a full page
+    fetch.
+    """
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://www.youtube.com/oembed",
+                params={"url": url, "format": "json"},
+            )
+        if response.status_code != 200:
+            return None
+        title = response.json().get("title")
+        return title.strip() if isinstance(title, str) and title.strip() else None
+    except Exception as exc:  # noqa: BLE001 — advisory only, never fatal
+        logger.warning("Could not fetch YouTube title for %s: %s", url, exc)
+        return None
+
+
 async def fetch_youtube_transcript(url: str) -> TranscriptResult | None:
     """Fetch captions for ``url``.
 
