@@ -288,7 +288,7 @@ def build_batch_request_line(
     state_vocab_pack = render_state_vocab_pack(state)
     return {
         "custom_id": custom_id,
-        "method": "post",
+        "method": "POST",
         "url": "/v1/chat/completions",
         "body": {
             "model": model,
