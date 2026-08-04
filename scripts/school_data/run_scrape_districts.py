@@ -37,7 +37,6 @@ from app.crud import schools as crud
 from app.db.connector import AsyncSessionLocal
 from app.models.school import School, SchoolScrapeUrl, ScrapedMedia
 from app.services.web_scraper.school_scraper_service import SchoolScraperService
-from app.services.transcription.youtube import fetch_youtube_title, is_youtube_url
 from app.services.web_scraper.year_filter import evaluate_media_year_async
 
 DEFAULT_JSON_PATH = (
@@ -179,13 +178,9 @@ async def _scrape_one_school(
             media_type = _classify_media_type(
                 mf.get("media_type"), mf.get("file_extension")
             )
-            name = mf.get("name")
-            if media_type == "youtube" and (not name or is_youtube_url(name)):
-                # No page-context anchor text — a bare video URL never has a
-                # title of its own, unlike a PDF's filename. Without this,
-                # the item's display name (and Knowledge Base searchability)
-                # would default to the raw URL.
-                name = await fetch_youtube_title(mf["url"]) or name
+            # YouTube title fallback now lives in
+            # SchoolScraperService._append_youtube_media itself, so mf["name"]
+            # is already the real title by the time it gets here.
             sm = ScrapedMedia(
                 tenant_id=school_row.tenant_id,
                 school_id=school_row.id,
@@ -198,7 +193,7 @@ async def _scrape_one_school(
                 content_hash=None,
                 media_type=media_type,
                 file_extension=mf.get("file_extension"),
-                original_name=name,
+                original_name=mf.get("name"),
                 doc_year=inferred_year,
                 status="discovered",
             )

@@ -7,6 +7,10 @@ board meeting embedded as a YouTube iframe was completely invisible.
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
+import pytest
+
 from app.core.config import settings
 from app.services.web_scraper.school_scraper_service import SchoolScraperService
 
@@ -15,9 +19,18 @@ CANONICAL = f"https://www.youtube.com/watch?v={VIDEO_ID}"
 PAGE_URL = "https://example-district.org/board/meetings"
 
 
-def _extract(html: str):
+@pytest.fixture(autouse=True)
+def _no_real_oembed_calls(monkeypatch):
+    """These are unit tests — never hit YouTube's oEmbed endpoint for real."""
+    monkeypatch.setattr(
+        "app.services.transcription.youtube.fetch_youtube_title",
+        AsyncMock(return_value=None),
+    )
+
+
+async def _extract(html: str):
     service = SchoolScraperService()
-    media_files, _sub_pages = service._extract_media_from_page(
+    media_files, _sub_pages = await service._extract_media_from_page(
         html,
         PAGE_URL,
         settings.SCHOOL_SCRAPER_VIDEO_EXTENSIONS,
@@ -27,7 +40,7 @@ def _extract(html: str):
     return media_files
 
 
-def test_iframe_youtube_is_discovered():
+async def test_iframe_youtube_is_discovered():
     html = f"""
     <html><body>
       <h1>Board Meeting</h1>
@@ -35,7 +48,7 @@ def test_iframe_youtube_is_discovered():
               title="October Board Meeting"></iframe>
     </body></html>
     """
-    media = _extract(html)
+    media = await _extract(html)
     youtube = [m for m in media if m["media_type"] == "youtube"]
 
     assert len(youtube) == 1
@@ -45,23 +58,23 @@ def test_iframe_youtube_is_discovered():
     assert youtube[0]["source_page_url"] == PAGE_URL
 
 
-def test_iframe_title_becomes_the_name():
+async def test_iframe_title_becomes_the_name():
     html = (
         f'<iframe src="https://www.youtube.com/embed/{VIDEO_ID}" '
         f'title="October Board Meeting"></iframe>'
     )
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert youtube[0]["name"] == "October Board Meeting"
 
 
-def test_anchor_youtube_is_discovered():
+async def test_anchor_youtube_is_discovered():
     html = f'<a href="https://youtu.be/{VIDEO_ID}">Watch the meeting</a>'
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert len(youtube) == 1
     assert youtube[0]["url"] == CANONICAL
 
 
-def test_same_video_as_iframe_and_anchor_dedups_to_one():
+async def test_same_video_as_iframe_and_anchor_dedups_to_one():
     """A page that both embeds and links the video must not pay twice."""
     html = f"""
     <html><body>
@@ -70,33 +83,47 @@ def test_same_video_as_iframe_and_anchor_dedups_to_one():
       <a href="https://youtu.be/{VIDEO_ID}">Direct link</a>
     </body></html>
     """
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert len(youtube) == 1
     assert youtube[0]["url"] == CANONICAL
 
 
-def test_lazy_loaded_youtube_in_data_src_is_discovered():
+async def test_lazy_loaded_youtube_in_data_src_is_discovered():
     """Many CMS themes only promote data-src to src client-side."""
     html = (
         f'<div class="video" data-src="https://www.youtube.com/embed/{VIDEO_ID}">'
         "</div>"
     )
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert len(youtube) == 1
     assert youtube[0]["url"] == CANONICAL
 
 
-def test_youtube_inside_a_script_payload_is_discovered():
+async def test_youtube_inside_a_script_payload_is_discovered():
     html = f"""
     <script>
       window.__DATA__ = {{"video": "https://www.youtube.com/watch?v={VIDEO_ID}"}};
     </script>
     """
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert len(youtube) == 1
 
 
-def test_existing_pdf_discovery_is_unchanged():
+async def test_missing_name_falls_back_to_fetched_youtube_title(monkeypatch):
+    """When page context supplies no name, the real video title is fetched."""
+    monkeypatch.setattr(
+        "app.services.transcription.youtube.fetch_youtube_title",
+        AsyncMock(return_value="October Board Meeting"),
+    )
+    html = (
+        f'<div class="video" data-src="https://www.youtube.com/embed/{VIDEO_ID}">'
+        "</div>"
+    )
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
+    assert youtube[0]["name"] == "October Board Meeting"
+
+
+async def test_existing_pdf_discovery_is_unchanged():
     """The YouTube path must not disturb the document path."""
     html = """
     <html><body>
@@ -104,7 +131,7 @@ def test_existing_pdf_discovery_is_unchanged():
       <a href="https://example-district.org/files/agenda.docx">Agenda</a>
     </body></html>
     """
-    media = _extract(html)
+    media = await _extract(html)
     docs = [m for m in media if m["media_type"] == "document"]
 
     assert len(docs) == 2
@@ -112,7 +139,7 @@ def test_existing_pdf_discovery_is_unchanged():
     assert extensions == {".pdf", ".docx"}
 
 
-def test_mixed_page_reports_every_type():
+async def test_mixed_page_reports_every_type():
     html = f"""
     <html><body>
       <a href="/files/minutes.pdf">Minutes</a>
@@ -122,7 +149,7 @@ def test_mixed_page_reports_every_type():
     </body></html>
     """
     counts: dict[str, int] = {}
-    for m in _extract(html):
+    for m in await _extract(html):
         counts[m["media_type"]] = counts.get(m["media_type"], 0) + 1
 
     assert counts["document"] == 1
@@ -131,17 +158,17 @@ def test_mixed_page_reports_every_type():
     assert counts["youtube"] == 1
 
 
-def test_non_video_youtube_urls_are_not_media():
+async def test_non_video_youtube_urls_are_not_media():
     """A channel or playlist page is not something we can transcribe."""
     html = """
     <a href="https://www.youtube.com/channel/UCabcdefghijklmno">Our channel</a>
     <a href="https://www.youtube.com/@somedistrict">Handle</a>
     """
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert youtube == []
 
 
-def test_vimeo_is_not_treated_as_youtube():
+async def test_vimeo_is_not_treated_as_youtube():
     html = '<iframe src="https://player.vimeo.com/video/123456789"></iframe>'
-    youtube = [m for m in _extract(html) if m["media_type"] == "youtube"]
+    youtube = [m for m in await _extract(html) if m["media_type"] == "youtube"]
     assert youtube == []

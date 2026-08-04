@@ -616,7 +616,7 @@ class SchoolScraperService:
             }
         )
 
-    def _append_youtube_media(
+    async def _append_youtube_media(
         self,
         media_files: list[dict],
         seen_media: set[str],
@@ -635,7 +635,11 @@ class SchoolScraperService:
         ``youtu.be/X``, ``/embed/X`` and ``watch?v=X&t=90`` collapses to one
         item — which is what stops us paying three times for one meeting.
         """
-        from app.services.transcription.youtube import canonical_youtube_url
+        from app.services.transcription.youtube import (
+            canonical_youtube_url,
+            fetch_youtube_title,
+            is_youtube_url,
+        )
 
         canonical = canonical_youtube_url(url)
         if not canonical:
@@ -644,6 +648,13 @@ class SchoolScraperService:
             return True
 
         seen_media.add(canonical)
+        # Page context (anchor text, iframe title) usually supplies a real
+        # name; when it doesn't — or the "name" is just the URL again — fall
+        # back to the video's actual title via oEmbed, same as
+        # scripts/school_data/run_scrape_districts.py does. Otherwise
+        # original_name would just be the raw YouTube link.
+        if not name or is_youtube_url(name):
+            name = await fetch_youtube_title(canonical) or name
         media_files.append(
             {
                 "name": name or canonical,
@@ -658,7 +669,7 @@ class SchoolScraperService:
         )
         return True
 
-    def _extract_youtube_from_text(
+    async def _extract_youtube_from_text(
         self,
         text: str,
         page_url: str,
@@ -673,14 +684,14 @@ class SchoolScraperService:
         if not text:
             return
         for match in _YOUTUBE_IN_TEXT_PATTERN.finditer(text):
-            self._append_youtube_media(
+            await self._append_youtube_media(
                 media_files,
                 seen_media,
                 url=match.group(0),
                 page_url=page_url,
             )
 
-    def _extract_media_urls_from_text(
+    async def _extract_media_urls_from_text(
         self,
         text: str,
         page_url: str,
@@ -694,7 +705,7 @@ class SchoolScraperService:
         if not text:
             return
 
-        self._extract_youtube_from_text(text, page_url, seen_media, media_files)
+        await self._extract_youtube_from_text(text, page_url, seen_media, media_files)
 
         pattern = self._media_url_pattern(all_ext)
         for match in pattern.finditer(text):
@@ -708,7 +719,7 @@ class SchoolScraperService:
                 audio_ext=audio_ext,
             )
 
-    def _extract_media_urls_from_json_scripts(
+    async def _extract_media_urls_from_json_scripts(
         self,
         soup: BeautifulSoup,
         page_url: str,
@@ -791,7 +802,7 @@ class SchoolScraperService:
             try:
                 payload = json.loads(raw)
             except json.JSONDecodeError:
-                self._extract_media_urls_from_text(
+                await self._extract_media_urls_from_text(
                     raw,
                     page_url,
                     all_ext,
@@ -803,7 +814,7 @@ class SchoolScraperService:
                 continue
             walk(payload)
 
-    def _extract_media_from_page(
+    async def _extract_media_from_page(
         self,
         html: str,
         page_url: str,
@@ -863,7 +874,7 @@ class SchoolScraperService:
                     if not yt_name and elem.parent:
                         yt_name = elem.parent.get_text(" ", strip=True)[:200] or None
 
-                if self._append_youtube_media(
+                if await self._append_youtube_media(
                     media_files,
                     seen_media,
                     url=full_url,
@@ -915,7 +926,7 @@ class SchoolScraperService:
 
         # Apptegy / Nuxt and similar CMS platforms embed document URLs in SSR
         # JSON payloads rather than plain <a href="...pdf"> tags.
-        self._extract_media_urls_from_json_scripts(
+        await self._extract_media_urls_from_json_scripts(
             soup,
             page_url,
             all_ext,
@@ -924,7 +935,7 @@ class SchoolScraperService:
             seen_media,
             media_files,
         )
-        self._extract_media_urls_from_text(
+        await self._extract_media_urls_from_text(
             html,
             page_url,
             all_ext,
@@ -999,7 +1010,7 @@ class SchoolScraperService:
 
             pages_crawled += 1
             if html:
-                media, sub_pages = self._extract_media_from_page(
+                media, sub_pages = await self._extract_media_from_page(
                     html, current_url, video_ext, audio_ext, doc_ext
                 )
                 all_media.extend(await filter_media_files_async(media))
