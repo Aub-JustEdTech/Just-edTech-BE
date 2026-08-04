@@ -144,7 +144,7 @@ jobs:
           REDIS_PORT=6379
           
           SCHOOL_SCRAPER_ALLOWED_YEARS=${{ vars.SCHOOL_SCRAPER_ALLOWED_YEARS }}
-          SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR=${{ VARS.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR }}
+          SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR=${{ vars.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR }}
           ENABLE_OCR=${{ vars.ENABLE_OCR }}
           OCR_PROVIDER=${{ vars.OCR_PROVIDER }}
           OCR_MIN_CHARS_THRESHOLD=${{ vars.OCR_MIN_CHARS_THRESHOLD }}
@@ -284,31 +284,44 @@ jobs:
               up -d
 
             echo
-            sleep 30
-
             docker compose \
               --env-file .env.prod \
               -f docker-compose.prod.yml \
               ps
 
             echo
-            echo "Health Check"
+            echo "Health Check (wait up to 5 minutes)"
 
             API=$(docker compose \
               --env-file .env.prod \
               -f docker-compose.prod.yml \
               ps -q api)
 
-            STATUS=$(docker inspect \
-              --format='{{.State.Health.Status}}' \
-              $API)
+            STATUS="starting"
+            # Migrations + gunicorn lifespan (checkpointer setup) can exceed
+            # the old fixed 30s sleep; poll until healthy or timeout.
+            for i in $(seq 1 30); do
+              STATUS=$(docker inspect \
+                --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
+                "$API")
 
-            echo "API STATUS = $STATUS"
+              echo "API STATUS = $STATUS (attempt $i/30)"
+
+              if [ "$STATUS" = "healthy" ]; then
+                break
+              fi
+
+              if [ "$STATUS" = "unhealthy" ] || [ "$STATUS" = "exited" ] || [ "$STATUS" = "dead" ]; then
+                break
+              fi
+
+              sleep 10
+            done
 
             if [ "$STATUS" != "healthy" ]; then
 
                 echo
-                echo "Deployment Failed"
+                echo "Deployment Failed (final status: $STATUS)"
 
                 docker compose \
                   --env-file .env.prod \

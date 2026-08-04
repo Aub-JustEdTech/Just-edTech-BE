@@ -106,10 +106,12 @@ services:
           "-f",
           "http://localhost:8000/health"
         ]
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      # alembic upgrade runs in the same process before gunicorn; allow time
+      # for migrations + worker lifespan before counting failures.
+      start_period: 120s
 
     deploy:
       resources:
