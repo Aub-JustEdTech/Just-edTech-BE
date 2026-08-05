@@ -155,6 +155,44 @@ def require_tenant_access(check_admin_only: bool = False):
     return check_tenant_access
 
 
+async def get_effective_tenant_id(
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> int:
+    """Resolve the tenant_id a request should be scoped to.
+
+    tenant_user / regular tenant_admin: always their own `tenant_id`, the
+    `tenant_id` query param is ignored.
+    Cross-tenant admins (`tenant_id` is NULL — access granted via
+    `user_tenant_access`): the `tenant_id` query param is required and must
+    be one of their granted tenants.
+    """
+    if current_user.tenant_id is not None:
+        return current_user.tenant_id
+
+    if tenant_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="tenant_id query parameter is required for admins with access to multiple tenants",
+        )
+
+    if user.is_super_admin(current_user):
+        return tenant_id
+
+    has = await user_tenant_access.has_access(
+        db, user_id=current_user.id, tenant_id=tenant_id
+    )
+    if not has:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: tenant not in your access list",
+        )
+    return tenant_id
+
+
 def require_role(*allowed_roles: str) -> Callable:
     """
     Factory function to create role-specific access dependency.
