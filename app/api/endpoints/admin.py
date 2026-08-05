@@ -115,7 +115,14 @@ async def invite_tenant_admin(
     db: AsyncSession = Depends(get_db),
     admin: User = require_super_admin,
 ):
-    """Invite a user to become tenant_admin of an existing tenant (Super Admin only)"""
+    """Invite a user to become tenant_admin (Super Admin only).
+
+    tenant_admin always means access to ALL tenants — there is no such thing
+    as a tenant admin scoped to one tenant. `tenant_id` here is only used to
+    confirm the tenant exists (this route is reached from a tenant's admin
+    page); the invite itself grants access to every tenant, same as the
+    unified invite flow.
+    """
     if not await tenant_crud.get(db, tenant_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
@@ -129,7 +136,7 @@ async def invite_tenant_admin(
 
     sent = await invitation_service.create_and_send(
         db,
-        tenant_id=tenant_id,
+        tenant_id=None,
         email=payload.email,
         role_id=settings.DEFAULT_ROLE_ID,
         enforce_tenant_user=False,
