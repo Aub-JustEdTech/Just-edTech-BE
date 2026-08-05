@@ -1480,6 +1480,20 @@ async def get_document_text(
             detail=f"Failed to retrieve document chunks: {str(e)}",
         ) from e
 
+    if document.document_type == ".transcript":
+        # Transcripts have no real pages — chunks are split by utterance/duration,
+        # not by page. Render the whole thing as one block, ordered by chunk_index.
+        ordered = sorted(
+            chunks, key=lambda c: int(c.get("metadata", {}).get("chunk_index", 0))
+        )
+        full_text = "\n\n".join(c["text"] for c in ordered)
+        return success_response(
+            data={
+                "title": document.name,
+                "pages": [{"page_number": 1, "text": full_text}],
+            }
+        )
+
     # Group chunks by page_number; fall back to chunk_index as a synthetic page
     pages: dict[int, list[str]] = {}
     for chunk in chunks:
