@@ -34,6 +34,7 @@ from app.utils.dependencies import (
     get_current_tenant_admin,
     get_current_tenant_user,
     get_db,
+    get_effective_tenant_id,
 )
 
 router = APIRouter()
@@ -366,12 +367,12 @@ async def list_scraped_media(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> ScrapedMediaListOut:
-    await _school_or_404(db, current_user.tenant_id, school_id)
+    await _school_or_404(db, tenant_id, school_id)
     items, total = await crud.list_scraped_media(
         db,
-        current_user.tenant_id,
+        tenant_id,
         school_id=school_id,
         status=status_filter,
         media_type=media_type,
