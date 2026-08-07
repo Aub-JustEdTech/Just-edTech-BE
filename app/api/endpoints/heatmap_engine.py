@@ -7,17 +7,18 @@ Two routes under `/api/v1/heatmap/engine`:
 - `GET /districts/{org_code}/citations` — paginated chunk citations for
   a single district
 
-Both are JWT-protected (`get_current_user`) and tenant-scoped via
-`current_user.tenant_id`. They read directly from the vector store.
-Districts are keyed by `org_code` (not internal school/district ids).
+Both are JWT-protected and tenant-scoped via `get_effective_tenant_id`
+(the user's own tenant, or an explicit `tenant_id` query param for
+admins with access to multiple tenants). They read directly from the
+vector store. Districts are keyed by `org_code` (not internal
+school/district ids).
 """
 
 from fastapi import APIRouter, Depends, Query
 
-from app.models.users import User
 from app.schemas.heatmap_engine import TimeframePreset, TopicCategory
 from app.services.heatmap_engine import heatmap_engine_service
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_effective_tenant_id
 from app.utils.response import success_response
 
 router = APIRouter(prefix="/heatmap/engine", tags=["HeatMap Engine"])
@@ -36,7 +37,7 @@ async def list_district_counts(
     state: str = "MA",
     include_zero: bool = True,
     breakdown: bool = False,
-    current_user: User = Depends(get_current_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """Return chunk-instance counts per district for the given filters.
 
@@ -54,7 +55,7 @@ async def list_district_counts(
     Each district is identified by `org_code`.
     """
     response = await heatmap_engine_service.count_by_district(
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
         timeframe=timeframe,
         categories=categories,
         state=state,
@@ -71,7 +72,7 @@ async def get_district_citations(
     categories: list[TopicCategory] = Query(default=_DEFAULT_CATEGORIES),
     page: int = 1,
     page_size: int = Query(default=10, le=25),
-    current_user: User = Depends(get_current_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """Return paginated chunk citations for a single district + filters.
 
@@ -79,7 +80,7 @@ async def get_district_citations(
     their respective subtopics). District is looked up by `org_code`.
     """
     citations, meta = await heatmap_engine_service.get_district_citations(
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
         org_code=org_code,
         timeframe=timeframe,
         categories=categories,

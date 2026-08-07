@@ -32,8 +32,8 @@ from app.services import school_scrape_url_confirmation_service as confirmation_
 from app.schemas.users import User
 from app.utils.dependencies import (
     get_current_tenant_admin,
-    get_current_tenant_user,
     get_db,
+    get_effective_tenant_id,
 )
 
 router = APIRouter()
@@ -108,11 +108,11 @@ async def list_schools(
     district_type: str | None = Query(None),
     is_active: bool | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolListOut:
     schools, total = await crud.list_schools(
         db,
-        current_user.tenant_id,
+        tenant_id,
         skip=skip,
         limit=limit,
         search=search,
@@ -147,7 +147,7 @@ async def list_scrape_url_candidates(
         description="Max ranked candidates per school (default returns full JSON list).",
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolCandidateReviewListOut:
     if confirmation_status is not None and confirmation_status not in (
         "added",
@@ -161,7 +161,7 @@ async def list_scrape_url_candidates(
         items, total, added_count, not_added_count = (
             await confirmation_service.list_candidate_reviews(
                 db,
-                current_user.tenant_id,
+                tenant_id,
                 confirmation_status=confirmation_status,  # type: ignore[arg-type]
                 skip=skip,
                 limit=limit,
@@ -197,9 +197,9 @@ async def list_scrape_url_candidates(
 async def get_school(
     school_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolOut:
-    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    school = await _school_or_404(db, tenant_id, school_id)
     return await _enrich_school(db, school)
 
 
@@ -223,13 +223,13 @@ async def get_scrape_url_candidates(
         description="Max ranked candidates (default returns full JSON list).",
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolCandidateReviewOut:
-    await _school_or_404(db, current_user.tenant_id, school_id)
+    await _school_or_404(db, tenant_id, school_id)
     try:
         review = await confirmation_service.get_candidate_review(
             db,
-            current_user.tenant_id,
+            tenant_id,
             school_id,
             max_candidates=max_candidates,
         )
@@ -256,9 +256,10 @@ async def get_scrape_url_candidates(
 async def create_school(
     payload: SchoolCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_admin),
+    admin: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolOut:
-    school = await crud.create_school(db, current_user.tenant_id, payload)
+    school = await crud.create_school(db, tenant_id, payload)
     return await _enrich_school(db, school)
 
 
@@ -271,9 +272,10 @@ async def update_school(
     school_id: int,
     payload: SchoolUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_admin),
+    admin: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolOut:
-    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    school = await _school_or_404(db, tenant_id, school_id)
     school = await crud.update_school(db, school, payload)
     return await _enrich_school(db, school)
 
@@ -286,9 +288,10 @@ async def update_school(
 async def delete_school(
     school_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_admin),
+    admin: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> None:
-    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    school = await _school_or_404(db, tenant_id, school_id)
     await crud.delete_school(db, school)
 
 
@@ -308,8 +311,9 @@ async def add_scrape_url(
     payload: ScrapeUrlCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolScrapeUrlOut:
-    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    school = await _school_or_404(db, tenant_id, school_id)
     url = await crud.add_scrape_url(db, school, payload, current_user.id)
     return SchoolScrapeUrlOut.model_validate(url)
 
@@ -324,9 +328,10 @@ async def update_scrape_url(
     url_id: int,
     payload: ScrapeUrlUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_admin),
+    admin: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolScrapeUrlOut:
-    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    school = await _school_or_404(db, tenant_id, school_id)
     scrape_url = await _scrape_url_or_404(db, school.id, url_id)
     updated = await crud.update_scrape_url(db, school, scrape_url, payload)
     return SchoolScrapeUrlOut.model_validate(updated)
@@ -341,9 +346,10 @@ async def deactivate_scrape_url(
     school_id: int,
     url_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_admin),
+    admin: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolScrapeUrlOut:
-    school = await _school_or_404(db, current_user.tenant_id, school_id)
+    school = await _school_or_404(db, tenant_id, school_id)
     scrape_url = await _scrape_url_or_404(db, school.id, url_id)
     updated = await crud.deactivate_scrape_url(db, school, scrape_url)
     return SchoolScrapeUrlOut.model_validate(updated)
@@ -366,12 +372,12 @@ async def list_scraped_media(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> ScrapedMediaListOut:
-    await _school_or_404(db, current_user.tenant_id, school_id)
+    await _school_or_404(db, tenant_id, school_id)
     items, total = await crud.list_scraped_media(
         db,
-        current_user.tenant_id,
+        tenant_id,
         school_id=school_id,
         status=status_filter,
         media_type=media_type,

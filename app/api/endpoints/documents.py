@@ -45,8 +45,8 @@ from app.services.document_service import DocumentService
 from app.services.web_scraper import MarkdownConverter, WebScraperService
 from app.tasks.document_pipeline import process_document_pipeline
 from app.utils.dependencies import (
-    get_current_tenant_user,
     get_db,
+    get_effective_tenant_id,
     require_user_or_chat_consumer,
 )
 from app.utils.response import success_response
@@ -73,7 +73,7 @@ def get_document_service() -> DocumentService:
 async def upload_document(
     file: UploadFile = File(..., description="Document file to upload"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Upload a document for processing and embedding generation.
@@ -113,14 +113,6 @@ async def upload_document(
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds {settings.MAX_FILE_SIZE_MB}MB limit",
-        )
-
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
         )
 
     # Upload document using streaming (memory-efficient)
@@ -171,7 +163,7 @@ async def upload_document(
 async def scrape_document(
     scrape_request: DocumentScrapeRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Scrape a web page and convert it to a document for processing.
@@ -198,14 +190,6 @@ async def scrape_document(
     """
     from datetime import datetime
     from urllib.parse import urlparse
-
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
 
     try:
         # Initialize web scraper with custom timeout
@@ -390,7 +374,7 @@ async def bulk_upload_documents(
         None, description="Optional: Batch ID for tracking bulk uploads"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Upload multiple documents at once for processing and embedding generation.
@@ -451,14 +435,6 @@ async def bulk_upload_documents(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Too many files provided in a single request. "
             f"Maximum allowed is {settings.BULK_UPLOAD_MAX_FILES}, but received {len(files)}.",
-        )
-
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
         )
 
     # Validate batch_id if provided
@@ -607,7 +583,7 @@ async def list_documents(
         SortOrder.DESC, description="Sort order (ascending or descending)"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     List documents for the current user's tenant.
@@ -623,13 +599,6 @@ async def list_documents(
     - Searching by document name (case-insensitive)
     - Sorting by common document attributes
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     try:
         # When no explicit status filter: exclude failed by default so users see only "usable" docs
         exclude_failed = processing_status is None and not include_failed
@@ -668,18 +637,11 @@ async def list_documents(
 async def get_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get detailed information about a specific document.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     document = await db.get(Document, document_id)
     if not document:
         raise HTTPException(
@@ -798,18 +760,11 @@ async def get_document_presigned_url(
 async def bulk_delete_documents(
     payload: DocumentBulkDeleteRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Delete multiple documents and associated data.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     seen_ids: set[int] = set()
     unique_document_ids: list[int] = []
     for document_id in payload.document_ids:
@@ -880,7 +835,7 @@ async def bulk_delete_documents(
 async def delete_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Delete a document and all associated data.
@@ -890,13 +845,6 @@ async def delete_document(
     2. Delete embeddings from vector store
     3. Delete database records (document and processing jobs)
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -933,7 +881,7 @@ async def delete_document(
 async def search_documents(
     search_request: DocumentSearchRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Perform semantic search across documents.
@@ -941,13 +889,6 @@ async def search_documents(
     Uses embeddings to find relevant document chunks based on the query.
     Results are ranked by semantic similarity (distance).
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Build filters
     filters = {}
     if search_request.document_types:
@@ -1003,20 +944,13 @@ async def search_documents(
 async def get_document_processing_jobs(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get all processing jobs for a document.
 
     Useful for debugging and tracking document processing history.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -1048,7 +982,7 @@ async def get_document_processing_jobs(
 async def get_document_chunks(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get all chunks for a specific document.
@@ -1059,13 +993,6 @@ async def get_document_chunks(
     - Validating chunk size and overlap
     - Reviewing chunk content before RAG queries
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -1133,7 +1060,7 @@ async def get_document_chunks(
 async def reprocess_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Trigger reprocessing of a document.
@@ -1143,13 +1070,6 @@ async def reprocess_document(
     - Tenant configuration changed (chunk size, embedding model, etc.)
     - Document needs to be re-indexed
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -1196,20 +1116,13 @@ async def reprocess_document(
 async def get_document_url_by_ref(
     doc_ref: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
     expires_in: int = Query(3600, ge=60, le=86400, description="URL expiry in seconds"),
 ):
     """
     Return a presigned S3 URL for a document identified by doc_id (UUID) or name (filename).
     Used by the HeatMap transcript viewer to render the raw PDF directly in the browser.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     result = await db.execute(
         select(Document)
         .where(Document.doc_id == doc_ref, Document.tenant_id == tenant_id)
@@ -1280,7 +1193,7 @@ async def get_document_url_by_ref(
 async def get_document_text(
     doc_ref: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Return the full text of a document assembled from its Qdrant chunks, grouped by page.
@@ -1289,13 +1202,6 @@ async def get_document_text(
     doc_ref may be either the document's doc_id (UUID) or its name/filename — whichever
     the citation carries. Sample data uses the filename; live Qdrant data uses the UUID.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Try by doc_id first; if not found, fall back to matching by name (filename).
     result = await db.execute(
         select(Document)
