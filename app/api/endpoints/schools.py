@@ -7,6 +7,7 @@ Provides:
 - Scraped media listing
 """
 
+import asyncio
 import logging
 from datetime import date
 
@@ -14,6 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.endpoints.documents import MIME_BY_EXTENSION
+from app.core.config import settings
 from app.crud import schools as crud
 from app.models.school import School, SchoolScrapeUrl
 from app.schemas.schools import (
@@ -38,16 +41,19 @@ from app.schemas.schools import (
     ScrapeUrlUpdate,
     SortFieldOption,
 )
-from app.services import school_scrape_url_confirmation_service as confirmation_service
 from app.schemas.users import User
+from app.services import school_scrape_url_confirmation_service as confirmation_service
 from app.utils.dependencies import (
     get_current_tenant_admin,
     get_db,
     get_effective_tenant_id,
 )
+from app.utils.s3 import S3Manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+SCRAPED_MEDIA_S3_URL_EXPIRATION_SECONDS = 3600
 
 
 # ---------------------------------------------------------------------------
@@ -89,6 +95,59 @@ def _confirmed_scrape_url(school: School) -> str | None:
         if scrape_url.id == school.scrape_url_id and scrape_url.is_active:
             return scrape_url.url
     return None
+
+
+async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
+    """Populate `s3_url` with a presigned GET URL for each item that has a
+    stored S3 copy, preferring the original file (`s3_key_raw`) over the
+    transcript (`s3_key_text`) since that's what a document click should open.
+
+    `ResponseContentDisposition=inline` is forced (mirroring the documents.py
+    playback flow) so the browser renders the file in a new tab instead of
+    downloading it — S3 would otherwise fall back to whatever disposition was
+    set at upload time, which for most of these scraped files is "attachment".
+    """
+    keyed = [
+        (item, item.s3_key_raw or item.s3_key_text)
+        for item in media
+        if item.s3_key_raw or item.s3_key_text
+    ]
+    if not keyed:
+        return
+
+    s3_manager = S3Manager(
+        bucket_name=settings.S3_BUCKET_NAME,
+        region_name=settings.S3_REGION,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+
+    def _presign(item: ScrapedMediaOut, key: str):
+        safe_name = (item.original_name or f"document_{item.id}").replace('"', "")
+        content_type = MIME_BY_EXTENSION.get(
+            (item.file_extension or "").lower(), "application/octet-stream"
+        )
+        return s3_manager.get_presigned_url(
+            s3_key=key,
+            expiration=SCRAPED_MEDIA_S3_URL_EXPIRATION_SECONDS,
+            response_content_type=content_type,
+            response_content_disposition=f'inline; filename="{safe_name}"',
+        )
+
+    urls = await asyncio.gather(
+        *(_presign(item, key) for item, key in keyed),
+        return_exceptions=True,
+    )
+    for (item, key), url in zip(keyed, urls):
+        if isinstance(url, BaseException):
+            logger.warning(
+                "Failed to presign s3_url for scraped media %s (key=%s): %s",
+                item.id,
+                key,
+                url,
+            )
+            continue
+        item.s3_url = url
 
 
 async def _enrich_school(db: AsyncSession, school: School) -> SchoolOut:
@@ -439,8 +498,10 @@ async def list_scraped_media(
         skip=skip,
         limit=limit,
     )
+    media_out = [ScrapedMediaOut.model_validate(i) for i in items]
+    await _attach_presigned_s3_urls(media_out)
     return ScrapedMediaListOut(
-        items=[ScrapedMediaOut.model_validate(i) for i in items],
+        items=media_out,
         total=total,
         skip=skip,
         limit=limit,

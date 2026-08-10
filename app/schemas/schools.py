@@ -144,6 +144,7 @@ class ScrapedMediaOut(BaseModel):
     doc_year: int | None = None
     s3_key_raw: str | None
     s3_key_text: str | None
+    s3_url: str | None = None
     size_bytes: int | None
     duration_seconds: int | None
     document_id: int | None
