@@ -21,7 +21,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import date
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, unquote, urljoin, urlparse, urlsplit, urlunsplit
 
 import httpx
 from bs4 import BeautifulSoup
@@ -41,6 +41,119 @@ if TYPE_CHECKING:
     from playwright.async_api import Browser, Playwright
 
 logger = logging.getLogger(__name__)
+
+# Deterministic URL-path keyword boost applied on top of the LLM's own
+# confidence when pushing a candidate link onto the frontier. The LLM is
+# good at structured extraction but is inconsistent at ranking — a page
+# whose URL path literally contains "meeting-minutes" or "board-of-trustees"
+# should be visited early even if the LLM was cautious about the link text.
+# STRONG matches (unambiguous path segments) get a bigger bump than WEAK
+# matches (generic terms that need to co-occur to mean anything).
+_MOM_KEYWORDS_STRONG: tuple[str, ...] = (
+    "meeting-minutes",
+    "meeting_minutes",
+    "meetingminutes",
+    "agendas-minutes",
+    "agendas_minutes",
+    "minutes-agendas",
+    "minutes-archive",
+    "minutes_archive",
+    "meeting-packets",
+    "meeting_packets",
+    "board-packets",
+    "archived-agendas",
+    "archived_agendas",
+    "document-archives",
+    "document_archives",
+    "board-of-trustees",
+    "board_of_trustees",
+    "school-committee",
+    "school_committee",
+    "supervisory_committee",
+    "supervisory-committee",
+)
+_MOM_KEYWORDS_WEAK: tuple[str, ...] = (
+    "minutes",
+    "agenda",
+    "committee",
+    "board",
+    "trustees",
+    "archive",
+    "packets",
+)
+_STRONG_BOOST = 0.25
+_WEAK_BOOST = 0.10
+_WEAK_MIN_HITS = 2
+
+# HTTP status codes that indicate a WAF/bot-protection block rather than a
+# genuine "page doesn't exist" response. On these we retry with an alternate
+# User-Agent before giving up, and — if still blocked — escalate to a real
+# Playwright browser context, which carries a full browser fingerprint (not
+# just a UA string) and bypasses many WAF rules that simple UA-sniffing
+# httpx requests trip.
+_BLOCKED_STATUS_CODES: frozenset[int] = frozenset({403, 429, 503})
+
+# Alternate User-Agents tried (in order) when the default
+# settings.SCHOOL_SCRAPER_USER_AGENT (curl-style, by design — see
+# school_scraper_service.py) gets blocked. Some stricter WAF configs
+# (Wordfence "aggressive", Cloudflare bot-fight mode) block generic
+# tool/browser UAs inconsistently, so we rotate through a couple of
+# realistic desktop-browser UAs before falling back to Playwright.
+_ALT_USER_AGENTS: tuple[str, ...] = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+    "(KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+)
+
+
+def _percent_encode_url(url: str) -> str:
+    """Percent-encode an absolute URL's path/query so it's safe to open directly.
+
+    Link hrefs extracted straight from raw HTML/markdown by the LLM (or by
+    BeautifulSoup nav-crawling) often contain literal unencoded characters —
+    most commonly spaces in a PDF filename, e.g.:
+        /UserFiles/.../Meeting Minutes/22-23/SC Minutes 7-19-22.pdf
+    Browsers silently encode these when following an <a href>, but the raw
+    string is not a valid, independently-clickable URL, and httpx will
+    reject or mishandle it as an outgoing request target (surfacing as a
+    spurious "fetch_failed" for a page that actually exists).
+
+    We unquote first so any segment that's already percent-encoded (e.g. an
+    existing "%20") is not double-encoded into "%2520", then re-quote.
+    """
+    parts = urlsplit(url)
+    path = quote(unquote(parts.path), safe="/%():@!$&'*+,;=~")
+    query = quote(unquote(parts.query), safe="=&%():@!$'*+,;~/")
+    return urlunsplit((parts.scheme, parts.netloc, path, query, parts.fragment))
+
+
+def _should_retry(status: int | None) -> bool:
+    """Whether a failed fetch is worth retrying with a different UA/browser.
+
+    True for WAF-style blocks (_BLOCKED_STATUS_CODES) AND for connection-level
+    failures (status is None — DNS, TLS/SSL trust, timeout) since a real
+    browser's network stack can succeed where httpx's did not (different CA
+    trust store, TLS fingerprint, etc.). False for genuine HTTP errors like
+    404 that no UA/browser change would fix.
+    """
+    return status is None or status in _BLOCKED_STATUS_CODES
+
+
+def _keyword_boost(url: str) -> float:
+    """Deterministic confidence bump based on meeting-minutes keywords in the URL path.
+
+    Applied additively to the LLM's per-link confidence before the link enters
+    the frontier, so obviously-relevant paths (e.g. .../school-committee/
+    agendas-minutes or .../board-of-trustees/) get crawled early even when the
+    LLM under-scores the surrounding link text.
+    """
+    path = urlparse(url).path.lower()
+    if any(k in path for k in _MOM_KEYWORDS_STRONG):
+        return _STRONG_BOOST
+    if sum(1 for k in _MOM_KEYWORDS_WEAK if k in path) >= _WEAK_MIN_HITS:
+        return _WEAK_BOOST
+    return 0.0
 
 
 @dataclass
@@ -188,9 +301,13 @@ class SchemaDrivenCrawler:
         ) as client:
             seed_urls = await self._collect_seed_frontier(client, base_url, base_domain)
             for url in seed_urls:
-                norm = self._normalize_url(url).split("#", 1)[0]
+                norm = _percent_encode_url(self._normalize_url(url).split("#", 1)[0])
                 if urlparse(norm).netloc == base_domain and norm not in visited:
-                    frontier.append((norm, 0.5, 1))
+                    # Sitemap/nav URLs get a base confidence of 0.5, boosted
+                    # deterministically if the path itself already looks like
+                    # a meeting-minutes page — this lets obviously-relevant
+                    # sitemap entries jump the queue before any LLM call.
+                    frontier.append((norm, min(1.0, 0.5 + _keyword_boost(norm)), 1))
 
             while frontier and result.pages_crawled < self.max_pages:
                 frontier.sort(key=lambda x: x[1], reverse=True)
@@ -235,19 +352,25 @@ class SchemaDrivenCrawler:
 
                 child_depth = current_depth + 1
                 for candidate in page.possible_relevant_pages:
-                    if candidate.confidence < self.confidence_threshold:
-                        continue
                     abs_url = self._normalize_url(urljoin(current_url, candidate.url))
-                    abs_url = abs_url.split("#", 1)[0]
+                    abs_url = _percent_encode_url(abs_url.split("#", 1)[0])
+                    # Persist the resolved, absolute, percent-encoded URL back
+                    # onto the candidate so JSON exports / API responses carry
+                    # a URL that's independently valid and clickable — not the
+                    # LLM's raw (often relative, unencoded) extracted href.
+                    candidate.url = abs_url
+                    boosted_confidence = min(1.0, candidate.confidence + _keyword_boost(abs_url))
+                    if boosted_confidence < self.confidence_threshold:
+                        continue
                     if abs_url in visited:
                         continue
                     if urlparse(abs_url).netloc != base_domain:
                         continue
-                    effective_confidence = candidate.confidence
+                    effective_confidence = boosted_confidence
                     if child_depth > self.max_depth:
                         overshoot = child_depth - self.max_depth
                         effective_confidence = max(
-                            0.0, candidate.confidence - self.depth_penalty * overshoot
+                            0.0, boosted_confidence - self.depth_penalty * overshoot
                         )
                     frontier.append((abs_url, effective_confidence, child_depth))
 
@@ -288,7 +411,8 @@ class SchemaDrivenCrawler:
         just the seed URL in the frontier) on any failure.
         """
         async def _fetch_text(url: str) -> str | None:
-            return await self._fetch_httpx(client, url)
+            html, _status = await self._fetch_httpx(client, url)
+            return html
 
         urls: list[str] = []
         # 1. WordPress sitemap
@@ -334,32 +458,92 @@ class SchemaDrivenCrawler:
         return nav_urls
 
     async def _fetch(self, client: httpx.AsyncClient, url: str) -> str | None:
-        """Fetch HTML for a URL with optional Playwright fallback for JS-rendered pages.
+        """Fetch HTML for a URL, escalating through UA rotation and Playwright as needed.
 
-        Mirrors SchoolScraperService's graceful-degradation pattern: plain httpx
-        first, and only when the raw HTML contains a known JS-CMS fingerprint do
-        we lazily launch Chromium and re-fetch with full JS execution. A
-        Playwright failure (or no browser available) silently degrades back to
-        the httpx result, so the crawler never hard-fails on a JS page.
+        Escalation ladder (each step only runs if the previous one failed):
+          1. Plain httpx with the default UA (curl-style — see
+             SCHOOL_SCRAPER_USER_AGENT).
+          2. If blocked (403/429/503) or the connection itself failed
+             (status=None — DNS, TLS/SSL trust errors, timeouts): retry with
+             each of _ALT_USER_AGENTS in turn. Some WAFs only block the
+             default UA pattern; this step is a no-op for connection-level
+             failures but is cheap to try.
+          3. If the HTML that came back needs JS rendering (known SPA/CMS
+             fingerprint): launch Playwright Chromium and re-fetch.
+          4. If still failing after (1)+(2) — whether a WAF block or a
+             connection/TLS failure — force Playwright even without a JS-CMS
+             fingerprint. A real browser context has its own network stack
+             (its own CA trust store, full TLS/JS fingerprint, not just a UA
+             header) and clears many failures plain httpx cannot: WAF
+             challenges AND sites whose certificate chain isn't recognized
+             by the Python process's CA bundle but is a valid, trusted chain
+             from a real browser's perspective.
+
+        A genuine "page not found" (404 etc., not in _RETRY_STATUS_CODES) is
+        NOT retried — only failures that a browser/UA change could plausibly
+        fix. A Playwright failure (or no browser available) silently degrades
+        back to the last httpx result, so the crawler never hard-fails
+        outright.
         """
-        html = await self._fetch_httpx(client, url)
+        html, status = await self._fetch_httpx(client, url)
+
+        if html is None and _should_retry(status):
+            for alt_ua in _ALT_USER_AGENTS:
+                html, status = await self._fetch_httpx(
+                    client, url, headers={"User-Agent": alt_ua}
+                )
+                if html is not None:
+                    logger.info(
+                        "SchemaDrivenCrawler: default fetch failed (status=%s), "
+                        "alt UA succeeded for %s",
+                        status,
+                        url,
+                    )
+                    break
+
         if html and html_needs_playwright(html):
             await self._ensure_playwright()
             rendered = await self._fetch_text_rendered(url)
             if rendered:
                 return rendered
+            return html
+
+        if html is None and _should_retry(status):
+            logger.info(
+                "SchemaDrivenCrawler: still failing (status=%s) after UA "
+                "rotation for %s — forcing Playwright",
+                status,
+                url,
+            )
+            await self._ensure_playwright()
+            rendered = await self._fetch_text_rendered(url)
+            if rendered:
+                return rendered
+
         return html
 
-    async def _fetch_httpx(self, client: httpx.AsyncClient, url: str) -> str | None:
+    async def _fetch_httpx(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+    ) -> tuple[str | None, int | None]:
+        """Fetch a URL via httpx. Returns (body_text_or_None, status_code_or_None).
+
+        status is None when the request never got an HTTP response at all
+        (connection refused, DNS failure, TLS/SSL trust error, timeout) —
+        distinct from a real HTTP error status like 404 or 403.
+        """
         try:
-            resp = await client.get(url)
+            resp = await client.get(url, headers=headers)
             if resp.status_code == 200:
-                return resp.text
+                return resp.text, resp.status_code
             logger.debug("Non-200 (%s) for %s", resp.status_code, url)
-            return None
+            return None, resp.status_code
         except Exception as exc:  # noqa: BLE001
-            logger.debug("Fetch failed for %s: %s", url, exc)
-            return None
+            logger.debug("Fetch failed for %s: %s: %s", url, type(exc).__name__, exc)
+            return None, None
 
     def _render_markdown(self, html: str, url: str) -> str:
         """Render page HTML as markdown-with-links, preserving link text + href.

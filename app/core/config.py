@@ -283,11 +283,17 @@ class Settings(BaseSettings):
     # discover_candidate_urls (default, unchanged behavior). "llm" = use the
     # schema-driven crawler for discovery. "both" = run both and union the
     # results. Switching back to "keyword" is a zero-code rollback.
-    SCHOOL_SCRAPER_RANKING_MODE: str = "keyword"  # keyword | llm | both
+    SCHOOL_SCRAPER_RANKING_MODE: str = "both"  # keyword | llm | both
     # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
     SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 10
     SCHOOL_SCRAPER_LLM_CONFIDENCE_THRESHOLD: float = 0.5
-    SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = True
+    # Archive pages (e.g. "school-committee-document-archives",
+    # "archived-agendas-meeting-packets") are frequently the ONLY place a
+    # district publishes meeting minutes/agendas, so they are kept by
+    # default. Set to True to restore the old behavior of dropping any page
+    # the LLM marks is_archive=true (e.g. for routine scrapes that only want
+    # the current school year).
+    SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = False
     # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"

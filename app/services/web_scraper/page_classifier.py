@@ -34,15 +34,31 @@ from app.services.web_scraper.page_schemas import DATA_TYPES, RelevantPage
 logger = logging.getLogger(__name__)
 
 
-_SYSTEM_PROMPT = """You classify pages on K-12 US school district websites.
+_SYSTEM_PROMPT = """You classify pages on K-12 US school district, charter, vocational, and agricultural school websites.
 
-Your ONLY goal is to find meeting MINUTES and meeting AGENDAS for school board meetings.
+Your ONLY goal is to find MEETING MINUTES, MEETING AGENDAS, and MEETING PACKETS
+for the district's governing body — regardless of what that body is called.
+
+The governing body may be named (all equivalent for this task):
+  - School Board / Board of Education
+  - School Committee / Regional School Committee
+  - Board of Trustees / Board of Directors (common for charter, vocational, and agricultural schools)
+  - Joint Supervisory Committee / Union District Committee
+  - Governing Board / Governance Committee
+
+Relevant signals in link text OR URL path (treat all of these as equivalent to "minutes/agendas"):
+  - "meeting minutes", "meeting agendas", "minutes & agendas", "agendas & minutes"
+  - "meeting packets", "board packets", "committee packets"
+  - "meeting archives", "minutes archive", "document archives", "archived agendas", "archived meeting packets"
+  - "board of trustees", "school committee", "school board", "board minutes", "board documents"
+  - "committee documents"
 
 Given a page rendered as markdown (with visible link text and URLs), decide:
-1. Does this page DIRECTLY host meeting minutes or meeting agendas (PDFs, embedded documents, audio/video of board meetings)? -> has_data
-2. Does this page link to subpages that host meeting minutes or agendas? -> has_data_links
-3. If has_data is true, is it minutes or agendas, is it an archive of a past school year, and which calendar years are present?
-4. Which same-domain links on this page are likely to lead to pages with meeting minutes or agendas? Assign each a confidence in [0.0, 1.0].
+1. Does this page DIRECTLY host meeting minutes, agendas, or packets (PDFs, embedded documents, audio/video of governing-body meetings)? -> has_data
+   This INCLUDES archive/index pages that list past meetings by year — an archive of past meeting minutes is a VALID data page, not something to ignore.
+2. Does this page link to subpages that host meeting minutes, agendas, or packets? -> has_data_links
+3. If has_data is true: is it minutes, agendas, or a mix; is it an archive covering two or more past school years; and which calendar years are present?
+4. Which same-domain links on this page are likely to lead to pages with meeting minutes, agendas, or packets (current OR archived)? Assign each a confidence in [0.0, 1.0].
 
 IGNORE pages about: policies, book challenges, public comments, candidate profiles, election records, news, advocacy, budgets, staff directories, calendars, lunch menus, sports.
 

@@ -48,7 +48,7 @@ SUBTOPICS (multi-label, only meaningful when sex_education is in topics):
 # off_topic
 
 off_topic=true ONLY for procedural/boilerplate content with NO substantive information:
-- Roll calls, attendance logs, call to order
+- Attendance logs, call to order
 - Adjournment, next-meeting announcements
 - Page numbers, repeated headers, table of contents
 - Signature blocks, contact information
@@ -56,7 +56,7 @@ off_topic=true ONLY for procedural/boilerplate content with NO substantive infor
 
 off_topic=false for ANY substantive content, EVEN IF no taxonomy topic applies. A budget discussion, a personnel appointment, a facilities bond, a transportation contract, a field trip approval, or MCAS results are all off_topic=false with empty topic arrays — they are substantive business, not boilerplate.
 
-# V1 fields (spec A3 / A5)
+# V1 fields
 
 TOPIC_TAGS (multi-label, choose 0..N): flat {category, subtopic} pairs from the universal core + state pack. Each pair is one tag. Tag a chunk with 0..N topic_tags. See the STATE VOCABULARY PACK section for state-specific curricula.
 
@@ -76,8 +76,7 @@ name is free text (do not resolve to a canonical person in V1). Empty list if no
 2. Return empty arrays if nothing applies. This is common and correct for substantive non-taxonomy business.
 3. evidence_quote: shortest verbatim span (max 30 words) that justifies the strongest label; empty string if no labels.
 4. Do not invent labels outside the taxonomy above.
-5. Do not classify stance or sentiment in V1 — that is a separate V2 pass, not part of this call.
-6. Return strict JSON matching the schema. No prose, no markdown fences.
+5. Return strict JSON matching the schema. No prose, no markdown fences.
 
 # Examples
 
@@ -169,7 +168,7 @@ def build_response_format_schema() -> dict[str, Any]:
     JSON schema passed as `response_format` to OpenAI structured outputs.
 
     Used both by the sync eval runner and the Batch API submission JSONL.
-    V1 additions: topic_tags, action_stage, speakers (per spec A3/A5).
+    V1 additions: topic_tags, action_stage, speakers.
     """
     return {
         "type": "json_schema",

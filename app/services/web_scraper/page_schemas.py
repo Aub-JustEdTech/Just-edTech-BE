@@ -32,10 +32,15 @@ class PossibleRelevantPage(BaseModel):
     confidence: float = Field(
         description=(
             "0.0–1.0 likelihood that following this link leads to a page hosting "
-            "meeting minutes or meeting agendas for a K-12 school board. "
-            "Assign 0.5 if genuinely unsure, >0.5 up to 1.0 for increasing certainty. "
-            "Assign 0.0 for links clearly unrelated to minutes or agendas "
-            "(policies, book challenges, elections, news, staff directories, etc.)."
+            "meeting minutes, meeting agendas, or meeting packets (current OR "
+            "archived) for the district's governing body (school board, school "
+            "committee, board of trustees/directors, joint supervisory "
+            "committee, etc.). Archive/document-archive links are just as "
+            "relevant as current-year links — do not down-rank them for being "
+            "past years. Assign 0.5 if genuinely unsure, >0.5 up to 1.0 for "
+            "increasing certainty. Assign 0.0 for links clearly unrelated to "
+            "minutes/agendas/packets (policies, book challenges, elections, "
+            "news, staff directories, etc.)."
         ),
     )
     reason: str | None = Field(
@@ -51,23 +56,29 @@ class DataPageInfo(BaseModel):
         description=(
             "Best single label for what this page hosts. One of: "
             + ", ".join(DATA_TYPES)
-            + ". A page of MEETING MINUTES (formal records of past meetings) "
-            "is 'board_minutes'; a page of AGENDAS (future/upcoming meeting "
+            + ". A page of MEETING MINUTES (formal records of past meetings, "
+            "including a document/meeting archive of past minutes) is "
+            "'board_minutes'; a page of AGENDAS (future/upcoming meeting "
             "topics) is 'board_agenda'. If a single page hosts BOTH agendas "
             "and minutes, choose 'board_agenda'. Use 'unknown' only if the "
-            "page clearly hosts board meeting material but the specific type "
-            "cannot be determined."
+            "page clearly hosts governing-body meeting material but the "
+            "specific type cannot be determined."
         ),
     )
     is_archive: bool = Field(
         description=(
             "True if this page is an ARCHIVE: it organizes documents for "
             "TWO OR MORE distinct PAST school years (e.g. sections/headers/"
-            "folders for 2022-2023, 2023-2024). False if it hosts only the "
-            "CURRENT school year's fresh documents, or a single year. A "
-            "single 'old' page (e.g. a previous policy-manual revision) is "
-            "NOT an archive. Use the current date provided in the prompt to "
-            "decide which years count as 'past'."
+            "folders for 2022-2023, 2023-2024), or is explicitly named an "
+            "'archive' / 'document archives' / 'archived agendas and "
+            "packets' page. False if it hosts only the CURRENT school "
+            "year's fresh documents, or a single year. A single 'old' page "
+            "(e.g. a previous policy-manual revision) is NOT an archive. "
+            "Note: is_archive=true does NOT mean this page should be "
+            "ignored — archive pages are still valid has_data=true pages "
+            "when they list meeting minutes/agendas/packets. Use the "
+            "current date provided in the prompt to decide which years "
+            "count as 'past'."
         ),
     )
     data_years_available: list[int] = Field(
@@ -93,27 +104,31 @@ class RelevantPage(BaseModel):
     has_data: bool = Field(
         description=(
             "True if THIS page's PRIMARY PURPOSE is to present meeting "
-            "minutes or meeting agendas for a K-12 school board. This "
+            "minutes, meeting agendas, or meeting packets for the district's "
+            "governing body (school board, school committee, board of "
+            "trustees/directors, joint supervisory committee, etc.). This "
             "includes: (a) pages that embed meeting documents inline "
-            "(PDF/DOCX/MP3/MP4/YouTube of board meetings), (b) pages that "
-            "list direct download links for minutes or agendas, AND (c) "
-            "archive/index pages whose main content is a list of meeting "
-            "entries (by date/year) each linking to minutes or agenda "
-            "documents. False for pages about policies, book challenges, "
+            "(PDF/DOCX/MP3/MP4/YouTube of governing-body meetings), (b) pages "
+            "that list direct download links for minutes, agendas, or "
+            "packets, AND (c) ARCHIVE/index pages whose main content is a "
+            "list of PAST meeting entries (by date/year) each linking to "
+            "minutes, agenda, or packet documents — these archive pages ARE "
+            "valid has_data=true pages, do not exclude them for being past "
+            "years. False only for pages about policies, book challenges, "
             "elections, news, staff directories, calendars, or any content "
-            "that is NOT meeting minutes or agendas."
+            "that is NOT meeting minutes/agendas/packets."
         ),
     )
     has_data_links: bool = Field(
         description=(
             "True if THIS page's MAIN CONTENT BODY (not the site-wide "
             "header/footer navigation) contains links to subpages hosting "
-            "meeting minutes or agendas, AND the page itself does not "
-            "directly host them (has_data=false). Ignore links that appear "
-            "in global nav/header/footer. Pages about policies, athletics, "
-            "lunch menus, staff directories, or generic news are "
-            "has_data_links=false unless they link to minutes/agendas in "
-            "their main content."
+            "meeting minutes, agendas, or packets (current OR archived), AND "
+            "the page itself does not directly host them (has_data=false). "
+            "Ignore links that appear in global nav/header/footer. Pages "
+            "about policies, athletics, lunch menus, staff directories, or "
+            "generic news are has_data_links=false unless they link to "
+            "minutes/agendas/packets in their main content."
         ),
     )
     description: str | None = Field(
@@ -131,9 +146,10 @@ class RelevantPage(BaseModel):
         default_factory=list,
         description=(
             "Links on the current page that seem likely to lead to meeting "
-            "minutes or meeting agendas. Include only same-domain links that "
-            "plausibly lead to minutes or agenda pages. Exclude links to "
-            "policies, elections, book challenges, news, staff directories, "
-            "mailto:/tel:/# anchors, and off-domain links."
+            "minutes, meeting agendas, or meeting packets — including archive "
+            "or 'document archives' pages that index past meetings. Include "
+            "only same-domain links that plausibly lead to such pages. "
+            "Exclude links to policies, elections, book challenges, news, "
+            "staff directories, mailto:/tel:/# anchors, and off-domain links."
         ),
     )

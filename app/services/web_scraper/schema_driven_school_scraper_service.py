@@ -19,9 +19,19 @@ from urllib.parse import urlparse
 
 from app.core.config import settings
 from app.services.web_scraper.page_classifier import PageClassifier
-from app.services.web_scraper.schema_driven_crawler import SchemaDrivenCrawler
+from app.services.web_scraper.schema_driven_crawler import (
+    SchemaDrivenCrawler,
+    _keyword_boost,
+)
 
 logger = logging.getLogger(__name__)
+
+# Fallback candidate score for hub pages (e.g. "/school-committee",
+# "/district-depts/school-committee") that link to meeting minutes/agendas
+# but don't directly host them. Lower than any real data-page score (which is
+# derived from LLM confidence * 100) so hub pages never outrank a page that
+# actually hosts documents.
+_HUB_FALLBACK_SCORE = 40
 
 
 class SchemaDrivenSchoolScraperService:
@@ -95,6 +105,34 @@ class SchemaDrivenSchoolScraperService:
                     "data_years_available": list(info.data_years_available) if info else [],
                 }
             )
+
+        # Hub-page fallback: some districts only expose a navigation hub
+        # (e.g. "/school-committee", "/district-depts/school-committee")
+        # whose subpages the crawler didn't reach within max_pages, or whose
+        # children the LLM classified as has_data=false. If we found no (or
+        # very few) direct data pages, surface visited hub pages whose URL
+        # path itself looks like a meeting-minutes page — better to return a
+        # plausible hub than nothing.
+        if len(candidates) < 1:
+            for page in result.visited_pages:
+                url = (page.url or "").strip()
+                if not url or url in seen:
+                    continue
+                if not page.has_data_links:
+                    continue
+                if _keyword_boost(url) <= 0:
+                    continue
+                seen.add(url)
+                candidates.append(
+                    {
+                        "url": url,
+                        "matched_keywords": [],
+                        "score": _HUB_FALLBACK_SCORE,
+                        "data_type": "hub",
+                        "is_archive": False,
+                        "data_years_available": [],
+                    }
+                )
 
         # Rank by score descending and cap at max_candidates.
         candidates.sort(key=lambda c: c["score"], reverse=True)
