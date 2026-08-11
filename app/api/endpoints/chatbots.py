@@ -307,12 +307,15 @@ async def create_chatbot(
                 detail=f"Failed to upload avatar: {str(e)}",
             )
     
-    # Verify tenant ownership
-    if chatbot_config_create.tenant_id != current_user.tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot create chatbot for different tenant",
-        )
+    # Resolve + verify tenant ownership. Overwrites (rather than merely
+    # checks) the body's tenant_id with the resolved value: for a
+    # single-tenant user this is always their own tenant regardless of what
+    # the body claims, closing the same spoofing gap a plain equality check
+    # would otherwise leave open; for a cross-tenant super_admin/tenant_admin
+    # it validates the requested tenant_id against user_tenant_access.
+    chatbot_config_create.tenant_id = await resolve_effective_tenant_id(
+        current_user, chatbot_config_create.tenant_id, db
+    )
 
     # Check if name already exists for this tenant
     existing_chatbots = await chatbot_config.list_by_tenant(
@@ -346,15 +349,10 @@ async def list_chatbots(
     current_user: User = Depends(get_current_user),
 ):
     """List chatbot configurations"""
-    # Use current user's tenant if not specified
-    filter_tenant_id = tenant_id or current_user.tenant_id
-
-    # Verify tenant access
-    if filter_tenant_id != current_user.tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot access chatbots from different tenant",
-        )
+    # Same bug as get_chatbot/conversations.py/rag.py had: comparing against
+    # current_user.tenant_id directly breaks for a cross-tenant super_admin/
+    # tenant_admin, whose tenant_id column is NULL. Resolve properly instead.
+    filter_tenant_id = await resolve_effective_tenant_id(current_user, tenant_id, db)
 
     chatbots = await chatbot_config.list_by_tenant(db, filter_tenant_id)
     total = len(chatbots)
@@ -563,8 +561,13 @@ async def update_chatbot(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found"
         )
 
-    # Verify tenant ownership
-    if chatbot_config_obj.tenant_id != current_user.tenant_id:
+    # Verify tenant ownership (resolved, not compared directly - see
+    # resolve_effective_tenant_id for why a cross-tenant super_admin/
+    # tenant_admin needs this instead of a plain equality check)
+    resolved_tenant_id = await resolve_effective_tenant_id(
+        current_user, chatbot_config_obj.tenant_id, db
+    )
+    if chatbot_config_obj.tenant_id != resolved_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot update chatbot from different tenant",
@@ -706,7 +709,10 @@ async def delete_chatbot(
         )
 
     # Verify tenant ownership
-    if chatbot_config_obj.tenant_id != current_user.tenant_id:
+    resolved_tenant_id = await resolve_effective_tenant_id(
+        current_user, chatbot_config_obj.tenant_id, db
+    )
+    if chatbot_config_obj.tenant_id != resolved_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot delete chatbot from different tenant",
@@ -739,14 +745,17 @@ async def set_default_chatbot(
         )
 
     # Verify tenant ownership
-    if chatbot_config_obj.tenant_id != current_user.tenant_id:
+    resolved_tenant_id = await resolve_effective_tenant_id(
+        current_user, chatbot_config_obj.tenant_id, db
+    )
+    if chatbot_config_obj.tenant_id != resolved_tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot set default chatbot for different tenant",
         )
 
     updated_chatbot = await chatbot_config.set_default(
-        db, current_user.tenant_id, chatbot_id
+        db, resolved_tenant_id, chatbot_id
     )
     if not updated_chatbot:
         raise HTTPException(
