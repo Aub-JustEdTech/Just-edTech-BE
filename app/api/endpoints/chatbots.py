@@ -25,7 +25,12 @@ from app.schemas.users import User
 from app.models.chat_consumers import ChatConsumer
 from app.models.tenants import Tenant
 from app.utils.avatar_upload import delete_avatar, upload_avatar
-from app.utils.dependencies import get_current_user, get_db, require_user_or_chat_consumer
+from app.utils.dependencies import (
+    get_current_user,
+    get_db,
+    require_user_or_chat_consumer,
+    resolve_effective_tenant_id,
+)
 from app.utils.response import success_response
 from app.utils.s3 import S3Manager, extract_s3_key_from_url
 
@@ -430,11 +435,18 @@ async def get_chatbot(
             status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found"
         )
     
-    # Extract tenant_id and consumer info based on authentication type
+    # Extract tenant_id and consumer info based on authentication type.
+    # For a cross-tenant admin (tenant_id column is NULL), resolve against
+    # the chatbot's own tenant — the same check require_tenant_access()/
+    # get_effective_tenant_id() use elsewhere, just checked against the
+    # resource's tenant instead of a client-supplied query param, since this
+    # route has no tenant_id param of its own.
     if isinstance(current_user_or_consumer, ChatConsumer):
         tenant_id = current_user_or_consumer.tenant_id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
+        tenant_id = await resolve_effective_tenant_id(
+            current_user_or_consumer, chatbot_config_obj.tenant_id, db
+        )
 
     # Verify tenant ownership
     if chatbot_config_obj.tenant_id != tenant_id:
