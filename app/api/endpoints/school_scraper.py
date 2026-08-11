@@ -12,6 +12,8 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crud import schools as crud
+from app.models.school import SchoolScrapeUrl
 from app.schemas.school_scraper import (
     BackfillYearsRequest,
     BackfillYearsResponse,
@@ -20,6 +22,8 @@ from app.schemas.school_scraper import (
     DiscoverResponse,
     MediaFileResult,
     MediaTypeSummary,
+    ScrapeMediaBatchRequest,
+    ScrapeMediaBatchResponse,
     ScrapeMediaRequest,
     ScrapeMediaResponse,
 )
@@ -30,10 +34,173 @@ from app.utils.dependencies import (
     get_current_tenant_admin,
     get_current_tenant_user,
     get_db,
+    get_effective_tenant_id,
 )
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+async def _resolve_scrape_url(
+    db: AsyncSession, tenant_id: int, school_id: int, scrape_url_id: int
+) -> SchoolScrapeUrl:
+    school = await crud.get_school(db, tenant_id, school_id)
+    if not school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"School {school_id} not found in tenant {tenant_id}",
+        )
+    scrape_url = next(
+        (u for u in school.scrape_urls if u.id == scrape_url_id), None
+    )
+    if not scrape_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Scrape URL {scrape_url_id} not found for school {school_id}",
+        )
+    return scrape_url
+
+
+async def _scrape_and_maybe_persist(
+    db: AsyncSession,
+    *,
+    url: str,
+    crawl_depth: int,
+    scrape_url: SchoolScrapeUrl | None,
+) -> ScrapeMediaResponse:
+    """Run one scrape attempt.
+
+    When `scrape_url` is given, the outcome (success or failure) is written
+    onto that row and a structured result is always returned — never raised
+    — so a bad target page shows up as `Invalid` in the FE instead of the
+    whole request erroring out. Without `scrape_url` (stateless/preview use,
+    e.g. discovery review), behavior is unchanged: failures raise HTTPException.
+    """
+    async with SchoolScraperService() as scraper:
+        try:
+            result = await scraper.scrape_media_files(
+                page_url=url, crawl_depth=crawl_depth
+            )
+        except httpx.TimeoutException:
+            if scrape_url is not None:
+                await crud.record_scrape_result(
+                    db, scrape_url, http_status=None, page_count=None
+                )
+                return ScrapeMediaResponse(
+                    source_url=url,
+                    scrape_url_id=scrape_url.id,
+                    success=False,
+                    http_status=None,
+                    pages_crawled=0,
+                    total_media_found=0,
+                    media_type_summary=MediaTypeSummary(),
+                    media_files=[],
+                )
+            raise HTTPException(
+                status_code=status.HTTP_408_REQUEST_TIMEOUT,
+                detail=f"Request timed out while accessing {url}",
+            ) from None
+        except httpx.HTTPStatusError as exc:
+            http_status = exc.response.status_code if exc.response else None
+            if scrape_url is not None:
+                await crud.record_scrape_result(
+                    db, scrape_url, http_status=http_status, page_count=None
+                )
+                return ScrapeMediaResponse(
+                    source_url=url,
+                    scrape_url_id=scrape_url.id,
+                    success=False,
+                    http_status=http_status,
+                    pages_crawled=0,
+                    total_media_found=0,
+                    media_type_summary=MediaTypeSummary(),
+                    media_files=[],
+                )
+            if http_status == 404:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Page not found (404): {url}",
+                ) from exc
+            elif http_status == 403:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access forbidden (403): {url}",
+                ) from exc
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"HTTP error {http_status} fetching {url}",
+            ) from exc
+        except httpx.NetworkError as exc:
+            if scrape_url is not None:
+                await crud.record_scrape_result(
+                    db, scrape_url, http_status=None, page_count=None
+                )
+                return ScrapeMediaResponse(
+                    source_url=url,
+                    scrape_url_id=scrape_url.id,
+                    success=False,
+                    http_status=None,
+                    pages_crawled=0,
+                    total_media_found=0,
+                    media_type_summary=MediaTypeSummary(),
+                    media_files=[],
+                )
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Network error while accessing {url}: {exc}",
+            ) from exc
+        except Exception as exc:
+            logger.exception("Unexpected error during media scrape for %s", url)
+            if scrape_url is not None:
+                await crud.record_scrape_result(
+                    db, scrape_url, http_status=None, page_count=None
+                )
+                return ScrapeMediaResponse(
+                    source_url=url,
+                    scrape_url_id=scrape_url.id,
+                    success=False,
+                    http_status=None,
+                    pages_crawled=0,
+                    total_media_found=0,
+                    media_type_summary=MediaTypeSummary(),
+                    media_files=[],
+                )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Unexpected error: {exc}",
+            ) from exc
+
+    media_files = [
+        MediaFileResult(
+            name=m["name"],
+            url=m["url"],
+            file_extension=m["file_extension"],
+            media_type=m["media_type"],
+            size_bytes=m["size_bytes"],
+            source_page_url=m["source_page_url"],
+        )
+        for m in result["media_files"]
+    ]
+
+    type_counts: dict[str, int] = {"video": 0, "audio": 0, "document": 0}
+    for m in media_files:
+        type_counts[m.media_type] = type_counts.get(m.media_type, 0) + 1
+
+    if scrape_url is not None:
+        await crud.record_scrape_result(
+            db, scrape_url, http_status=200, page_count=result["pages_crawled"]
+        )
+
+    return ScrapeMediaResponse(
+        source_url=result["source_url"],
+        scrape_url_id=scrape_url.id if scrape_url is not None else None,
+        success=True,
+        http_status=200,
+        pages_crawled=result["pages_crawled"],
+        total_media_found=len(media_files),
+        media_type_summary=MediaTypeSummary(**type_counts),
+        media_files=media_files,
+    )
 
 
 @router.post(
@@ -125,8 +292,9 @@ async def discover_urls(
 )
 async def scrape_media(
     request: ScrapeMediaRequest,
-    current_user: User = Depends(get_current_tenant_user),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ) -> ScrapeMediaResponse:
     """
     Step 2 — Media Scraping.
@@ -156,74 +324,20 @@ async def scrape_media(
       -d '{"url": "https://www.akfcs.org/meeting-archives/", "crawl_depth": 1}'
     ```
     """
-    async with SchoolScraperService() as scraper:
-        try:
-            result = await scraper.scrape_media_files(
-                page_url=request.url,
-                crawl_depth=request.crawl_depth,
-            )
-        except httpx.TimeoutException:
-            raise HTTPException(
-                status_code=status.HTTP_408_REQUEST_TIMEOUT,
-                detail=f"Request timed out while accessing {request.url}",
-            )
-        except httpx.HTTPStatusError as exc:
-            http_status = exc.response.status_code if exc.response else "unknown"
-            if http_status == 404:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Page not found (404): {request.url}",
-                )
-            elif http_status == 403:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Access forbidden (403): {request.url}",
-                )
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"HTTP error {http_status} fetching {request.url}",
-            )
-        except httpx.NetworkError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Network error while accessing {request.url}: {exc}",
-            )
-        except Exception as exc:
-            logger.exception("Unexpected error during media scrape for %s", request.url)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Unexpected error: {exc}",
-            )
-
-    media_files = [
-        MediaFileResult(
-            name=m["name"],
-            url=m["url"],
-            file_extension=m.get("file_extension"),
-            media_type=m["media_type"],
-            size_bytes=m["size_bytes"],
-            source_page_url=m["source_page_url"],
+    scrape_url = None
+    if request.school_id is not None and request.scrape_url_id is not None:
+        scrape_url = await _resolve_scrape_url(
+            db, tenant_id, request.school_id, request.scrape_url_id
         )
-        for m in result["media_files"]
-    ]
 
-    # Seeded with every key MediaTypeSummary declares — otherwise a type
-    # that happens to be absent from this page silently reports zero.
-    type_counts: dict[str, int] = {
-        "video": 0,
-        "audio": 0,
-        "document": 0,
-        "youtube": 0,
-    }
-    for m in media_files:
-        type_counts[m.media_type] = type_counts.get(m.media_type, 0) + 1
+    response = await _scrape_and_maybe_persist(
+        db,
+        url=request.url,
+        crawl_depth=request.crawl_depth,
+        scrape_url=scrape_url,
+    )
 
-    persisted = 0
-    skipped_duplicates = 0
-    enqueued = 0
-    scraped_media_ids: list[int] = []
-
-    if request.persist:
+    if request.persist and response.success:
         if request.school_id is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -234,7 +348,7 @@ async def scrape_media(
 
         # Tenant-scoped: without this any tenant could attach media to any
         # school by guessing an id.
-        school = await get_school(db, current_user.tenant_id, request.school_id)
+        school = await get_school(db, tenant_id, request.school_id)
         if not school:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -245,10 +359,11 @@ async def scrape_media(
             db,
             school=school,
             source_page_url=request.url,
-            media_files=result["media_files"],
+            media_files=[m.model_dump() for m in response.media_files],
         )
-        persisted = len(rows)
-        scraped_media_ids = [r.id for r in rows]
+        response.persisted = len(rows)
+        response.skipped_duplicates = skipped_duplicates
+        response.scraped_media_ids = [r.id for r in rows]
 
         # Imported here, not at module scope, to avoid the tasks -> models
         # import cycle (matches backfill_years below).
@@ -258,19 +373,53 @@ async def scrape_media(
         # db.get(ScrapedMedia, id) -> None and silently drops the item.
         for row in rows:
             ingest_scraped_media.delay(row.id)
-            enqueued += 1
+            response.enqueued += 1
 
-    return ScrapeMediaResponse(
-        source_url=result["source_url"],
-        pages_crawled=result["pages_crawled"],
-        total_media_found=len(media_files),
-        media_type_summary=MediaTypeSummary(**type_counts),
-        media_files=media_files,
-        persisted=persisted,
-        skipped_duplicates=skipped_duplicates,
-        enqueued=enqueued,
-        scraped_media_ids=scraped_media_ids,
-    )
+    return response
+
+
+@router.post(
+    "/scrape-media-batch",
+    response_model=ScrapeMediaBatchResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Scrape multiple confirmed source URLs for one school in one call",
+)
+async def scrape_media_batch(
+    request: ScrapeMediaBatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
+) -> ScrapeMediaBatchResponse:
+    """Scrape every listed SchoolScrapeUrl id for a school and persist each
+    result independently, so one failing URL doesn't block the others —
+    backs the "Scrape selected" multi-select action on the Schools admin page.
+    """
+    school = await crud.get_school(db, tenant_id, request.school_id)
+    if not school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"School {request.school_id} not found in tenant {tenant_id}",
+        )
+    urls_by_id = {u.id: u for u in school.scrape_urls}
+
+    results: list[ScrapeMediaResponse] = []
+    for scrape_url_id in request.scrape_url_ids:
+        scrape_url = urls_by_id.get(scrape_url_id)
+        if not scrape_url:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scrape URL {scrape_url_id} not found for school {request.school_id}",
+            )
+        results.append(
+            await _scrape_and_maybe_persist(
+                db,
+                url=scrape_url.url,
+                crawl_depth=request.crawl_depth,
+                scrape_url=scrape_url,
+            )
+        )
+
+    return ScrapeMediaBatchResponse(results=results)
 
 
 @router.post(

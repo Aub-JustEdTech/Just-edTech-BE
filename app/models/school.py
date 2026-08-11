@@ -115,6 +115,7 @@ class SchoolScrapeUrl(BaseModel):
     confirmed_at = Column(DateTime(timezone=True), nullable=True)
     last_http_status = Column(Integer, nullable=True)
     last_crawl_page_count = Column(Integer, nullable=True)
+    last_scraped_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
 
     school = relationship(

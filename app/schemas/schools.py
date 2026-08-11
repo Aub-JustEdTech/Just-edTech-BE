@@ -54,6 +54,7 @@ class SchoolScrapeUrlOut(BaseModel):
     confirmed_at: datetime | None
     last_http_status: int | None
     last_crawl_page_count: int | None
+    last_scraped_at: datetime | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -96,6 +97,10 @@ class SchoolListOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+def _normalize_url(v: str) -> str:
+    return v.strip().rstrip("/")
+
+
 class ScrapeUrlCreate(BaseModel):
     url: str
     crawl_depth: int = Field(1, ge=0, le=3)
@@ -108,14 +113,24 @@ class ScrapeUrlCreate(BaseModel):
     @field_validator("url")
     @classmethod
     def strip_trailing_slash(cls, v: str) -> str:
-        return v.strip().rstrip("/")
+        return _normalize_url(v)
 
 
 class ScrapeUrlUpdate(BaseModel):
+    url: str | None = Field(
+        None,
+        description="New URL text. Resets last_http_status/last_crawl_page_count"
+        " since the edited page is unverified.",
+    )
     crawl_depth: int | None = Field(None, ge=0, le=3)
     use_playwright: bool | None = None
     is_active: bool | None = None
     is_primary: bool | None = None
+
+    @field_validator("url")
+    @classmethod
+    def strip_trailing_slash(cls, v: str | None) -> str | None:
+        return _normalize_url(v) if v is not None else v
 
 
 # ---------------------------------------------------------------------------
