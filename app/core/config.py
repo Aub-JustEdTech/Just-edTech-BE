@@ -50,9 +50,7 @@ class Settings(BaseSettings):
     CHATBOT_DEFAULT_NAME: str = "New Chatbot"
     CHATBOT_DEFAULT_TITLE: str = "Assistant"
     CHATBOT_DEFAULT_WELCOME_MESSAGE: str = "Hi there! How can I help you today?"
-    CHATBOT_DEFAULT_SYSTEM_PROMPT: str = (
-        "You are a helpful assistant that answers using the organization's knowledge base."
-    )
+    CHATBOT_DEFAULT_SYSTEM_PROMPT: str = "You are a helpful assistant that answers using the organization's knowledge base."
     CHATBOT_DEFAULT_CHAT_MODEL: str = "openai/gpt-4o-mini"
     CHATBOT_DEFAULT_CHAT_TEMPERATURE: float = 0.7
     CHATBOT_DEFAULT_RAG_TOP_K: int = 3
@@ -72,7 +70,9 @@ class Settings(BaseSettings):
     # Multimodal RAG Configuration
     CHATBOT_DEFAULT_ENABLE_MULTIMODAL: bool = True
     CHATBOT_DEFAULT_MAX_IMAGES: int = 2
-    CHATBOT_DEFAULT_IMAGE_CONTEXT_CHARS: int = 200  # Characters before/after image for context
+    CHATBOT_DEFAULT_IMAGE_CONTEXT_CHARS: int = (
+        200  # Characters before/after image for context
+    )
 
     # Vector Database Configuration
     VECTOR_STORE_TYPE: str = "qdrant"  # chroma, qdrant, pinecone, weaviate, etc.
@@ -294,6 +294,20 @@ class Settings(BaseSettings):
     # the LLM marks is_archive=true (e.g. for routine scrapes that only want
     # the current school year).
     SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = False
+    # Off-domain board-meeting platforms the crawler is allowed to follow a
+    # single hop into when discovered on a school site (BoardDocs, Diligent
+    # Community, BoardOnTrack). These are JS/iframe-heavy SPAs whose document
+    # download links are frequently session-bound — see
+    # app/services/web_scraper/board_platforms.py.
+    SCHOOL_SCRAPER_BOARD_PLATFORM_DOMAINS: list[str] = [
+        "boarddocs.com",
+        "diligentoneplatform.com",
+        "boardontrack.com",
+        "granicus.com",
+    ]
+    # Hard cap on meetings visited per board-platform portal per scrape
+    # (Diligent/BoardOnTrack calendars can span 10+ years of history).
+    SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS: int = 24
     # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"

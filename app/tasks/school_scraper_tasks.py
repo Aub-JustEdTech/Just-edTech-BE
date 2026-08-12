@@ -66,9 +66,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         try:
             raw_bytes, text_content, content_h = await _fetch_media_payload(sm)
         except Exception as exc:  # noqa: BLE001
-            logger.exception(
-                "Ingest failed for scraped_media %s", scraped_media_id
-            )
+            logger.exception("Ingest failed for scraped_media %s", scraped_media_id)
             await update_scraped_media(
                 db,
                 sm.id,
@@ -82,7 +80,9 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
             await db.flush()
 
         if content_h:
-            existing = await get_scraped_media_by_content_hash(db, sm.school_id, content_h)
+            existing = await get_scraped_media_by_content_hash(
+                db, sm.school_id, content_h
+            )
             if existing and existing.id != sm.id:
                 await update_scraped_media(
                     db,
@@ -121,10 +121,23 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
 
 
 async def _fetch_media_payload(sm):
-    """Return (raw_bytes, text_content, content_hash) for a ScrapedMedia item."""
+    """Return (raw_bytes, text_content, content_hash) for a ScrapedMedia item.
+
+    For documents whose source URL (or source page URL) is on an allowlisted
+    board-meeting platform (BoardDocs, Diligent, BoardOnTrack), fetch via a
+    short-lived Playwright browser session so the platform's session cookies /
+    referrer checks are satisfied. A cold ``httpx.GET`` from this Celery
+    worker (whose browser context is long gone by the time this task runs)
+    is typically redirected to a login/error page on these platforms.
+    """
     import hashlib
 
     import httpx
+
+    from app.services.web_scraper.board_platforms import (
+        fetch_document_via_playwright_session,
+        is_board_platform_url,
+    )
 
     if sm.media_type == "youtube":
         if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
@@ -133,6 +146,21 @@ async def _fetch_media_payload(sm):
             )
         text = await _fetch_youtube_transcript(sm.source_media_url)
         return None, text, None
+
+    # Board-platform document downloads require an established browser session
+    # (cookies set during navigation) — a stateless httpx.GET gets blocked.
+    # Non-document media (audio/video/youtube) on these platforms is rare;
+    # if it occurs, fall through to the httpx path and rely on the task's
+    # existing retry/error handling.
+    board_doc_url = sm.source_media_url or sm.source_page_url or ""
+    if sm.media_type == "document" and is_board_platform_url(board_doc_url):
+        raw = await fetch_document_via_playwright_session(
+            sm.source_page_url,
+            sm.source_media_url,
+        )
+        content_h = hashlib.sha256(raw).hexdigest()
+        text = _extract_text_from_document(raw, sm.file_extension)
+        return raw, text, content_h
 
     async with httpx.AsyncClient(
         timeout=settings.WEB_SCRAPER_TIMEOUT_SECONDS,
@@ -363,9 +391,7 @@ async def _create_document_and_enqueue(
 
         process_document_pipeline.delay(doc.id, job.id)
     except Exception:  # noqa: BLE001
-        logger.exception(
-            "Failed to enqueue document processing for doc %s", doc.id
-        )
+        logger.exception("Failed to enqueue document processing for doc %s", doc.id)
 
     return doc.id
 

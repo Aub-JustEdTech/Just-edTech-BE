@@ -70,11 +70,21 @@ def filter_media_files(media_files: list[dict]) -> list[dict]:
     """Drop media dicts whose inferred year is outside the allowed set."""
     kept: list[dict] = []
     for media in media_files:
-        _, should_process, _ = evaluate_media_year(
-            url=media["url"],
-            filename=media.get("name"),
-            source_page_url=media.get("source_page_url"),
-        )
+        # If doc_year is already set (e.g., from board platform expanders that
+        # extracted year from meeting dates), use it directly instead of re-inferring
+        existing_year = media.get("doc_year")
+        if existing_year is not None:
+            # Already has a year - just check if it's in the allowed range
+            allowed = allowed_calendar_years()
+            should_process = existing_year in allowed
+        else:
+            # No year set yet - infer from URL/filename
+            _, should_process, _ = evaluate_media_year(
+                url=media["url"],
+                filename=media.get("name"),
+                source_page_url=media.get("source_page_url"),
+            )
+        
         if should_process:
             kept.append(media)
     return kept

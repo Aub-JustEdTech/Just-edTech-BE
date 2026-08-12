@@ -33,9 +33,11 @@ from app.services.web_scraper._discovery_helpers import (
     get_sitemap_url_from_robots as _get_sitemap_url_from_robots_helper,
     html_needs_playwright,
 )
+from app.services.web_scraper.board_platforms import is_board_platform_url
 from app.services.web_scraper.markdown_converter import MarkdownConverter
 from app.services.web_scraper.page_classifier import PageClassifier
 from app.services.web_scraper.page_schemas import RelevantPage
+from app.services.web_scraper.playwright_interactions import merge_iframe_content
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, Playwright
@@ -233,20 +235,42 @@ class SchemaDrivenCrawler:
         )
 
     async def _fetch_text_rendered(self, url: str) -> str | None:
-        """Fetch a page with Playwright (full JS execution); fall back to httpx on failure."""
+        """Fetch a page with Playwright (full JS execution); fall back to httpx on failure.
+
+        For board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack) the
+        page content is typically injected into nested ``<iframe>``s rather
+        than the parent document, so after the page loads we merge the HTML of
+        every accessible frame into the parent HTML before returning.
+        """
         if not self._browser:
             return None
         try:
             page = await self._browser.new_page()
             try:
-                await page.goto(url, wait_until="load", timeout=self.fetch_timeout * 1000)
+                # Board platforms are SPAs that set session cookies + render
+                # content via XHR after the initial HTML loads; networkidle
+                # waits for that post-load activity to settle. Plain pages
+                # (same-domain school sites) keep the cheaper "load" wait.
+                wait_until = "networkidle" if is_board_platform_url(url) else "load"
+                # networkidle can stall on long-polling apps; cap at the
+                # configured per-request timeout either way.
+                await page.goto(
+                    url, wait_until=wait_until, timeout=self.fetch_timeout * 1000
+                )
+                if is_board_platform_url(url):
+                    # Merge iframe content (the real meeting/agenda HTML lives
+                    # inside nested frames on these platforms). Falls back to
+                    # parent-only HTML if every frame.content() raises.
+                    return await merge_iframe_content(page, top_url=url)
                 return await page.content()
             finally:
                 await page.close()
         except Exception as exc:  # noqa: BLE001
             logger.debug(
                 "SchemaDrivenCrawler: Playwright render failed for %s (%s): %s — using httpx",
-                url, type(exc).__name__, exc,
+                url,
+                type(exc).__name__,
+                exc,
             )
             return None
 
@@ -302,7 +326,9 @@ class SchemaDrivenCrawler:
             seed_urls = await self._collect_seed_frontier(client, base_url, base_domain)
             for url in seed_urls:
                 norm = _percent_encode_url(self._normalize_url(url).split("#", 1)[0])
-                if urlparse(norm).netloc == base_domain and norm not in visited:
+                if (
+                    urlparse(norm).netloc == base_domain or is_board_platform_url(norm)
+                ) and norm not in visited:
                     # Sitemap/nav URLs get a base confidence of 0.5, boosted
                     # deterministically if the path itself already looks like
                     # a meeting-minutes page — this lets obviously-relevant
@@ -315,7 +341,13 @@ class SchemaDrivenCrawler:
 
                 if current_url in visited:
                     continue
-                if urlparse(current_url).netloc != base_domain:
+                current_netloc = urlparse(current_url).netloc
+                # Same-domain OR an allowlisted off-domain board-meeting
+                # platform (single-hop follow — these platforms host meeting
+                # minutes/agendas on a different domain than the school site).
+                if current_netloc != base_domain and not is_board_platform_url(
+                    current_url
+                ):
                     continue
 
                 visited.add(current_url)
@@ -351,6 +383,11 @@ class SchemaDrivenCrawler:
                         result.data_pages.append(page)
 
                 child_depth = current_depth + 1
+                # Board platforms are a single-hop visit only — don't enqueue
+                # their own discovered sub-links. The crawl descends into the
+                # foreign platform once (to fetch + classify the linked page),
+                # then returns to the school domain for further exploration.
+                skip_child_enqueue = is_board_platform_url(current_url)
                 for candidate in page.possible_relevant_pages:
                     abs_url = self._normalize_url(urljoin(current_url, candidate.url))
                     abs_url = _percent_encode_url(abs_url.split("#", 1)[0])
@@ -359,12 +396,20 @@ class SchemaDrivenCrawler:
                     # a URL that's independently valid and clickable — not the
                     # LLM's raw (often relative, unencoded) extracted href.
                     candidate.url = abs_url
-                    boosted_confidence = min(1.0, candidate.confidence + _keyword_boost(abs_url))
+                    if skip_child_enqueue:
+                        continue
+                    boosted_confidence = min(
+                        1.0, candidate.confidence + _keyword_boost(abs_url)
+                    )
                     if boosted_confidence < self.confidence_threshold:
                         continue
                     if abs_url in visited:
                         continue
-                    if urlparse(abs_url).netloc != base_domain:
+                    current_candidate_netloc = urlparse(abs_url).netloc
+                    if (
+                        current_candidate_netloc != base_domain
+                        and not is_board_platform_url(abs_url)
+                    ):
                         continue
                     effective_confidence = boosted_confidence
                     if child_depth > self.max_depth:
@@ -410,6 +455,7 @@ class SchemaDrivenCrawler:
         ranking during the crawl. Falls back to an empty list (which leaves
         just the seed URL in the frontier) on any failure.
         """
+
         async def _fetch_text(url: str) -> str | None:
             html, _status = await self._fetch_httpx(client, url)
             return html
@@ -417,7 +463,9 @@ class SchemaDrivenCrawler:
         urls: list[str] = []
         # 1. WordPress sitemap
         try:
-            wp = await _collect_urls_from_sitemap_helper(f"{base_url}/wp-sitemap.xml", _fetch_text)
+            wp = await _collect_urls_from_sitemap_helper(
+                f"{base_url}/wp-sitemap.xml", _fetch_text
+            )
         except Exception as exc:  # noqa: BLE001
             logger.debug("wp-sitemap fetch failed for %s: %s", base_url, exc)
             wp = []
@@ -426,7 +474,9 @@ class SchemaDrivenCrawler:
 
         # 2. Generic sitemap
         try:
-            generic = await _collect_urls_from_sitemap_helper(f"{base_url}/sitemap.xml", _fetch_text)
+            generic = await _collect_urls_from_sitemap_helper(
+                f"{base_url}/sitemap.xml", _fetch_text
+            )
         except Exception as exc:  # noqa: BLE001
             logger.debug("sitemap.xml fetch failed for %s: %s", base_url, exc)
             generic = []
@@ -435,15 +485,21 @@ class SchemaDrivenCrawler:
 
         # 3. robots.txt Sitemap: directive
         try:
-            robots_sitemap = await _get_sitemap_url_from_robots_helper(base_url, _fetch_text)
+            robots_sitemap = await _get_sitemap_url_from_robots_helper(
+                base_url, _fetch_text
+            )
         except Exception as exc:  # noqa: BLE001
             logger.debug("robots.txt fetch failed for %s: %s", base_url, exc)
             robots_sitemap = None
         if robots_sitemap:
             try:
-                robots_urls = await _collect_urls_from_sitemap_helper(robots_sitemap, _fetch_text)
+                robots_urls = await _collect_urls_from_sitemap_helper(
+                    robots_sitemap, _fetch_text
+                )
             except Exception as exc:  # noqa: BLE001
-                logger.debug("robots sitemap fetch failed for %s: %s", robots_sitemap, exc)
+                logger.debug(
+                    "robots sitemap fetch failed for %s: %s", robots_sitemap, exc
+                )
                 robots_urls = []
             if robots_urls:
                 return robots_urls
@@ -479,12 +535,30 @@ class SchemaDrivenCrawler:
              by the Python process's CA bundle but is a valid, trusted chain
              from a real browser's perspective.
 
+        Board-meeting platform URLs (BoardDocs, Diligent Community,
+        BoardOnTrack) are always fetched with Playwright directly (skipping
+        the httpx-first gate) because they are JS/iframe-heavy SPAs whose
+        meaningful content is not present in the raw httpx response body.
+
         A genuine "page not found" (404 etc., not in _RETRY_STATUS_CODES) is
         NOT retried — only failures that a browser/UA change could plausibly
         fix. A Playwright failure (or no browser available) silently degrades
         back to the last httpx result, so the crawler never hard-fails
         outright.
         """
+        # Board platforms: skip the httpx-fingerprint gate and go straight to
+        # a real browser. Their content is JS-rendered into iframes, so httpx
+        # would only return the SPA shell with no useful text/links.
+        if is_board_platform_url(url):
+            await self._ensure_playwright()
+            rendered = await self._fetch_text_rendered(url)
+            if rendered:
+                return rendered
+            # Fall through to httpx as a last resort if Playwright is
+            # unavailable or failed — better a shell than nothing.
+            html, status = await self._fetch_httpx(client, url)
+            return html
+
         html, status = await self._fetch_httpx(client, url)
 
         if html is None and _should_retry(status):

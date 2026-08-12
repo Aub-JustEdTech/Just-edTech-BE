@@ -194,16 +194,33 @@ class SchoolScraperService:
         Returns ``(html, extra_media)`` where ``extra_media`` are document
         dicts discovered by clicking/opening SharpSchool folder explorers
         (same-URL widgets that never expose PDFs in the initial DOM).
+
+        For board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack)
+        ``wait_until`` is forced to ``networkidle`` (these SPAs inject content
+        via XHR after the initial HTML loads) and the HTML of every accessible
+        nested iframe is merged into the returned HTML, since these platforms
+        render the real meeting/agenda content inside iframes rather than the
+        parent document.
         """
         if not self._browser:
             return await self._fetch_text(url), []
 
+        from app.services.web_scraper.board_platforms import (
+            board_platform_kind,
+            is_board_platform_url,
+        )
         from app.services.web_scraper.playwright_interactions import (
+            expand_boardontrack_meetings,
+            expand_diligent_meetings,
             expand_sharpschool_document_list,
             extract_google_drive_folder_media,
             extract_google_sheets_embed_media,
             looks_like_sharpschool_document_list,
+            merge_iframe_content,
         )
+
+        is_board = is_board_platform_url(url)
+        effective_wait_until = "networkidle" if is_board else wait_until
 
         try:
             page = await self._browser.new_page(
@@ -212,15 +229,23 @@ class SchoolScraperService:
             try:
                 await page.goto(
                     url,
-                    wait_until=wait_until,
+                    wait_until=effective_wait_until,
                     timeout=self.timeout * 1000,
                 )
-                # Sheets embeds need a beat to populate iframe frames.
+                # Sheets embeds need a beat to populate iframe frames; board
+                # platforms likewise need a brief settle for any post-load
+                # XHR that injects content into iframes.
                 try:
                     await page.wait_for_timeout(2500)
                 except Exception:  # noqa: BLE001
                     pass
-                html = await page.content()
+                if is_board:
+                    # Merge iframe HTML so the extractor sees the real meeting
+                    # content. Falls back to parent-only HTML on cross-origin
+                    # frame failures (see merge_iframe_content).
+                    html = await merge_iframe_content(page, top_url=url)
+                else:
+                    html = await page.content()
                 extra_media: list[dict] = []
 
                 if expand_document_folders:
@@ -290,9 +315,7 @@ class SchoolScraperService:
         from playwright.async_api import async_playwright
 
         self._pw = await async_playwright().start()
-        self._browser = await self._pw.chromium.launch(
-            **self._chromium_launch_kwargs()
-        )
+        self._browser = await self._pw.chromium.launch(**self._chromium_launch_kwargs())
         logger.info(
             "Playwright Chromium auto-launched — JS-rendered navigation detected"
         )
@@ -407,7 +430,9 @@ class SchoolScraperService:
             path = urlparse(url).path.lower()
             matched = [kw for kw in keywords if kw in path]
             if matched:
-                raw.append({"url": url, "matched_keywords": matched, "score": len(matched)})
+                raw.append(
+                    {"url": url, "matched_keywords": matched, "score": len(matched)}
+                )
 
         # Deduplicate and sort by score descending
         seen: set[str] = set()
@@ -462,7 +487,9 @@ class SchoolScraperService:
 
         # 2. Generic sitemap
         if not all_urls:
-            generic_urls = await self._collect_urls_from_sitemap(f"{base_url}/sitemap.xml")
+            generic_urls = await self._collect_urls_from_sitemap(
+                f"{base_url}/sitemap.xml"
+            )
             if generic_urls:
                 all_urls = generic_urls
                 method_used = "sitemap"
@@ -487,7 +514,9 @@ class SchoolScraperService:
                     method_used = "nav-crawl"
                 else:
                     method_used = f"{method_used}+nav-crawl"
-            initial_candidates = self._filter_candidates(all_urls, keywords, max_candidates)
+            initial_candidates = self._filter_candidates(
+                all_urls, keywords, max_candidates
+            )
 
         # 5. Follow-up crawl on top candidates to surface deeper sub-pages.
         #    E.g. homepage nav has /school-committee/about but the actual
@@ -549,6 +578,49 @@ class SchoolScraperService:
         if ext in audio_ext:
             return "audio"
         return "document"
+
+    @staticmethod
+    def _is_granicus_document_url(url: str, link_text: str | None = None) -> bool:
+        """
+        Detect Granicus platform document URLs that don't have explicit file
+        extensions.
+
+        Returns True for:
+        - AgendaViewer.php URLs (agenda documents)
+        - MinutesViewer.php URLs (minutes documents)
+        - GeneratedAgendaViewer.php URLs (generated agenda documents)
+        - Cloudfront CDN links that are likely PDFs (used for agenda packets)
+        - View.ashx URLs with M=A or M=M parameters (legacy Legistar format)
+        """
+        url_lower = url.lower()
+
+        # Granicus hosted agenda/minutes viewers
+        if any(
+            pattern in url_lower
+            for pattern in [
+                "agendaviewer.php",
+                "minutesviewer.php",
+                "generatedagendaviewer.php",
+            ]
+        ):
+            return True
+
+        # Legistar View.ashx patterns (M=A for agenda, M=M for minutes)
+        if "view.ashx" in url_lower and ("m=a" in url_lower or "m=m" in url_lower):
+            return True
+
+        # Cloudfront CDN links that are likely agenda packets (PDFs)
+        # Typically hosted at d3n9y02raazwpg.cloudfront.net or similar
+        if "cloudfront.net" in url_lower and link_text:
+            text_lower = link_text.lower()
+            # Check if link text suggests it's a document
+            if any(
+                kw in text_lower
+                for kw in ["agenda", "packet", "minutes", "document"]
+            ):
+                return True
+
+        return False
 
     @staticmethod
     def _media_url_pattern(all_ext: set[str]) -> re.Pattern[str]:
@@ -799,13 +871,53 @@ class SchoolScraperService:
                     )
 
                 elif tag_name == "a" and not matched_ext:
-                    # Collect same-domain sub-paths for depth crawling
-                    if (
-                        parsed.netloc == base_domain
-                        and full_url.startswith(page_prefix)
-                        and full_url != page_url
-                    ):
-                        sub_pages.append(full_url)
+                    # Check for Granicus document URLs (AgendaViewer.php,
+                    # MinutesViewer.php, Cloudfront agenda packets, etc.) that
+                    # don't have file extensions in the path.
+                    link_text = elem.get_text(strip=True)
+                    if self._is_granicus_document_url(full_url, link_text):
+                        self._append_media_url(
+                            media_files,
+                            seen_media,
+                            url=full_url,
+                            page_url=page_url,
+                            all_ext=all_ext,
+                            video_ext=video_ext,
+                            audio_ext=audio_ext,
+                            name=link_text,
+                            # Force document type and .pdf extension hint
+                            filename_hint="agenda.pdf",
+                        )
+                    else:
+                        # Collect same-domain sub-paths for depth crawling
+                        if (
+                            parsed.netloc == base_domain
+                            and full_url.startswith(page_prefix)
+                            and full_url != page_url
+                        ):
+                            sub_pages.append(full_url)
+
+        # Extract <object data="..."> URLs (common for embedded Granicus calendars)
+        from app.services.web_scraper.board_platforms import is_board_platform_url
+
+        for obj_elem in soup.find_all("object", data=True):
+            raw = str(obj_elem["data"]).strip()
+            if not raw or raw.startswith(("#", "mailto:", "tel:")):
+                continue
+
+            full_url = urljoin(page_url, raw)
+            parsed = urlparse(full_url)
+
+            # If it's a board platform URL (cross-domain allowed), add as sub-page
+            if is_board_platform_url(full_url) and full_url != page_url:
+                sub_pages.append(full_url)
+            # Or if it's same-domain, add as sub-page
+            elif (
+                parsed.netloc == base_domain
+                and full_url.startswith(page_prefix)
+                and full_url != page_url
+            ):
+                sub_pages.append(full_url)
 
         # Apptegy / Nuxt and similar CMS platforms embed document URLs in SSR
         # JSON payloads rather than plain <a href="...pdf"> tags.
@@ -863,6 +975,15 @@ class SchoolScraperService:
         doc_ext = settings.SCHOOL_SCRAPER_DOCUMENT_EXTENSIONS
         max_pages = settings.SCHOOL_SCRAPER_MAX_PAGES_PER_CRAWL
 
+        from app.services.web_scraper.board_platforms import (
+            board_platform_kind,
+            is_board_platform_url,
+        )
+        from app.services.web_scraper.playwright_interactions import (
+            expand_boardontrack_meetings,
+            expand_diligent_meetings,
+        )
+
         all_media: list[dict] = []
         visited: set[str] = {page_url}
         pages_crawled = 0
@@ -874,15 +995,152 @@ class SchoolScraperService:
             current_url, depth = queue.pop(0)
             extra_media: list[dict] = []
 
+            # Board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack)
+            # are JS/iframe-heavy SPAs — skip the httpx-fingerprint gate and
+            # go straight to Playwright + iframe-merge, regardless of whether
+            # a browser was already running.
+            is_board = is_board_platform_url(current_url)
+            if is_board and not self._browser:
+                await self._ensure_playwright()
+
             if self._browser:
                 html, extra_media = await self._fetch_rendered_with_interactions(
                     current_url, expand_document_folders=True
                 )
+                
+                # Board platform interaction layers: dispatch to platform-specific
+                # meeting/document expanders for in-portal navigation
+                max_meetings = getattr(
+                    settings, "SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS", 24
+                )
+                timeout_ms = int(settings.WEB_SCRAPER_TIMEOUT_SECONDS * 1000)
+                
+                if is_board:
+                    kind = board_platform_kind(current_url)
+                    if kind in ("diligent", "boardontrack"):
+                        
+                        # Create a new page for the board platform expander
+                        page = await self._browser.new_page(
+                            user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+                        )
+                        try:
+                            board_docs: list[dict] = []
+                            
+                            if kind == "diligent":
+                                logger.info(
+                                    "Board platform dispatch: expanding Diligent meetings on %s",
+                                    current_url,
+                                )
+                                board_docs = await expand_diligent_meetings(
+                                    page,
+                                    page_url=current_url,
+                                    timeout_ms=timeout_ms,
+                                    max_meetings=max_meetings,
+                                )
+                            elif kind == "boardontrack":
+                                logger.info(
+                                    "Board platform dispatch: expanding BoardOnTrack meetings on %s",
+                                    current_url,
+                                )
+                                board_docs = await expand_boardontrack_meetings(
+                                    page,
+                                    page_url=current_url,
+                                    timeout_ms=timeout_ms,
+                                    max_meetings=max_meetings,
+                                )
+                            
+                            if board_docs:
+                                logger.info(
+                                    "Board platform dispatch: %s expander returned %d documents for %s",
+                                    kind,
+                                    len(board_docs),
+                                    current_url,
+                                )
+                                extra_media.extend(board_docs)
+                        finally:
+                            await page.close()
+                
+                # Check for Granicus iframe on ANY page with Playwright
+                # (many schools embed Granicus in iframes on their own sites)
+                try:
+                    # Create a temporary page to check for Granicus iframe
+                    check_page = await self._browser.new_page(
+                        user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+                    )
+                    try:
+                        await check_page.goto(current_url, wait_until="load", timeout=timeout_ms)
+                        await check_page.wait_for_timeout(1500)
+                        
+                        # Look for Granicus iframe or object embed
+                        granicus_iframe_url = await check_page.evaluate(
+                            """() => {
+                                // Check iframes
+                                const iframes = document.querySelectorAll('iframe');
+                                for (const iframe of iframes) {
+                                    const src = iframe.src || '';
+                                    if (src.includes('granicus.com/ViewPublisher')) {
+                                        return src;
+                                    }
+                                }
+                                
+                                // Check object embeds
+                                const objects = document.querySelectorAll('object');
+                                for (const obj of objects) {
+                                    const data = obj.getAttribute('data') || '';
+                                    if (data.includes('granicus.com/ViewPublisher')) {
+                                        return data;
+                                    }
+                                }
+                                
+                                return null;
+                            }"""
+                        )
+                        
+                        if granicus_iframe_url:
+                            logger.info(
+                                "Board platform dispatch: detected Granicus iframe, expanding meetings from %s",
+                                granicus_iframe_url,
+                            )
+                            from app.services.web_scraper.playwright_interactions import (
+                                expand_granicus_meetings,
+                            )
+                            
+                            # Create new page for Granicus iframe
+                            granicus_page = await self._browser.new_page(
+                                user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+                            )
+                            try:
+                                granicus_docs = await expand_granicus_meetings(
+                                    granicus_page,
+                                    page_url=granicus_iframe_url,
+                                    timeout_ms=timeout_ms,
+                                    max_meetings=max_meetings,
+                                )
+                                if granicus_docs:
+                                    logger.info(
+                                        "Board platform dispatch: Granicus expander returned %d documents",
+                                        len(granicus_docs),
+                                    )
+                                    extra_media.extend(granicus_docs)
+                            finally:
+                                await granicus_page.close()
+                    finally:
+                        await check_page.close()
+                except Exception as exc:  # noqa: BLE001
+                    logger.debug(
+                        "Granicus iframe detection failed (%s): %s",
+                        type(exc).__name__,
+                        exc,
+                    )
+                
             else:
                 html = await self._fetch_text(current_url)
                 if html and self._html_needs_playwright(html):
                     await self._ensure_playwright()
-                    rendered, extra_media = await self._fetch_rendered_with_interactions(
+                    (
+                        rendered,
+                        extra_media,
+                    ) = await self._fetch_rendered_with_interactions(
                         current_url, expand_document_folders=True
                     )
                     if rendered:
@@ -903,7 +1161,10 @@ class SchoolScraperService:
             if extra_media:
                 all_media.extend(filter_media_files(extra_media))
 
-            if depth < crawl_depth:
+            if depth < crawl_depth and not is_board:
+                # Board-platform visits are single-page only — don't enqueue
+                # their own discovered sub-pages (matches the schema-driven
+                # crawler's single-hop scope for these platforms).
                 for sub_url in sub_pages:
                     if sub_url not in visited and pages_crawled < max_pages:
                         if not should_crawl_page_url(sub_url):
