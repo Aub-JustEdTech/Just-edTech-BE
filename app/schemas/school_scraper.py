@@ -172,3 +172,20 @@ class BackfillYearsResponse(BaseModel):
     enqueued: int
     skipped: int
     message: str
+
+
+class ScrapeAllResponse(BaseModel):
+    """Response from triggering a tenant-wide sweep of every active source."""
+
+    task_id: str
+    status: str
+    message: str
+
+
+class ScrapeStatusResponse(BaseModel):
+    """Whether a tenant-wide sweep is currently running, for the FE to know
+    when to keep the common and per-school scrape buttons disabled."""
+
+    running: bool
+    task_id: str | None = None
+    task_status: str | None = None

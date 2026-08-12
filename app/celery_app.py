@@ -90,6 +90,14 @@ celery_app.conf.update(
             "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
             "options": {"expires": 2 * 3600},
         },
+        # Nightly sweep of every active school source URL, tenant-agnostic
+        # (no school_ids filter = all schools). Runs at 1:00 AM UTC, ahead of
+        # the 2:00-4:00 AM jobs above so they don't compete for the DB.
+        "sweep-school-media": {
+            "task": "app.tasks.school_scraper_tasks.sweep_school_media",
+            "schedule": crontab(hour=1, minute=0),  # Daily at 1:00 AM UTC
+            "options": {"expires": 3 * 3600},
+        },
     },
 )
 
