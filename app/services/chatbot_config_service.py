@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.crud.chatbot_configs import chatbot_config
 from app.models.chatbot_configs import ChatbotConfig
 from app.models.llm_models import LLMModel
+from app.schemas.chatbot_configs import ChatbotConfigCreate
 
 logger = logging.getLogger(__name__)
 
@@ -337,6 +338,34 @@ class ChatbotConfigService:
             "enable_multimodal": settings.CHATBOT_DEFAULT_ENABLE_MULTIMODAL,
             "max_images": settings.CHATBOT_DEFAULT_MAX_IMAGES,
         }
+
+
+    async def provision_default_chatbot(
+        self, db: AsyncSession, tenant_id: int, tenant_name: str
+    ) -> ChatbotConfig:
+        """
+        Create the single default chatbot a tenant gets automatically at
+        creation time. There is no user-facing chatbot creation flow anymore
+        — every tenant has exactly one chatbot, provisioned here.
+
+        Args:
+            db: Database session
+            tenant_id: The newly created tenant's ID
+            tenant_name: Used as the chatbot's display title
+
+        Returns:
+            The created ChatbotConfig
+        """
+        return await chatbot_config.create(
+            db,
+            ChatbotConfigCreate(
+                tenant_id=tenant_id,
+                name="Default Assistant",
+                title=tenant_name,
+                welcome_message="Hi! How can I help you today?",
+                is_default=True,
+            ),
+        )
 
 
 # Global chatbot config service instance
