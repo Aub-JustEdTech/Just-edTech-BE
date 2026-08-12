@@ -56,6 +56,12 @@ class PendingClassification(BaseModel):
     # (not FK) so a batch row can be deleted for cleanup without stranding
     # pending rows; the status field is the source of truth for state.
     batch_id = Column(String(64), nullable=True)
-    # pending | submitted | applied | failed
+    # pending | submitted | applied | failed | dead_letter
     status = Column(String(16), nullable=False, default="pending")
     error_message = Column(Text, nullable=True)
+    # Number of times this chunk has been reset to 'pending' after its batch
+    # ended failed/expired/cancelled. Capped by
+    # HEATMAP_INGEST_MAX_BATCH_RETRIES in poll_batch -- once exceeded, the
+    # row is parked at 'dead_letter' instead of being retried again, so a
+    # batch that keeps failing for a content reason doesn't retry forever.
+    retry_count = Column(Integer, nullable=False, default=0, server_default="0")
