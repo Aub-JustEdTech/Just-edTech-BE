@@ -18,6 +18,8 @@ from app.schemas.school_scraper import (
     CandidateUrl,
     DiscoverRequest,
     DiscoverResponse,
+    IngestScrapedMediaRequest,
+    IngestScrapedMediaResponse,
     MediaFileResult,
     MediaTypeSummary,
     ScrapeMediaRequest,
@@ -275,5 +277,72 @@ async def backfill_years(
         message=(
             f"Re-evaluated {len(rows)} skipped_year rows: "
             f"{enqueued} re-queued, {skipped} still out of range."
+        ),
+    )
+
+
+@router.post(
+    "/ingest",
+    response_model=IngestScrapedMediaResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Manually dispatch scraped-media ingestion for the caller's tenant (admin)",
+)
+async def trigger_ingestion(
+    payload: IngestScrapedMediaRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+) -> IngestScrapedMediaResponse:
+    """Dispatch `ingest_scraped_media` for scraped_media rows matching the filter.
+
+    Same dispatch logic as `scripts/school_data/bulk_ingest_scraped_media.py`
+    (download/dedupe → Document → `process_document_pipeline`), exposed as
+    an on-demand API trigger alongside the CLI script and the 15-day
+    recheck sweep, for kicking off a district (or a small test batch)
+    without shell access to the box running Celery.
+
+    Capped at `limit` rows per call -- dispatched rows leave the filtered
+    `status`, so calling again with the same filter naturally pages through
+    the rest.
+    """
+    from app.crud.schools import (
+        count_scraped_media_by_status,
+        list_scraped_media,
+        list_stale_in_progress_media,
+        update_scraped_media,
+    )
+    from app.tasks.school_scraper_tasks import ingest_scraped_media
+
+    reset_stale = 0
+    if payload.reset_stale_minutes > 0:
+        stale = await list_stale_in_progress_media(
+            db, current_user.tenant_id, payload.reset_stale_minutes
+        )
+        for sm in stale:
+            await update_scraped_media(db, sm.id, status="discovered")
+        reset_stale = len(stale)
+
+    status_counts_before = await count_scraped_media_by_status(
+        db, current_user.tenant_id
+    )
+
+    items, _total = await list_scraped_media(
+        db,
+        current_user.tenant_id,
+        school_id=payload.school_id,
+        status=payload.status,
+        limit=payload.limit,
+    )
+
+    for sm in items:
+        ingest_scraped_media.delay(sm.id)
+
+    scope = f" for school_id={payload.school_id}" if payload.school_id else ""
+    return IngestScrapedMediaResponse(
+        enqueued=len(items),
+        reset_stale=reset_stale,
+        status_counts_before=status_counts_before,
+        message=(
+            f"Enqueued {len(items)} scraped_media row(s) with "
+            f"status='{payload.status}'{scope}."
         ),
     )

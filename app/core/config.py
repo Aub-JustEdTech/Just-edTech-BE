@@ -80,6 +80,19 @@ class Settings(BaseSettings):
     CHROMA_COLLECTION_PREFIX: str = "tenant"
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_COLLECTION_PREFIX: str = "justedtech"
+    # Points per upsert call. A single request carrying hundreds of points
+    # (each with a full-text payload) can exceed the client's write timeout.
+    QDRANT_UPSERT_BATCH_SIZE: int = 100
+    # qdrant-client's own default (5s) is too short once the collection is
+    # under sustained load (e.g. apply_batch_results writing thousands of
+    # points back-to-back) -- observed causing widespread ReadTimeouts on
+    # an 8k-chunk apply run.
+    QDRANT_CLIENT_TIMEOUT_SECONDS: int = 30
+    # Per-point set_payload retries during apply_batch_results before a
+    # chunk is given up on and marked 'failed'. A raised timeout budget
+    # (above) covers most cases; this covers the rest without needing a
+    # full batch resubmission for a handful of transient blips.
+    HEATMAP_INGEST_APPLY_SET_PAYLOAD_RETRIES: int = 2
 
     # Future: Other vector stores
     PINECONE_API_KEY: str | None = None
@@ -114,6 +127,16 @@ class Settings(BaseSettings):
     # Max chunks per OpenAI Batch API submission. The API caps at 50,000
     # requests per batch; we use a smaller default to keep batches quick.
     HEATMAP_INGEST_BATCH_SIZE: int = 50_000
+    # A chunk whose batch ends failed/expired/cancelled is reset to
+    # 'pending' for resubmission. After this many resets it's parked at
+    # 'dead_letter' instead, so a batch that keeps failing for a content
+    # reason (not a transient bug) doesn't retry forever.
+    HEATMAP_INGEST_MAX_BATCH_RETRIES: int = 3
+    # apply_batch_results commits progress every N processed chunks instead
+    # of once at the very end. Without this, a single failure late in a
+    # large batch (e.g. one bad heatmap_aggregate row) rolls back every
+    # chunk's classification result, not just the one that failed.
+    HEATMAP_INGEST_APPLY_COMMIT_BATCH_SIZE: int = 200
     # When True, the heatmap service returns canned sample data instead of
     # reading heatmap_aggregate + Qdrant. Useful for local dev without a
     # populated vector store. Default False (use real data).

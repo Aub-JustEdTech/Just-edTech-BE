@@ -22,6 +22,7 @@ import logging
 import re
 from typing import Any
 
+from langsmith import traceable
 from pydantic import ValidationError
 
 from app.core.config import settings
@@ -194,6 +195,7 @@ class DocClassifier:
         get_llm_api_key()
         self._client = get_async_openai_client(timeout=timeout_s)
 
+    @traceable(name="doc_classifier_classify")
     async def classify(
         self,
         filename: str,

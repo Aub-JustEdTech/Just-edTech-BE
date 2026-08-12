@@ -33,7 +33,9 @@ class QdrantStore(VectorStore):
         try:
             # Disable version check for compatibility with older servers
             self.client = QdrantClient(
-                url=self.url, check_compatibility=False
+                url=self.url,
+                check_compatibility=False,
+                timeout=settings.QDRANT_CLIENT_TIMEOUT_SECONDS,
             )
             logger.info(f"Qdrant initialized with URL: {self.url}")
         except Exception as e:
@@ -303,71 +305,80 @@ class QdrantStore(VectorStore):
         Used by the heatmap ingest pipeline (step6_accumulate_batch) which
         needs the per-chunk point IDs to write pending_classifications rows
         and later apply batch results via set_payload.
+
+        Upserts are batched (QDRANT_UPSERT_BATCH_SIZE points/call) and a
+        failed batch is raised rather than swallowed into an empty result:
+        a silent [] here previously got reported as pipeline success with
+        nothing actually stored.
         """
-        try:
-            if not chunks or not embeddings or not metadatas:
-                logger.warning("Empty chunks, embeddings, or metadatas provided")
-                return []
+        if not chunks or not embeddings or not metadatas:
+            logger.warning("Empty chunks, embeddings, or metadatas provided")
+            return []
 
-            if len(chunks) != len(embeddings) != len(metadatas):
-                logger.error("Mismatch in lengths of chunks, embeddings, and metadatas")
-                return []
+        if len(chunks) != len(embeddings) != len(metadatas):
+            logger.error("Mismatch in lengths of chunks, embeddings, and metadatas")
+            return []
 
-            # Get tenant_id from first metadata
-            tenant_id = metadatas[0].get("tenant_id")
-            if not tenant_id:
-                logger.error("tenant_id not found in metadata")
-                return []
+        # Get tenant_id from first metadata
+        tenant_id = metadatas[0].get("tenant_id")
+        if not tenant_id:
+            logger.error("tenant_id not found in metadata")
+            return []
 
-            vector_size = len(embeddings[0]) if embeddings else 1536
-            collection_name = await self._get_or_create_collection(tenant_id, vector_size)
+        vector_size = len(embeddings[0]) if embeddings else 1536
+        collection_name = await self._get_or_create_collection(tenant_id, vector_size)
 
-            # Prepare points for Qdrant
-            # Use dict format for better compatibility with older server versions
-            points = []
-            point_ids: list[str] = []
-            for i, (chunk, embedding, metadata) in enumerate(
-                zip(chunks, embeddings, metadatas)
-            ):
-                # Generate a proper UUID for the point ID
-                # Qdrant only accepts unsigned integers or valid UUIDs
-                # We generate a unique UUID4 for each chunk
-                point_id = str(uuid.uuid4())
-                point_ids.append(point_id)
+        # Prepare points for Qdrant
+        # Use dict format for better compatibility with older server versions
+        points = []
+        point_ids: list[str] = []
+        for i, (chunk, embedding, metadata) in enumerate(
+            zip(chunks, embeddings, metadatas)
+        ):
+            # Generate a proper UUID for the point ID
+            # Qdrant only accepts unsigned integers or valid UUIDs
+            # We generate a unique UUID4 for each chunk
+            point_id = str(uuid.uuid4())
+            point_ids.append(point_id)
 
-                # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
-                # Qdrant payload can contain: str, int, float, bool, list, dict
-                normalized_metadata = {}
-                for key, value in metadata.items():
-                    if value is None:
-                        continue  # Skip None values
-                    elif isinstance(value, (str, int, float, bool)):
-                        normalized_metadata[key] = value
-                    elif isinstance(value, (list, dict)):
-                        # Qdrant supports nested structures
-                        normalized_metadata[key] = value
-                    else:
-                        normalized_metadata[key] = str(value)
+            # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
+            # Qdrant payload can contain: str, int, float, bool, list, dict
+            normalized_metadata = {}
+            for key, value in metadata.items():
+                if value is None:
+                    continue  # Skip None values
+                elif isinstance(value, (str, int, float, bool)):
+                    normalized_metadata[key] = value
+                elif isinstance(value, (list, dict)):
+                    # Qdrant supports nested structures
+                    normalized_metadata[key] = value
+                else:
+                    normalized_metadata[key] = str(value)
 
-                # Ensure tenant_id is consistent
-                normalized_metadata["tenant_id"] = tenant_id
-                normalized_metadata["document_id"] = document_id
-                normalized_metadata["text"] = chunk  # Store text in payload
-                normalized_metadata["chunk_index"] = i  # Store index for reference
+            # Ensure tenant_id is consistent
+            normalized_metadata["tenant_id"] = tenant_id
+            normalized_metadata["document_id"] = document_id
+            normalized_metadata["text"] = chunk  # Store text in payload
+            normalized_metadata["chunk_index"] = i  # Store index for reference
 
-                # Use dict format for compatibility with older Qdrant server versions
-                points.append(
-                    {
-                        "id": point_id,
-                        "vector": embedding,
-                        "payload": normalized_metadata,
-                    }
-                )
+            # Use dict format for compatibility with older Qdrant server versions
+            points.append(
+                {
+                    "id": point_id,
+                    "vector": embedding,
+                    "payload": normalized_metadata,
+                }
+            )
 
+        batch_size = settings.QDRANT_UPSERT_BATCH_SIZE
+        for start in range(0, len(points), batch_size):
+            batch = points[start : start + batch_size]
             try:
                 await asyncio.to_thread(
                     self.client.upsert,
-                    collection_name=collection_name, points=points, wait=True,
+                    collection_name=collection_name,
+                    points=batch,
+                    wait=True,
                 )
             except UnexpectedResponse as e:
                 if "PointInsertOperations" in str(e):
@@ -376,19 +387,17 @@ class QdrantStore(VectorStore):
                         "using individual point inserts via REST API"
                     )
                     await asyncio.to_thread(
-                        self._upsert_points_individually, collection_name, points,
+                        self._upsert_points_individually,
+                        collection_name,
+                        batch,
                     )
                 else:
                     raise
 
-            logger.info(
-                f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
-            )
-            return point_ids
-
-        except Exception as e:
-            logger.error(f"Error adding chunks to Qdrant: {e}", exc_info=True)
-            return []
+        logger.info(
+            f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
+        )
+        return point_ids
 
     async def search(
         self,
@@ -789,36 +798,36 @@ class QdrantStore(VectorStore):
     async def update_metadata(
         self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int
     ) -> bool:
-        """Update metadata for chunks"""
-        try:
-            collection_name = self._get_collection_name(tenant_id)
+        """Update metadata for chunks.
 
-            points = await asyncio.to_thread(
-                self.client.retrieve,
+        Raises on failure rather than swallowing it -- callers (e.g. the
+        batch-classification apply step) rely on the exception to mark a
+        chunk 'failed' instead of treating a no-op write as success.
+        """
+        collection_name = self._get_collection_name(tenant_id)
+
+        points = await asyncio.to_thread(
+            self.client.retrieve,
+            collection_name=collection_name,
+            ids=chunk_ids,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        for point in points:
+            existing_payload = point.payload or {}
+            updated_payload = {**existing_payload, **metadata}
+            updated_payload["tenant_id"] = tenant_id
+
+            await asyncio.to_thread(
+                self.client.set_payload,
                 collection_name=collection_name,
-                ids=chunk_ids,
-                with_payload=True,
-                with_vectors=False,
+                payload=updated_payload,
+                points=[point.id],
             )
 
-            for point in points:
-                existing_payload = point.payload or {}
-                updated_payload = {**existing_payload, **metadata}
-                updated_payload["tenant_id"] = tenant_id
-
-                await asyncio.to_thread(
-                    self.client.set_payload,
-                    collection_name=collection_name,
-                    payload=updated_payload,
-                    points=[point.id],
-                )
-
-            logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error updating metadata: {e}", exc_info=True)
-            return False
+        logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
+        return True
 
     async def add_image_captions(
         self,

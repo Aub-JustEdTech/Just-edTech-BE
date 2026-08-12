@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 from sqlalchemy import func, select
@@ -339,6 +339,87 @@ async def count_scraped_media(
         ScrapedMedia.school_id == school_id
     )
     return (await db.execute(stmt)).scalar_one()
+
+
+async def count_scraped_media_by_status(
+    db: AsyncSession, tenant_id: int
+) -> dict[str, int]:
+    """Return {status: count} for all scraped_media rows under a tenant.
+
+    Used to report bulk-ingestion progress (discovered/completed/failed/...)
+    without pulling every row into memory.
+    """
+    stmt = (
+        select(ScrapedMedia.status, func.count(ScrapedMedia.id))
+        .where(ScrapedMedia.tenant_id == tenant_id)
+        .group_by(ScrapedMedia.status)
+    )
+    rows = (await db.execute(stmt)).all()
+    return dict(rows)
+
+
+async def scraped_media_status_by_school(db: AsyncSession, tenant_id: int) -> list[dict]:
+    """Per-district status rollup: one row per school with counts by status.
+
+    Ordered by backlog (discovered count) descending so districts furthest
+    behind on ingestion surface first. Used for an ops-facing view across
+    all 400 districts, since count_scraped_media_by_status only rolls up
+    to the whole tenant.
+    """
+    stmt = (
+        select(
+            ScrapedMedia.school_id,
+            ScrapedMedia.school_org_code,
+            ScrapedMedia.school_name,
+            ScrapedMedia.status,
+            func.count(ScrapedMedia.id),
+        )
+        .where(ScrapedMedia.tenant_id == tenant_id)
+        .group_by(
+            ScrapedMedia.school_id,
+            ScrapedMedia.school_org_code,
+            ScrapedMedia.school_name,
+            ScrapedMedia.status,
+        )
+    )
+    rows = (await db.execute(stmt)).all()
+
+    by_school: dict[int, dict] = {}
+    for school_id, org_code, school_name, media_status, count in rows:
+        entry = by_school.setdefault(
+            school_id,
+            {
+                "school_id": school_id,
+                "org_code": org_code,
+                "school_name": school_name,
+                "total": 0,
+                "status_counts": {},
+            },
+        )
+        entry["status_counts"][media_status] = count
+        entry["total"] += count
+
+    results = list(by_school.values())
+    results.sort(key=lambda e: e["status_counts"].get("discovered", 0), reverse=True)
+    return results
+
+
+async def list_stale_in_progress_media(
+    db: AsyncSession, tenant_id: int, older_than_minutes: int
+) -> list[ScrapedMedia]:
+    """Return rows stuck in 'downloading'/'ingesting' past a staleness cutoff.
+
+    A worker crash mid-ingest leaves a row in a transient status forever
+    (nothing times it out). The bulk-ingest script resets these back to
+    'discovered' before dispatching so a re-run can pick them up again.
+    """
+    cutoff = datetime.utcnow() - timedelta(minutes=older_than_minutes)
+    stmt = select(ScrapedMedia).where(
+        ScrapedMedia.tenant_id == tenant_id,
+        ScrapedMedia.status.in_(["downloading", "ingesting"]),
+        ScrapedMedia.updated_at < cutoff,
+    )
+    return list((await db.execute(stmt)).scalars().all())
 
 
 async def list_skipped_year_media(

@@ -327,7 +327,19 @@ class BatchClassifier:
     # ------------------------------------------------------------------
 
     async def poll_batch(self, db: AsyncSession, batch_id: str) -> BatchClassificationJob:
-        """Refresh a batch job's status from OpenAI."""
+        """Refresh a batch job's status from OpenAI.
+
+        If the batch ended in failed/expired/cancelled, resets its
+        still-'submitted' pending_classifications rows back to 'pending' so
+        the next submit picks them back up -- otherwise they'd be stranded
+        pointing at a dead batch_id forever.
+
+        Each reset increments the row's retry_count. Once it exceeds
+        HEATMAP_INGEST_MAX_BATCH_RETRIES, the row is parked at
+        'dead_letter' instead of 'pending' -- a batch failing repeatedly for
+        a content reason (not a transient bug) would otherwise retry on
+        every daily submit forever.
+        """
         job = (
             await db.execute(
                 select(BatchClassificationJob).where(
@@ -347,6 +359,50 @@ class BatchClassifier:
                 job.error_message = "; ".join(
                     (getattr(e, "message", "") or "") for e in errs
                 ) or None
+
+        if batch.status in ("failed", "expired", "cancelled"):
+            stranded = (
+                (
+                    await db.execute(
+                        select(PendingClassification).where(
+                            PendingClassification.batch_id == batch_id,
+                            PendingClassification.status == "submitted",
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            max_retries = int(
+                getattr(settings, "HEATMAP_INGEST_MAX_BATCH_RETRIES", 3)
+            )
+            reset_count = 0
+            dead_lettered = 0
+            for row in stranded:
+                row.retry_count += 1
+                row.batch_id = None
+                if row.retry_count > max_retries:
+                    row.status = "dead_letter"
+                    row.error_message = (
+                        f"batch {batch_id} ended {batch.status}; exceeded "
+                        f"max retries ({max_retries})"
+                    )
+                    dead_lettered += 1
+                else:
+                    row.status = "pending"
+                    row.error_message = (
+                        f"batch {batch_id} ended {batch.status}; "
+                        f"retry {row.retry_count}/{max_retries}"
+                    )
+                    reset_count += 1
+            if stranded:
+                logger.warning(
+                    f"Batch {batch_id} ended {batch.status}; reset "
+                    f"{reset_count} chunk(s) back to pending for resubmission, "
+                    f"{dead_lettered} chunk(s) moved to dead_letter "
+                    f"(exceeded {max_retries} retries)"
+                )
+
         await db.commit()
         logger.info(f"Batch {batch_id} status: {job.status}")
         return job
@@ -357,7 +413,7 @@ class BatchClassifier:
 
     async def apply_batch_results(
         self, db: AsyncSession, batch_id: str
-    ) -> dict[str, int]:
+    ) -> dict[str, Any]:
         """
         Download the output JSONL for a completed batch, write the
         classification results to Qdrant (per-point set_payload), upsert
@@ -416,6 +472,24 @@ class BatchClassifier:
         # Cache tenant_id per document_id to avoid re-querying.
         tenant_cache: dict[int, int] = {}
 
+        # Commit progress periodically rather than once at the end -- a
+        # single failure late in a large batch (e.g. one bad
+        # heatmap_aggregate row) must not roll back every chunk already
+        # classified. expire_on_commit=False on AsyncSessionLocal means
+        # objects already in `pending_rows` stay usable after a mid-loop
+        # commit without needing a re-fetch.
+        commit_batch_size = int(
+            getattr(settings, "HEATMAP_INGEST_APPLY_COMMIT_BATCH_SIZE", 200)
+        )
+        uncommitted_count = 0
+
+        async def _checkpoint() -> None:
+            nonlocal uncommitted_count
+            uncommitted_count += 1
+            if uncommitted_count >= commit_batch_size:
+                await db.commit()
+                uncommitted_count = 0
+
         # First parse all lines.
         for line in output_text.splitlines():
             line = line.strip()
@@ -441,6 +515,7 @@ class BatchClassifier:
                 pending.status = "failed"
                 pending.error_message = json.dumps(error)[:1000]
                 stats["failed"] += 1
+                await _checkpoint()
                 continue
 
             try:
@@ -452,6 +527,7 @@ class BatchClassifier:
                 pending.status = "failed"
                 pending.error_message = f"parse error: {exc}"[:1000]
                 stats["failed"] += 1
+                await _checkpoint()
                 continue
 
             # Write the classification fields to the Qdrant point.
@@ -462,7 +538,8 @@ class BatchClassifier:
                     )
                 tenant_id = tenant_cache[pending.document_id]
                 if hasattr(vector_store, "update_metadata"):
-                    await vector_store.update_metadata(
+                    await self._update_metadata_with_retry(
+                        vector_store,
                         chunk_ids=[pending.qdrant_point_id],
                         metadata=self._build_payload_metadata(
                             classification, row_entity_type=pending.entity_type
@@ -477,6 +554,7 @@ class BatchClassifier:
                 pending.status = "failed"
                 pending.error_message = f"qdrant set_payload: {exc}"[:1000]
                 stats["failed"] += 1
+                await _checkpoint()
                 continue
 
             # Buffer for the aggregate upsert.
@@ -502,8 +580,32 @@ class BatchClassifier:
                     pending.id,
                 )
 
-        # Upsert heatmap_aggregate per (school, topic).
-        await self._upsert_heatmap_aggregate(db, per_doc_classifications)
+            await _checkpoint()
+
+        # Flush any remainder before the aggregate step -- per-chunk
+        # classification results must be durable even if the aggregate
+        # upsert below fails, since heatmap_aggregate has its own nightly
+        # reconcile_heatmap_aggregate safety net but pending_classifications
+        # does not.
+        await db.commit()
+
+        # Upsert heatmap_aggregate per (school, topic). Failures here are
+        # logged but must not roll back or block the per-chunk results
+        # already committed above -- reconcile_heatmap_aggregate (nightly)
+        # recomputes this table from Qdrant and will pick up the slack.
+        try:
+            await self._upsert_heatmap_aggregate(db, per_doc_classifications)
+            await db.commit()
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                f"heatmap_aggregate upsert failed for batch {batch_id}; "
+                f"{stats['applied']} chunk result(s) are still applied and "
+                f"safe. Nightly reconcile_heatmap_aggregate will backfill "
+                f"the aggregate: {exc}",
+                exc_info=True,
+            )
+            await db.rollback()
+            stats["aggregate_failed"] = True
 
         # Persist output S3 key on the job row.
         output_s3_key = (
@@ -612,6 +714,35 @@ class BatchClassifier:
         if doc is None:
             return None
         return doc.state
+
+    async def _update_metadata_with_retry(
+        self,
+        vector_store: Any,
+        *,
+        chunk_ids: list[str],
+        metadata: dict[str, Any],
+        tenant_id: int,
+    ) -> None:
+        """Retry a single point's set_payload a few times before giving up.
+
+        At ~8k-chunk apply volumes, Qdrant intermittently times out on a
+        handful of points even with a generous client timeout. Retrying
+        cheaply here avoids marking an otherwise-successful chunk 'failed'
+        (and needing a full batch resubmission) for a transient blip.
+        """
+        max_retries = int(
+            getattr(settings, "HEATMAP_INGEST_APPLY_SET_PAYLOAD_RETRIES", 2)
+        )
+        for attempt in range(max_retries + 1):
+            try:
+                await vector_store.update_metadata(
+                    chunk_ids=chunk_ids, metadata=metadata, tenant_id=tenant_id
+                )
+                return
+            except Exception:
+                if attempt >= max_retries:
+                    raise
+                await asyncio.sleep(0.5 * (attempt + 1))
 
     async def _tenant_id_for_doc(
         self, db: AsyncSession, document_id: int
