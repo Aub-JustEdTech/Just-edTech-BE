@@ -13,6 +13,7 @@ import json
 import logging
 from typing import Any
 
+from langsmith import traceable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -119,6 +120,7 @@ class DocumentSummarizer:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    @traceable(name="document_summarizer_call_llm")
     async def _call_llm(
         self, text: str, document_id: int
     ) -> dict[str, Any] | None:
