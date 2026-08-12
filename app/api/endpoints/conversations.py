@@ -18,6 +18,7 @@ from app.models.documents import Document
 from app.schemas.conversations import (
     ConversationListResponse,
     ConversationResponse,
+    CreateEmptyConversationRequest,
 )
 from app.schemas.messages import (
     MessageListResponse,
@@ -275,6 +276,65 @@ async def delete_conversation(
 
     return success_response( data={"message": "Conversation deleted successfully"}, status_code=status.HTTP_200_OK )
     
+
+@router.post(
+    "/empty",
+    response_model=ConversationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_empty_conversation(
+    payload: CreateEmptyConversationRequest,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
+    db: AsyncSession = Depends(get_db),
+    current_user_or_consumer: User
+    | ChatConsumer = require_api_key_user_or_chat_consumer,
+):
+    """Create a conversation with no first message — backs the "New Chat"
+    action, which selects the new chat immediately instead of waiting on
+    RAG. The conversation gets a generic, auto-generated title; it is
+    replaced with a content-derived one (see generate_conversation_title)
+    the moment the first real message is sent.
+    """
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    if isinstance(current_user_or_consumer, ChatConsumer):
+        user_id = None
+        chat_consumer_id = current_user_or_consumer.id
+    else:
+        user_id = current_user_or_consumer.id
+        chat_consumer_id = None
+
+    chatbot_config_obj = await chatbot_config_service.get_chatbot_config(
+        db, payload.chatbot_id
+    )
+    if not chatbot_config_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found"
+        )
+    if chatbot_config_obj.tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chatbot does not belong to your tenant",
+        )
+
+    version_index = chatbot_config_service.get_latest_version_index(chatbot_config_obj)
+
+    db_conversation = await conversation.create_conversation(
+        db,
+        tenant_id=tenant_id,
+        chatbot_config_id=payload.chatbot_id,
+        title="New Chat",
+        user_id=user_id,
+        chat_consumer_id=chat_consumer_id,
+        chatbot_config_version_index=version_index,
+    )
+
+    return success_response(
+        data=ConversationResponse.model_validate(db_conversation),
+        status_code=status.HTTP_201_CREATED,
+    )
+
 
 @router.post("", response_model=SendMessageResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
