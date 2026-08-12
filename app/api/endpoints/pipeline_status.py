@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crud.schools import scraped_media_status_by_school
 from app.models.documents import Document
 from app.models.processing_stages import DocumentProcessingStage
 from app.schemas.users import User
@@ -15,6 +16,40 @@ from app.utils.redis_pipeline import get_redis_tracker
 from app.utils.response import success_response
 
 router = APIRouter(prefix="/pipeline")
+
+
+@router.get("/scraped-media/districts")
+async def get_scraped_media_district_status(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+):
+    """
+    Per-district scraped-media ingestion status, across all schools in the
+    tenant. Ordered by backlog (discovered count) descending, so districts
+    furthest behind on ingestion surface first.
+
+    Example Response:
+    ```json
+    {
+        "districts": [
+            {
+                "school_id": 408,
+                "org_code": "0123",
+                "school_name": "Example Regional School District",
+                "total": 42,
+                "status_counts": {
+                    "discovered": 8,
+                    "completed": 30,
+                    "failed": 2,
+                    "skipped_duplicate": 2
+                }
+            }
+        ]
+    }
+    ```
+    """
+    districts = await scraped_media_status_by_school(db, current_user.tenant_id)
+    return success_response(data={"districts": districts})
 
 
 @router.get("/{document_id}/status")
