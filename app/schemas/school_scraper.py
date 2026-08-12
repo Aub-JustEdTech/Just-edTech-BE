@@ -124,3 +124,48 @@ class BackfillYearsResponse(BaseModel):
     enqueued: int
     skipped: int
     message: str
+
+
+class IngestScrapedMediaRequest(BaseModel):
+    """Request body for the manual ingestion-trigger endpoint.
+
+    Mirrors scripts/school_data/bulk_ingest_scraped_media.py: dispatches the
+    existing `ingest_scraped_media` Celery task for scraped_media rows
+    matching the filter, scoped to the caller's tenant. `status` is
+    restricted to 'discovered' (the normal queue) and 'failed' (manual
+    retry) -- 'skipped_year' rows have their own re-evaluation flow via
+    /backfill-years and must not be re-dispatched directly here.
+    """
+
+    school_id: int | None = Field(
+        None,
+        description="Scope to a single school. Omit to dispatch across the "
+        "whole tenant.",
+    )
+    status: Literal["discovered", "failed"] = Field(
+        "discovered",
+        description="scraped_media status to pull rows from.",
+    )
+    limit: int = Field(
+        200,
+        ge=1,
+        le=1000,
+        description="Max rows to dispatch in this call. Call again to "
+        "continue past this page.",
+    )
+    reset_stale_minutes: int = Field(
+        0,
+        ge=0,
+        description="Reset rows stuck in 'downloading'/'ingesting' longer "
+        "than this many minutes back to 'discovered' before dispatching. "
+        "0 disables.",
+    )
+
+
+class IngestScrapedMediaResponse(BaseModel):
+    """Response from the manual ingestion-trigger endpoint."""
+
+    enqueued: int
+    reset_stale: int
+    status_counts_before: dict[str, int]
+    message: str
