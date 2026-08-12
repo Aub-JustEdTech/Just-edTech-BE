@@ -108,7 +108,7 @@ async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
     set at upload time, which for most of these scraped files is "attachment".
     """
     keyed = [
-        (item, item.s3_key_raw or item.s3_key_text)
+        (item, item.s3_key_raw or item.s3_key_text, bool(item.s3_key_raw))
         for item in media
         if item.s3_key_raw or item.s3_key_text
     ]
@@ -122,10 +122,19 @@ async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     )
 
-    def _presign(item: ScrapedMediaOut, key: str):
+    def _presign(item: ScrapedMediaOut, key: str, is_raw_file: bool):
         safe_name = (item.original_name or f"document_{item.id}").replace('"', "")
-        content_type = MIME_BY_EXTENSION.get(
-            (item.file_extension or "").lower(), "application/octet-stream"
+        # `file_extension` is only ever set on an original uploaded/downloaded
+        # file (s3_key_raw). When there's no raw copy — every YouTube item,
+        # and any audio/video item never downloaded — the key we're presigning
+        # is the transcript text instead, so the extension-based lookup has
+        # nothing to key off and would silently fall back to
+        # application/octet-stream, which browsers force-download regardless
+        # of the inline Content-Disposition set below.
+        content_type = (
+            MIME_BY_EXTENSION.get((item.file_extension or "").lower(), "application/octet-stream")
+            if is_raw_file
+            else MIME_BY_EXTENSION[".transcript"]
         )
         return s3_manager.get_presigned_url(
             s3_key=key,
@@ -135,10 +144,10 @@ async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
         )
 
     urls = await asyncio.gather(
-        *(_presign(item, key) for item, key in keyed),
+        *(_presign(item, key, is_raw_file) for item, key, is_raw_file in keyed),
         return_exceptions=True,
     )
-    for (item, key), url in zip(keyed, urls):
+    for (item, key, _is_raw_file), url in zip(keyed, urls):
         if isinstance(url, BaseException):
             logger.warning(
                 "Failed to presign s3_url for scraped media %s (key=%s): %s",
