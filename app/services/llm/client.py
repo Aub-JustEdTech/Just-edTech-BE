@@ -38,12 +38,18 @@ def get_openrouter_headers() -> dict[str, str]:
 
 
 def normalize_model_name(model: str) -> str:
-    """Ensure model names include a provider prefix when using OpenRouter."""
+    """Normalize a model name for the active provider.
+
+    OpenRouter expects a `provider/model` id; direct OpenAI expects a bare
+    model name. Config defaults (e.g. "openai/gpt-4o-mini") were written for
+    OpenRouter, so under LLM_API_PROVIDER=openai the prefix must be stripped
+    before the name reaches the real OpenAI API.
+    """
     if not model:
         return model
-    if uses_openrouter() and "/" not in model:
-        return f"openai/{model}"
-    return model
+    if uses_openrouter():
+        return model if "/" in model else f"openai/{model}"
+    return model.split("/", 1)[1] if "/" in model else model
 
 
 def strip_model_provider_prefix(model: str) -> str:
