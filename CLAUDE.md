@@ -140,6 +140,7 @@ Rules and skills for this project live in `.claude/`. They are automatically loa
 | `code-review` | Review backend code / audit a change / self-review before merging *(read-only — no file edits)* |
 | `github-pr-create` | Open a PR / push and raise a pull request on GitHub |
 | `github-pr-review` | Review a PR / audit a pull request / check what a branch changes |
+| `restore-qdrant-snapshot` | Restore a teammate's Qdrant `.snapshot` dump into the local vector DB *(Bash+Read only)* |
 
 ### Key env vars to set in `.env`
 
