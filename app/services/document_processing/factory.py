@@ -11,6 +11,9 @@ from app.services.document_processing.processors.markdown_processor import (
 )
 from app.services.document_processing.processors.pdf_processor import PDFProcessor
 from app.services.document_processing.processors.pptx_processor import PPTXProcessor
+from app.services.document_processing.processors.transcript_processor import (
+    TranscriptProcessor,
+)
 from app.services.document_processing.processors.xlsx_processor import XLSXProcessor
 
 logger = logging.getLogger(__name__)
@@ -30,6 +33,8 @@ class ProcessorFactory:
         ".pptx": PPTXProcessor,
         ".xlsx": XLSXProcessor,
         ".xls": XLSXProcessor,
+        # Audio/video transcript envelope (JSON) — see TranscriptProcessor.
+        ".transcript": TranscriptProcessor,
     }
 
     @classmethod
@@ -39,7 +44,10 @@ class ProcessorFactory:
 
         processor_class = cls._processors.get(extension)
         if not processor_class:
-            raise ValueError(f"Unsupported file type: {extension}")
+            raise ValueError(
+                f"Unsupported file type: {extension!r} (from path {file_path!r}). "
+                f"Supported: {sorted(cls._processors)}"
+            )
 
         logger.debug(f"Selected {processor_class.__name__} for {extension}")
         return processor_class()

@@ -74,6 +74,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     chromium \
     tesseract-ocr \
     tesseract-ocr-eng \
+    # ffmpeg ships both `ffmpeg` and `ffprobe`. The default transcription mode
+    # (url_direct) uses only ffprobe, to read a remote media file's duration
+    # from its header without downloading it. ffmpeg itself is used only when
+    # TRANSCRIPTION_AUDIO_MODE=preprocess.
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
@@ -91,6 +96,7 @@ COPY --chown=app:app pyproject.toml alembic.ini gunicorn.conf.py ./
 # Create runtime folders required by app
 RUN mkdir -p \
     /app/temp_uploads \
+    /app/temp_uploads/media \
     /app/storage \
     /app/data/images \
     && chown -R app:app /app

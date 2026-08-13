@@ -38,12 +38,12 @@ def get_openrouter_headers() -> dict[str, str]:
 
 
 def normalize_model_name(model: str) -> str:
-    """Ensure model names include a provider prefix when using OpenRouter."""
+    """Add the provider/ prefix OpenRouter expects, or strip it for direct OpenAI calls."""
     if not model:
         return model
-    if uses_openrouter() and "/" not in model:
-        return f"openai/{model}"
-    return model
+    if uses_openrouter():
+        return model if "/" in model else f"openai/{model}"
+    return strip_model_provider_prefix(model)
 
 
 def strip_model_provider_prefix(model: str) -> str:

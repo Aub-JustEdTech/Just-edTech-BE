@@ -141,9 +141,9 @@ async def fetch_document_via_playwright_session(
 
     Raises ``RuntimeError`` on any failure (non-2xx, HTML error page,
     navigation error, Playwright unavailable). The caller
-    (``_fetch_media_payload`` in ``app/tasks/school_scraper_tasks.py``) is
+    (``_materialize_media`` in ``app/tasks/school_scraper_tasks.py``) is
     already wrapped by ``ingest_scraped_media``'s try/except + Celery
-    ``max_retries=2``, so failures surface as ``status="failed"`` rows
+    ``max_retries=3``, so failures surface as ``status="failed"`` rows
     that get retried automatically.
     """
     if timeout_ms is None:

@@ -49,7 +49,7 @@ from app.services.web_scraper._discovery_helpers import (
     parse_sitemap_xml as _parse_sitemap_xml_helper,
 )
 from app.services.web_scraper.year_filter import (
-    filter_media_files,
+    filter_media_files_async,
     should_crawl_page_url,
 )
 
@@ -57,6 +57,18 @@ if TYPE_CHECKING:
     from playwright.async_api import Browser, Playwright
 
 logger = logging.getLogger(__name__)
+
+# Matches YouTube URLs anywhere in raw HTML or a JS payload, so embeds hidden
+# in lazy-load attributes (data-src) are still discovered. Validation of the
+# video ID itself is left to extract_youtube_id.
+_YOUTUBE_IN_TEXT_PATTERN = re.compile(
+    r"https?://(?:www\.|m\.)?"
+    r"(?:youtube(?:-nocookie)?\.com/(?:watch\?[^\s\"'<>\\]*v=[A-Za-z0-9_-]{11}"
+    r"|embed/[A-Za-z0-9_-]{11}|v/[A-Za-z0-9_-]{11}"
+    r"|live/[A-Za-z0-9_-]{11}|shorts/[A-Za-z0-9_-]{11})"
+    r"|youtu\.be/[A-Za-z0-9_-]{11})",
+    re.IGNORECASE,
+)
 
 # User-Agent for HTTP requests.
 #
@@ -676,7 +688,82 @@ class SchoolScraperService:
             }
         )
 
-    def _extract_media_urls_from_text(
+    async def _append_youtube_media(
+        self,
+        media_files: list[dict],
+        seen_media: set[str],
+        *,
+        url: str,
+        page_url: str,
+        name: str | None = None,
+    ) -> bool:
+        """Append ``url`` as a YouTube item if it is one. Returns True if it was.
+
+        A sibling of ``_append_media_url`` rather than a branch inside it,
+        because that method's ``if not matched_ext: return`` is unconditional
+        and YouTube URLs have no file extension.
+
+        Dedup is on the CANONICAL url, so the same video linked as
+        ``youtu.be/X``, ``/embed/X`` and ``watch?v=X&t=90`` collapses to one
+        item — which is what stops us paying three times for one meeting.
+        """
+        from app.services.transcription.youtube import (
+            canonical_youtube_url,
+            fetch_youtube_title,
+            is_youtube_url,
+        )
+
+        canonical = canonical_youtube_url(url)
+        if not canonical:
+            return False
+        if canonical in seen_media:
+            return True
+
+        seen_media.add(canonical)
+        # Page context (anchor text, iframe title) usually supplies a real
+        # name; when it doesn't — or the "name" is just the URL again — fall
+        # back to the video's actual title via oEmbed, same as
+        # scripts/school_data/run_scrape_districts.py does. Otherwise
+        # original_name would just be the raw YouTube link.
+        if not name or is_youtube_url(name):
+            name = await fetch_youtube_title(canonical) or name
+        media_files.append(
+            {
+                "name": name or canonical,
+                "url": canonical,
+                # No extension exists for a YouTube video. Downstream
+                # consumers must treat file_extension as nullable.
+                "file_extension": None,
+                "media_type": "youtube",
+                "size_bytes": None,
+                "source_page_url": page_url,
+            }
+        )
+        return True
+
+    async def _extract_youtube_from_text(
+        self,
+        text: str,
+        page_url: str,
+        seen_media: set[str],
+        media_files: list[dict],
+    ) -> None:
+        """Catch YouTube embeds in lazy-load attrs and JS payloads.
+
+        Many CMS themes put the real embed in ``data-src`` and only promote it
+        to ``src`` client-side, so the parsed DOM never shows it.
+        """
+        if not text:
+            return
+        for match in _YOUTUBE_IN_TEXT_PATTERN.finditer(text):
+            await self._append_youtube_media(
+                media_files,
+                seen_media,
+                url=match.group(0),
+                page_url=page_url,
+            )
+
+    async def _extract_media_urls_from_text(
         self,
         text: str,
         page_url: str,
@@ -690,6 +777,8 @@ class SchoolScraperService:
         if not text:
             return
 
+        await self._extract_youtube_from_text(text, page_url, seen_media, media_files)
+
         pattern = self._media_url_pattern(all_ext)
         for match in pattern.finditer(text):
             self._append_media_url(
@@ -702,7 +791,7 @@ class SchoolScraperService:
                 audio_ext=audio_ext,
             )
 
-    def _extract_media_urls_from_json_scripts(
+    async def _extract_media_urls_from_json_scripts(
         self,
         soup: BeautifulSoup,
         page_url: str,
@@ -785,7 +874,7 @@ class SchoolScraperService:
             try:
                 payload = json.loads(raw)
             except json.JSONDecodeError:
-                self._extract_media_urls_from_text(
+                await self._extract_media_urls_from_text(
                     raw,
                     page_url,
                     all_ext,
@@ -797,7 +886,7 @@ class SchoolScraperService:
                 continue
             walk(payload)
 
-    def _extract_media_from_page(
+    async def _extract_media_from_page(
         self,
         html: str,
         page_url: str,
@@ -826,6 +915,10 @@ class SchoolScraperService:
             ("source", "src"),
             ("video", "src"),
             ("audio", "src"),
+            # School sites embed board-meeting recordings as YouTube iframes.
+            # Without these two, every such video is invisible to discovery.
+            ("iframe", "src"),
+            ("embed", "src"),
         ]
 
         for tag_name, attr in _tag_attrs:
@@ -837,6 +930,30 @@ class SchoolScraperService:
                 full_url = urljoin(page_url, raw)
                 parsed = urlparse(full_url)
                 path_lower = parsed.path.lower()
+
+                # YouTube URLs carry no file extension, so they must be
+                # matched before the extension gate below rejects them.
+                #
+                # The URL itself never carries a year (youtube.com/watch?v=...),
+                # so nearby text is the only cheap source the year filter can
+                # infer a date from — link text for <a>, else the iframe/embed's
+                # title, else its parent element's text (meeting listings
+                # commonly wrap the embed and its date label in one container).
+                if tag_name == "a":
+                    yt_name = elem.get_text(strip=True) or None
+                else:
+                    yt_name = elem.get("title") or None
+                    if not yt_name and elem.parent:
+                        yt_name = elem.parent.get_text(" ", strip=True)[:200] or None
+
+                if await self._append_youtube_media(
+                    media_files,
+                    seen_media,
+                    url=full_url,
+                    page_url=page_url,
+                    name=yt_name,
+                ):
+                    continue
 
                 filename_hint: str | None = None
                 if tag_name == "a":
@@ -921,7 +1038,7 @@ class SchoolScraperService:
 
         # Apptegy / Nuxt and similar CMS platforms embed document URLs in SSR
         # JSON payloads rather than plain <a href="...pdf"> tags.
-        self._extract_media_urls_from_json_scripts(
+        await self._extract_media_urls_from_json_scripts(
             soup,
             page_url,
             all_ext,
@@ -930,7 +1047,7 @@ class SchoolScraperService:
             seen_media,
             media_files,
         )
-        self._extract_media_urls_from_text(
+        await self._extract_media_urls_from_text(
             html,
             page_url,
             all_ext,
@@ -1151,15 +1268,15 @@ class SchoolScraperService:
 
             pages_crawled += 1
             if html:
-                media, sub_pages = self._extract_media_from_page(
+                media, sub_pages = await self._extract_media_from_page(
                     html, current_url, video_ext, audio_ext, doc_ext
                 )
-                all_media.extend(filter_media_files(media))
+                all_media.extend(await filter_media_files_async(media))
             else:
                 sub_pages = []
 
             if extra_media:
-                all_media.extend(filter_media_files(extra_media))
+                all_media.extend(await filter_media_files_async(extra_media))
 
             if depth < crawl_depth and not is_board:
                 # Board-platform visits are single-page only — don't enqueue

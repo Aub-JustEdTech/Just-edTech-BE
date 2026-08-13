@@ -22,6 +22,10 @@ from app.utils.school_calendar import derive_quarter_month, derive_school_year
 _QUARTER_MONTH_FIELD = "quarter_month"
 # Field name on Qdrant chunk payloads holding the academic-year string.
 _SCHOOL_YEAR_FIELD = "school_year"
+# Field name on Qdrant chunk payloads holding the per-chunk meeting date,
+# indexed as DATETIME (see `qdrant_store._ensure_payload_indexes`) so it
+# supports a native `Range` condition for the custom date-range filter.
+_MEETING_DATE_FIELD = "meeting_date"
 
 
 def previous_school_year(school_year: str) -> str:
@@ -96,3 +100,23 @@ def build_timeframe_filter(
 
     # Defensive — unknown preset applies no timeframe filter.
     return {}
+
+
+def build_date_range_filter(
+    start_date: date, end_date: date
+) -> dict[str, dict[str, str]]:
+    """Translate an explicit start/end date into a `range_match` fragment.
+
+    Returns `{"meeting_date": {"gte": iso, "lte": iso}}` spanning
+    midnight UTC on `start_date` through 23:59:59 UTC on `end_date`
+    (inclusive on both ends). Day-level granularity, unlike the
+    month/year-bucket presets above — this is the true custom date-range
+    filter, matched via a native Qdrant `Range` condition rather than an
+    enumerated bucket list.
+    """
+    return {
+        _MEETING_DATE_FIELD: {
+            "gte": f"{start_date.isoformat()}T00:00:00Z",
+            "lte": f"{end_date.isoformat()}T23:59:59Z",
+        }
+    }

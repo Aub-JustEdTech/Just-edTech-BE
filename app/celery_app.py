@@ -35,6 +35,17 @@ celery_app.conf.update(
         "app.tasks.school_scraper_tasks.ingest_scraped_media": {
             "queue": "scraping"
         },
+        "app.tasks.school_scraper_tasks.sweep_school_media": {
+            "queue": "scraping"
+        },
+        "app.tasks.school_scraper_tasks.scrape_media_batch": {
+            "queue": "scraping"
+        },
+        # Transcription is minutes-long and I/O-bound — the same workload shape
+        # the scraping queue already carries, and that queue runs with a 6000s
+        # soft limit. The documents queue is sized for second-scale parses; a
+        # long provider poll parked there would starve ordinary uploads.
+        "pipeline.transcribe_media": {"queue": "scraping"},
     },
     # Retry settings
     task_acks_late=True,  # Acknowledge after task completion
@@ -81,6 +92,16 @@ celery_app.conf.update(
             "task": "reconcile_heatmap_aggregate",
             "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
             "options": {"expires": 2 * 3600},
+        },
+        # Weekly sweep of every active school source URL, tenant-agnostic
+        # (no school_ids filter = all schools). Runs Monday 1:00 AM UTC,
+        # ahead of the 2:00-4:00 AM jobs above so they don't compete for the DB.
+        "sweep-school-media": {
+            "task": "app.tasks.school_scraper_tasks.sweep_school_media",
+            "schedule": crontab(
+                hour=1, minute=0, day_of_week=1
+            ),  # Weekly, Monday 1:00 AM UTC
+            "options": {"expires": 3 * 3600},
         },
     },
 )

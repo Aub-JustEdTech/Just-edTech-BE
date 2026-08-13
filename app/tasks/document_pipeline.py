@@ -533,6 +533,27 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
                 "spreadsheet chunks"
             )
 
+        # For transcripts, pre-chunk on utterance boundaries so each chunk keeps
+        # exact start_ms/end_ms/speaker. Stored in doc_metadata so step3 can use
+        # them without re-reading the envelope.
+        if ctx.document_type == ".transcript" and hasattr(processor, "chunk_transcript"):
+            transcript_chunks = processor.chunk_transcript(ctx.temp_file_path)
+            ctx.doc_metadata["_transcript_pre_chunks"] = [
+                c["text"] for c in transcript_chunks
+            ]
+            ctx.doc_metadata["_transcript_chunk_meta"] = [
+                {
+                    "start_ms": c["start_ms"],
+                    "end_ms": c["end_ms"],
+                    "speaker": c["speaker"],
+                }
+                for c in transcript_chunks
+            ]
+            logger.info(
+                f"[Doc {ctx.document_id}] Pre-computed {len(transcript_chunks)} "
+                "transcript chunks"
+            )
+
         # Extract images if enabled and PDF processor supports it
         extracted_images = []
         if (
@@ -946,8 +967,38 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
             db, chatbot_config_obj.id
         )
 
-        # For PDFs, chunk per page to preserve page_number metadata.
-        if ctx.document_type == ".pdf" and "_pdf_pages_text" in ctx.doc_metadata:
+        # Chunking strategy, one branch per document class. Pre-computed
+        # chunks (transcript, spreadsheet) win over the generic text chunker
+        # because they carry per-chunk metadata the chunker cannot recover.
+        #
+        # Popped unconditionally and branched on TRUTHINESS, not key presence:
+        # an empty pre-chunk list means the specialised chunker produced
+        # nothing, and must fall through to the generic chunker rather than
+        # hard-failing the document at "No chunks generated".
+        transcript_chunks = ctx.doc_metadata.pop("_transcript_pre_chunks", None)
+        transcript_chunk_meta = ctx.doc_metadata.pop("_transcript_chunk_meta", None)
+        xlsx_chunks = ctx.doc_metadata.pop("_xlsx_pre_chunks", None)
+        xlsx_chunk_meta = ctx.doc_metadata.pop("_xlsx_chunk_meta", None)
+
+        if transcript_chunks:
+            # Transcripts are pre-chunked on utterance boundaries so each
+            # chunk keeps exact start_ms/end_ms/speaker for click-to-jump.
+            ctx.chunks = transcript_chunks
+            ctx.chunk_metadatas = transcript_chunk_meta or []
+            logger.info(
+                f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
+                "transcript chunks"
+            )
+        elif xlsx_chunks:
+            # Spreadsheets use table-aware chunks (headers repeated per chunk).
+            ctx.chunks = xlsx_chunks
+            ctx.chunk_metadatas = xlsx_chunk_meta or []
+            logger.info(
+                f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
+                "spreadsheet chunks"
+            )
+        elif ctx.document_type == ".pdf" and ctx.doc_metadata.get("_pdf_pages_text"):
+            # PDFs chunk per page to preserve page_number metadata.
             chunker = Chunker(
                 chunk_size=chunking_config["chunk_size"],
                 chunk_overlap=chunking_config["chunk_overlap"],
@@ -968,23 +1019,27 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
                 f"[Doc {ctx.document_id}] Chunked PDF into {len(ctx.chunks)} chunks "
                 f"across {len(pages_text)} pages"
             )
-        # For spreadsheets use pre-computed table-aware chunks (headers repeated).
-        # For all other document types use the standard text chunker.
-        if "_xlsx_pre_chunks" in ctx.doc_metadata:
-            ctx.chunks = ctx.doc_metadata.pop("_xlsx_pre_chunks")
-            ctx.chunk_metadatas = ctx.doc_metadata.pop("_xlsx_chunk_meta", [])
-            logger.info(
-                f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
-                "spreadsheet chunks"
-            )
         else:
-            # If we already chunked a PDF above, don't overwrite.
-            if not ctx.chunks:
-                chunker = Chunker(
-                    chunk_size=chunking_config["chunk_size"],
-                    chunk_overlap=chunking_config["chunk_overlap"],
-                )
-                ctx.chunks = chunker.chunk_text(ctx.extracted_text)
+            ctx.chunks = Chunker(
+                chunk_size=chunking_config["chunk_size"],
+                chunk_overlap=chunking_config["chunk_overlap"],
+            ).chunk_text(ctx.extracted_text)
+
+        if not ctx.chunks:
+            # A specialised chunker produced nothing (e.g. a PDF whose pages
+            # are all whitespace). Fall back to the generic chunker on the
+            # extracted text rather than failing a document we DO have text
+            # for. Per-chunk metadata is dropped, which is the correct
+            # trade-off: losing page numbers beats losing the document.
+            logger.warning(
+                f"[Doc {ctx.document_id}] Specialised chunker produced no chunks; "
+                "falling back to the generic text chunker"
+            )
+            ctx.chunks = Chunker(
+                chunk_size=chunking_config["chunk_size"],
+                chunk_overlap=chunking_config["chunk_overlap"],
+            ).chunk_text(ctx.extracted_text)
+            ctx.chunk_metadatas = []
 
         if not ctx.chunks:
             raise ValueError("No chunks generated from document")
@@ -1411,10 +1466,13 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
 
         # Prepare metadata for vector store.
         # Strip internal pipeline keys before spreading onto every chunk.
+        # Any key prefixed with "_" is internal (e.g. _pdf_pages_text,
+        # _xlsx_pre_chunks, _transcript_pre_chunks) and must never be copied
+        # onto every chunk payload.
         doc_meta_clean = {
             k: v
             for k, v in ctx.doc_metadata.items()
-            if not k.startswith("_xlsx_")
+            if not k.startswith("_")
         }
         document = await db.get(Document, ctx.document_id)
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+from datetime import date
 from typing import Any
 
 from sqlalchemy import select
@@ -29,7 +30,10 @@ from app.schemas.heatmap_engine import (
     TimeframePreset,
     TopicCategory,
 )
-from app.services.heatmap_engine.timeframe import build_timeframe_filter
+from app.services.heatmap_engine.timeframe import (
+    build_date_range_filter,
+    build_timeframe_filter,
+)
 from app.services.vector_store.base import VectorStore
 from app.services.vector_store.factory import VectorStoreFactory, VectorStoreType
 from app.utils.s3 import S3Manager
@@ -75,20 +79,32 @@ class HeatmapEngineService:
         district_name: str | None,
         timeframe: TimeframePreset,
         categories: list[TopicCategory],
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> dict[str, Any]:
         """
         Assemble the engine-style filter fragments to hand to the vector store.
 
-        Returns a dict with `must_match`, `must_match_any`, and
-        `nested_match_any` keys ready to splat into `count_chunks` /
-        `filter_chunks`.
+        Returns a dict with `must_match`, `must_match_any`,
+        `nested_match_any`, and `range_match` keys ready to splat into
+        `count_chunks` / `filter_chunks`.
+
+        When both `start_date` and `end_date` are given, the custom
+        date-range filter (a `range_match` on `meeting_date`) is used
+        instead of the `timeframe` preset — the two are mutually
+        exclusive, and an explicit range always wins.
         """
         must_match: dict[str, Any] = {"classified": True}
         if district_name:
             must_match[_DISTRICT_NAME_FIELD] = district_name
 
-        # Timeframe → must_match_any fragment over quarter_month / school_year.
-        timeframe_fragment = build_timeframe_filter(timeframe)
+        must_match_any: dict[str, list] | None = None
+        range_match: dict[str, dict[str, str]] | None = None
+        if start_date and end_date:
+            range_match = build_date_range_filter(start_date, end_date)
+        else:
+            # Timeframe → must_match_any fragment over quarter_month / school_year.
+            must_match_any = build_timeframe_filter(timeframe) or None
 
         nested_match_any: dict[str, list] | None = None
         if categories:
@@ -98,8 +114,9 @@ class HeatmapEngineService:
 
         return {
             "must_match": must_match,
-            "must_match_any": timeframe_fragment or None,
+            "must_match_any": must_match_any,
             "nested_match_any": nested_match_any,
+            "range_match": range_match,
         }
 
     async def count_by_district(
@@ -111,21 +128,24 @@ class HeatmapEngineService:
         state: str = "MA",
         include_zero: bool = True,
         breakdown: bool = False,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> DistrictCountResponse:
         """
         Return one `DistrictCountItem` per active school for the tenant.
 
         For each school we issue a single Qdrant `count` call scoped to
         the district's name (the indexed payload field present on every
-        ingested chunk), the timeframe buckets, and the selected
-        `topic_tags` categories (or all categories if none are supplied).
-        MA has ~280 districts, so ~280 count calls is well within
-        sub-second budgets.
+        ingested chunk), the timeframe buckets (or the custom date range
+        when `start_date`/`end_date` are both given — see
+        `_build_filter_fragments`), and the selected `topic_tags`
+        categories (or all categories if none are supplied). MA has ~280
+        districts, so ~280 count calls is well within sub-second budgets.
 
         With `breakdown=True` each data-bearing district additionally gets
-        `top_category` / `top_category_count` — the highest-counting of the
-        selected categories. This costs extra counts, so it is opt-in; see
-        `_resolve_top_categories` for how they are kept down.
+        `top_category` / `top_category_count` / `category_counts` — the
+        full per-category breakdown of the selected categories. This costs
+        extra counts, so it is opt-in; see `_resolve_top_categories`.
         """
         vector_store = self._get_vector_store()
 
@@ -139,6 +159,8 @@ class HeatmapEngineService:
                 district_name=school.name,
                 timeframe=timeframe,
                 categories=categories,
+                start_date=start_date,
+                end_date=end_date,
             )
             count = await vector_store.count_chunks(
                 tenant_id=tenant_id,
@@ -163,6 +185,8 @@ class HeatmapEngineService:
                 tenant_id=tenant_id,
                 timeframe=timeframe,
                 categories=categories,
+                start_date=start_date,
+                end_date=end_date,
             )
 
         # Sort: charter first (drives the map), then by chunk_count desc.
@@ -179,6 +203,8 @@ class HeatmapEngineService:
             total_districts=len(items),
             total_chunks=total_chunks,
             districts=items,
+            start_date=start_date.isoformat() if start_date else None,
+            end_date=end_date.isoformat() if end_date else None,
         )
 
     async def _resolve_top_categories(
@@ -188,27 +214,24 @@ class HeatmapEngineService:
         tenant_id: int,
         timeframe: TimeframePreset,
         categories: list[TopicCategory],
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> None:
         """
-        Fill `top_category` / `top_category_count` on `items`, in place.
+        Fill `top_category`, `top_category_count`, and `category_counts`
+        on `items`, in place.
 
-        Requires one extra count per (district, selected category). Three
-        cuts keep that bounded:
+        Requires one extra count per (district, selected category). Unlike
+        the original top-category-only version, there is no early exit
+        once a category saturates `chunk_count` — the report's
+        topic-mentions-per-district breakdown needs every category's
+        count, not just the winner. Two cuts still keep the cost down:
 
         1. Districts with `chunk_count == 0` are skipped — nothing to rank.
-        2. A single selected category needs no counts at all: it is the only
-           candidate, and `chunk_count` is already its count.
-        3. Per-category counts can never exceed the district's combined
-           `chunk_count`, so once a category ties that total it cannot be
-           beaten and the remaining categories are skipped.
+        2. A single selected category needs no counts at all: it is the
+           only candidate, and `chunk_count` is already its count.
 
-        The probes that survive run concurrently, capped at
-        `_COUNT_CONCURRENCY`.
-
-        Note we cannot prune on "the remaining categories can't catch up":
-        `topic_tags` is an array, so one chunk may carry several categories
-        and the per-category counts can sum above `chunk_count`. Only the
-        saturation bound in (3) is sound.
+        The probes run concurrently, capped at `_COUNT_CONCURRENCY`.
         """
         selected = list(categories) if categories else list(TopicCategory)
         active = [item for item in items if item.chunk_count > 0]
@@ -216,9 +239,11 @@ class HeatmapEngineService:
             return
 
         if len(selected) == 1:
+            only = selected[0]
             for item in active:
-                item.top_category = selected[0]
+                item.top_category = only
                 item.top_category_count = item.chunk_count
+                item.category_counts = {only: item.chunk_count}
             return
 
         vector_store = self._get_vector_store()
@@ -227,29 +252,31 @@ class HeatmapEngineService:
 
         async def _resolve(item: DistrictCountItem) -> None:
             nonlocal probe_calls
+            counts: dict[TopicCategory, int] = {}
             async with semaphore:
-                top_category: TopicCategory | None = None
-                top_count = 0
-                # Iterate in `selected` order so ties settle deterministically
-                # on the earliest-declared category (strict `>` below).
+                # Iterate in `selected` order so ties on `max()` below settle
+                # deterministically on the earliest-declared category.
                 for category in selected:
                     fragments = self._build_filter_fragments(
                         district_name=item.district_name,
                         timeframe=timeframe,
                         categories=[category],
+                        start_date=start_date,
+                        end_date=end_date,
                     )
                     count = await vector_store.count_chunks(
                         tenant_id=tenant_id,
                         **fragments,
                     )
                     probe_calls += 1
-                    if count > top_count:
-                        top_category, top_count = category, count
-                    if top_count >= item.chunk_count:
-                        break
+                    if count:
+                        counts[category] = count
 
+            item.category_counts = counts
+            if counts:
+                top_category = max(counts, key=lambda c: counts[c])
                 item.top_category = top_category
-                item.top_category_count = top_count
+                item.top_category_count = counts[top_category]
 
         await asyncio.gather(*(_resolve(item) for item in active))
 
@@ -269,6 +296,8 @@ class HeatmapEngineService:
         categories: list[TopicCategory],
         page: int,
         page_size: int,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> tuple[DistrictCitationsEngineResponse, dict]:
         """
         Return paginated chunk citations for one district + filter set.
@@ -302,6 +331,8 @@ class HeatmapEngineService:
                 district_name=school.name,
                 timeframe=timeframe,
                 categories=categories,
+                start_date=start_date,
+                end_date=end_date,
             )
 
             offset = (page - 1) * page_size
