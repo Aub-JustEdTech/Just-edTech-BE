@@ -7,6 +7,7 @@ Two-step workflow:
 """
 
 import logging
+from datetime import timedelta
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,10 +23,12 @@ from app.schemas.school_scraper import (
     DiscoverResponse,
     MediaFileResult,
     MediaTypeSummary,
+    ScrapeAllResponse,
     ScrapeMediaBatchRequest,
     ScrapeMediaBatchResponse,
     ScrapeMediaRequest,
     ScrapeMediaResponse,
+    ScrapeStatusResponse,
 )
 from app.schemas.users import User
 from app.services.web_scraper.discovery_dispatch import discover_with_ranking_mode
@@ -39,6 +42,17 @@ from app.utils.dependencies import (
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# One tenant-wide sweep at a time. Value is the Celery task_id; the status
+# endpoint lazily clears the key once that task is ready, so no task
+# callback wiring is needed. TTL is a safety net only, in case a worker
+# dies without ever completing (or failing) the task.
+_SCRAPE_RUNNING_KEY_PREFIX = "scrape_running:"
+_SCRAPE_RUNNING_TTL = timedelta(hours=6)
+
+
+def _scrape_running_key(tenant_id: int) -> str:
+    return f"{_SCRAPE_RUNNING_KEY_PREFIX}{tenant_id}"
 
 
 async def _resolve_scrape_url(
@@ -479,4 +493,89 @@ async def backfill_years(
             f"Re-evaluated {len(rows)} skipped_year rows: "
             f"{enqueued} re-queued, {skipped} still out of range."
         ),
+    )
+
+
+@router.post(
+    "/scrape-all",
+    response_model=ScrapeAllResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Scrape every active source URL for the tenant (background job)",
+)
+async def scrape_all_sources(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
+) -> ScrapeAllResponse:
+    """Tenant-wide "Scrape all sources" action for the Schools page header —
+    queues the same sweep task used for the nightly scheduled run, across
+    every school in this tenant. Only one sweep may run per tenant at a
+    time, so the common button and every per-school scrape button in the
+    UI can share one disabled state.
+    """
+    from app.celery_app import celery_app
+    from app.db.redis_connector import redis_manager
+
+    key = _scrape_running_key(tenant_id)
+    existing_task_id = await redis_manager.get(key)
+    if existing_task_id:
+        existing_result = celery_app.AsyncResult(existing_task_id)
+        if not existing_result.ready():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A scrape is already running for this tenant.",
+            )
+        await redis_manager.delete(key)
+
+    from sqlalchemy import select
+
+    from app.models.school import School
+    from app.tasks.school_scraper_tasks import sweep_school_media
+
+    school_ids = (
+        (await db.execute(select(School.id).where(School.tenant_id == tenant_id)))
+        .scalars()
+        .all()
+    )
+    task = sweep_school_media.delay(school_ids=list(school_ids))
+    await redis_manager.set(key, task.id, expire=_SCRAPE_RUNNING_TTL)
+
+    return ScrapeAllResponse(
+        task_id=task.id,
+        status="queued",
+        message=(
+            f"Scraping {len(school_ids)} district source(s). "
+            "Check progress via /school-scraper/scrape-all/status."
+        ),
+    )
+
+
+@router.get(
+    "/scrape-all/status",
+    response_model=ScrapeStatusResponse,
+    summary="Check whether a tenant-wide scrape is currently running",
+)
+async def get_scrape_all_status(
+    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
+) -> ScrapeStatusResponse:
+    """Polled by the FE to know when to re-enable the common and per-school
+    scrape buttons."""
+    from app.celery_app import celery_app
+    from app.db.redis_connector import redis_manager
+
+    key = _scrape_running_key(tenant_id)
+    task_id = await redis_manager.get(key)
+    if not task_id:
+        return ScrapeStatusResponse(running=False)
+
+    task_result = celery_app.AsyncResult(task_id)
+    if task_result.ready():
+        await redis_manager.delete(key)
+        return ScrapeStatusResponse(
+            running=False, task_id=task_id, task_status=task_result.state
+        )
+
+    return ScrapeStatusResponse(
+        running=True, task_id=task_id, task_status=task_result.state
     )

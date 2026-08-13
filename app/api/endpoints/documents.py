@@ -59,6 +59,7 @@ from app.utils.dependencies import (
     get_db,
     get_effective_tenant_id,
     require_user_or_chat_consumer,
+    resolve_chat_tenant_id,
 )
 from app.utils.response import success_response
 from app.utils.s3 import S3Manager
@@ -197,14 +198,6 @@ async def upload_document(
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds {settings.MAX_FILE_SIZE_MB}MB limit",
-        )
-
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
         )
 
     if is_media:
@@ -924,16 +917,6 @@ async def get_document_presigned_url(
 
     Returns a temporary URL suitable for browser access (view/download).
     """
-    if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
-    else:
-        tenant_id = current_user_or_consumer.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     document = await db.get(Document, document_id)
     if not document:
         raise HTTPException(
@@ -941,6 +924,12 @@ async def get_document_presigned_url(
             detail="Document not found",
         )
 
+    # Resolved against the document's own tenant, same as get_chatbot -
+    # a cross-tenant super_admin/tenant_admin has no tenant_id of their own
+    # to compare against directly.
+    tenant_id = await resolve_chat_tenant_id(
+        current_user_or_consumer, document.tenant_id, db
+    )
     if document.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

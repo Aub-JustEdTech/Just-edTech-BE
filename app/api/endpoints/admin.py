@@ -23,6 +23,7 @@ from app.schemas.admin import (
 )
 from app.schemas.users import User as UserSchema
 from app.schemas.users import UserCreate, UserUpdate
+from app.services.chatbot_config_service import chatbot_config_service
 from app.services.invitation_service import invitation_service
 from app.services.tenant_access_service import list_tenants_for_principal
 from app.utils.dependencies import (
@@ -95,6 +96,10 @@ async def create_tenant(
 
     new_tenant = await tenant_crud.create(
         db, name=payload.name, domain=domain, logo_url=payload.logo_url
+    )
+
+    await chatbot_config_service.provision_default_chatbot(
+        db, tenant_id=new_tenant.id, tenant_name=new_tenant.name
     )
 
     # Grant all existing tenant_admins access to the new tenant
