@@ -184,7 +184,9 @@ class ScrapedMedia(BaseModel):
         index=True,
     )
 
-    status = Column(String(16), default="discovered", nullable=False, index=True)
+    # Widened from 16 to 32: statuses such as "skipped_duplicate" (17) and
+    # "skipped_too_large" (17) overflow a String(16) column.
+    status = Column(String(32), default="discovered", nullable=False, index=True)
     error_message = Column(Text, nullable=True)
     scraped_at = Column(
         DateTime(timezone=True), nullable=False, default=_utcnow

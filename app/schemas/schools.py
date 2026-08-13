@@ -144,6 +144,7 @@ class ScrapedMediaOut(BaseModel):
     doc_year: int | None = None
     s3_key_raw: str | None
     s3_key_text: str | None
+    s3_url: str | None = None
     size_bytes: int | None
     duration_seconds: int | None
     document_id: int | None
@@ -165,6 +166,84 @@ class ScrapedMediaListOut(BaseModel):
 MediaTypeLiteral = Literal["video", "audio", "document", "youtube"]
 
 ConfirmationStatusFilter = Literal["added", "not_added"]
+
+
+# ---------------------------------------------------------------------------
+# Scraped media filters (GET /schools/scraped-media/filters)
+#
+# The FE School Browser treats this endpoint as the single source of truth
+# for how raw ScrapedMedia.status values group into filter chips, what the
+# sortable fields are, and what date-preset values mean — see
+# apps/tenants/.../utils/schoolBrowser/{dateUtils,mediaTypeUtils}.ts.
+# ---------------------------------------------------------------------------
+
+ScrapedMediaStatusGroup = Literal[
+    "not_discovered", "discovered", "in_progress", "confirmed", "error"
+]
+
+# Raw ScrapedMedia.status values (see app/tasks/school_scraper_tasks.py and
+# scripts/school_data/run_scrape_districts.py for every status="..." site)
+# grouped into the five buckets the FE shows as filter chips. "not_discovered"
+# has no raw value of its own — a school with zero ScrapedMedia rows reads as
+# not-discovered by absence, not by a stored status.
+STATUS_GROUP_RAW_VALUES: dict[ScrapedMediaStatusGroup, list[str]] = {
+    "not_discovered": [],
+    "discovered": ["discovered"],
+    "in_progress": ["downloading", "ingesting"],
+    "confirmed": ["completed"],
+    "error": ["failed", "no_transcript", "skipped_duplicate", "skipped_year"],
+}
+
+STATUS_GROUP_LABELS: dict[ScrapedMediaStatusGroup, str] = {
+    "not_discovered": "Not Discovered",
+    "discovered": "Discovered",
+    "in_progress": "In Progress",
+    "confirmed": "Confirmed",
+    "error": "Error",
+}
+
+# (value, label) for every sortable field list_scraped_media accepts.
+SORT_FIELDS: list[tuple[str, str]] = [
+    ("scraped_at", "Date Scraped"),
+    ("original_name", "Name"),
+    ("size_bytes", "Size"),
+    ("status", "Status"),
+]
+
+# (value, label) for every date_from/date_to shortcut the FE offers.
+# resolveDatePresetRange() on the FE is the single place these are turned
+# into an actual { date_from, date_to } range — this list only has to name
+# the presets, not define their math.
+DATE_PRESETS: list[tuple[str, str]] = [
+    ("today", "Today"),
+    ("this_month", "This Month"),
+    ("last_month", "Last Month"),
+]
+
+SortField = Literal["scraped_at", "original_name", "size_bytes", "status"]
+SortOrder = Literal["asc", "desc"]
+
+
+class ScrapedMediaStatusOption(BaseModel):
+    value: ScrapedMediaStatusGroup
+    label: str
+    raw_values: list[str]
+
+
+class SortFieldOption(BaseModel):
+    value: str
+    label: str
+
+
+class DatePresetOption(BaseModel):
+    value: str
+    label: str
+
+
+class ScrapedMediaFiltersOut(BaseModel):
+    statuses: list[ScrapedMediaStatusOption]
+    sort_fields: list[SortFieldOption]
+    date_presets: list[DatePresetOption]
 
 
 # ---------------------------------------------------------------------------

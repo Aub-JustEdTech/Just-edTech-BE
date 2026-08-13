@@ -37,7 +37,7 @@ from app.crud import schools as crud
 from app.db.connector import AsyncSessionLocal
 from app.models.school import School, SchoolScrapeUrl, ScrapedMedia
 from app.services.web_scraper.school_scraper_service import SchoolScraperService
-from app.services.web_scraper.year_filter import evaluate_media_year
+from app.services.web_scraper.year_filter import evaluate_media_year_async
 
 DEFAULT_JSON_PATH = (
     Path(__file__).parent / "output" / "finalised_20_disticts.json"
@@ -47,6 +47,8 @@ DEFAULT_JSON_PATH = (
 def _classify_media_type(reported: str | None, ext: str | None) -> str:
     if reported == "document":
         return "document"
+    if reported == "youtube":
+        return "youtube"
     if reported in ("video", "audio"):
         if ext and "youtube" in ext.lower():
             return "youtube"
@@ -158,7 +160,7 @@ async def _scrape_one_school(
             return result
 
         for mf in media_files:
-            inferred_year, should_process, _skip_reason = evaluate_media_year(
+            inferred_year, should_process, _skip_reason = await evaluate_media_year_async(
                 url=mf["url"],
                 filename=mf.get("name"),
                 source_page_url=mf.get("source_page_url", scrape_url.url),
@@ -176,6 +178,9 @@ async def _scrape_one_school(
             media_type = _classify_media_type(
                 mf.get("media_type"), mf.get("file_extension")
             )
+            # YouTube title fallback now lives in
+            # SchoolScraperService._append_youtube_media itself, so mf["name"]
+            # is already the real title by the time it gets here.
             sm = ScrapedMedia(
                 tenant_id=school_row.tenant_id,
                 school_id=school_row.id,
@@ -193,10 +198,15 @@ async def _scrape_one_school(
                 status="discovered",
             )
             db.add(sm)
-            await db.flush()
+            await db.commit()
             result["media_new"] += 1
 
             if enqueue:
+                # Commit above (not just flush) matters: the Celery worker
+                # opens its own DB connection and won't see a merely-flushed
+                # row from this session, so an enqueue before commit races
+                # the worker into "ScrapedMedia not found" — a silent,
+                # non-retried no-op, not a task failure.
                 ingest_scraped_media.delay(scraped_media_id=sm.id)
                 result["enqueue_count"] += 1
 

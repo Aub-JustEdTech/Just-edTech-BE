@@ -14,7 +14,9 @@ vector store. Districts are keyed by `org_code` (not internal
 school/district ids).
 """
 
-from fastapi import APIRouter, Depends, Query
+from datetime import date
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.schemas.heatmap_engine import TimeframePreset, TopicCategory
 from app.services.heatmap_engine import heatmap_engine_service
@@ -30,6 +32,18 @@ router = APIRouter(prefix="/heatmap/engine", tags=["HeatMap Engine"])
 _DEFAULT_CATEGORIES: list[TopicCategory] = list(TopicCategory)
 
 
+def _validate_date_range(start_date: date | None, end_date: date | None) -> None:
+    if (start_date is None) != (end_date is None):
+        raise HTTPException(
+            status_code=400,
+            detail="start_date and end_date must be provided together",
+        )
+    if start_date and end_date and start_date > end_date:
+        raise HTTPException(
+            status_code=400, detail="start_date must not be after end_date"
+        )
+
+
 @router.get("/districts")
 async def list_district_counts(
     timeframe: TimeframePreset = TimeframePreset.MONTH,
@@ -37,6 +51,8 @@ async def list_district_counts(
     state: str = "MA",
     include_zero: bool = True,
     breakdown: bool = False,
+    start_date: date | None = None,
+    end_date: date | None = None,
     tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """Return chunk-instance counts per district for the given filters.
@@ -46,14 +62,18 @@ async def list_district_counts(
     filter to one or more categories; pass an empty `categories` to
     select all.
 
-    Pass `breakdown=true` to additionally populate `top_category` and
-    `top_category_count` on each district with data — the highest-counting
-    of the selected categories. This costs extra vector-store counts, so it
-    is off by default and intended for the report export rather than the
-    map view.
+    Pass `start_date` and `end_date` (both required together) to use a
+    custom day-level date range instead of `timeframe` — the range takes
+    precedence when both are supplied.
+
+    Pass `breakdown=true` to additionally populate `top_category`,
+    `top_category_count`, and the full `category_counts` breakdown on each
+    district with data. This costs extra vector-store counts, so it is off
+    by default and intended for the report export rather than the map view.
 
     Each district is identified by `org_code`.
     """
+    _validate_date_range(start_date, end_date)
     response = await heatmap_engine_service.count_by_district(
         tenant_id=tenant_id,
         timeframe=timeframe,
@@ -61,6 +81,8 @@ async def list_district_counts(
         state=state,
         include_zero=include_zero,
         breakdown=breakdown,
+        start_date=start_date,
+        end_date=end_date,
     )
     return success_response(data=response.model_dump(mode="json"))
 
@@ -72,13 +94,18 @@ async def get_district_citations(
     categories: list[TopicCategory] = Query(default=_DEFAULT_CATEGORIES),
     page: int = 1,
     page_size: int = Query(default=10, le=25),
+    start_date: date | None = None,
+    end_date: date | None = None,
     tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """Return paginated chunk citations for a single district + filters.
 
     Defaults to the last month and all topic categories (which include
-    their respective subtopics). District is looked up by `org_code`.
+    their respective subtopics). District is looked up by `org_code`. Pass
+    `start_date`/`end_date` (both required together) for a custom
+    day-level date range instead of `timeframe`.
     """
+    _validate_date_range(start_date, end_date)
     citations, meta = await heatmap_engine_service.get_district_citations(
         tenant_id=tenant_id,
         org_code=org_code,
@@ -86,5 +113,7 @@ async def get_district_citations(
         categories=categories,
         page=page,
         page_size=page_size,
+        start_date=start_date,
+        end_date=end_date,
     )
     return success_response(data=citations.model_dump(mode="json"), extra=meta)

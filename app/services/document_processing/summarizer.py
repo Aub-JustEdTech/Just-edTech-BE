@@ -66,8 +66,8 @@ class DocumentSummarizer:
     )
     """
 
-    def __init__(self, model: str = "openai/gpt-4o-mini"):
-        self._model = normalize_model_name(model)
+    def __init__(self, model: str | None = None):
+        self._model = normalize_model_name(model or settings.DOCUMENT_SUMMARIZER_MODEL)
         try:
             self._client = get_async_openai_client()
         except ValueError:

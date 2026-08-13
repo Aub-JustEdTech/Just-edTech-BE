@@ -126,6 +126,7 @@ async def discover_urls(
 async def scrape_media(
     request: ScrapeMediaRequest,
     current_user: User = Depends(get_current_tenant_user),
+    db: AsyncSession = Depends(get_db),
 ) -> ScrapeMediaResponse:
     """
     Step 2 — Media Scraping.
@@ -198,7 +199,7 @@ async def scrape_media(
         MediaFileResult(
             name=m["name"],
             url=m["url"],
-            file_extension=m["file_extension"],
+            file_extension=m.get("file_extension"),
             media_type=m["media_type"],
             size_bytes=m["size_bytes"],
             source_page_url=m["source_page_url"],
@@ -206,9 +207,58 @@ async def scrape_media(
         for m in result["media_files"]
     ]
 
-    type_counts: dict[str, int] = {"video": 0, "audio": 0, "document": 0}
+    # Seeded with every key MediaTypeSummary declares — otherwise a type
+    # that happens to be absent from this page silently reports zero.
+    type_counts: dict[str, int] = {
+        "video": 0,
+        "audio": 0,
+        "document": 0,
+        "youtube": 0,
+    }
     for m in media_files:
         type_counts[m.media_type] = type_counts.get(m.media_type, 0) + 1
+
+    persisted = 0
+    skipped_duplicates = 0
+    enqueued = 0
+    scraped_media_ids: list[int] = []
+
+    if request.persist:
+        if request.school_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="school_id is required when persist=True",
+            )
+
+        from app.crud.schools import bulk_create_scraped_media, get_school
+
+        # Tenant-scoped: without this any tenant could attach media to any
+        # school by guessing an id.
+        school = await get_school(db, current_user.tenant_id, request.school_id)
+        if not school:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"School {request.school_id} not found for this tenant",
+            )
+
+        rows, skipped_duplicates = await bulk_create_scraped_media(
+            db,
+            school=school,
+            source_page_url=request.url,
+            media_files=result["media_files"],
+        )
+        persisted = len(rows)
+        scraped_media_ids = [r.id for r in rows]
+
+        # Imported here, not at module scope, to avoid the tasks -> models
+        # import cycle (matches backfill_years below).
+        from app.tasks.school_scraper_tasks import ingest_scraped_media
+
+        # Enqueued only AFTER the commit above — otherwise the worker does
+        # db.get(ScrapedMedia, id) -> None and silently drops the item.
+        for row in rows:
+            ingest_scraped_media.delay(row.id)
+            enqueued += 1
 
     return ScrapeMediaResponse(
         source_url=result["source_url"],
@@ -216,6 +266,10 @@ async def scrape_media(
         total_media_found=len(media_files),
         media_type_summary=MediaTypeSummary(**type_counts),
         media_files=media_files,
+        persisted=persisted,
+        skipped_duplicates=skipped_duplicates,
+        enqueued=enqueued,
+        scraped_media_ids=scraped_media_ids,
     )
 
 
@@ -243,7 +297,7 @@ async def backfill_years(
     Optionally scope to a single school via `school_id`.
     """
     from app.crud.schools import list_skipped_year_media, update_scraped_media
-    from app.services.web_scraper.year_filter import evaluate_media_year
+    from app.services.web_scraper.year_filter import evaluate_media_year_async
     from app.tasks.school_scraper_tasks import ingest_scraped_media
 
     rows = await list_skipped_year_media(
@@ -255,7 +309,7 @@ async def backfill_years(
     enqueued = 0
     skipped = 0
     for sm in rows:
-        inferred, in_range, _reason = evaluate_media_year(
+        inferred, in_range, _reason = await evaluate_media_year_async(
             url=sm.source_media_url,
             filename=sm.original_name,
             source_page_url=sm.source_page_url,

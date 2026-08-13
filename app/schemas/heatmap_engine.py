@@ -51,6 +51,10 @@ class DistrictCountItem(BaseModel):
     # it stays None for districts with no matching chunks.
     top_category: TopicCategory | None = None
     top_category_count: int = 0
+    # Full per-category mention counts, populated alongside `top_category`
+    # when `breakdown=true`. Only categories with at least one match are
+    # present. Powers the report's topic-mentions-per-district breakdown.
+    category_counts: dict[TopicCategory, int] = {}
 
 
 class DistrictCountResponse(BaseModel):
@@ -61,6 +65,10 @@ class DistrictCountResponse(BaseModel):
     total_districts: int
     total_chunks: int
     districts: list[DistrictCountItem]
+    # Echoed back only when the request used the custom date-range filter
+    # (mutually exclusive with `timeframe` taking effect); ISO date strings.
+    start_date: str | None = None
+    end_date: str | None = None
 
 
 class EngineCitationItem(BaseModel):

@@ -72,7 +72,7 @@ def test_match_file_extension_recognizes_getfile_ashx():
     )
 
 
-def test_extract_media_includes_getfile_ashx_links():
+async def test_extract_media_includes_getfile_ashx_links():
     html = """
     <html><body>
       <a class="content_item" href="/common/pages/GetFile.ashx?key=abc">
@@ -81,7 +81,7 @@ def test_extract_media_includes_getfile_ashx_links():
     </body></html>
     """
     svc = SchoolScraperService()
-    media, _ = svc._extract_media_from_page(
+    media, _ = await svc._extract_media_from_page(
         html,
         "https://www.leicester.k12.ma.us/SC/minutes",
         video_ext=[".mp4"],
