@@ -30,8 +30,11 @@ from app.schemas.school_scraper import (
     ScrapeMediaRequest,
     ScrapeMediaResponse,
     ScrapeStatusResponse,
+    TranscriptPreviewRequest,
+    TranscriptPreviewResponse,
 )
 from app.schemas.users import User
+from app.services.transcript_preview_service import transcript_preview_service
 from app.services.web_scraper.discovery_dispatch import discover_with_ranking_mode
 from app.services.web_scraper.school_scraper_service import SchoolScraperService
 from app.utils.dependencies import (
@@ -646,3 +649,32 @@ async def get_scrape_all_status(
     return ScrapeStatusResponse(
         running=True, task_id=task_id, task_status=task_result.state
     )
+
+
+@router.post(
+    "/preview-transcripts",
+    response_model=TranscriptPreviewResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Preview transcripts for confirmed schools' audio/video/YouTube media (admin)",
+)
+async def preview_transcripts(
+    request: TranscriptPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+    tenant_id: int = Depends(get_effective_tenant_id),
+) -> TranscriptPreviewResponse:
+    """Scrape every scoped school's confirmed URL and transcribe its
+    audio/video/YouTube items via the same `transcription_service` the
+    production ingest pipeline uses — but persist nothing.
+
+    Sources confirmed URLs from the DB (no more static JSON input file):
+    every active `SchoolScrapeUrl` for this tenant, optionally narrowed by
+    `school_ids` or `org_codes`.
+
+    Set `dry_run=True` to list what would be transcribed and estimate cost
+    without spending anything. Without it, real transcription runs and
+    AssemblyAI charges apply for anything that isn't free (YouTube with
+    captions). Nothing is written to `scraped_media`, S3, or Qdrant — use
+    `/scrape-media` or `/scrape-all` to actually ingest.
+    """
+    return await transcript_preview_service.preview(db, tenant_id, request)

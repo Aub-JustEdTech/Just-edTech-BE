@@ -215,3 +215,86 @@ class ScrapeStatusResponse(BaseModel):
     running: bool
     task_id: str | None = None
     task_status: str | None = None
+
+
+class TranscriptPreviewRequest(BaseModel):
+    """Request body for previewing transcripts of confirmed schools' A/V media.
+
+    Sources confirmed URLs from the DB (School + SchoolScrapeUrl) instead of
+    a static file, and never persists to scraped_media/S3/Qdrant — this is a
+    review/cost-preview tool, not the ingest pipeline. Use /scrape-media or
+    /scrape-all for that.
+    """
+
+    school_ids: list[int] | None = Field(
+        None,
+        description="Scope to specific schools. Omit together with org_codes "
+        "to cover every school with an active confirmed scrape URL in this "
+        "tenant.",
+    )
+    org_codes: list[str] | None = Field(
+        None,
+        description="Scope to specific districts by org_code. Takes "
+        "precedence over school_ids when both are given.",
+    )
+    youtube_only: bool = Field(
+        False,
+        description="Skip direct audio/video entirely — YouTube captions "
+        "are free, so this guarantees $0 spend.",
+    )
+    limit_items: int | None = Field(
+        None,
+        description="Cap the total number of audio/video/YouTube items "
+        "transcribed across all scoped schools. Useful while testing.",
+    )
+    dry_run: bool = Field(
+        False,
+        description="List what would be transcribed and estimate nothing. "
+        "No transcription is performed and nothing is spent.",
+    )
+    concurrency: int = 3
+
+    @field_validator("concurrency")
+    @classmethod
+    def clamp_concurrency(cls, v: int) -> int:
+        return max(1, min(v, 8))
+
+
+class TranscriptPreviewItem(BaseModel):
+    """One audio/video/YouTube item found on a confirmed URL, with its
+    transcript preview when dry_run=False."""
+
+    school_id: int
+    school_name: str | None
+    org_code: str | None
+    media_type: MediaTypeLiteral
+    media_url: str
+    media_name: str | None
+    source_page_url: str
+    status: str
+    source: str | None = None
+    caption_kind: str | None = None
+    speech_model: str | None = None
+    duration_seconds: int | None = None
+    segments: int = 0
+    speakers: list[str] = Field(default_factory=list)
+    paid: bool = False
+    estimated_usd: float = 0.0
+    # First ~500 chars only — this is a review preview, not the stored artifact.
+    text_preview: str | None = None
+    error: str | None = None
+    elapsed_seconds: float = 0.0
+
+
+class TranscriptPreviewResponse(BaseModel):
+    """Response from the transcript preview endpoint."""
+
+    dry_run: bool
+    schools_scraped: int
+    total_av_items_found: int
+    items: list[TranscriptPreviewItem]
+    statuses: dict[str, int] = Field(default_factory=dict)
+    free_count: int = 0
+    paid_count: int = 0
+    estimated_total_usd: float = 0.0
+    scrape_failures: list[str] = Field(default_factory=list)

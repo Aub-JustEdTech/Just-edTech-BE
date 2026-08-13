@@ -140,6 +140,32 @@ async def list_schools_by_org_codes(
     return {school.org_code: school for school in rows}
 
 
+async def list_active_scrape_urls(
+    db: AsyncSession,
+    tenant_id: int,
+    *,
+    school_ids: list[int] | None = None,
+    org_codes: list[str] | None = None,
+) -> list[SchoolScrapeUrl]:
+    """Confirmed, active scrape URLs for a tenant, optionally scoped.
+
+    Each row's `.school` is eagerly loaded so callers (e.g. transcript
+    preview) never trigger a lazy load per row.
+    """
+    stmt = (
+        select(SchoolScrapeUrl)
+        .join(School, School.id == SchoolScrapeUrl.school_id)
+        .options(selectinload(SchoolScrapeUrl.school))
+        .where(School.tenant_id == tenant_id, SchoolScrapeUrl.is_active.is_(True))
+    )
+    if school_ids:
+        stmt = stmt.where(SchoolScrapeUrl.school_id.in_(school_ids))
+    if org_codes:
+        stmt = stmt.where(School.org_code.in_(org_codes))
+    stmt = stmt.order_by(School.name.asc())
+    return list((await db.execute(stmt)).scalars().all())
+
+
 async def create_school(
     db: AsyncSession, tenant_id: int, data: SchoolCreate
 ) -> School:
