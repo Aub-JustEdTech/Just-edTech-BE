@@ -443,7 +443,12 @@ async def update_scrape_url(
 ) -> SchoolScrapeUrlOut:
     school = await _school_or_404(db, tenant_id, school_id)
     scrape_url = await _scrape_url_or_404(db, school.id, url_id)
-    updated = await crud.update_scrape_url(db, school, scrape_url, payload)
+    try:
+        updated = await crud.update_scrape_url(db, school, scrape_url, payload)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
     return SchoolScrapeUrlOut.model_validate(updated)
 
 

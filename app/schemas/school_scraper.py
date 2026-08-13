@@ -72,7 +72,13 @@ class ScrapeMediaRequest(BaseModel):
     school_id: int | None = Field(
         None,
         description="School to attach discovered media to. Required when "
-        "persist=True.",
+        "persist=True. When supplied together with scrape_url_id, the scrape "
+        "result (last_scraped_at/last_http_status/last_crawl_page_count) is "
+        "also persisted onto that SchoolScrapeUrl row. Omit for a stateless "
+        "preview scrape (e.g. during discovery review).",
+    )
+    scrape_url_id: int | None = Field(
+        None, description="See school_id."
     )
     persist: bool = Field(
         False,
@@ -112,6 +118,9 @@ class ScrapeMediaResponse(BaseModel):
     """Response from the media-scraping step."""
 
     source_url: str
+    scrape_url_id: int | None = None
+    success: bool = True
+    http_status: int | None = None
     pages_crawled: int
     total_media_found: int
     media_type_summary: MediaTypeSummary
@@ -121,6 +130,25 @@ class ScrapeMediaResponse(BaseModel):
     skipped_duplicates: int = 0
     enqueued: int = 0
     scraped_media_ids: list[int] = Field(default_factory=list)
+
+
+class ScrapeMediaBatchRequest(BaseModel):
+    """Request body for scraping multiple confirmed URLs for one school."""
+
+    school_id: int
+    scrape_url_ids: list[int] = Field(..., min_length=1)
+    crawl_depth: int = 1
+
+    @field_validator("crawl_depth")
+    @classmethod
+    def clamp_depth(cls, v: int) -> int:
+        return max(0, min(v, 3))
+
+
+class ScrapeMediaBatchResponse(BaseModel):
+    """Response from the batch media-scraping endpoint — one result per URL."""
+
+    results: list[ScrapeMediaResponse]
 
 
 class BackfillYearsRequest(BaseModel):

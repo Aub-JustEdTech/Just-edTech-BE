@@ -13,6 +13,7 @@ from datetime import date, datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 from sqlalchemy import asc, desc, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -174,15 +175,28 @@ async def delete_school(db: AsyncSession, school: School) -> None:
     await db.commit()
 
 
-async def touch_last_scrapped(
-    db: AsyncSession, school_id: int, when: datetime | None = None
-) -> None:
-    """Update School.last_scrapped_at after a scrape completes."""
-    when = when or datetime.now(timezone.utc)
-    school = await db.get(School, school_id)
+async def record_scrape_result(
+    db: AsyncSession,
+    scrape_url: SchoolScrapeUrl,
+    *,
+    http_status: int | None,
+    page_count: int | None,
+) -> SchoolScrapeUrl:
+    """Persist the outcome of a scrape attempt onto a SchoolScrapeUrl row.
+
+    Also touches the parent School's denormalized `last_scrapped_at` so FE
+    list views don't need to fan out over every scrape_urls[] entry.
+    """
+    when = datetime.now(timezone.utc)
+    scrape_url.last_scraped_at = when
+    scrape_url.last_http_status = http_status
+    scrape_url.last_crawl_page_count = page_count
+    school = await db.get(School, scrape_url.school_id)
     if school:
         school.last_scrapped_at = when
-        await db.commit()
+    await db.commit()
+    await db.refresh(scrape_url)
+    return scrape_url
 
 
 # ---------------------------------------------------------------------------
@@ -246,6 +260,13 @@ async def update_scrape_url(
     scrape_url: SchoolScrapeUrl,
     data: ScrapeUrlUpdate,
 ) -> SchoolScrapeUrl:
+    if data.url is not None and data.url != scrape_url.url:
+        scrape_url.url = data.url
+        # The URL text changed, so any prior crawl result no longer applies —
+        # treat it as a fresh, unverified page until it's scraped again.
+        scrape_url.last_http_status = None
+        scrape_url.last_crawl_page_count = None
+        scrape_url.last_scraped_at = None
     if data.crawl_depth is not None:
         scrape_url.crawl_depth = data.crawl_depth
     if data.use_playwright is not None:
@@ -254,7 +275,13 @@ async def update_scrape_url(
         scrape_url.is_active = data.is_active
     if data.is_primary:
         school.scrape_url_id = scrape_url.id
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise ValueError(
+            f"URL {data.url!r} is already listed for this school"
+        ) from exc
     await db.refresh(scrape_url)
     return scrape_url
 
