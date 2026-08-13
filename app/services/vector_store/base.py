@@ -97,6 +97,7 @@ class VectorStore(ABC):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """
@@ -115,6 +116,10 @@ class VectorStore(ABC):
                 of `{category, subtopic}` objects). Only one nested value
                 per field is supported here; pass multiple keys for
                 multiple nested fields.
+            range_match: {field: {"gte": iso, "lte": iso}} — field must
+                fall within the given datetime bounds. Requires a
+                DATETIME payload index on the field. Used by the heatmap
+                engine's custom date-range filter.
             limit: Max results.
 
         Returns:
@@ -131,6 +136,7 @@ class VectorStore(ABC):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
     ) -> int:
         """
         Count chunks matching a payload filter (no vector query, no scroll).
@@ -144,6 +150,7 @@ class VectorStore(ABC):
             must_match: {field: value} — all must equal the value.
             must_match_any: {field: [values]} — field must contain any.
             nested_match_any: same semantics as `filter_chunks`.
+            range_match: same semantics as `filter_chunks`.
 
         Returns:
             Number of matching chunks (0 on missing collection or error).
@@ -154,6 +161,7 @@ class VectorStore(ABC):
             must_match=must_match,
             must_match_any=must_match_any,
             nested_match_any=nested_match_any,
+            range_match=range_match,
             limit=100_000,
         )
         return len(chunks)

@@ -35,6 +35,7 @@ from app.schemas.users import (
     VerifyResetTokenRequest,
 )
 from app.services.auth_status_service import auth_status_service
+from app.services.chatbot_config_service import chatbot_config_service
 from app.services.email_verification_service import email_verification_service
 from app.services.invitation_service import invitation_service
 from app.services.password_reset_service import password_reset_service
@@ -248,6 +249,10 @@ async def setup_tenant(payload: SetupTenantRequest, db: AsyncSession = Depends(g
     tenant = Tenant(name=payload.tenant_name, domain=domain)
     db.add(tenant)
     await db.flush()
+
+    await chatbot_config_service.provision_default_chatbot(
+        db, tenant_id=tenant.id, tenant_name=payload.tenant_name
+    )
 
     # If logo provided, upload to S3 and store URL
     if payload.logo_b64:

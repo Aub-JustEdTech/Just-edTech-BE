@@ -155,14 +155,12 @@ def require_tenant_access(check_admin_only: bool = False):
     return check_tenant_access
 
 
-async def get_effective_tenant_id(
-    tenant_id: int | None = Query(
-        None, description="Tenant to scope to. Required for admins with access to all tenants."
-    ),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+async def resolve_effective_tenant_id(
+    current_user: User,
+    tenant_id: int | None,
+    db: AsyncSession,
 ) -> int:
-    """Resolve the tenant_id a request should be scoped to.
+    """Resolve the tenant_id a request should be scoped to, for a JWT user.
 
     tenant_user / regular tenant_admin: always their own `tenant_id`, the
     `tenant_id` query param is ignored.
@@ -191,6 +189,38 @@ async def get_effective_tenant_id(
             detail="Access denied: tenant not in your access list",
         )
     return tenant_id
+
+
+async def get_effective_tenant_id(
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> int:
+    """FastAPI dependency wrapper around `resolve_effective_tenant_id` for a
+    plain JWT-only route (see that function for the resolution rules)."""
+    return await resolve_effective_tenant_id(current_user, tenant_id, db)
+
+
+async def resolve_chat_tenant_id(
+    principal: User | ChatConsumer,
+    tenant_id: int | None,
+    db: AsyncSession,
+) -> int:
+    """Resolve the tenant_id a chat/RAG request should be scoped to, for
+    either principal type returned by `get_current_user_or_chat_consumer` /
+    `get_principal_with_api_key`.
+
+    A ChatConsumer always carries a concrete `tenant_id` already. A JWT User
+    is resolved via the same rules as `resolve_effective_tenant_id` — without
+    this, a cross-tenant super_admin/tenant_admin (whose own `tenant_id`
+    column is NULL) would silently scope every chat/RAG call to `tenant_id
+    is None` instead of the tenant selected in the UI.
+    """
+    if isinstance(principal, ChatConsumer):
+        return principal.tenant_id
+    return await resolve_effective_tenant_id(principal, tenant_id, db)
 
 
 def require_role(*allowed_roles: str) -> Callable:
@@ -317,59 +347,64 @@ async def require_api_key(
 
 
 async def get_principal_with_api_key(
-    api_key_info: dict = Depends(require_api_key),
     credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
     x_chat_consumer_uuid: str | None = Header(None, alias="X-Chat-Consumer-UUID"),
     chat_consumer_uuid: str | None = Query(None),
+    x_api_key: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> User | ChatConsumer:
     """
-    Require a valid API key AND one of:
-      - a valid JWT user
-      - a valid chat consumer UUID (via header or query)
+    Authenticate either:
+      - a JWT tenant user (super_admin, tenant_admin, or tenant_user) — no API
+        key required, since their own tenant_id already scopes the request
+      - an anonymous chat consumer — an API key is still mandatory here, since
+        a bare chat-consumer UUID alone is not proof of tenant authorization
 
-    Ensures the tenant from API key matches the principal tenant.
     Returns the authenticated principal (User or ChatConsumer).
     """
-    # Try chat consumer auth first if UUID provided
     uuid_str = x_chat_consumer_uuid or chat_consumer_uuid
-    if uuid_str:
-        try:
-            consumer_uuid = UUID(uuid_str)
-        except ValueError as err:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid UUID format",
-            ) from err
-        db_chat_consumer = await chat_consumer.get_by_uuid(db, consumer_uuid)
-        if not db_chat_consumer:
+
+    if not uuid_str:
+        # No consumer UUID presented -> this must be a JWT tenant user.
+        if not credentials:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid chat consumer UUID",
+                detail="Authentication required: provide Bearer token or chat UUID",
             )
-        if db_chat_consumer.tenant_id != api_key_info["tenant_id"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="API key tenant mismatch",
-            )
-        return db_chat_consumer
+        return await _user_from_token(credentials.credentials, db)
 
-    # Else require JWT user
-    if not credentials:
+    # Chat consumer path — API key remains mandatory, exactly as before.
+    if not x_api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required: provide Bearer token or chat UUID",
+            detail="Missing API key",
         )
-    db_user = await _user_from_token(credentials.credentials, db)
-    # super_admin and tenant_admin have NULL tenant_id — they bypass the tenant match check
-    if not (user.is_super_admin(db_user) or user.is_tenant_admin(db_user)):
-        if db_user.tenant_id != api_key_info["tenant_id"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="API key tenant mismatch",
-            )
-    return db_user
+    api_key_record = await api_keys.get_by_key(db, x_api_key)
+    if not api_key_record:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
+        )
+
+    try:
+        consumer_uuid = UUID(uuid_str)
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid UUID format",
+        ) from err
+    db_chat_consumer = await chat_consumer.get_by_uuid(db, consumer_uuid)
+    if not db_chat_consumer:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid chat consumer UUID",
+        )
+    if db_chat_consumer.tenant_id != api_key_record.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API key tenant mismatch",
+        )
+    return db_chat_consumer
 
 
-# Convenience alias for endpoints: require API key + (user or chat consumer)
+# Convenience alias for endpoints: JWT tenant user, or API-key-verified chat consumer
 require_api_key_user_or_chat_consumer = Depends(get_principal_with_api_key)

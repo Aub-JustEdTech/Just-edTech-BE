@@ -18,14 +18,22 @@ from app.tasks.document_pipeline import (
 )
 from app.tasks.document_tasks import process_document_task
 
+# Media transcription — runs BEFORE the pipeline for audio/video/links
+from app.tasks.media_transcription_tasks import (  # noqa: F401
+    transcribe_media_task,
+)
+
 # Token aggregation + billing tasks
 from app.tasks.token_aggregation_tasks import (
     aggregate_daily_token_usage_task,
     backfill_daily_token_usage_task,
 )
 
-# School scraper ingest task (scraping queue)
-from app.tasks.school_scraper_tasks import ingest_scraped_media  # noqa: F401
+# School scraper ingest + sweep tasks (scraping queue)
+from app.tasks.school_scraper_tasks import (  # noqa: F401
+    ingest_scraped_media,
+    sweep_school_media,
+)
 
 # Heatmap batch classification tasks (default queue)
 from app.tasks.batch_classification_tasks import (  # noqa: F401
@@ -48,11 +56,14 @@ __all__ = [
     "step3_chunk_text",
     "step4_generate_embeddings",
     "step5_store_vectors",
+    # Media transcription
+    "transcribe_media_task",
     # Token aggregation
     "aggregate_daily_token_usage_task",
     "backfill_daily_token_usage_task",
     # School scraper ingest
     "ingest_scraped_media",
+    "sweep_school_media",
     # Heatmap batch classification
     "submit_pending_batch_classification_task",
     "poll_batch_classification_task",
