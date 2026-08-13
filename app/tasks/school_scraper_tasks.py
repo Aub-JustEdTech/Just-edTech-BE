@@ -632,3 +632,164 @@ async def _sweep_school_media_async(school_ids: list[int] | None) -> dict:
         )
     logger.info("sweep_school_media finished: %s", totals)
     return totals
+
+
+async def _scrape_one_batch_url(url: str, crawl_depth: int) -> dict:
+    """Run one scrape attempt with no DB access, so it is safe to run
+    concurrently alongside the other URLs in the same batch."""
+    import httpx
+
+    from app.services.web_scraper.school_scraper_service import SchoolScraperService
+
+    async with SchoolScraperService() as scraper:
+        try:
+            result = await scraper.scrape_media_files(
+                page_url=url, crawl_depth=crawl_depth
+            )
+        except httpx.HTTPStatusError as exc:
+            return {
+                "success": False,
+                "http_status": exc.response.status_code if exc.response else None,
+                "pages_crawled": 0,
+                "media_files": [],
+            }
+        except Exception:
+            # One bad URL must not sink the whole batch — every other URL in
+            # the gather() below keeps running regardless.
+            logger.exception("Batch scrape failed for %s", url)
+            return {
+                "success": False,
+                "http_status": None,
+                "pages_crawled": 0,
+                "media_files": [],
+            }
+
+    return {
+        "success": True,
+        "http_status": 200,
+        "pages_crawled": result["pages_crawled"],
+        "media_files": result["media_files"],
+    }
+
+
+@celery_app.task(
+    name="app.tasks.school_scraper_tasks.scrape_media_batch",
+    bind=True,
+    max_retries=3,
+)
+def scrape_media_batch(
+    self,
+    tenant_id: int,
+    school_id: int,
+    scrape_url_ids: list[int],
+    crawl_depth: int,
+) -> dict:
+    """Background counterpart of POST /school-scraper/scrape-media-batch.
+
+    Crawls every scrape_url_id concurrently (network I/O only, no DB), then
+    persists sequentially — an AsyncSession cannot safely be touched from
+    concurrent coroutines. Poll GET /scrape-media-batch/status?task_id=...
+    for the result.
+
+    Always persists discovered media, unlike /scrape-media's optional
+    persist flag: this task backs only "Scrape selected" on the Schools
+    admin page, which has no preview-only use case.
+    """
+    try:
+        loop = get_event_loop()
+        return loop.run_until_complete(
+            _scrape_media_batch_async(
+                tenant_id, school_id, scrape_url_ids, crawl_depth
+            )
+        )
+    except Exception as exc:
+        logger.error("scrape_media_batch failed: %s", str(exc))
+        raise self.retry(
+            exc=exc, countdown=60 * (2**self.request.retries)
+        ) from exc
+
+
+async def _scrape_media_batch_async(
+    tenant_id: int,
+    school_id: int,
+    scrape_url_ids: list[int],
+    crawl_depth: int,
+) -> dict:
+    import asyncio
+
+    from app.crud.schools import (
+        bulk_create_scraped_media,
+        get_school,
+        record_scrape_result,
+    )
+
+    async with AsyncSessionLocal() as db:
+        school = await get_school(db, tenant_id, school_id)
+        if not school:
+            return {
+                "error": f"School {school_id} not found in tenant {tenant_id}",
+                "results": [],
+            }
+
+        urls_by_id = {u.id: u for u in school.scrape_urls}
+        missing = [sid for sid in scrape_url_ids if sid not in urls_by_id]
+        if missing:
+            return {
+                "error": f"Scrape URL(s) {missing} not found for school {school_id}",
+                "results": [],
+            }
+
+        ordered_urls = [urls_by_id[sid] for sid in scrape_url_ids]
+
+        # The only part worth parallelizing: real network crawling. It has
+        # no DB dependency, so every URL runs concurrently instead of the
+        # sequential loop the old synchronous endpoint used — wall time
+        # drops from sum(each URL) to roughly max(each URL).
+        raw_results = await asyncio.gather(
+            *(_scrape_one_batch_url(u.url, crawl_depth) for u in ordered_urls)
+        )
+
+        results: list[dict] = []
+        for scrape_url, raw in zip(ordered_urls, raw_results, strict=True):
+            # All DB writes happen here, sequentially, after every crawl has
+            # finished — AsyncSession is not safe for concurrent use.
+            await record_scrape_result(
+                db,
+                scrape_url,
+                http_status=raw["http_status"],
+                page_count=raw["pages_crawled"] if raw["success"] else None,
+            )
+
+            entry = {
+                "source_url": scrape_url.url,
+                "scrape_url_id": scrape_url.id,
+                "success": raw["success"],
+                "http_status": raw["http_status"],
+                "pages_crawled": raw["pages_crawled"],
+                "media_files": raw["media_files"],
+                "persisted": 0,
+                "skipped_duplicates": 0,
+                "enqueued": 0,
+                "scraped_media_ids": [],
+            }
+
+            if raw["success"] and raw["media_files"]:
+                rows, skipped = await bulk_create_scraped_media(
+                    db,
+                    school=school,
+                    source_page_url=scrape_url.url,
+                    media_files=raw["media_files"],
+                )
+                entry["persisted"] = len(rows)
+                entry["skipped_duplicates"] = skipped
+                entry["scraped_media_ids"] = [r.id for r in rows]
+                # Enqueued only AFTER the commit inside bulk_create_scraped_media
+                # — otherwise the worker's db.get(ScrapedMedia, id) returns None
+                # and silently drops the item.
+                for row in rows:
+                    ingest_scraped_media.delay(row.id)
+                    entry["enqueued"] += 1
+
+            results.append(entry)
+
+    return {"error": None, "results": results}

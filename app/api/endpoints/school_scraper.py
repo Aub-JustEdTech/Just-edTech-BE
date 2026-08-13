@@ -25,7 +25,8 @@ from app.schemas.school_scraper import (
     MediaTypeSummary,
     ScrapeAllResponse,
     ScrapeMediaBatchRequest,
-    ScrapeMediaBatchResponse,
+    ScrapeMediaBatchStatusResponse,
+    ScrapeMediaBatchTaskResponse,
     ScrapeMediaRequest,
     ScrapeMediaResponse,
     ScrapeStatusResponse,
@@ -73,6 +74,14 @@ async def _resolve_scrape_url(
             detail=f"Scrape URL {scrape_url_id} not found for school {school_id}",
         )
     return scrape_url
+
+
+def _media_type_summary(media_files: list[dict]) -> MediaTypeSummary:
+    type_counts: dict[str, int] = {"video": 0, "audio": 0, "document": 0}
+    for m in media_files:
+        media_type = m["media_type"]
+        type_counts[media_type] = type_counts.get(media_type, 0) + 1
+    return MediaTypeSummary(**type_counts)
 
 
 async def _scrape_and_maybe_persist(
@@ -394,19 +403,26 @@ async def scrape_media(
 
 @router.post(
     "/scrape-media-batch",
-    response_model=ScrapeMediaBatchResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Scrape multiple confirmed source URLs for one school in one call",
+    response_model=ScrapeMediaBatchTaskResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Kick off a background scrape of multiple confirmed source URLs for one school",
 )
 async def scrape_media_batch(
     request: ScrapeMediaBatchRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_tenant_user),
     tenant_id: int = Depends(get_effective_tenant_id),
-) -> ScrapeMediaBatchResponse:
-    """Scrape every listed SchoolScrapeUrl id for a school and persist each
-    result independently, so one failing URL doesn't block the others —
-    backs the "Scrape selected" multi-select action on the Schools admin page.
+) -> ScrapeMediaBatchTaskResponse:
+    """Validates the school + URLs synchronously (fast, DB-only — a bad id
+    still 404s immediately), then hands the slow part to a Celery task on
+    the `scraping` queue, which crawls every URL concurrently instead of
+    the old sequential loop. Poll `/scrape-media-batch/status?task_id=...`
+    for the result.
+
+    Always persists: each URL's discovered media is saved to scraped_media
+    and newly created rows are enqueued for ingestion. Unlike /scrape-media,
+    there is no preview-only mode here — "Scrape selected" has exactly one
+    caller and it always wants the result saved.
     """
     school = await crud.get_school(db, tenant_id, request.school_id)
     if not school:
@@ -415,25 +431,76 @@ async def scrape_media_batch(
             detail=f"School {request.school_id} not found in tenant {tenant_id}",
         )
     urls_by_id = {u.id: u for u in school.scrape_urls}
-
-    results: list[ScrapeMediaResponse] = []
-    for scrape_url_id in request.scrape_url_ids:
-        scrape_url = urls_by_id.get(scrape_url_id)
-        if not scrape_url:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Scrape URL {scrape_url_id} not found for school {request.school_id}",
-            )
-        results.append(
-            await _scrape_and_maybe_persist(
-                db,
-                url=scrape_url.url,
-                crawl_depth=request.crawl_depth,
-                scrape_url=scrape_url,
-            )
+    missing = [i for i in request.scrape_url_ids if i not in urls_by_id]
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Scrape URL(s) {missing} not found for school {request.school_id}",
         )
 
-    return ScrapeMediaBatchResponse(results=results)
+    # Imported here, not at module scope, to avoid the tasks -> models
+    # import cycle (matches backfill_years/scrape_media above).
+    from app.tasks.school_scraper_tasks import scrape_media_batch as scrape_media_batch_task
+
+    task = scrape_media_batch_task.delay(
+        tenant_id,
+        request.school_id,
+        request.scrape_url_ids,
+        request.crawl_depth,
+    )
+    return ScrapeMediaBatchTaskResponse(task_id=task.id, status="PENDING")
+
+
+@router.get(
+    "/scrape-media-batch/status",
+    response_model=ScrapeMediaBatchStatusResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Poll the status/result of a batch scrape kicked off by POST /scrape-media-batch",
+)
+async def get_scrape_media_batch_status(
+    task_id: str,
+    current_user: User = Depends(get_current_tenant_user),
+) -> ScrapeMediaBatchStatusResponse:
+    from app.celery_app import celery_app
+
+    task_result = celery_app.AsyncResult(task_id)
+    if not task_result.ready():
+        return ScrapeMediaBatchStatusResponse(
+            running=True, task_status=task_result.state
+        )
+
+    raw = task_result.result
+    if not isinstance(raw, dict):
+        # A worker crash/timeout surfaces here as a non-dict result
+        # (typically an exception instance) — report it rather than 500.
+        return ScrapeMediaBatchStatusResponse(
+            running=False, task_status=task_result.state, error=str(raw)
+        )
+    if raw.get("error"):
+        return ScrapeMediaBatchStatusResponse(
+            running=False, task_status=task_result.state, error=raw["error"]
+        )
+
+    results = [
+        ScrapeMediaResponse(
+            source_url=r["source_url"],
+            scrape_url_id=r["scrape_url_id"],
+            success=r["success"],
+            http_status=r["http_status"],
+            pages_crawled=r["pages_crawled"],
+            total_media_found=len(r["media_files"]),
+            media_type_summary=_media_type_summary(r["media_files"]),
+            media_files=[MediaFileResult(**m) for m in r["media_files"]],
+            persisted=r["persisted"],
+            skipped_duplicates=r["skipped_duplicates"],
+            enqueued=r["enqueued"],
+            scraped_media_ids=r["scraped_media_ids"],
+        )
+        for r in raw["results"]
+    ]
+    return ScrapeMediaBatchStatusResponse(
+        running=False, task_status=task_result.state, results=results
+    )
 
 
 @router.post(

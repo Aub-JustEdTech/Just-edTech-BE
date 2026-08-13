@@ -133,7 +133,12 @@ class ScrapeMediaResponse(BaseModel):
 
 
 class ScrapeMediaBatchRequest(BaseModel):
-    """Request body for scraping multiple confirmed URLs for one school."""
+    """Request body for scraping multiple confirmed URLs for one school.
+
+    Unlike /scrape-media, this endpoint has no preview-only mode: it backs
+    the "Scrape selected" action, which always saves discovered media to
+    scraped_media and enqueues ingestion for newly created rows.
+    """
 
     school_id: int
     scrape_url_ids: list[int] = Field(..., min_length=1)
@@ -149,6 +154,27 @@ class ScrapeMediaBatchResponse(BaseModel):
     """Response from the batch media-scraping endpoint — one result per URL."""
 
     results: list[ScrapeMediaResponse]
+
+
+class ScrapeMediaBatchTaskResponse(BaseModel):
+    """Returned immediately by POST /scrape-media-batch — the scrape itself
+    runs in the background. Poll GET /scrape-media-batch/status with this
+    task_id for the actual results."""
+
+    task_id: str
+    status: str = "PENDING"
+
+
+class ScrapeMediaBatchStatusResponse(BaseModel):
+    """Poll this until `running` is False, then read `results`."""
+
+    running: bool
+    task_status: str | None = None
+    results: list[ScrapeMediaResponse] | None = None
+    # Set only on a validation failure inside the task (bad school_id or
+    # scrape_url_ids) — mirrors what the old synchronous endpoint used to
+    # raise as an immediate 404.
+    error: str | None = None
 
 
 class BackfillYearsRequest(BaseModel):
