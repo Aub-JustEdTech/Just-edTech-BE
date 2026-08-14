@@ -18,7 +18,7 @@ change, and dropping the checkpoint tables would destroy conversation
 state — so they were deliberately removed from this revision.
 
 Revision ID: e40a3d4fec9c
-Revises: 9d23df92a0ce
+Revises: 20260729_000001
 Create Date: 2026-07-29 17:52:02.057456
 
 """
@@ -29,7 +29,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "e40a3d4fec9c"
-down_revision: str | None = "9d23df92a0ce"
+down_revision: str | None = "20260729_000001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
