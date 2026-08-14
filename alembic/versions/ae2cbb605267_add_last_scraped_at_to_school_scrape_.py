@@ -1,7 +1,7 @@
 """add_last_scraped_at_to_school_scrape_urls
 
 Revision ID: ae2cbb605267
-Revises: 20260729_000001
+Revises: 20260731_000001
 Create Date: 2026-08-07 16:31:28.361448
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'ae2cbb605267'
-down_revision: Union[str, None] = 'c24950a18e03'
+down_revision: Union[str, None] = '20260731_000001'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
