@@ -74,8 +74,7 @@ async def seed_schools(
             ).scalar_one_or_none()
 
             if existing:
-                # Update mutable fields only; do not clobber scrape_url_id
-                # or last_scrapped_at.
+                # Update mutable fields only; do not clobber last_scrapped_at.
                 existing.name = name
                 existing.district_type = rec.get("district_type") or existing.district_type
                 existing.website = rec.get("website") or existing.website

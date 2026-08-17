@@ -549,11 +549,12 @@ async def _create_document_and_enqueue(
     max_retries=3,
 )
 def sweep_school_media(self, school_ids: list[int] | None = None) -> dict:
-    """Walk confirmed school URLs, persist what is found, enqueue only new rows.
+    """Walk every active school_scrape_urls row, persist media, enqueue new rows.
 
-    Deliberately NOT in beat_schedule: run it manually and confirm the
-    created/skipped counts look right before letting it fire unattended
-    against several hundred district sites.
+    Does not re-run URL discovery — only the human-confirmed scrapable URLs
+    paired with each school are crawled. Deliberately NOT in beat_schedule:
+    run it manually and confirm the created/skipped counts look right before
+    letting it fire unattended against several hundred district sites.
     """
     try:
         loop = get_event_loop()

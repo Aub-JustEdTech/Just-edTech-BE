@@ -219,14 +219,23 @@ _DRIVE_FOLDER_RE = re.compile(
     r"drive\.google\.com/(?:embeddedfolderview\?id=|drive/folders/)([a-zA-Z0-9_-]+)",
     re.IGNORECASE,
 )
+_DRIVE_FOLDER_URL_RE = re.compile(
+    r"drive\.google\.com/(?:drive/folders/|folderview\?id=|embeddedfolderview\?id=)([a-zA-Z0-9_-]+)",
+    re.IGNORECASE,
+)
 _DRIVE_FILE_RE = re.compile(
     r"drive\.google\.com/file/d/([a-zA-Z0-9_-]+)",
+    re.IGNORECASE,
+)
+_DRIVE_OPEN_RE = re.compile(
+    r"drive\.google\.com/open(?:\?|&)(?:[^#\"']*&)?id=([a-zA-Z0-9_-]+)",
     re.IGNORECASE,
 )
 _DOCS_FILE_RE = re.compile(
     r"docs\.google\.com/document/d/(?:e/)?([a-zA-Z0-9_-]+)",
     re.IGNORECASE,
 )
+_DEFAULT_MAX_DRIVE_FOLDERS = 50
 _GOOGLE_URL_Q_RE = re.compile(
     r"https?://www\.google\.com/url\?[^\"\s]*?[?&]q=([^&\"\s]+)",
     re.IGNORECASE,
@@ -262,6 +271,7 @@ def _keep_media(
     name: str | None,
     page_url: str,
     file_extension: str,
+    allow_unknown_year: bool = False,
 ) -> dict | None:
     year, should_keep, skip_reason = evaluate_media_year(
         url=url,
@@ -269,8 +279,11 @@ def _keep_media(
         source_page_url=page_url,
     )
     if not should_keep:
-        logger.debug("Skipping Google embed file %r (%s)", name or url, skip_reason)
-        return None
+        if allow_unknown_year:
+            year = None
+        else:
+            logger.debug("Skipping Google embed file %r (%s)", name or url, skip_reason)
+            return None
     return {
         "name": name,
         "url": url,
@@ -280,6 +293,65 @@ def _keep_media(
         "source_page_url": page_url,
         "doc_year": year,
     }
+
+
+def classify_google_url(url: str | None) -> tuple[str | None, str | None]:
+    """Classify a Google Drive/Docs URL.
+
+    Returns ``(kind, resource_id)`` where *kind* is one of:
+    ``folder``, ``file``, ``open`` (Drive file via ``open?id=``), ``gdoc``,
+    or ``None`` when the URL is not a supported Google resource.
+    """
+    if not url:
+        return None, None
+    lowered = url.lower()
+
+    if "docs.google.com/document" in lowered:
+        m = _DOCS_FILE_RE.search(url)
+        if m:
+            return "gdoc", m.group(1)
+
+    m = _DRIVE_FOLDER_URL_RE.search(url)
+    if m:
+        return "folder", m.group(1)
+
+    m = _DRIVE_FILE_RE.search(url)
+    if m:
+        return "file", m.group(1)
+
+    m = _DRIVE_OPEN_RE.search(url)
+    if m:
+        return "open", m.group(1)
+
+    return None, None
+
+
+def parse_drive_subfolders(folder_html: str) -> list[tuple[str, str]]:
+    """Return ``(folder_id, folder_name)`` pairs from embeddedfolderview HTML."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(folder_html or "", "html.parser")
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for entry in soup.find_all(class_=re.compile(r"flip-entry", re.I)):
+        anchor = entry.find("a", href=True)
+        if not anchor:
+            continue
+        href = str(anchor.get("href") or "")
+        match = _DRIVE_FOLDER_RE.search(href)
+        if not match:
+            continue
+        folder_id = match.group(1)
+        if folder_id in seen:
+            continue
+        seen.add(folder_id)
+        title_el = entry.find(class_=re.compile(r"flip-entry-title", re.I))
+        if title_el:
+            name = title_el.get_text(" ", strip=True)
+        else:
+            name = anchor.get_text(" ", strip=True)
+        out.append((folder_id, name or folder_id))
+    return out
 
 
 def parse_drive_folder_html(folder_html: str, *, page_url: str) -> list[dict]:
@@ -310,6 +382,99 @@ def parse_drive_folder_html(folder_html: str, *, page_url: str) -> list[dict]:
     return list(collected.values())
 
 
+def media_from_google_drive_file(
+    file_id: str,
+    *,
+    page_url: str,
+    name: str | None = None,
+    allow_unknown_year: bool = False,
+) -> dict | None:
+    """Build a media dict for a single Drive file id."""
+    download = drive_uc_download_url(file_id)
+    return _keep_media(
+        url=download,
+        name=name,
+        page_url=page_url,
+        file_extension=_extension_from_name(name),
+        allow_unknown_year=allow_unknown_year,
+    )
+
+
+def media_from_google_doc(
+    doc_id: str,
+    *,
+    page_url: str,
+    name: str | None = None,
+    allow_unknown_year: bool = False,
+) -> dict | None:
+    """Build a media dict for a Google Doc exported as PDF."""
+    export_url = docs_export_pdf_url(doc_id)
+    doc_name = name or f"google-doc-{doc_id}.pdf"
+    return _keep_media(
+        url=export_url,
+        name=doc_name,
+        page_url=page_url,
+        file_extension=".pdf",
+        allow_unknown_year=allow_unknown_year,
+    )
+
+
+async def crawl_google_drive_folder(
+    folder_id: str,
+    *,
+    page_url: str,
+    fetch_text,
+    max_folders: int = _DEFAULT_MAX_DRIVE_FOLDERS,
+) -> list[dict]:
+    """Walk a Drive folder tree via ``embeddedfolderview`` and collect files."""
+    queue: list[tuple[str, str | None]] = [(folder_id, None)]
+    visited: set[str] = set()
+    collected: dict[str, dict] = {}
+
+    while queue and len(visited) < max_folders:
+        current_id, folder_name = queue.pop(0)
+        if current_id in visited:
+            continue
+        if folder_name and not folder_may_contain_allowed_years(folder_name):
+            logger.debug(
+                "Skipping Drive subfolder %r (no allowed years in name)",
+                folder_name,
+            )
+            continue
+
+        visited.add(current_id)
+        folder_url = (
+            f"https://drive.google.com/embeddedfolderview?id={current_id}#list"
+        )
+        try:
+            folder_html = await fetch_text(folder_url)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(
+                "Drive folder fetch failed for %s (%s): %s",
+                current_id,
+                type(exc).__name__,
+                exc,
+            )
+            continue
+        if not folder_html:
+            continue
+
+        for item in parse_drive_folder_html(folder_html, page_url=page_url):
+            collected[item["url"]] = item
+
+        for sub_id, sub_name in parse_drive_subfolders(folder_html):
+            if sub_id not in visited:
+                queue.append((sub_id, sub_name))
+
+    logger.info(
+        "Google Drive folder walk for %s: visited=%d folders, docs=%d",
+        page_url,
+        len(visited),
+        len(collected),
+    )
+    return list(collected.values())
+
+
 async def extract_google_drive_folder_media(
     html: str,
     *,
@@ -318,7 +483,7 @@ async def extract_google_drive_folder_media(
 ) -> list[dict]:
     """
     Find ``embeddedfolderview`` / Drive folder iframes in ``html``, fetch each
-    folder listing, and return downloadable document media.
+    folder listing (recursively), and return downloadable document media.
     """
     folder_ids = list(dict.fromkeys(_DRIVE_FOLDER_RE.findall(html or "")))
     if not folder_ids:
@@ -326,24 +491,16 @@ async def extract_google_drive_folder_media(
 
     collected: dict[str, dict] = {}
     for folder_id in folder_ids:
-        folder_url = f"https://drive.google.com/embeddedfolderview?id={folder_id}#list"
-        try:
-            folder_html = await fetch_text(folder_url)
-        except Exception as exc:  # noqa: BLE001
-            logger.debug(
-                "Drive folder fetch failed for %s (%s): %s",
-                folder_id,
-                type(exc).__name__,
-                exc,
-            )
-            continue
-        if not folder_html:
-            continue
-        for item in parse_drive_folder_html(folder_html, page_url=page_url):
+        items = await crawl_google_drive_folder(
+            folder_id,
+            page_url=page_url,
+            fetch_text=fetch_text,
+        )
+        for item in items:
             collected[item["url"]] = item
 
     logger.info(
-        "Google Drive folders on %s: %d folders, %d docs",
+        "Google Drive folders on %s: %d roots, %d docs",
         page_url,
         len(folder_ids),
         len(collected),

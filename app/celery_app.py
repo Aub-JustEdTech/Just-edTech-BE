@@ -32,6 +32,16 @@ celery_app.conf.update(
     # Task routing
     task_routes={
         "app.tasks.document_tasks.process_document_task": {"queue": "documents"},
+        "pipeline.process_document": {"queue": "documents"},
+        "pipeline.download_from_s3": {"queue": "documents"},
+        "pipeline.extract_text": {"queue": "documents"},
+        "pipeline.summarize_document": {"queue": "documents"},
+        "pipeline.classify_document": {"queue": "documents"},
+        "pipeline.chunk_text": {"queue": "documents"},
+        "pipeline.contextualize_chunks": {"queue": "documents"},
+        "pipeline.generate_embeddings": {"queue": "documents"},
+        "pipeline.store_vectors": {"queue": "documents"},
+        "pipeline.accumulate_batch": {"queue": "documents"},
         "app.tasks.school_scraper_tasks.ingest_scraped_media": {
             "queue": "scraping"
         },

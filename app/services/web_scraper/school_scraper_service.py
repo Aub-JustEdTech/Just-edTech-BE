@@ -1097,8 +1097,16 @@ class SchoolScraperService:
             is_board_platform_url,
         )
         from app.services.web_scraper.playwright_interactions import (
+            classify_google_url,
+            crawl_google_drive_folder,
             expand_boardontrack_meetings,
             expand_diligent_meetings,
+            media_from_google_doc,
+            media_from_google_drive_file,
+        )
+        from app.services.transcription.youtube import (
+            is_youtube_scrape_url,
+            resolve_youtube_media_items,
         )
 
         all_media: list[dict] = []
@@ -1110,6 +1118,52 @@ class SchoolScraperService:
 
         while queue:
             current_url, depth = queue.pop(0)
+
+            # Google Drive/Docs URLs are handled by dedicated extractors —
+            # not the generic HTML link crawler.
+            google_kind, google_id = classify_google_url(current_url)
+            if google_kind == "folder" and google_id:
+                pages_crawled += 1
+                drive_media = await crawl_google_drive_folder(
+                    google_id,
+                    page_url=current_url,
+                    fetch_text=self._fetch_text,
+                )
+                all_media.extend(drive_media)
+                continue
+            if google_kind in ("file", "open") and google_id:
+                pages_crawled += 1
+                item = media_from_google_drive_file(
+                    google_id,
+                    page_url=current_url,
+                    allow_unknown_year=True,
+                )
+                if item:
+                    all_media.append(item)
+                continue
+            if google_kind == "gdoc" and google_id:
+                pages_crawled += 1
+                item = media_from_google_doc(
+                    google_id,
+                    page_url=current_url,
+                    allow_unknown_year=True,
+                )
+                if item:
+                    all_media.append(item)
+                continue
+
+            # Direct YouTube fixed URLs (watch, playlist, channel) — same as
+            # Google Drive, not the generic HTML link crawler.
+            if is_youtube_scrape_url(current_url):
+                pages_crawled += 1
+                yt_items = await resolve_youtube_media_items(
+                    current_url,
+                    source_page_url=page_url,
+                )
+                if yt_items:
+                    all_media.extend(yt_items)
+                continue
+
             extra_media: list[dict] = []
 
             # Board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack)

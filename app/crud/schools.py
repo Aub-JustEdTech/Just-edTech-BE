@@ -253,11 +253,6 @@ async def add_scrape_url(
         existing.confirmed_by_user_id = user_id
         existing.confirmed_at = datetime.now(timezone.utc)
         existing.is_active = True
-        await db.flush()
-        # Only promote when explicitly requested — adding a manual candidate
-        # must not silently become the primary scrape URL.
-        if data.is_primary:
-            school.scrape_url_id = existing.id
         await db.commit()
         await db.refresh(existing)
         return existing
@@ -273,8 +268,6 @@ async def add_scrape_url(
     )
     db.add(url)
     await db.flush()
-    if data.is_primary:
-        school.scrape_url_id = url.id
     await db.commit()
     await db.refresh(url)
     return url
@@ -299,8 +292,6 @@ async def update_scrape_url(
         scrape_url.use_playwright = data.use_playwright
     if data.is_active is not None:
         scrape_url.is_active = data.is_active
-    if data.is_primary:
-        school.scrape_url_id = scrape_url.id
     try:
         await db.commit()
     except IntegrityError as exc:
@@ -316,19 +307,9 @@ async def deactivate_scrape_url(
     db: AsyncSession, school: School, scrape_url: SchoolScrapeUrl
 ) -> SchoolScrapeUrl:
     scrape_url.is_active = False
-    if school.scrape_url_id == scrape_url.id:
-        school.scrape_url_id = None
     await db.commit()
     await db.refresh(scrape_url)
     return scrape_url
-
-
-async def clear_primary_scrape_url(db: AsyncSession, school: School) -> School:
-    """Unset the school's primary scrape URL without deactivating stored rows."""
-    school.scrape_url_id = None
-    await db.commit()
-    await db.refresh(school)
-    return school
 
 
 # ---------------------------------------------------------------------------

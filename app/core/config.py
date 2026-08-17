@@ -404,6 +404,10 @@ class Settings(BaseSettings):
     # youtube-transcript-api raises IpBlocked when YouTube rate-limits a
     # datacenter IP. Set a residential/rotating proxy here if that happens.
     SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
+    # Max free caption API calls per worker process before switching every
+    # subsequent YouTube item to AssemblyAI (audio download + paid transcribe).
+    # YouTube commonly rate-limits datacenter IPs after ~10 requests.
+    SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
     # yt-dlp is used ONLY to fetch audio for videos with no captions.
     # A Netscape cookies.txt defeats "Sign in to confirm you're not a bot".
     SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""

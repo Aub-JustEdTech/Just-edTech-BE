@@ -28,6 +28,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import threading
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -116,6 +117,190 @@ def is_youtube_url(url: str) -> bool:
     return extract_youtube_id(url) is not None
 
 
+def extract_playlist_id(url: str) -> str | None:
+    """Return the playlist id from a YouTube URL, if present."""
+    if not url:
+        return None
+    try:
+        parsed = urlparse(url.strip())
+    except ValueError:
+        return None
+    host = (parsed.hostname or "").lower()
+    if host not in _YOUTUBE_HOSTS:
+        return None
+    values = parse_qs(parsed.query).get("list") or []
+    return values[0] if values else None
+
+
+def is_youtube_scrape_url(url: str) -> bool:
+    """True when ``url`` is a direct YouTube video, playlist, or channel entry point."""
+    if extract_youtube_id(url) or extract_playlist_id(url):
+        return True
+    try:
+        parsed = urlparse(url.strip())
+    except ValueError:
+        return False
+    host = (parsed.hostname or "").lower()
+    if host not in _YOUTUBE_HOSTS:
+        return False
+    path = parsed.path or ""
+    return (
+        path.startswith("/playlist")
+        or "/channel/" in path
+        or path.startswith("/@")
+        or path.startswith("/c/")
+        or path.startswith("/user/")
+    )
+
+
+class _YouTubeCaptionBudget:
+    """Process-local counter for free caption API calls (per Celery worker)."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._attempts = 0
+        self._exhausted = False
+
+    def reset(self) -> None:
+        with self._lock:
+            self._attempts = 0
+            self._exhausted = False
+
+    def is_exhausted(self) -> bool:
+        with self._lock:
+            limit = int(getattr(settings, "SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET", 10))
+            if limit <= 0:
+                return True
+            return self._exhausted or self._attempts >= limit
+
+    def record_attempt(self) -> None:
+        with self._lock:
+            limit = int(getattr(settings, "SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET", 10))
+            self._attempts += 1
+            if limit > 0 and self._attempts >= limit:
+                self._exhausted = True
+
+    def exhaust(self) -> None:
+        with self._lock:
+            self._exhausted = True
+
+
+_caption_budget = _YouTubeCaptionBudget()
+
+
+def reset_youtube_caption_budget() -> None:
+    """Test helper — reset the per-process caption budget."""
+    _caption_budget.reset()
+
+
+def youtube_caption_budget_exhausted() -> bool:
+    return _caption_budget.is_exhausted()
+
+
+async def list_youtube_video_urls(url: str) -> list[str]:
+    """Expand a YouTube video, playlist, or channel URL to canonical watch URLs."""
+    if not is_youtube_scrape_url(url):
+        return []
+
+    if extract_youtube_id(url) and not extract_playlist_id(url):
+        canonical = canonical_youtube_url(url)
+        return [canonical] if canonical else []
+
+    return await asyncio.to_thread(_list_youtube_videos_sync, url)
+
+
+def _list_youtube_videos_sync(url: str) -> list[str]:
+    """Blocking playlist/channel expansion via yt-dlp (no downloads)."""
+    try:
+        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
+    except ImportError:  # pragma: no cover
+        logger.warning("yt-dlp not installed; cannot expand YouTube playlist %s", url)
+        canonical = canonical_youtube_url(url)
+        return [canonical] if canonical else []
+
+    opts = _ytdlp_options()
+    opts.update(
+        {
+            "extract_flat": "in_playlist",
+            "skip_download": True,
+            "ignoreerrors": True,
+            "quiet": True,
+        }
+    )
+
+    try:
+        with YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not expand YouTube URL %s: %s", url, exc)
+        canonical = canonical_youtube_url(url)
+        return [canonical] if canonical else []
+
+    if not info:
+        return []
+
+    entries = info.get("entries")
+    if not entries:
+        vid = info.get("id")
+        if isinstance(vid, str) and _VIDEO_ID_RE.match(vid):
+            return [f"https://www.youtube.com/watch?v={vid}"]
+        canonical = canonical_youtube_url(url)
+        return [canonical] if canonical else []
+
+    urls: list[str] = []
+    seen: set[str] = set()
+    for entry in entries:
+        if not entry:
+            continue
+        candidate: str | None = None
+        entry_id = entry.get("id")
+        if isinstance(entry_id, str) and _VIDEO_ID_RE.match(entry_id):
+            candidate = f"https://www.youtube.com/watch?v={entry_id}"
+        else:
+            entry_url = entry.get("url") or entry.get("webpage_url")
+            if isinstance(entry_url, str):
+                candidate = canonical_youtube_url(entry_url)
+        if candidate and candidate not in seen:
+            seen.add(candidate)
+            urls.append(candidate)
+    return urls
+
+
+async def resolve_youtube_media_items(
+    url: str,
+    *,
+    source_page_url: str | None = None,
+) -> list[dict] | None:
+    """Build scraper media dicts for a direct YouTube fixed URL.
+
+    Returns ``None`` when ``url`` is not a YouTube scrape entry point.
+    """
+    video_urls = await list_youtube_video_urls(url)
+    if not video_urls:
+        return None
+
+    page = source_page_url or url
+    seen: set[str] = set()
+    items: list[dict] = []
+    for video_url in video_urls:
+        canonical = canonical_youtube_url(video_url)
+        if not canonical or canonical in seen:
+            continue
+        seen.add(canonical)
+        name = await fetch_youtube_title(canonical) or canonical
+        items.append(
+            {
+                "name": name,
+                "url": canonical,
+                "file_extension": None,
+                "media_type": "youtube",
+                "size_bytes": None,
+                "source_page_url": page,
+            }
+        )
+    return items or None
+
+
 async def fetch_youtube_title(url: str) -> str | None:
     """The video's real title, via YouTube's oEmbed endpoint — no API key.
 
@@ -146,18 +331,27 @@ async def fetch_youtube_title(url: str) -> str | None:
 async def fetch_youtube_transcript(url: str) -> TranscriptResult | None:
     """Fetch captions for ``url``.
 
-    Returns ``None`` when the video genuinely has no captions — that is the
-    signal for the caller to fall back to paid transcription.
+    Returns ``None`` when:
+    - the video genuinely has no captions (caller may use AssemblyAI), or
+    - the per-process caption budget is exhausted, or
+    - YouTube rate-limited us (budget is exhausted and caller should use AssemblyAI).
 
     Raises ``MediaUnavailableError`` (terminal) when the video itself is gone
-    or restricted, and ``TranscriptionProviderError`` (transient, retried) when
-    YouTube rate-limits us, because the latter must never be mistaken for
-    "no captions".
+    or restricted. Other unexpected errors raise ``TranscriptionProviderError``.
     """
     video_id = extract_youtube_id(url)
     if not video_id:
         return None
 
+    if _caption_budget.is_exhausted():
+        logger.warning(
+            "YouTube caption budget exhausted; skipping free captions for %s — "
+            "caller should use AssemblyAI",
+            video_id,
+        )
+        return None
+
+    _caption_budget.record_attempt()
     return await asyncio.to_thread(_fetch_sync, video_id, url)
 
 
@@ -213,17 +407,15 @@ def _fetch_sync(video_id: str, url: str) -> TranscriptResult | None:
         # UNREACHABLE, not absent. Must not be mistaken for "no captions" —
         # raise so Celery retries instead of silently paying.
         if name in ("IpBlocked", "RequestBlocked", "TooManyRequests", "YouTubeRequestFailed"):
-            logger.error(
-                "YouTube BLOCKED the caption request for %s (%s). Captions are "
-                "UNREACHABLE, not absent — NOT falling through to paid "
-                "transcription. Set SCHOOL_SCRAPER_YOUTUBE_PROXY_URL if this "
-                "persists.",
+            _caption_budget.exhaust()
+            logger.warning(
+                "YouTube BLOCKED the caption request for %s (%s). Caption budget "
+                "exhausted — falling through to AssemblyAI. Set "
+                "SCHOOL_SCRAPER_YOUTUBE_PROXY_URL to extend free caption usage.",
                 video_id,
                 name,
             )
-            raise TranscriptionProviderError(
-                f"YouTube blocked caption retrieval for {video_id}: {name}"
-            ) from exc
+            return None
         if name in ("AgeRestricted", "VideoUnplayable", "InvalidVideoId"):
             raise MediaUnavailableError(
                 f"YouTube video {video_id} not retrievable: {name}"
