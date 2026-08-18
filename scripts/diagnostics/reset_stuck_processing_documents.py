@@ -1,4 +1,4 @@
-"""Recover documents orphaned at processing_status='processing'.
+"""Recover documents orphaned at processing_status='processing' or 'pending'.
 
 Background: a Celery chain stage can complete successfully and leave a
 document at PROCESSING, but the chain fails to trigger its next stage (e.g.
@@ -8,10 +8,19 @@ ever raised, so `_mark_stage_failed` in app/tasks/document_pipeline.py never
 runs and the row is stuck forever: no worker holds it, no queue holds it, and
 it never becomes COMPLETED or FAILED on its own.
 
-This script, for documents that have been stuck in 'processing' for longer
-than --stale-hours:
+A second, distinct failure mode covered by --include-pending: if Redis
+rejects a write with `OutOfMemoryError` (maxmemory + noeviction) at the exact
+moment a message would be published or a crashed task would be requeued
+(task_reject_on_worker_lost also needs a successful broker write), the
+message is lost outright rather than delayed. Restarting the workers doesn't
+help in that case - there's nothing left in the queue for them to consume,
+and documents that were still PENDING (never even got their first stage 1
+message through) stay PENDING forever with no worker aware of them.
+
+This script, for documents matching the target statuses that have been
+stuck (by updated_at) for longer than --stale-hours:
   1. Deletes any existing chunk points (`documents` collection) and summary
-     point (`summaries` collection) already written by the partial run, so
+     point (`summaries` collection) already written by a partial run, so
      the retry doesn't create duplicates on top of a partial success
      (vector_store.delete_document / delete_document_summary are otherwise
      never called before a reprocess - see the duplicate-points investigation
@@ -25,6 +34,9 @@ Defaults to --dry-run. Pass --apply to actually make changes.
 Usage (inside the api container):
     docker exec just-edtech-api python scripts/diagnostics/reset_stuck_processing_documents.py --tenant-id 4 --dry-run
     docker exec just-edtech-api python scripts/diagnostics/reset_stuck_processing_documents.py --tenant-id 4 --apply
+    # Also catch documents whose first stage-1 message was never delivered
+    # (lost during a Redis OOM event, not just a broken mid-chain):
+    docker exec just-edtech-api python scripts/diagnostics/reset_stuck_processing_documents.py --tenant-id 4 --include-pending --apply
 """
 
 import argparse
@@ -39,13 +51,19 @@ from app.models.processing_jobs import DocumentProcessingJob, JobStatus
 from app.services.vector_store.factory import VectorStoreFactory
 
 
-async def find_stuck(tenant_id: int, stale_hours: int) -> list[Document]:
+async def find_stuck(
+    tenant_id: int, stale_hours: int, include_pending: bool
+) -> list[Document]:
+    statuses = [ProcessingStatus.PROCESSING]
+    if include_pending:
+        statuses.append(ProcessingStatus.PENDING)
+
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(Document)
             .where(
                 Document.tenant_id == tenant_id,
-                Document.processing_status == ProcessingStatus.PROCESSING,
+                Document.processing_status.in_(statuses),
                 Document.updated_at < _now_minus_hours(stale_hours),
             )
             .order_by(Document.id.asc())
@@ -59,16 +77,19 @@ def _now_minus_hours(hours: int):
     return datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=hours)
 
 
-async def reset_and_requeue(tenant_id: int, stale_hours: int, apply: bool) -> dict:
-    docs = await find_stuck(tenant_id, stale_hours)
+async def reset_and_requeue(
+    tenant_id: int, stale_hours: int, apply: bool, include_pending: bool
+) -> dict:
+    docs = await find_stuck(tenant_id, stale_hours, include_pending)
     stats = {"total": len(docs), "reset": 0, "chunks_deleted": 0, "summaries_deleted": 0}
 
     print("=" * 60)
-    print("Reset stuck-processing documents")
-    print(f"  tenant_id     : {tenant_id}")
-    print(f"  stale_hours   : {stale_hours}")
-    print(f"  mode          : {'APPLY' if apply else 'DRY RUN'}")
-    print(f"  candidates    : {len(docs)}")
+    print("Reset stuck documents")
+    print(f"  tenant_id       : {tenant_id}")
+    print(f"  stale_hours     : {stale_hours}")
+    print(f"  include_pending : {include_pending}")
+    print(f"  mode            : {'APPLY' if apply else 'DRY RUN'}")
+    print(f"  candidates      : {len(docs)}")
     print("=" * 60)
 
     if not docs:
@@ -77,7 +98,10 @@ async def reset_and_requeue(tenant_id: int, stale_hours: int, apply: bool) -> di
 
     if not apply:
         for doc in docs[:20]:
-            print(f"  [dry] doc={doc.id} chunk_count={doc.chunk_count} name={doc.name[:60]!r}")
+            print(
+                f"  [dry] doc={doc.id} status={doc.processing_status.value} "
+                f"chunk_count={doc.chunk_count} name={doc.name[:60]!r}"
+            )
         if len(docs) > 20:
             print(f"  ... and {len(docs) - 20} more")
         print("\nRe-run with --apply to actually reset and requeue these documents.")
@@ -140,6 +164,15 @@ def main() -> None:
     )
     parser.add_argument("--apply", action="store_true", help="Actually reset and requeue (default is dry-run)")
     parser.add_argument("--dry-run", action="store_true", help="Explicit dry-run (default behavior)")
+    parser.add_argument(
+        "--include-pending",
+        action="store_true",
+        help=(
+            "Also include documents stuck at processing_status='pending' "
+            "(their initial stage-1 message was lost/never delivered - a "
+            "different failure mode than a broken mid-chain 'processing' row)."
+        ),
+    )
     args = parser.parse_args()
 
     try:
@@ -148,6 +181,7 @@ def main() -> None:
                 tenant_id=args.tenant_id,
                 stale_hours=args.stale_hours,
                 apply=args.apply,
+                include_pending=args.include_pending,
             )
         )
     except Exception as exc:
