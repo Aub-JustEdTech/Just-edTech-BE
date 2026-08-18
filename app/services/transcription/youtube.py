@@ -199,6 +199,9 @@ def youtube_caption_budget_exhausted() -> bool:
 
 async def list_youtube_video_urls(url: str) -> list[str]:
     """Expand a YouTube video, playlist, or channel URL to canonical watch URLs."""
+    if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+        return []
+
     if not is_youtube_scrape_url(url):
         return []
 
@@ -536,6 +539,9 @@ async def fetch_youtube_upload_year(url: str) -> int | None:
 
     Returns None if the metadata cannot be read.
     """
+    if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+        return None
+
     try:
         from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
     except ImportError:  # pragma: no cover

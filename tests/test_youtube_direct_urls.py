@@ -189,3 +189,20 @@ async def test_transcribe_youtube_uses_assemblyai_when_budget_exhausted(monkeypa
 async def test_list_youtube_video_urls_single_video():
     urls = await list_youtube_video_urls(VIDEO_URL)
     assert urls == [VIDEO_URL]
+
+
+async def test_list_youtube_video_urls_empty_when_transcript_disabled(monkeypatch):
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED", False)
+    assert await list_youtube_video_urls(PLAYLIST_URL) == []
+
+
+async def test_fetch_youtube_upload_year_skips_ytdlp_when_transcript_disabled(
+    monkeypatch,
+):
+    from app.services.transcription.youtube import fetch_youtube_upload_year
+
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED", False)
+    with patch("app.services.transcription.youtube.asyncio.to_thread") as mock_thread:
+        result = await fetch_youtube_upload_year(VIDEO_URL)
+    mock_thread.assert_not_called()
+    assert result is None
