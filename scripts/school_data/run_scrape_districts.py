@@ -171,79 +171,84 @@ async def _scrape_one_url(
 
     from app.tasks.school_scraper_tasks import ingest_scraped_media
 
-    async with AsyncSessionLocal() as db:
-        school_row = await db.get(School, school.id)
-        if not school_row:
-            result["error"] = "school missing on persist"
-            return result
+    try:
+        async with AsyncSessionLocal() as db:
+            school_row = await db.get(School, school.id)
+            if not school_row:
+                result["error"] = "school missing on persist"
+                return result
 
-        for mf in media_files:
-            media_type = _classify_media_type(
-                mf.get("media_type"), mf.get("file_extension")
-            )
-            if (
-                media_type == "youtube"
-                and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED
-            ):
-                result["media_skipped"] += 1
-                continue
-
-            inferred_year, should_process, _skip_reason = (
-                await evaluate_media_year_async(
-                    url=mf["url"],
-                    filename=mf.get("name"),
-                    source_page_url=mf.get("source_page_url", scrape_url.url),
+            for mf in media_files:
+                media_type = _classify_media_type(
+                    mf.get("media_type"), mf.get("file_extension")
                 )
+                if (
+                    media_type == "youtube"
+                    and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED
+                ):
+                    result["media_skipped"] += 1
+                    continue
+
+                inferred_year, should_process, _skip_reason = (
+                    await evaluate_media_year_async(
+                        url=mf["url"],
+                        filename=mf.get("name"),
+                        source_page_url=mf.get("source_page_url", scrape_url.url),
+                    )
+                )
+                if not should_process:
+                    result["media_skipped_year"] += 1
+                    continue
+
+                uh = crud.url_hash(mf["url"])
+                existing = await crud.get_scraped_media_by_url_hash(
+                    db, school_row.id, uh
+                )
+                if existing:
+                    result["media_skipped"] += 1
+                    continue
+
+                sm = ScrapedMedia(
+                    tenant_id=school_row.tenant_id,
+                    school_id=school_row.id,
+                    school_org_code=school_row.org_code,
+                    school_name=school_row.name,
+                    district_type=school_row.district_type,
+                    source_page_url=mf.get("source_page_url", scrape_url.url),
+                    source_media_url=mf["url"],
+                    url_hash=uh,
+                    content_hash=None,
+                    media_type=media_type,
+                    file_extension=mf.get("file_extension"),
+                    original_name=mf.get("name"),
+                    doc_year=inferred_year,
+                    status="discovered",
+                )
+                db.add(sm)
+                await db.commit()
+                result["media_new"] += 1
+
+                if enqueue:
+                    # Commit above (not just flush) matters: the Celery worker
+                    # opens its own DB connection and won't see a merely-flushed
+                    # row from this session, so an enqueue before commit races
+                    # the worker into "ScrapedMedia not found" — a silent,
+                    # non-retried no-op, not a task failure.
+                    ingest_scraped_media.delay(scraped_media_id=sm.id)
+                    result["enqueue_count"] += 1
+
+            await crud.record_scrape_result(
+                db,
+                scrape_url,
+                http_status=None,
+                page_count=result["pages_crawled"],
             )
-            if not should_process:
-                result["media_skipped_year"] += 1
-                continue
-
-            uh = crud.url_hash(mf["url"])
-            existing = await crud.get_scraped_media_by_url_hash(
-                db, school_row.id, uh
-            )
-            if existing:
-                result["media_skipped"] += 1
-                continue
-
-            sm = ScrapedMedia(
-                tenant_id=school_row.tenant_id,
-                school_id=school_row.id,
-                school_org_code=school_row.org_code,
-                school_name=school_row.name,
-                district_type=school_row.district_type,
-                source_page_url=mf.get("source_page_url", scrape_url.url),
-                source_media_url=mf["url"],
-                url_hash=uh,
-                content_hash=None,
-                media_type=media_type,
-                file_extension=mf.get("file_extension"),
-                original_name=mf.get("name"),
-                doc_year=inferred_year,
-                status="discovered",
-            )
-            db.add(sm)
-            await db.commit()
-            result["media_new"] += 1
-
-            if enqueue:
-                # Commit above (not just flush) matters: the Celery worker
-                # opens its own DB connection and won't see a merely-flushed
-                # row from this session, so an enqueue before commit races
-                # the worker into "ScrapedMedia not found" — a silent,
-                # non-retried no-op, not a task failure.
-                ingest_scraped_media.delay(scraped_media_id=sm.id)
-                result["enqueue_count"] += 1
-
-        # Record the scrape outcome on this specific URL row (per-URL
-        # last_scraped_at / last_crawl_page_count) and touch the school.
-        await crud.record_scrape_result(
-            db,
-            scrape_url,
-            http_status=None,
-            page_count=result["pages_crawled"],
+    except Exception as exc:  # noqa: BLE001
+        result["error"] = str(exc)
+        print(
+            f"  [fail] {school.name} ({school.org_code}) [{scrape_url.url}] — {exc}"
         )
+        return result
 
     print(
         f"  [ok]   {school.name} ({school.org_code}) [{scrape_url.url}] — "
@@ -350,7 +355,26 @@ async def run_scrape_districts(
             )
 
     tasks = [_run(pair) for pair in pairs]
-    results = await asyncio.gather(*tasks)
+    gathered = await asyncio.gather(*tasks, return_exceptions=True)
+    results = []
+    for item in gathered:
+        if isinstance(item, Exception):
+            print(f"  [fail] school scrape aborted — {item}")
+            results.append(
+                {
+                    "url_errors": 1,
+                    "error": str(item),
+                    "urls_scraped": 0,
+                    "pages_crawled": 0,
+                    "media_found": 0,
+                    "media_new": 0,
+                    "media_skipped": 0,
+                    "media_skipped_year": 0,
+                    "enqueue_count": 0,
+                }
+            )
+        else:
+            results.append(item)
 
     stats = {
         "schools": len(results),
