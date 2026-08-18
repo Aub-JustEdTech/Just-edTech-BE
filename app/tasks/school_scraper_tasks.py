@@ -86,6 +86,18 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
             logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
 
+        if sm.media_type == "youtube" and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            await update_scraped_media(
+                db,
+                sm.id,
+                status="no_transcript",
+                error_message="YouTube ingestion disabled (batch: documents only)",
+            )
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "no_transcript",
+            }
+
         inferred_year, should_process, skip_reason = await evaluate_media_year_async(
             url=sm.source_media_url,
             filename=sm.original_name,

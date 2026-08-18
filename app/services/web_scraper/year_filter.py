@@ -151,8 +151,12 @@ def should_crawl_page_url(url: str) -> bool:
 
 def filter_media_files(media_files: list[dict]) -> list[dict]:
     """Drop media dicts whose inferred year is outside the allowed set."""
+    from app.services.transcription.youtube import is_youtube_url
+
     kept: list[dict] = []
     for media in media_files:
+        if is_youtube_url(media["url"]) and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            continue
         # If doc_year is already set (e.g., from board platform expanders that
         # extracted year from meeting dates), use it directly instead of re-inferring
         existing_year = media.get("doc_year")

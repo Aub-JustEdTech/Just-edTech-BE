@@ -707,6 +707,9 @@ class SchoolScraperService:
         ``youtu.be/X``, ``/embed/X`` and ``watch?v=X&t=90`` collapses to one
         item — which is what stops us paying three times for one meeting.
         """
+        if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            return False
+
         from app.services.transcription.youtube import (
             canonical_youtube_url,
             fetch_youtube_title,
@@ -753,6 +756,8 @@ class SchoolScraperService:
         Many CMS themes put the real embed in ``data-src`` and only promote it
         to ``src`` client-side, so the parsed DOM never shows it.
         """
+        if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            return
         if not text:
             return
         for match in _YOUTUBE_IN_TEXT_PATTERN.finditer(text):
@@ -1360,6 +1365,15 @@ class SchoolScraperService:
             if m["url"] not in seen:
                 seen.add(m["url"])
                 unique_media.append(m)
+
+        if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            from app.services.transcription.youtube import is_youtube_url
+
+            unique_media = [
+                m
+                for m in unique_media
+                if m.get("media_type") != "youtube" and not is_youtube_url(m.get("url", ""))
+            ]
 
         return {
             "source_url": page_url,
