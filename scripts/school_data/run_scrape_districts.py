@@ -112,6 +112,53 @@ async def _load_schools(
         return pairs
 
 
+async def _doc_counts_by_source_page(tenant_id: int) -> dict[str, int]:
+    """Count document scraped_media rows per source_page_url for a tenant."""
+    from sqlalchemy import func
+
+    async with AsyncSessionLocal() as db:
+        rows = (
+            await db.execute(
+                select(ScrapedMedia.source_page_url, func.count(ScrapedMedia.id))
+                .where(
+                    ScrapedMedia.tenant_id == tenant_id,
+                    ScrapedMedia.media_type == "document",
+                )
+                .group_by(ScrapedMedia.source_page_url)
+            )
+        ).all()
+    return {url: int(n) for url, n in rows if url}
+
+
+def _apply_url_policy(
+    pairs: list[tuple[School, list[SchoolScrapeUrl]]],
+    *,
+    skip_scraped: bool,
+    revisit_max_docs: int | None,
+    doc_counts: dict[str, int],
+) -> tuple[list[tuple[School, list[SchoolScrapeUrl]]], int]:
+    """Drop already-scraped URLs unless they have fewer than revisit_max_docs docs."""
+    if not skip_scraped:
+        return pairs, 0
+
+    kept_pairs: list[tuple[School, list[SchoolScrapeUrl]]] = []
+    skipped = 0
+    for school, urls in pairs:
+        kept_urls: list[SchoolScrapeUrl] = []
+        for su in urls:
+            if su.last_scraped_at is None:
+                kept_urls.append(su)
+                continue
+            docs = doc_counts.get(su.url, 0)
+            if revisit_max_docs is not None and docs < revisit_max_docs:
+                kept_urls.append(su)
+                continue
+            skipped += 1
+        if kept_urls:
+            kept_pairs.append((school, kept_urls))
+    return kept_pairs, skipped
+
+
 async def _scrape_one_url(
     school: School,
     scrape_url: SchoolScrapeUrl,
@@ -318,9 +365,20 @@ async def run_scrape_districts(
     concurrency: int,
     dry_run: bool,
     enqueue: bool,
+    skip_scraped: bool = False,
+    revisit_max_docs: int | None = None,
 ) -> dict:
     org_codes = await _load_target_org_codes(json_path, org_codes_arg)
     pairs = await _load_schools(tenant_id, org_codes)
+    skipped_scraped = 0
+    if skip_scraped:
+        doc_counts = await _doc_counts_by_source_page(tenant_id)
+        pairs, skipped_scraped = _apply_url_policy(
+            pairs,
+            skip_scraped=True,
+            revisit_max_docs=revisit_max_docs,
+            doc_counts=doc_counts,
+        )
 
     total_urls = sum(len(urls) for _, urls in pairs)
 
@@ -329,10 +387,13 @@ async def run_scrape_districts(
     print(f"  tenant_id   : {tenant_id}")
     print(f"  schools     : {len(pairs)}")
     print(f"  scrape urls : {total_urls}")
+    print(f"  skipped done: {skipped_scraped}")
     print(f"  crawl_depth : {crawl_depth if crawl_depth is not None else '(per URL)'}")
     print(f"  concurrency : {concurrency}")
     print(f"  dry_run     : {dry_run}")
     print(f"  enqueue     : {enqueue and not dry_run}")
+    print(f"  skip_scraped: {skip_scraped}")
+    print(f"  revisit_max : {revisit_max_docs}")
     print("=" * 60)
 
     if not pairs:
@@ -459,6 +520,21 @@ def main() -> None:
         action="store_true",
         help="Persist ScrapedMedia rows but do not enqueue ingest tasks.",
     )
+    parser.add_argument(
+        "--skip-scraped",
+        action="store_true",
+        help="Skip URLs that already have last_scraped_at set.",
+    )
+    parser.add_argument(
+        "--revisit-max-docs",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "With --skip-scraped, still recrawl scraped URLs that have fewer "
+            "than N document rows on that source page."
+        ),
+    )
     args = parser.parse_args()
 
     json_path = None if args.all else args.json
@@ -475,6 +551,8 @@ def main() -> None:
                 concurrency=args.concurrency,
                 dry_run=args.dry_run,
                 enqueue=not args.no_enqueue,
+                skip_scraped=args.skip_scraped,
+                revisit_max_docs=args.revisit_max_docs,
             )
         )
     except Exception as exc:
