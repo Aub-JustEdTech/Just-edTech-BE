@@ -39,6 +39,10 @@ from app.models.processing_stages import (
 from app.services.chatbot_config_service import chatbot_config_service
 from app.services.document_processing.chunker import Chunker
 from app.services.document_processing.factory import ProcessorFactory
+from app.services.document_processing.heading_chunker import chunk_sections_by_heading
+from app.services.document_processing.markdown_heading_parser import (
+    parse_markdown_sections,
+)
 from app.services.embeddings.embedding_service import EmbeddingService
 from app.services.image_caption_service import ImageCaptionService
 from app.services.vector_store.factory import VectorStoreFactory, VectorStoreType
@@ -496,6 +500,12 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
                 ctx.doc_metadata["_ocr_pages_count"] = getattr(
                     processor, "ocr_pages_count", 0
                 )
+        elif ctx.document_type == ".pptx" and hasattr(processor, "extract_text_by_page"):
+            # Mirrors the PDF branch above: preserve per-slide text so
+            # chunking can attach page_number (slide index) metadata.
+            pages_text = processor.extract_text_by_page(ctx.temp_file_path)
+            ctx.doc_metadata["_pptx_pages_text"] = pages_text
+            ctx.extracted_text = "\n\n".join([p for p in pages_text if p])
         else:
             ctx.extracted_text = processor.extract_text(ctx.temp_file_path)
 
@@ -531,6 +541,21 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
             logger.info(
                 f"[Doc {ctx.document_id}] Pre-computed {len(spreadsheet_chunks)} "
                 "spreadsheet chunks"
+            )
+
+        # For DOCX, pre-extract heading/table structure (not final-sized
+        # chunks) so step3 can pack it against the tenant's chunk_size
+        # without re-opening the file. Sizing happens in step3 because
+        # (unlike xlsx row-batching/transcript duration-packing) DOCX
+        # sections should respect the per-tenant chunk_size/chunk_overlap,
+        # which is only fetched in step3 today.
+        if ctx.document_type == ".docx" and hasattr(processor, "extract_sections"):
+            ctx.doc_metadata["_docx_sections"] = processor.extract_sections(
+                ctx.temp_file_path
+            )
+            logger.info(
+                f"[Doc {ctx.document_id}] Extracted "
+                f"{len(ctx.doc_metadata['_docx_sections'])} DOCX sections"
             )
 
         # For transcripts, pre-chunk on utterance boundaries so each chunk keeps
@@ -967,18 +992,23 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
             db, chatbot_config_obj.id
         )
 
-        # Chunking strategy, one branch per document class. Pre-computed
-        # chunks (transcript, spreadsheet) win over the generic text chunker
-        # because they carry per-chunk metadata the chunker cannot recover.
+        # Chunking strategy, one branch per document class. Pre-computed /
+        # structure-aware chunks (transcript, spreadsheet, DOCX, PDF, PPTX,
+        # Markdown) win over the fully generic text chunker because they
+        # carry per-chunk metadata (or boundary quality) the generic chunker
+        # cannot recover.
         #
-        # Popped unconditionally and branched on TRUTHINESS, not key presence:
-        # an empty pre-chunk list means the specialised chunker produced
-        # nothing, and must fall through to the generic chunker rather than
-        # hard-failing the document at "No chunks generated".
+        # Pre-chunk keys are popped unconditionally and branched on
+        # TRUTHINESS, not key presence: an empty pre-chunk list means the
+        # specialised chunker produced nothing, and must fall through to the
+        # generic chunker rather than hard-failing the document at
+        # "No chunks generated".
         transcript_chunks = ctx.doc_metadata.pop("_transcript_pre_chunks", None)
         transcript_chunk_meta = ctx.doc_metadata.pop("_transcript_chunk_meta", None)
         xlsx_chunks = ctx.doc_metadata.pop("_xlsx_pre_chunks", None)
         xlsx_chunk_meta = ctx.doc_metadata.pop("_xlsx_chunk_meta", None)
+        docx_sections = ctx.doc_metadata.pop("_docx_sections", None)
+        pptx_pages_text = ctx.doc_metadata.pop("_pptx_pages_text", None)
 
         if transcript_chunks:
             # Transcripts are pre-chunked on utterance boundaries so each
@@ -997,6 +1027,24 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
                 f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
                 "spreadsheet chunks"
             )
+        elif docx_sections:
+            # DOCX chunks by heading section (heading_path metadata), with
+            # tables kept as their own chunk instead of flattened into the
+            # surrounding paragraph text.
+            packed = chunk_sections_by_heading(
+                docx_sections,
+                chunking_config["chunk_size"],
+                chunking_config["chunk_overlap"],
+            )
+            ctx.chunks = [c["text"] for c in packed]
+            ctx.chunk_metadatas = [
+                {"heading_path": c["heading_path"], "is_table": c["is_table"]}
+                for c in packed
+            ]
+            logger.info(
+                f"[Doc {ctx.document_id}] Chunked DOCX into {len(ctx.chunks)} chunks "
+                f"across {len(docx_sections)} sections"
+            )
         elif ctx.document_type == ".pdf" and ctx.doc_metadata.get("_pdf_pages_text"):
             # PDFs chunk per page to preserve page_number metadata.
             chunker = Chunker(
@@ -1010,7 +1058,7 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
             for page_idx, page_text in enumerate(pages_text, start=1):
                 if not page_text or not page_text.strip():
                     continue
-                page_chunks = chunker.chunk_text(page_text)
+                page_chunks = chunker.chunk_text(page_text, strategy="sentence")
                 for ch in page_chunks:
                     ctx.chunks.append(ch)
                     ctx.chunk_metadatas.append({"page_number": page_idx})
@@ -1019,11 +1067,74 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
                 f"[Doc {ctx.document_id}] Chunked PDF into {len(ctx.chunks)} chunks "
                 f"across {len(pages_text)} pages"
             )
+        elif pptx_pages_text:
+            # PPTX chunks per slide, mirroring the PDF branch. The
+            # `page_number` key is reused (not a new `slide_number` key) —
+            # every downstream consumer treats it as an opaque per-chunk
+            # locator, and the one PDF-specific use already gates on
+            # document_type == ".pdf" first.
+            chunker = Chunker(
+                chunk_size=chunking_config["chunk_size"],
+                chunk_overlap=chunking_config["chunk_overlap"],
+            )
+            ctx.chunks = []
+            ctx.chunk_metadatas = []
+
+            for slide_idx, slide_text in enumerate(pptx_pages_text, start=1):
+                if not slide_text or not slide_text.strip():
+                    continue
+                slide_chunks = chunker.chunk_text(slide_text, strategy="sentence")
+                for ch in slide_chunks:
+                    ctx.chunks.append(ch)
+                    ctx.chunk_metadatas.append({"page_number": slide_idx})
+
+            logger.info(
+                f"[Doc {ctx.document_id}] Chunked PPTX into {len(ctx.chunks)} chunks "
+                f"across {len(pptx_pages_text)} slides"
+            )
+        elif ctx.document_type in (".md", ".markdown"):
+            # Markdown chunks by heading section, gated strictly on
+            # extension (not content) — a .txt file containing "#"-prefixed
+            # lines must not be misparsed as document structure.
+            md_sections = parse_markdown_sections(ctx.extracted_text)
+            if md_sections:
+                packed = chunk_sections_by_heading(
+                    md_sections,
+                    chunking_config["chunk_size"],
+                    chunking_config["chunk_overlap"],
+                )
+                ctx.chunks = [c["text"] for c in packed]
+                ctx.chunk_metadatas = [
+                    {"heading_path": c["heading_path"]} for c in packed
+                ]
+                logger.info(
+                    f"[Doc {ctx.document_id}] Chunked Markdown into "
+                    f"{len(ctx.chunks)} chunks across {len(md_sections)} sections"
+                )
+            else:
+                # No headings found — degrade to sentence-aware chunking,
+                # same as any other unstructured text.
+                ctx.chunks = Chunker(
+                    chunk_size=chunking_config["chunk_size"],
+                    chunk_overlap=chunking_config["chunk_overlap"],
+                ).chunk_text(ctx.extracted_text, strategy="sentence")
+        elif ctx.source_type == "school_scraper":
+            # school_scraper docs bill by token downstream (classifier +
+            # embedding model), so this is the one branch that stays on
+            # strategy="fixed" (the default) with mode="token" — deliberately
+            # NOT switched to strategy="sentence", since
+            # _chunk_by_sentence/_chunk_by_paragraph ignore `mode` entirely
+            # and size by len(). Do not "normalize" this in a future refactor.
+            ctx.chunks = Chunker(
+                chunk_size=settings.HEATMAP_INGEST_CHUNK_SIZE,
+                chunk_overlap=settings.HEATMAP_INGEST_CHUNK_OVERLAP,
+                mode="token",
+            ).chunk_text(ctx.extracted_text)
         else:
             ctx.chunks = Chunker(
                 chunk_size=chunking_config["chunk_size"],
                 chunk_overlap=chunking_config["chunk_overlap"],
-            ).chunk_text(ctx.extracted_text)
+            ).chunk_text(ctx.extracted_text, strategy="sentence")
 
         if not ctx.chunks:
             # A specialised chunker produced nothing (e.g. a PDF whose pages
@@ -1038,7 +1149,7 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
             ctx.chunks = Chunker(
                 chunk_size=chunking_config["chunk_size"],
                 chunk_overlap=chunking_config["chunk_overlap"],
-            ).chunk_text(ctx.extracted_text)
+            ).chunk_text(ctx.extracted_text, strategy="sentence")
             ctx.chunk_metadatas = []
 
         if not ctx.chunks:

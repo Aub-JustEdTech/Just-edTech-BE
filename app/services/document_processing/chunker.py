@@ -182,6 +182,18 @@ class Chunker:
         for sentence in sentences:
             sentence_size = len(sentence)
 
+            # A single sentence longer than chunk_size (OCR noise, no
+            # terminal punctuation, one giant run-on) can't be packed as a
+            # unit. Flush whatever's buffered, then fall back to fixed-window
+            # splitting for just this sentence so no chunk is left unbounded.
+            if sentence_size > self.chunk_size:
+                if current_chunk:
+                    chunks.append(" ".join(current_chunk))
+                    current_chunk = []
+                    current_size = 0
+                chunks.extend(self._chunk_fixed(sentence))
+                continue
+
             # If adding this sentence would exceed chunk_size, start new chunk
             if current_size + sentence_size > self.chunk_size and current_chunk:
                 chunks.append(" ".join(current_chunk))

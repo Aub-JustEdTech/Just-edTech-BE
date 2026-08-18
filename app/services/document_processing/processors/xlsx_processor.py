@@ -10,11 +10,24 @@ except ImportError:
     openpyxl = None
 
 from app.services.document_processing.base import DocumentProcessor
+from app.services.document_processing.markdown_table import (
+    cell_value as _raw_cell_value,
+)
+from app.services.document_processing.markdown_table import (
+    make_separator as _make_separator,
+)
+from app.services.document_processing.markdown_table import (
+    row_to_markdown as _row_to_markdown,
+)
 
 logger = logging.getLogger(__name__)
 
 # How many data rows to include in each chunk (headers are always repeated).
 _DEFAULT_ROWS_PER_CHUNK = 25
+
+# Char cap alongside the row cap: a wide sheet (many columns) can otherwise
+# produce an oversized chunk despite staying under the row limit.
+_DEFAULT_MAX_CHUNK_CHARS = 4000
 
 # openpyxl loads .xls as well via xlrd compatibility, but we guard the import.
 _SUPPORTED_EXTENSIONS = [".xlsx", ".xls"]
@@ -25,21 +38,8 @@ _SUPPORTED_MIME_TYPES = [
 
 
 def _cell_value(cell) -> str:
-    """Coerce an openpyxl cell value to a clean string safe for Markdown tables."""
-    v = cell.value
-    if v is None:
-        return ""
-    text = str(v).strip()
-    # Escape pipe characters so they don't break the Markdown table syntax.
-    return text.replace("|", "\\|").replace("\n", " ")
-
-
-def _make_separator(col_count: int) -> str:
-    return "| " + " | ".join(["---"] * col_count) + " |"
-
-
-def _row_to_markdown(values: list[str]) -> str:
-    return "| " + " | ".join(values) + " |"
+    """Coerce an openpyxl cell to a clean string safe for Markdown tables."""
+    return _raw_cell_value(cell.value)
 
 
 def _find_header_row_index(sheet) -> int:
@@ -189,6 +189,7 @@ class XLSXProcessor(DocumentProcessor):
         self,
         file_path: str,
         rows_per_chunk: int = _DEFAULT_ROWS_PER_CHUNK,
+        max_chunk_chars: int = _DEFAULT_MAX_CHUNK_CHARS,
     ) -> list[dict[str, Any]]:
         """
         Chunk the workbook into row-group segments, repeating column headers
@@ -206,8 +207,12 @@ class XLSXProcessor(DocumentProcessor):
         --------
         - Each sheet is treated independently.
         - The header row is detected automatically and repeated in every chunk.
-        - Data rows are grouped into batches of `rows_per_chunk`.
-        - Small sheets (total data rows <= rows_per_chunk) produce a single chunk.
+        - Data rows are grouped into batches, closing a batch when EITHER
+          `rows_per_chunk` rows or `max_chunk_chars` characters is reached —
+          a wide sheet (many columns) would otherwise produce an oversized
+          chunk despite staying under the row cap.
+        - Small sheets (total data rows <= rows_per_chunk, under the char
+          cap) produce a single chunk.
         - Entirely empty sheets are skipped.
         """
         self._require_openpyxl()
@@ -226,37 +231,57 @@ class XLSXProcessor(DocumentProcessor):
             col_count = len(headers)
             header_line = _row_to_markdown(headers)
             separator_line = _make_separator(col_count)
+            base_chars = len(header_line) + len(separator_line) + 2  # + newlines
 
-            # Split data rows into groups.
-            for batch_start in range(0, len(data_rows), rows_per_chunk):
-                batch = data_rows[batch_start : batch_start + rows_per_chunk]
-                row_start = batch_start + 1  # 1-based
-                row_end = batch_start + len(batch)
+            batch: list[list[str]] = []
+            batch_chars = base_chars
+            batch_start = 0  # 0-based index into data_rows
 
-                # Build chunk text.
-                if len(data_rows) <= rows_per_chunk:
-                    # Single-chunk sheet – no row range annotation.
+            def _flush(
+                batch,
+                batch_start_idx,
+                *,
+                sheet_name=sheet_name,
+                header_line=header_line,
+                separator_line=separator_line,
+                total_rows=len(data_rows),
+            ):
+                row_start = batch_start_idx + 1  # 1-based
+                row_end = batch_start_idx + len(batch)  # 1-based, inclusive
+                if row_start == 1 and row_end == total_rows:
                     heading = f"## Sheet: {sheet_name}"
                 else:
                     heading = f"## Sheet: {sheet_name} (rows {row_start}–{row_end})"
-
                 lines = [heading, "", header_line, separator_line]
-                for row in batch:
-                    lines.append(_row_to_markdown(row))
+                lines.extend(_row_to_markdown(row) for row in batch)
+                return {
+                    "text": "\n".join(lines),
+                    "sheet_name": sheet_name,
+                    "row_start": row_start,
+                    "row_end": row_end,
+                }
 
-                chunks.append(
-                    {
-                        "text": "\n".join(lines),
-                        "sheet_name": sheet_name,
-                        "row_start": row_start,
-                        "row_end": row_end,
-                    }
+            for i, row in enumerate(data_rows):
+                row_line = _row_to_markdown(row)
+                row_chars = len(row_line) + 1  # + newline
+                would_exceed_rows = len(batch) >= rows_per_chunk
+                would_exceed_chars = batch and (
+                    batch_chars + row_chars > max_chunk_chars
                 )
+                if batch and (would_exceed_rows or would_exceed_chars):
+                    chunks.append(_flush(batch, batch_start))
+                    batch = []
+                    batch_chars = base_chars
+                    batch_start = i
+
+                batch.append(row)
+                batch_chars += row_chars
+
+            if batch:
+                chunks.append(_flush(batch, batch_start))
 
         wb.close()
-        logger.info(
-            f"Produced {len(chunks)} spreadsheet chunk(s) from {file_path}"
-        )
+        logger.info(f"Produced {len(chunks)} spreadsheet chunk(s) from {file_path}")
         return chunks
 
     # ------------------------------------------------------------------

@@ -158,6 +158,7 @@ class Settings(BaseSettings):
         ".doc",
         ".xlsx",
         ".xls",
+        ".pptx",
     ]
     # Media accepted for storage. These are transcribed, not text-extracted, so
     # they are kept separate from ALLOWED_DOCUMENT_TYPES — there is no document
