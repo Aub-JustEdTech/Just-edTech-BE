@@ -13,6 +13,7 @@ from app.services.web_scraper.year_filter import (
     evaluate_media_year,
     evaluate_media_year_async,
     filter_media_files,
+    filter_media_files_async,
     is_meeting_date_in_range,
     should_crawl_page_url,
 )
@@ -168,3 +169,29 @@ async def test_evaluate_async_skips_ytdlp_when_youtube_transcript_disabled():
     assert year is None
     assert ok is False
     assert reason == "year could not be inferred"
+
+
+@patch(
+    "app.services.web_scraper.year_filter.settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED",
+    False,
+)
+async def test_filter_media_files_async_skips_youtube_when_transcript_disabled():
+    with patch(
+        "app.services.web_scraper.year_filter.evaluate_media_year_async"
+    ) as mock_eval:
+        mock_eval.return_value = (2024, True, None)
+        kept = await filter_media_files_async(
+            [
+                {
+                    "url": "https://www.youtube.com/watch?v=abc12345678",
+                    "name": "Board meeting",
+                },
+                {
+                    "url": "https://example.com/2024/minutes.pdf",
+                    "name": "minutes.pdf",
+                },
+            ]
+        )
+    mock_eval.assert_awaited_once()
+    assert len(kept) == 1
+    assert kept[0]["url"].endswith("minutes.pdf")

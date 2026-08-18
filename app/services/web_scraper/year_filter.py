@@ -182,8 +182,12 @@ async def filter_media_files_async(media_files: list[dict]) -> list[dict]:
     per-item re-checks in ``run_scrape_districts.py`` / the ingest task,
     because by then it's already gone.
     """
+    from app.services.transcription.youtube import is_youtube_url
+
     kept: list[dict] = []
     for media in media_files:
+        if is_youtube_url(media["url"]) and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            continue
         _, should_process, _ = await evaluate_media_year_async(
             url=media["url"],
             filename=media.get("name"),
