@@ -245,6 +245,10 @@ async def _materialize_media(sm, workdir: Path) -> MediaPayload:
 
     from app.services.transcription.service import transcription_service
     from app.services.transcription.youtube import extract_youtube_id
+    from app.services.web_scraper.board_platforms import (
+        fetch_document_via_playwright_session,
+        is_board_platform_url,
+    )
 
     # --- YouTube: captions first, always free ---
     if sm.media_type == "youtube":
@@ -288,7 +292,24 @@ async def _materialize_media(sm, workdir: Path) -> MediaPayload:
             size_bytes=transcript.source_size_bytes,
         )
 
-    # --- Documents: unchanged. Small, fast, already working. ---
+    # --- Documents: board platforms need a Playwright session; others use httpx ---
+    # Board-platform downloads require cookies/referrer from a real browser
+    # session. A cold httpx.GET from this Celery worker is typically redirected
+    # to a login/error page. Non-document media on these platforms is rare;
+    # if it occurs, fall through to the httpx/transcription paths above.
+    board_doc_url = sm.source_media_url or sm.source_page_url or ""
+    if sm.media_type == "document" and is_board_platform_url(board_doc_url):
+        raw = await fetch_document_via_playwright_session(
+            sm.source_page_url,
+            sm.source_media_url,
+        )
+        return MediaPayload(
+            text=_extract_text_from_document(raw, sm.file_extension),
+            content_hash=hashlib.sha256(raw).hexdigest(),
+            size_bytes=len(raw),
+            raw_bytes=raw,
+        )
+
     async with httpx.AsyncClient(
         timeout=settings.WEB_SCRAPER_TIMEOUT_SECONDS,
         headers={"User-Agent": settings.SCHOOL_SCRAPER_USER_AGENT},
@@ -528,11 +549,12 @@ async def _create_document_and_enqueue(
     max_retries=3,
 )
 def sweep_school_media(self, school_ids: list[int] | None = None) -> dict:
-    """Walk confirmed school URLs, persist what is found, enqueue only new rows.
+    """Walk every active school_scrape_urls row, persist media, enqueue new rows.
 
-    Deliberately NOT in beat_schedule: run it manually and confirm the
-    created/skipped counts look right before letting it fire unattended
-    against several hundred district sites.
+    Does not re-run URL discovery — only the human-confirmed scrapable URLs
+    paired with each school are crawled. Deliberately NOT in beat_schedule:
+    run it manually and confirm the created/skipped counts look right before
+    letting it fire unattended against several hundred district sites.
     """
     try:
         loop = get_event_loop()

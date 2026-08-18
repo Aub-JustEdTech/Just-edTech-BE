@@ -5,12 +5,17 @@ Crawl confirmed scrape URLs, persist ScrapedMedia rows, and enqueue ingestion.
 This is the missing bridge between URL confirmation (feed_finalised_scrape_urls.py)
 and the existing ingest_scraped_media Celery task.
 
-For each school with a primary scrape URL:
-  1. Call SchoolScraperService.scrape_media_files() on the confirmed page.
+For each school with one or more active scrape URLs:
+  1. Call SchoolScraperService.scrape_media_files() on every active URL.
   2. Insert new ScrapedMedia rows (deduped by url_hash per school).
   3. Optionally enqueue ingest_scraped_media for each new row.
 
-Idempotent: re-running skips URLs already recorded for a school.
+A school can have many scrape URLs (historical ingest: multiple archive
+pages per district). Each URL is scraped with its own crawl_depth /
+use_playwright settings, so board-platform pages can opt into Playwright
+while plain sitemap pages stay on httpx.
+
+Idempotent: re-running skips media URLs already recorded for a school.
 
 Usage:
     python scripts/school_data/run_scrape_districts.py
@@ -77,30 +82,37 @@ async def _load_target_org_codes(
 
 async def _load_schools(
     tenant_id: int, org_codes: set[str] | None
-) -> list[tuple[School, SchoolScrapeUrl]]:
+) -> list[tuple[School, list[SchoolScrapeUrl]]]:
+    """Load active schools with all their active scrape URLs.
+
+    A school is included if it has at least one active SchoolScrapeUrl.
+    The primary-scrape-URL-only filter is gone — historical ingest needs
+    every confirmed archive page per district, not just the first one.
+    """
     async with AsyncSessionLocal() as db:
         stmt = (
             select(School)
             .where(
                 School.tenant_id == tenant_id,
                 School.is_active.is_(True),
-                School.scrape_url_id.isnot(None),
             )
-            .options(selectinload(School.primary_scrape_url))
+            .options(selectinload(School.scrape_urls))
         )
         if org_codes:
             stmt = stmt.where(School.org_code.in_(sorted(org_codes)))
         schools = list((await db.execute(stmt)).scalars().all())
 
-        pairs: list[tuple[School, SchoolScrapeUrl]] = []
+        pairs: list[tuple[School, list[SchoolScrapeUrl]]] = []
         for school in schools:
-            scrape_url = school.primary_scrape_url
-            if scrape_url and scrape_url.is_active:
-                pairs.append((school, scrape_url))
+            active_urls = [
+                su for su in (school.scrape_urls or []) if su.is_active
+            ]
+            if active_urls:
+                pairs.append((school, active_urls))
         return pairs
 
 
-async def _scrape_one_school(
+async def _scrape_one_url(
     school: School,
     scrape_url: SchoolScrapeUrl,
     *,
@@ -109,13 +121,17 @@ async def _scrape_one_school(
     dry_run: bool,
     enqueue: bool,
 ) -> dict:
+    """Scrape a single URL and persist/enqueue its media files.
+
+    Returns a per-URL result dict. The caller aggregates these into a
+    per-school summary.
+    """
     depth = crawl_depth if crawl_depth is not None else scrape_url.crawl_depth
     pw = use_playwright if use_playwright is not None else scrape_url.use_playwright
 
     result: dict = {
-        "org_code": school.org_code,
-        "name": school.name,
         "url": scrape_url.url,
+        "scrape_url_id": scrape_url.id,
         "crawl_depth": depth,
         "use_playwright": pw,
         "pages_crawled": 0,
@@ -135,7 +151,9 @@ async def _scrape_one_school(
             )
     except Exception as exc:  # noqa: BLE001
         result["error"] = str(exc)
-        print(f"  [fail] {school.name} ({school.org_code}) — {exc}")
+        print(
+            f"  [fail] {school.name} ({school.org_code}) [{scrape_url.url}] — {exc}"
+        )
         return result
 
     media_files = scrape_result.get("media_files", [])
@@ -145,7 +163,7 @@ async def _scrape_one_school(
     if dry_run:
         docs = sum(1 for m in media_files if m.get("media_type") == "document")
         print(
-            f"  [dry]  {school.name} ({school.org_code}) — "
+            f"  [dry]  {school.name} ({school.org_code}) [{scrape_url.url}] — "
             f"{len(media_files)} media ({docs} docs) across "
             f"{result['pages_crawled']} pages"
         )
@@ -160,17 +178,21 @@ async def _scrape_one_school(
             return result
 
         for mf in media_files:
-            inferred_year, should_process, _skip_reason = await evaluate_media_year_async(
-                url=mf["url"],
-                filename=mf.get("name"),
-                source_page_url=mf.get("source_page_url", scrape_url.url),
+            inferred_year, should_process, _skip_reason = (
+                await evaluate_media_year_async(
+                    url=mf["url"],
+                    filename=mf.get("name"),
+                    source_page_url=mf.get("source_page_url", scrape_url.url),
+                )
             )
             if not should_process:
                 result["media_skipped_year"] += 1
                 continue
 
             uh = crud.url_hash(mf["url"])
-            existing = await crud.get_scraped_media_by_url_hash(db, school_row.id, uh)
+            existing = await crud.get_scraped_media_by_url_hash(
+                db, school_row.id, uh
+            )
             if existing:
                 result["media_skipped"] += 1
                 continue
@@ -178,9 +200,6 @@ async def _scrape_one_school(
             media_type = _classify_media_type(
                 mf.get("media_type"), mf.get("file_extension")
             )
-            # YouTube title fallback now lives in
-            # SchoolScraperService._append_youtube_media itself, so mf["name"]
-            # is already the real title by the time it gets here.
             sm = ScrapedMedia(
                 tenant_id=school_row.tenant_id,
                 school_id=school_row.id,
@@ -210,21 +229,71 @@ async def _scrape_one_school(
                 ingest_scraped_media.delay(scraped_media_id=sm.id)
                 result["enqueue_count"] += 1
 
-        scrape_url_row = await db.get(SchoolScrapeUrl, scrape_url.id)
-        if scrape_url_row:
-            scrape_url_row.last_crawl_page_count = result["pages_crawled"]
-
-        await crud.touch_last_scrapped(db, school_row.id)
-        await db.commit()
+        # Record the scrape outcome on this specific URL row (per-URL
+        # last_scraped_at / last_crawl_page_count) and touch the school.
+        await crud.record_scrape_result(
+            db,
+            scrape_url,
+            http_status=None,
+            page_count=result["pages_crawled"],
+        )
 
     print(
-        f"  [ok]   {school.name} ({school.org_code}) — "
+        f"  [ok]   {school.name} ({school.org_code}) [{scrape_url.url}] — "
         f"found={result['media_found']} new={result['media_new']} "
         f"skipped={result['media_skipped']} "
         f"skipped_year={result['media_skipped_year']} "
         f"enqueued={result['enqueue_count']}"
     )
     return result
+
+
+async def _scrape_one_school(
+    school: School,
+    scrape_urls: list[SchoolScrapeUrl],
+    *,
+    crawl_depth: int | None,
+    use_playwright: bool | None,
+    dry_run: bool,
+    enqueue: bool,
+) -> dict:
+    """Scrape every active URL for one school, sequentially.
+
+    URLs are scraped sequentially within a school so the per-URL result
+    (and any per-URL failure) stays attributable. Cross-school
+    parallelism is controlled by the concurrency semaphore in the
+    caller.
+    """
+    url_results: list[dict] = []
+    for scrape_url in scrape_urls:
+        url_results.append(
+            await _scrape_one_url(
+                school,
+                scrape_url,
+                crawl_depth=crawl_depth,
+                use_playwright=use_playwright,
+                dry_run=dry_run,
+                enqueue=enqueue,
+            )
+        )
+
+    # Aggregate per-URL results into a school-level summary.
+    return {
+        "org_code": school.org_code,
+        "name": school.name,
+        "urls_scraped": len(url_results),
+        "pages_crawled": sum(r.get("pages_crawled", 0) for r in url_results),
+        "media_found": sum(r.get("media_found", 0) for r in url_results),
+        "media_new": sum(r.get("media_new", 0) for r in url_results),
+        "media_skipped": sum(r.get("media_skipped", 0) for r in url_results),
+        "media_skipped_year": sum(
+            r.get("media_skipped_year", 0) for r in url_results
+        ),
+        "enqueue_count": sum(r.get("enqueue_count", 0) for r in url_results),
+        "url_errors": sum(1 for r in url_results if r.get("error")),
+        "error": None,
+        "url_results": url_results,
+    }
 
 
 async def run_scrape_districts(
@@ -241,10 +310,13 @@ async def run_scrape_districts(
     org_codes = await _load_target_org_codes(json_path, org_codes_arg)
     pairs = await _load_schools(tenant_id, org_codes)
 
+    total_urls = sum(len(urls) for _, urls in pairs)
+
     print("=" * 60)
-    print("Just-EdTech District Scrape Runner")
+    print("Just-EdTech District Scrape Runner (multi-URL)")
     print(f"  tenant_id   : {tenant_id}")
     print(f"  schools     : {len(pairs)}")
+    print(f"  scrape urls : {total_urls}")
     print(f"  crawl_depth : {crawl_depth if crawl_depth is not None else '(per URL)'}")
     print(f"  concurrency : {concurrency}")
     print(f"  dry_run     : {dry_run}")
@@ -252,18 +324,18 @@ async def run_scrape_districts(
     print("=" * 60)
 
     if not pairs:
-        print("No schools with confirmed scrape URLs found.")
-        return {"schools": 0, "results": []}
+        print("No schools with active scrape URLs found.")
+        return {"schools": 0, "scrape_urls": 0, "results": []}
 
     sem = asyncio.Semaphore(max(1, concurrency))
     results: list[dict] = []
 
-    async def _run(pair: tuple[School, SchoolScrapeUrl]) -> dict:
-        school, scrape_url = pair
+    async def _run(pair: tuple[School, list[SchoolScrapeUrl]]) -> dict:
+        school, scrape_urls = pair
         async with sem:
             return await _scrape_one_school(
                 school,
-                scrape_url,
+                scrape_urls,
                 crawl_depth=crawl_depth,
                 use_playwright=use_playwright,
                 dry_run=dry_run,
@@ -275,12 +347,20 @@ async def run_scrape_districts(
 
     stats = {
         "schools": len(results),
-        "ok": sum(1 for r in results if not r.get("error")),
-        "failed": sum(1 for r in results if r.get("error")),
+        "scrape_urls": total_urls,
+        "ok": sum(1 for r in results if not r.get("url_errors")),
+        "partial": sum(
+            1 for r in results if r.get("url_errors") and r.get("urls_scraped", 0) > r.get("url_errors", 0)
+        ),
+        "failed": sum(
+            1 for r in results if r.get("url_errors") and r.get("urls_scraped", 0) == r.get("url_errors", 0)
+        ),
         "media_found": sum(r.get("media_found", 0) for r in results),
         "media_new": sum(r.get("media_new", 0) for r in results),
         "media_skipped": sum(r.get("media_skipped", 0) for r in results),
-        "media_skipped_year": sum(r.get("media_skipped_year", 0) for r in results),
+        "media_skipped_year": sum(
+            r.get("media_skipped_year", 0) for r in results
+        ),
         "enqueue_count": sum(r.get("enqueue_count", 0) for r in results),
     }
 
@@ -302,13 +382,13 @@ def main() -> None:
         help=(
             "Limit to org_codes listed in this JSON "
             "(default: finalised_20_disticts.json). Pass --all to scrape every "
-            "school with a confirmed URL."
+            "school with active scrape URLs."
         ),
     )
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Scrape all schools with a primary scrape URL (ignore --json filter).",
+        help="Scrape all schools with active scrape URLs (ignore --json filter).",
     )
     parser.add_argument(
         "--org-codes",
@@ -330,7 +410,7 @@ def main() -> None:
     parser.add_argument(
         "--use-playwright",
         action="store_true",
-        help="Force Playwright for all schools (auto-detect is default).",
+        help="Force Playwright for all URLs (per-URL setting is default).",
     )
     parser.add_argument(
         "--concurrency",

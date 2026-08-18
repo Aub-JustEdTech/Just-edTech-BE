@@ -118,13 +118,15 @@ class TranscriptionService:
     ) -> TranscriptResult:
         """Gate 2 + Gate 3: captions if they exist, otherwise paid audio.
 
-        Captions are always tried first and are always free.
+        Captions are tried first when the per-process budget allows. After
+        ``SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET`` attempts, or when YouTube
+        rate-limits us, caption fetch is skipped and AssemblyAI is used.
         """
         result = await fetch_youtube_transcript(url)
         if result is not None:
             return result
 
-        # No captions. Everything below this line costs money.
+        # No captions, budget exhausted, or rate-limited. Everything below costs money.
         if not settings.transcription_youtube_audio_fallback_enabled:
             raise NoTranscriptAvailableError(
                 f"No captions for {url} and the audio fallback is disabled"

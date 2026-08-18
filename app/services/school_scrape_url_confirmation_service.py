@@ -61,13 +61,15 @@ def _load_json_records() -> list[dict]:
     return records
 
 
-def _confirmed_url_for_school(school: School | None) -> tuple[bool, str | None, int | None]:
-    if school is None or school.scrape_url_id is None:
-        return False, None, None
-    for scrape_url in school.scrape_urls or []:
-        if scrape_url.id == school.scrape_url_id and scrape_url.is_active:
-            return True, scrape_url.url, scrape_url.id
-    return False, None, school.scrape_url_id
+def _active_scrape_url_keys(school: School | None) -> set[str]:
+    """Return dedupe keys for every active scrape URL on a school."""
+    if school is None:
+        return set()
+    return {
+        candidate_dedupe_key(su.url)
+        for su in school.scrape_urls or []
+        if su.is_active
+    }
 
 
 def _scrape_url_id_by_key(school: School | None) -> dict[str, int]:
@@ -88,9 +90,12 @@ def _format_candidates(
     max_candidates: int,
     school: School | None = None,
 ) -> list[ScrapeUrlCandidateOut]:
-    """Rank discovered candidates and merge active manual scrape URLs."""
-    has_confirmed, confirmed_url, confirmed_id = _confirmed_url_for_school(school)
-    confirmed_key = candidate_dedupe_key(confirmed_url) if confirmed_url else None
+    """Rank discovered candidates and merge active manual scrape URLs.
+
+    A candidate is ``is_selected`` when it matches any active DB scrape URL
+    for the school (not just a single "primary" URL).
+    """
+    active_keys = _active_scrape_url_keys(school)
     id_by_key = _scrape_url_id_by_key(school)
 
     ranked = dedupe_and_rank_candidates(
@@ -115,9 +120,8 @@ def _format_candidates(
                 is_archive=bool(row.get("is_archive") or False),
                 data_years_available=list(row.get("data_years_available") or []),
                 source="discovered",
-                is_selected=bool(confirmed_key and key == confirmed_key),
-                scrape_url_id=id_by_key.get(key)
-                or (confirmed_id if confirmed_key and key == confirmed_key else None),
+                is_selected=key in active_keys,
+                scrape_url_id=id_by_key.get(key),
             )
         )
 
@@ -131,7 +135,6 @@ def _format_candidates(
             if key in seen_keys:
                 continue
             seen_keys.add(key)
-            is_selected = has_confirmed and scrape_url.id == confirmed_id
             out.append(
                 ScrapeUrlCandidateOut(
                     rank=len(out) + 1,
@@ -142,12 +145,12 @@ def _format_candidates(
                     is_archive=False,
                     data_years_available=[],
                     source="manual",
-                    is_selected=is_selected,
+                    is_selected=True,
                     scrape_url_id=scrape_url.id,
                 )
             )
 
-    # Keep selected candidate visible near the top for FE edit UX.
+    # Keep selected candidates visible near the top for FE edit UX.
     if any(c.is_selected for c in out):
         selected = [c for c in out if c.is_selected]
         others = [c for c in out if not c.is_selected]
@@ -164,21 +167,19 @@ def _build_review_row(
     *,
     max_candidates: int,
 ) -> SchoolCandidateReviewOut:
-    has_confirmed, confirmed_url, confirmed_id = _confirmed_url_for_school(school)
     candidates = _format_candidates(
         record.get("candidates") or [],
         max_candidates=max_candidates,
         school=school,
     )
+    has_urls = bool(_active_scrape_url_keys(school))
     return SchoolCandidateReviewOut(
         school_id=school.id if school else None,
         org_code=str(record.get("org_code") or ""),
         name=str(record.get("name") or ""),
         website=record.get("website") or (school.website if school else None),
         in_database=school is not None,
-        has_confirmed_scrape_url=has_confirmed,
-        confirmed_scrape_url=confirmed_url,
-        confirmed_scrape_url_id=confirmed_id,
+        has_scrape_urls=has_urls,
         discovery_method=record.get("discovery_method"),
         total_urls_scanned=int(record.get("total_urls_scanned") or 0),
         total_candidates=len(candidates),
@@ -216,13 +217,13 @@ async def list_candidate_reviews(
         for record in records
     ]
 
-    added_count = sum(1 for row in all_rows if row.has_confirmed_scrape_url)
+    added_count = sum(1 for row in all_rows if row.has_scrape_urls)
     not_added_count = len(all_rows) - added_count
 
     if confirmation_status == "added":
-        filtered = [row for row in all_rows if row.has_confirmed_scrape_url]
+        filtered = [row for row in all_rows if row.has_scrape_urls]
     elif confirmation_status == "not_added":
-        filtered = [row for row in all_rows if not row.has_confirmed_scrape_url]
+        filtered = [row for row in all_rows if not row.has_scrape_urls]
     else:
         filtered = all_rows
 

@@ -4,12 +4,12 @@ Confirm a SchoolScrapeUrl for each of the 20 districts listed in
 scripts/school_data/output/selected_schools_url_candidates_both.json.
 
 For each school:
-  - Skip if a SchoolScrapeUrl is already set (school.scrape_url_id is not NULL).
+  - Skip if the school already has one or more active SchoolScrapeUrl rows.
   - Otherwise pick the best candidate from the discovery JSON using a
     conservative heuristic (data_type=board_minutes|board_agenda, score>=50,
     years intersecting the 2024-2026 window when known, no URL fragment).
   - Create the SchoolScrapeUrl via app.crud.schools.add_scrape_url (idempotent
-    on (school_id, url)) and set it as the school's primary scrape URL.
+    on (school_id, url)).
 
 Idempotent: safe to re-run. Existing scrape URLs are left untouched.
 
@@ -29,11 +29,12 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.crud import schools as crud
 from app.db.connector import AsyncSessionLocal
-from app.models.school import School, SchoolScrapeUrl
+from app.models.school import School
 from app.schemas.schools import ScrapeUrlCreate
 
 DEFAULT_JSON_PATH = (
@@ -172,7 +173,9 @@ async def confirm_scrape_urls(json_path: Path, dry_run: bool) -> dict:
 
             school = (
                 await db.execute(
-                    select(School).where(School.org_code == org_code)
+                    select(School)
+                    .where(School.org_code == org_code)
+                    .options(selectinload(School.scrape_urls))
                 )
             ).scalar_one_or_none()
 
@@ -184,17 +187,21 @@ async def confirm_scrape_urls(json_path: Path, dry_run: bool) -> dict:
                 )
                 continue
 
-            if school.scrape_url_id is not None:
-                existing = await db.get(SchoolScrapeUrl, school.scrape_url_id)
-                url = existing.url if existing else "<missing>"
-                print(f"  [skip] {name} ({org_code}) — already set: {url}")
+            active_urls = [
+                su for su in (school.scrape_urls or []) if su.is_active
+            ]
+            if active_urls:
+                print(
+                    f"  [skip] {name} ({org_code}) — "
+                    f"already has {len(active_urls)} URL(s)"
+                )
                 stats["already_set"] += 1
                 decisions.append(
                     {
                         "org_code": org_code,
                         "name": name,
                         "action": "already_set",
-                        "url": url,
+                        "urls": [su.url for su in active_urls],
                     }
                 )
                 continue
@@ -234,7 +241,6 @@ async def confirm_scrape_urls(json_path: Path, dry_run: bool) -> dict:
                 url=url,
                 crawl_depth=1,
                 use_playwright=False,
-                is_primary=True,
             )
             scrape_url = await crud.add_scrape_url(
                 db, school, data, user_id=None
