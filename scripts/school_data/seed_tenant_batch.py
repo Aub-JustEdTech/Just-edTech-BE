@@ -37,16 +37,14 @@ import argparse
 import asyncio
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
-from app.crud import schools as crud
 from app.db.connector import AsyncSessionLocal
-from app.models.school import School
-from app.schemas.schools import ScrapeUrlCreate
+from app.models.school import School, SchoolScrapeUrl
 
 DEFAULT_BATCH_JSON = (
     Path(__file__).parent / "output" / "final batch 1.json"
@@ -226,6 +224,50 @@ def enrich_batch_records(
     return out_rows, unresolved
 
 
+async def _upsert_scrape_url(
+    db,
+    *,
+    school_id: int,
+    url: str,
+    crawl_depth: int,
+    use_playwright: bool,
+) -> bool:
+    """Insert or update one scrape URL. Returns True if changed, False if unchanged."""
+    existing = (
+        await db.execute(
+            select(SchoolScrapeUrl).where(
+                SchoolScrapeUrl.school_id == school_id,
+                SchoolScrapeUrl.url == url,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is not None:
+        if (
+            existing.is_active
+            and existing.crawl_depth == crawl_depth
+            and existing.use_playwright == use_playwright
+        ):
+            return False
+        existing.crawl_depth = crawl_depth
+        existing.use_playwright = use_playwright
+        existing.confirmed_at = datetime.now(timezone.utc)
+        existing.is_active = True
+        return True
+
+    db.add(
+        SchoolScrapeUrl(
+            school_id=school_id,
+            url=url,
+            crawl_depth=crawl_depth,
+            use_playwright=use_playwright,
+            confirmed_at=datetime.now(timezone.utc),
+            is_active=True,
+        )
+    )
+    return True
+
+
 async def seed_tenant_from_enriched(
     tenant_id: int,
     enriched: list[dict],
@@ -249,9 +291,9 @@ async def seed_tenant_from_enriched(
 
             existing = (
                 await db.execute(
-                    select(School)
-                    .where(School.tenant_id == tenant_id, School.org_code == org_code)
-                    .options(selectinload(School.scrape_urls))
+                    select(School).where(
+                        School.tenant_id == tenant_id, School.org_code == org_code
+                    )
                 )
             ).scalar_one_or_none()
 
@@ -292,37 +334,26 @@ async def seed_tenant_from_enriched(
             if school is None:
                 school = (
                     await db.execute(
-                        select(School)
-                        .where(School.tenant_id == tenant_id, School.org_code == org_code)
-                        .options(selectinload(School.scrape_urls))
+                        select(School).where(
+                            School.tenant_id == tenant_id, School.org_code == org_code
+                        )
                     )
                 ).scalar_one()
 
-            for cfg in url_configs:
-                existing_url = next(
-                    (su for su in (school.scrape_urls or []) if su.url == cfg["url"]),
-                    None,
-                )
-                if (
-                    existing_url
-                    and existing_url.is_active
-                    and existing_url.crawl_depth == cfg["crawl_depth"]
-                    and existing_url.use_playwright == cfg["use_playwright"]
-                ):
-                    stats["urls_unchanged"] += 1
-                    continue
+            school_id = school.id
 
-                await crud.add_scrape_url(
+            for cfg in url_configs:
+                changed = await _upsert_scrape_url(
                     db,
-                    school,
-                    ScrapeUrlCreate(
-                        url=cfg["url"],
-                        crawl_depth=cfg["crawl_depth"],
-                        use_playwright=cfg["use_playwright"],
-                    ),
-                    user_id=None,
+                    school_id=school_id,
+                    url=cfg["url"],
+                    crawl_depth=cfg["crawl_depth"],
+                    use_playwright=cfg["use_playwright"],
                 )
-                stats["urls_upserted"] += 1
+                if changed:
+                    stats["urls_upserted"] += 1
+                else:
+                    stats["urls_unchanged"] += 1
 
         if not dry_run:
             await db.commit()
