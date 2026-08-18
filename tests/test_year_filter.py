@@ -11,12 +11,13 @@ from unittest.mock import patch
 
 from app.services.web_scraper.year_filter import (
     evaluate_media_year,
+    evaluate_media_year_async,
     filter_media_files,
     is_meeting_date_in_range,
     should_crawl_page_url,
 )
 
-ALLOWED = [2023, 2024, 2025]
+ALLOWED = [2023, 2024, 2025, 2026]
 
 
 @patch(
@@ -140,3 +141,30 @@ def test_meeting_date_in_range():
     assert is_meeting_date_in_range(date(2024, 3, 14)) is True
     assert is_meeting_date_in_range(date(2022, 11, 1)) is False
     assert is_meeting_date_in_range(None) is False
+
+
+@patch(
+    "app.services.web_scraper.year_filter.settings.SCHOOL_SCRAPER_ALLOWED_YEARS",
+    ALLOWED,
+)
+@patch(
+    "app.services.web_scraper.year_filter.settings.SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR",
+    False,
+)
+@patch(
+    "app.services.web_scraper.year_filter.settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED",
+    False,
+)
+async def test_evaluate_async_skips_ytdlp_when_youtube_transcript_disabled():
+    with patch(
+        "app.services.transcription.youtube.fetch_youtube_upload_year"
+    ) as mock_fetch:
+        year, ok, reason = await evaluate_media_year_async(
+            url="https://www.youtube.com/watch?v=abc12345678",
+            filename=None,
+            source_page_url="https://example.com/board",
+        )
+    mock_fetch.assert_not_called()
+    assert year is None
+    assert ok is False
+    assert reason == "year could not be inferred"

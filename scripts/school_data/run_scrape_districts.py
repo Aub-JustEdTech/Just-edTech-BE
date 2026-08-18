@@ -178,6 +178,16 @@ async def _scrape_one_url(
             return result
 
         for mf in media_files:
+            media_type = _classify_media_type(
+                mf.get("media_type"), mf.get("file_extension")
+            )
+            if (
+                media_type == "youtube"
+                and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED
+            ):
+                result["media_skipped"] += 1
+                continue
+
             inferred_year, should_process, _skip_reason = (
                 await evaluate_media_year_async(
                     url=mf["url"],
@@ -197,9 +207,6 @@ async def _scrape_one_url(
                 result["media_skipped"] += 1
                 continue
 
-            media_type = _classify_media_type(
-                mf.get("media_type"), mf.get("file_extension")
-            )
             sm = ScrapedMedia(
                 tenant_id=school_row.tenant_id,
                 school_id=school_row.id,
