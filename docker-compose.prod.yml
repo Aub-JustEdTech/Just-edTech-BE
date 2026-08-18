@@ -4,10 +4,10 @@
 # All environment variables are injected via .env.prod (CI/CD writes from secrets).
 #
 # RAM budget on t4g.2xlarge (~32 GiB):
-#   api 4G + qdrant 6G + redis 0.3G + beat 0.3G
+#   api 4G + qdrant 6G + redis 1G (maxmemory, was 256mb - see below) + beat 0.3G
 #   celery-ingest ×3 @ 2G = 6G   (document pipeline)
 #   celery-scraper ×2 @ 2.5G = 5G (download/transcribe/Playwright)
-#   ~10G headroom for OS, Docker, Qdrant growth during bulk embed
+#   ~9G headroom for OS, Docker, Qdrant growth during bulk embed
 #
 # Bulk school ingest (recommended for this instance):
 #   docker compose -f docker-compose.prod.yml up -d \
@@ -36,11 +36,21 @@ services:
     ports:
       - "6386:6379"
 
+    # maxmemory-policy is noeviction, not allkeys-lru: this Redis instance is
+    # the Celery broker (db/2) as well as app cache. allkeys-lru silently
+    # evicts whatever key is least-recently-used when the limit is hit -
+    # including in-flight broker messages and chain-continuation bookkeeping
+    # - which breaks a document_pipeline chain between stages with no
+    # exception raised anywhere, leaving documents stuck at
+    # processing_status=PROCESSING forever. noeviction makes an out-of-memory
+    # write fail loudly (OOM command not allowed) instead of losing data
+    # silently. maxmemory raised from 256mb: a 100-school scraper batch was
+    # observed to evict 42k+ keys at the old limit (see incident notes).
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
+      --maxmemory 1gb
+      --maxmemory-policy noeviction
 
     volumes:
       - redis_data:/data
