@@ -154,7 +154,9 @@ jobs:
           OCR_TIMEOUT_SECONDS=${{ vars.OCR_TIMEOUT_SECONDS }}
           ASSEMBLYAI_API_KEY=${{ vars.ASSEMBLYAI_API_KEY }}
           SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET=${{ vars.SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET }}
-
+          SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED=${{ vars.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED }}
+          SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED=${{ vars.SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED }}
+          SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS=${{ vars.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS }}
           EOF
 
       ###########################################################
@@ -302,12 +304,12 @@ jobs:
             STATUS="starting"
             # Migrations + gunicorn lifespan (checkpointer setup) can exceed
             # the old fixed 30s sleep; poll until healthy or timeout.
-            for i in $(seq 1 30); do
+            for i in $(seq 1 10); do
               STATUS=$(docker inspect \
                 --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
                 "$API")
 
-              echo "API STATUS = $STATUS (attempt $i/30)"
+              echo "API STATUS = $STATUS (attempt $i/10)"
 
               if [ "$STATUS" = "healthy" ]; then
                 break
@@ -317,7 +319,7 @@ jobs:
                 break
               fi
 
-              sleep 10
+              sleep 60
             done
 
             if [ "$STATUS" != "healthy" ]; then
