@@ -47,7 +47,7 @@ services:
 
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
 
@@ -74,7 +74,7 @@ services:
 
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/6333' || exit 1"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 30s
@@ -109,6 +109,9 @@ services:
 
     volumes:
       - temp_uploads:/app/temp_uploads
+      # Batch hotfix path: git pull updates Python without waiting for ECR rebuild.
+      # Same pattern as ./scripts for seed/scrape admin commands.
+      - ./app:/app/app
       # Batch ingest admin scripts + JSON live on the host checkout (not in the
       # ECR image). git pull on EC2 before seed/scrape; rw so --output JSON
       # can be written under scripts/school_data/output/.
@@ -128,7 +131,7 @@ services:
           "-f",
           "http://localhost:8000/health"
         ]
-      interval: 10s
+      interval: 60s
       timeout: 10s
       retries: 5
       # alembic upgrade runs in the same process before gunicorn; allow time
@@ -167,6 +170,7 @@ services:
 
     volumes:
       - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
 
     command: >
       celery
@@ -212,6 +216,7 @@ services:
 
     volumes:
       - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
 
     command: >
       celery

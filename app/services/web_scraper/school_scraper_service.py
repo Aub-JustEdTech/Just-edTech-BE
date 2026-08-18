@@ -1156,6 +1156,12 @@ class SchoolScraperService:
             # Google Drive, not the generic HTML link crawler.
             if is_youtube_scrape_url(current_url):
                 pages_crawled += 1
+                if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+                    logger.info(
+                        "Skipping YouTube scrape URL (transcripts disabled): %s",
+                        current_url,
+                    )
+                    continue
                 yt_items = await resolve_youtube_media_items(
                     current_url,
                     source_page_url=page_url,
