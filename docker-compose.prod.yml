@@ -3,8 +3,19 @@
 # Postgres is NOT managed here; it runs on AWS RDS.
 # All environment variables are injected via .env.prod (CI/CD writes from secrets).
 #
+# Redis is split into two containers:
+#   redis         — app cache (tokens/OTP/invites on db 0, pipeline status
+#                   on db 3). allkeys-lru: cache is disposable, evicting a
+#                   refresh-token key just forces a re-login.
+#   redis-broker  — Celery broker + result backend (db 2). noeviction: an
+#                   in-flight task message must NEVER be silently evicted
+#                   (that broke document_pipeline chains mid-stage and
+#                   orphaned documents at processing_status=PROCESSING
+#                   forever during the 100-school incident). An OOM here
+#                   fails loudly instead of losing data.
+#
 # RAM budget on t4g.2xlarge (~32 GiB):
-#   api 4G + qdrant 6G + redis 1G (maxmemory, was 256mb - see below) + beat 0.3G
+#   api 4G + qdrant 6G + redis 0.5G + redis-broker 0.5G + beat 0.3G
 #   celery-ingest ×3 @ 2G = 6G   (document pipeline)
 #   celery-scraper ×2 @ 2.5G = 5G (download/transcribe/Playwright)
 #   ~9G headroom for OS, Docker, Qdrant growth during bulk embed
@@ -26,7 +37,8 @@ version: "3.9"
 services:
 
   ##################################################
-  # Redis
+  # Redis — app cache (tokens, OTP, invites, pipeline status)
+  # allkeys-lru is safe here: cache keys are disposable.
   ##################################################
   redis:
     image: redis:7-alpine
@@ -36,24 +48,43 @@ services:
     ports:
       - "6386:6379"
 
-    # maxmemory-policy is noeviction, not allkeys-lru: this Redis instance is
-    # the Celery broker (db/2) as well as app cache. allkeys-lru silently
-    # evicts whatever key is least-recently-used when the limit is hit -
-    # including in-flight broker messages and chain-continuation bookkeeping
-    # - which breaks a document_pipeline chain between stages with no
-    # exception raised anywhere, leaving documents stuck at
-    # processing_status=PROCESSING forever. noeviction makes an out-of-memory
-    # write fail loudly (OOM command not allowed) instead of losing data
-    # silently. maxmemory raised from 256mb: a 100-school scraper batch was
-    # observed to evict 42k+ keys at the old limit (see incident notes).
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 1gb
-      --maxmemory-policy noeviction
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
 
     volumes:
       - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+
+  ##################################################
+  # Redis Broker — Celery broker + result backend only.
+  # noeviction: an in-flight task message must NEVER be evicted.
+  # Sized small: with payload shrinkage in document_pipeline.py the
+  # broker only carries in-flight chain messages + result stubs.
+  ##################################################
+  redis-broker:
+    image: redis:7-alpine
+    container_name: redis-broker
+    restart: unless-stopped
+
+    ports:
+      - "6387:6379"
+
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy noeviction
+
+    volumes:
+      - redis_broker_data:/data
 
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -105,6 +136,10 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # Celery broker/backend -> dedicated redis-broker container. App
+      # cache (REDIS_HOST above) stays on `redis`.
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
     ports:
@@ -112,6 +147,8 @@ services:
 
     depends_on:
       redis:
+        condition: service_healthy
+      redis-broker:
         condition: service_healthy
 
       qdrant:
@@ -169,10 +206,14 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
     depends_on:
       redis:
+        condition: service_healthy
+      redis-broker:
         condition: service_healthy
 
       qdrant:
@@ -216,10 +257,14 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
     depends_on:
       redis:
+        condition: service_healthy
+      redis-broker:
         condition: service_healthy
       qdrant:
         condition: service_started
@@ -272,10 +317,14 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
     depends_on:
       redis:
+        condition: service_healthy
+      redis-broker:
         condition: service_healthy
       qdrant:
         condition: service_started
@@ -289,5 +338,6 @@ services:
 
 volumes:
   redis_data:
+  redis_broker_data:
   qdrant_data:
   temp_uploads:

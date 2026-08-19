@@ -47,6 +47,13 @@ from app.tasks.heatmap_reconciliation_tasks import (  # noqa: F401
     reconcile_heatmap_aggregate_task,
 )
 
+# Stuck-document reconciliation task (default queue) — finds documents
+# orphaned at PROCESSING/PENDING by a broken Celery chain continuation
+# (the Redis maxmemory/allkeys-lru incident) and re-enqueues them.
+from app.tasks.stuck_document_reconciliation_tasks import (  # noqa: F401
+    reconcile_stuck_documents_task,
+)
+
 __all__ = [
     # Document pipeline
     "process_document_task",
@@ -70,4 +77,6 @@ __all__ = [
     "apply_batch_results_task",
     # Heatmap reconciliation
     "reconcile_heatmap_aggregate_task",
+    # Stuck-document reconciliation
+    "reconcile_stuck_documents_task",
 ]

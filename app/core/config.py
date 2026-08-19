@@ -39,6 +39,23 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
+    # Separate Celery broker/backend Redis. When unset, falls back to the
+    # app-cache Redis (REDIS_HOST:REDIS_PORT / db 2) — preserving the old
+    # single-Redis behavior for local dev. In prod (docker-compose.prod.yml)
+    # this points at a dedicated redis-broker container so a cache-heavy burst
+    # cannot evict in-flight Celery messages (the root cause of the
+    # allkeys-lru silent-chain-break incident) and the broker's noeviction
+    # policy doesn't make app-cache writes fail loudly.
+    CELERY_BROKER_REDIS_HOST: str | None = None
+    CELERY_BROKER_REDIS_PORT: int | None = None
+    CELERY_BROKER_REDIS_DB: int = 2
+    CELERY_BROKER_REDIS_PASSWORD: str | None = None
+    # Result backend (often same as broker). Separate override only if needed.
+    CELERY_BACKEND_REDIS_HOST: str | None = None
+    CELERY_BACKEND_REDIS_PORT: int | None = None
+    CELERY_BACKEND_REDIS_DB: int | None = None
+    CELERY_BACKEND_REDIS_PASSWORD: str | None = None
+
     # CORS
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl]
     # RAG Configuration
@@ -611,10 +628,40 @@ class Settings(BaseSettings):
 
     @property
     def REDIS_URL(self) -> str:
-        """Construct Redis URL"""
+        """Construct Redis URL for app cache (tokens, OTP, invites)."""
         if self.REDIS_PASSWORD:
             return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    @property
+    def CELERY_BROKER_URL(self) -> str:
+        """Celery broker URL. Falls back to app-cache Redis db/2 when unset."""
+        host = self.CELERY_BROKER_REDIS_HOST or self.REDIS_HOST
+        port = self.CELERY_BROKER_REDIS_PORT or self.REDIS_PORT
+        password = self.CELERY_BROKER_REDIS_PASSWORD or self.REDIS_PASSWORD
+        db = self.CELERY_BROKER_REDIS_DB
+        if password:
+            return f"redis://:{password}@{host}:{port}/{db}"
+        return f"redis://{host}:{port}/{db}"
+
+    @property
+    def CELERY_BACKEND_URL(self) -> str:
+        """Celery result-backend URL. Defaults to the broker URL."""
+        host = self.CELERY_BACKEND_REDIS_HOST or self.CELERY_BROKER_REDIS_HOST or self.REDIS_HOST
+        port = self.CELERY_BACKEND_REDIS_PORT or self.CELERY_BROKER_REDIS_PORT or self.REDIS_PORT
+        password = (
+            self.CELERY_BACKEND_REDIS_PASSWORD
+            or self.CELERY_BROKER_REDIS_PASSWORD
+            or self.REDIS_PASSWORD
+        )
+        db = (
+            self.CELERY_BACKEND_REDIS_DB
+            if self.CELERY_BACKEND_REDIS_DB is not None
+            else self.CELERY_BROKER_REDIS_DB
+        )
+        if password:
+            return f"redis://:{password}@{host}:{port}/{db}"
+        return f"redis://{host}:{port}/{db}"
 
     class Config:
         env_file = ".env"
