@@ -635,6 +635,61 @@ class SchoolScraperService:
         return False
 
     @staticmethod
+    def _append_google_drive_link_media(
+        media_files: list[dict],
+        seen_media: set[str],
+        *,
+        elem: Any,
+        full_url: str,
+        page_url: str,
+        link_text: str,
+    ) -> bool:
+        """
+        Handle an individual Google Drive/Docs file link embedded as a plain
+        ``<a href>`` (e.g. a static "Agenda"/"Minutes" table row linking
+        straight to ``drive.google.com/file/d/...``), as opposed to an
+        entire Drive folder or an in-page Google Sheets iframe (handled by
+        ``crawl_google_drive_folder`` / ``extract_google_sheets_embed_media``
+        respectively).
+
+        Returns True when ``full_url`` was a recognised Google Drive/Docs
+        file link, regardless of whether the year filter kept or dropped it
+        — callers use this to skip re-processing the link, not to decide
+        whether a media item was actually appended.
+        """
+        from app.services.web_scraper.playwright_interactions import (
+            classify_google_url,
+            media_from_google_doc,
+            media_from_google_drive_file,
+        )
+
+        google_kind, google_id = classify_google_url(full_url)
+        if not google_id or google_kind not in ("file", "open", "gdoc"):
+            return False
+        if full_url in seen_media:
+            return True
+
+        # Link text alone ("Agenda"/"Minutes") carries no date; the meeting
+        # date usually lives in a sibling cell of the same table row (or, for
+        # non-tabular layouts, the immediately enclosing element), so pull
+        # that in as extra context for the year filter.
+        row = elem.find_parent("tr") or elem.parent
+        row_context = row.get_text(" ", strip=True)[:200] if row is not None else None
+        name = row_context or link_text or None
+        if link_text and row_context and link_text.lower() not in row_context.lower():
+            name = f"{row_context} {link_text}"
+
+        if google_kind == "gdoc":
+            item = media_from_google_doc(google_id, page_url=page_url, name=name)
+        else:
+            item = media_from_google_drive_file(google_id, page_url=page_url, name=name)
+
+        seen_media.add(full_url)
+        if item:
+            media_files.append(item)
+        return True
+
+    @staticmethod
     def _media_url_pattern(all_ext: set[str]) -> re.Pattern[str]:
         """Regex for absolute http(s) URLs whose path ends in a known media ext."""
         ext_alt = "|".join(
@@ -1010,6 +1065,15 @@ class SchoolScraperService:
                             # Force document type and .pdf extension hint
                             filename_hint="agenda.pdf",
                         )
+                    elif self._append_google_drive_link_media(
+                        media_files,
+                        seen_media,
+                        elem=elem,
+                        full_url=full_url,
+                        page_url=page_url,
+                        link_text=link_text,
+                    ):
+                        pass
                     else:
                         # Collect same-domain sub-paths for depth crawling
                         if (
