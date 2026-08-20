@@ -429,6 +429,20 @@ class Settings(BaseSettings):
     # A Netscape cookies.txt defeats "Sign in to confirm you're not a bot".
     SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
     SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS: int = 900
+    # Separate from SCHOOL_SCRAPER_YOUTUBE_PROXY_URL above: that one only
+    # routes the free caption API. This routes yt-dlp's own audio download
+    # request. Confirmed via manual testing that even a valid PO Token +
+    # JS runtime still gets HTTP 403 from googlevideo.com on this server's
+    # IP — the download itself needs a non-datacenter egress IP, which only
+    # a proxy provides. See docs/PO_TOKEN_IMPLEMENTATION_PLAN.md.
+    SCHOOL_SCRAPER_YTDLP_PROXY_URL: str = ""
+    # Base URL of a bgutil-ytdlp-pot-provider sidecar (see docker-compose.yml
+    # service "pot-provider"). YouTube now gates downloads behind a
+    # proof-of-origin token that a real browser generates automatically;
+    # without this, yt-dlp's audio download gets HTTP 403 from a datacenter
+    # IP even when cookies are set. Left empty by default so local dev
+    # without the sidecar running degrades gracefully instead of hard-failing.
+    SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL: str = ""
 
     # --- Transcription: neutral gate names ---
     # The gates above were written when the scraper was the only caller, so
