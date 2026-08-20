@@ -13,12 +13,21 @@
 #                   orphaned documents at processing_status=PROCESSING
 #                   forever during the 100-school incident). An OOM here
 #                   fails loudly instead of losing data.
+#                   Sized at 2G: the broker also holds Celery result
+#                   backend entries (task_track_started + result_expires=1h
+#                   means a 6-stage chain × N docs can accumulate tens of
+#                   thousands of result stubs before expiry reaps them).
+#                   512M was too tight for a bulk-scrape enqueue burst and
+#                   OOM-rejected process_document_pipeline.delay() /
+#                   ingest_scraped_media.delay() calls, silently orphaning
+#                   ~2500 ScrapedMedia rows and ~400 Document chains.
 #
 # RAM budget on t4g.2xlarge (~32 GiB):
-#   api 4G + qdrant 6G + redis 0.5G + redis-broker 0.5G + beat 0.3G
-#   celery-ingest ×3 @ 2G = 6G   (document pipeline)
-#   celery-scraper ×2 @ 2.5G = 5G (download/transcribe/Playwright)
-#   ~9G headroom for OS, Docker, Qdrant growth during bulk embed
+#   api 4G + qdrant 6G + redis 0.5G + redis-broker 2G + beat 0.3G = 12.8G
+#   celery-ingest  ×N @ 2G    (document pipeline)
+#   celery-scraper ×N @ 2.5G (download/transcribe/Playwright)
+#   3 scraper + 2 ingest = 11.5G  -> ~7.7G headroom
+#   2 scraper + 3 ingest = 11.0G  -> ~8.2G headroom
 #
 # Bulk school ingest (recommended for this instance):
 #   docker compose -f docker-compose.prod.yml up -d \
@@ -80,7 +89,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 512mb
+      --maxmemory 2gb
       --maxmemory-policy noeviction
 
     volumes:
