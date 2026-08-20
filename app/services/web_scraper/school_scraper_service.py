@@ -70,6 +70,13 @@ _YOUTUBE_IN_TEXT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Zoom recordings are out of scope: the real download is a signed URL
+# generated client-side on the share page (sometimes behind a passcode),
+# not a static file this scraper can fetch. Detected only so a resolved
+# short link that turns out to be Zoom is skipped with a visible log line
+# instead of silently vanishing the same way an unrecognized link does.
+_ZOOM_HOST_RE = re.compile(r"(?:^|\.)zoom\.us$", re.IGNORECASE)
+
 # User-Agent for HTTP requests.
 #
 # Some school-district sites (notably WordPress installs behind Wordfence /
@@ -635,7 +642,92 @@ class SchoolScraperService:
         return False
 
     @staticmethod
-    def _append_google_drive_link_media(
+    def _is_zoom_recording_url(url: str) -> bool:
+        """True for a Zoom recording share link (``.../rec/share/...``)."""
+        try:
+            parsed = urlparse(url)
+        except ValueError:
+            return False
+        host = parsed.hostname or ""
+        return bool(_ZOOM_HOST_RE.search(host)) and "/rec/" in parsed.path.lower()
+
+    @staticmethod
+    def _registrable_domain(host: str) -> str:
+        """Naive eTLD+1, e.g. ``go.svusd.org`` -> ``svusd.org``.
+
+        Doesn't handle multi-part public suffixes (``co.uk`` etc.) — the
+        existing same-domain check in this module (``parsed.netloc ==
+        base_domain``) makes the same simplifying assumption, so this stays
+        at that level of rigor rather than pulling in a public-suffix-list
+        dependency for one heuristic.
+        """
+        parts = host.lower().split(".")
+        return ".".join(parts[-2:]) if len(parts) > 2 else host.lower()
+
+    @classmethod
+    def _is_shortlink_candidate(cls, base_domain: str, candidate_netloc: str) -> bool:
+        """True when ``candidate_netloc`` is a different subdomain of the
+        same organization as ``base_domain`` (e.g. a district's own vanity
+        short-link domain like ``go.svusd.org``), as opposed to an
+        unrelated external site (Facebook, YouTube, Zoom, ...) that also
+        happens to be cross-domain.
+        """
+        if not candidate_netloc or candidate_netloc == base_domain:
+            return False
+        return cls._registrable_domain(base_domain) == cls._registrable_domain(
+            candidate_netloc
+        )
+
+    async def _resolve_shortlink(self, url: str) -> str | None:
+        """Follow a same-organization short link to its real target.
+
+        Uses HEAD (no body) so resolving a link that turns out to point at
+        a large audio/video file doesn't download it during discovery.
+        Returns None on any failure — callers then fall back to the
+        existing "drop it" behavior, same as an unrecognized link today.
+        """
+        try:
+            resp = await self.client.head(url)
+            resp.raise_for_status()
+            return str(resp.url)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Could not resolve short link %s: %s", url, exc)
+            return None
+
+    async def _probe_drive_media_kind(
+        self, file_id: str
+    ) -> tuple[str | None, str | None]:
+        """Detect whether a Drive file link is actually audio/video.
+
+        The classifier otherwise always assumes ``.pdf`` regardless of what
+        is really behind the link — a real failure mode: an audio recording
+        shared via Drive would silently fail PDF text extraction at ingest.
+        Returns ``(None, None)`` when detection fails so the caller falls
+        back to the existing document/.pdf default.
+        """
+        import mimetypes
+
+        from app.services.web_scraper.playwright_interactions import (
+            drive_uc_download_url,
+        )
+
+        try:
+            resp = await self.client.head(drive_uc_download_url(file_id))
+            content_type = (
+                resp.headers.get("content-type", "").split(";")[0].strip().lower()
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Could not probe Drive content-type for %s: %s", file_id, exc)
+            return None, None
+
+        if content_type.startswith("audio/"):
+            return "audio", mimetypes.guess_extension(content_type) or ".mp3"
+        if content_type.startswith("video/"):
+            return "video", mimetypes.guess_extension(content_type) or ".mp4"
+        return None, None
+
+    async def _append_google_drive_link_media(
+        self,
         media_files: list[dict],
         seen_media: set[str],
         *,
@@ -682,7 +774,14 @@ class SchoolScraperService:
         if google_kind == "gdoc":
             item = media_from_google_doc(google_id, page_url=page_url, name=name)
         else:
-            item = media_from_google_drive_file(google_id, page_url=page_url, name=name)
+            media_type, file_extension = await self._probe_drive_media_kind(google_id)
+            item = media_from_google_drive_file(
+                google_id,
+                page_url=page_url,
+                name=name,
+                media_type=media_type,
+                file_extension=file_extension,
+            )
 
         seen_media.add(full_url)
         if item:
@@ -1065,7 +1164,7 @@ class SchoolScraperService:
                             # Force document type and .pdf extension hint
                             filename_hint="agenda.pdf",
                         )
-                    elif self._append_google_drive_link_media(
+                    elif await self._append_google_drive_link_media(
                         media_files,
                         seen_media,
                         elem=elem,
@@ -1074,6 +1173,48 @@ class SchoolScraperService:
                         link_text=link_text,
                     ):
                         pass
+                    elif self._is_zoom_recording_url(full_url):
+                        # Zoom recordings are out of scope — see _ZOOM_HOST_RE.
+                        logger.warning(
+                            "Skipping Zoom recording link %s — Zoom recordings "
+                            "are not supported (the real download is a signed, "
+                            "sometimes passcode-gated URL on the share page, "
+                            "not a fetchable file)",
+                            full_url,
+                        )
+                    elif self._is_shortlink_candidate(base_domain, parsed.netloc):
+                        # A same-organization vanity short link (e.g.
+                        # go.svusd.org) — unlike an unrelated external site,
+                        # this is worth resolving before deciding to drop it.
+                        resolved = await self._resolve_shortlink(full_url)
+                        if not resolved:
+                            pass
+                        elif self._is_zoom_recording_url(resolved):
+                            logger.warning(
+                                "Skipping short link %s -> Zoom recording %s — "
+                                "Zoom recordings are not supported",
+                                full_url,
+                                resolved,
+                            )
+                        elif await self._append_youtube_media(
+                            media_files,
+                            seen_media,
+                            url=resolved,
+                            page_url=page_url,
+                            name=link_text,
+                        ):
+                            pass
+                        else:
+                            self._append_media_url(
+                                media_files,
+                                seen_media,
+                                url=resolved,
+                                page_url=page_url,
+                                all_ext=all_ext,
+                                video_ext=video_ext,
+                                audio_ext=audio_ext,
+                                name=link_text or None,
+                            )
                     else:
                         # Collect same-domain sub-paths for depth crawling
                         if (
