@@ -15,6 +15,7 @@ from app.services.transcription.schemas import (
 )
 from app.services.transcription.service import TranscriptionService
 from app.services.transcription.youtube import (
+    _ytdlp_options,
     canonical_youtube_url,
     fetch_youtube_transcript,
     is_youtube_scrape_url,
@@ -44,6 +45,40 @@ def _no_real_oembed(monkeypatch):
         "app.services.transcription.youtube.fetch_youtube_title",
         AsyncMock(return_value="Board Meeting"),
     )
+
+
+def test_ytdlp_options_omits_pot_provider_when_unset(monkeypatch):
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL", "")
+    opts = _ytdlp_options()
+    assert "extractor_args" not in opts
+
+
+def test_ytdlp_options_wires_pot_provider_when_set(monkeypatch):
+    monkeypatch.setattr(
+        settings,
+        "SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL",
+        "http://pot-provider:4416",
+    )
+    opts = _ytdlp_options()
+    assert opts["extractor_args"] == {
+        "youtubepot-bgutilhttp": {"base_url": ["http://pot-provider:4416"]}
+    }
+
+
+def test_ytdlp_options_omits_proxy_when_unset(monkeypatch):
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YTDLP_PROXY_URL", "")
+    opts = _ytdlp_options()
+    assert "proxy" not in opts
+
+
+def test_ytdlp_options_wires_proxy_when_set(monkeypatch):
+    monkeypatch.setattr(
+        settings,
+        "SCHOOL_SCRAPER_YTDLP_PROXY_URL",
+        "http://user:pass@proxy.example.com:8000",
+    )
+    opts = _ytdlp_options()
+    assert opts["proxy"] == "http://user:pass@proxy.example.com:8000"
 
 
 def test_is_youtube_scrape_url():

@@ -524,6 +524,23 @@ def _ytdlp_options() -> dict[str, object]:
     }
     if settings.SCHOOL_SCRAPER_YTDLP_COOKIES_FILE:
         opts["cookiefile"] = settings.SCHOOL_SCRAPER_YTDLP_COOKIES_FILE
+    if settings.SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL:
+        # Routes yt-dlp's proof-of-origin token requests to the
+        # bgutil-ytdlp-pot-provider sidecar (docker-compose service
+        # "pot-provider"). Without a token, YouTube returns HTTP 403 on the
+        # audio download even with cookies set — see docs/PO_TOKEN_IMPLEMENTATION_PLAN.md.
+        opts["extractor_args"] = {
+            "youtubepot-bgutilhttp": {
+                "base_url": [settings.SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL]
+            }
+        }
+    if settings.SCHOOL_SCRAPER_YTDLP_PROXY_URL:
+        # PO Token + a JS runtime are necessary but NOT sufficient: verified
+        # by manual testing that googlevideo.com still returns 403 on this
+        # server's own (datacenter) IP even with a valid token. Only a
+        # non-datacenter egress IP resolves that — see
+        # docs/PO_TOKEN_IMPLEMENTATION_PLAN.md for the full investigation.
+        opts["proxy"] = settings.SCHOOL_SCRAPER_YTDLP_PROXY_URL
     return opts
 
 
