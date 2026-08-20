@@ -326,103 +326,39 @@ class Settings(BaseSettings):
     # How many top candidate pages to follow for sub-link discovery
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
 
-    # School scraper pipeline (knowledge base) settings.
-    # Master switch for all YouTube handling: transcript fetch
-    # (youtube-transcript-api / Supadata) and metadata/expansion (YouTube
-    # Data API v3, see youtube_data_api.py). When False, youtube media items
-    # are recorded but skipped at ingest, and no YouTube API of any kind is
-    # called.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
-    # When True, run_scrape_districts.py persists only audio/video/youtube
-    # ScrapedMedia rows and skips documents entirely (used to backfill AV
-    # coverage without re-touching already-correct document counts).
     SCHOOL_SCRAPER_AV_ONLY_MODE: bool = False
-    # Master switch for audio/video transcription. When False, audio/video
-    # media items are recorded but no transcript is produced. Named "WHISPER"
-    # for backwards compatibility with deployed .env files; the provider is
-    # now AssemblyAI (see ASSEMBLYAI_* below).
     SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED: bool = True
-    # S3 path prefix for scraped media. Final key layout is:
-    #   {SCHOOL_SCRAPER_S3_PREFIX}tenants/{tenant_id}/schools/{org_code}/...
     SCHOOL_SCRAPER_S3_PREFIX: str = ""
-    # Year filter applied at crawl, persistence, download, and post-classification.
-    # Documents whose inferred calendar year is not in this set are skipped.
     SCHOOL_SCRAPER_ALLOWED_YEARS: list[int] = [2023, 2024, 2025, 2026]
-    # When False, media with no inferrable year from URL/filename/page context
-    # are not crawled, stored, downloaded, or embedded. Unknown-year docs that
-    # slip through are rejected after LLM classification if meeting_date is
-    # missing or outside SCHOOL_SCRAPER_ALLOWED_YEARS.
     SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR: bool = False
-    # Schema-driven crawler POC (experiment branch only). Model used by
-    # scripts/school_data/schema_crawl_poc; defaults to the heatmap doc
-    # classifier model when unset. Not used by SchoolScraperService.
     SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
-    # Hybrid crawler ranking mode. "keyword" = existing SchoolScraperService
-    # discover_candidate_urls (default, unchanged behavior). "llm" = use the
-    # schema-driven crawler for discovery. "both" = run both and union the
-    # results. Switching back to "keyword" is a zero-code rollback.
-    SCHOOL_SCRAPER_RANKING_MODE: str = "both"  # keyword | llm | both
-    # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
+    SCHOOL_SCRAPER_RANKING_MODE: str = "both"
     SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 15
-    # Maximum hop depth the schema-driven crawler will descend from the seed
-    # before depth_penalty makes further links unattractive. Matches the
-    # Layer-2 crawl_depth ceiling so discovery and media scrape reach the same
-    # depth, and so a confirmed hub found at depth N is reachable at depth N+2.
     SCHOOL_SCRAPER_LLM_MAX_DEPTH: int = 4
     SCHOOL_SCRAPER_LLM_CONFIDENCE_THRESHOLD: float = 0.5
-    # Archive pages (e.g. "school-committee-document-archives",
-    # "archived-agendas-meeting-packets") are frequently the ONLY place a
-    # district publishes meeting minutes/agendas, so they are kept by
-    # default. Set to True to restore the old behavior of dropping any page
-    # the LLM marks is_archive=true (e.g. for routine scrapes that only want
-    # the current school year).
     SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = False
-    # Off-domain board-meeting platforms the crawler is allowed to follow a
-    # single hop into when discovered on a school site (BoardDocs, Diligent
-    # Community, BoardOnTrack). These are JS/iframe-heavy SPAs whose document
-    # download links are frequently session-bound — see
-    # app/services/web_scraper/board_platforms.py.
     SCHOOL_SCRAPER_BOARD_PLATFORM_DOMAINS: list[str] = [
         "boarddocs.com",
         "diligentoneplatform.com",
         "boardontrack.com",
         "granicus.com",
     ]
-    # Hard cap on meetings visited per board-platform portal per scrape
-    # (Diligent/BoardOnTrack calendars can span 10+ years of history).
     SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS: int = 24
-    # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"
     )
 
     # --- Transcription: AssemblyAI ---
     ASSEMBLYAI_API_KEY: str = ""
-    # US endpoint. Target market is Massachusetts + California; no US state
-    # law requires in-state processing. Only revisit for EU tenants.
     ASSEMBLYAI_BASE_URL: str = "https://api.assemblyai.com"
-    # Ordered AVAILABILITY fallback: try each model until one is accepted.
-    # NO keyterms_prompt / word_boost / custom_spelling is ever sent.
     ASSEMBLYAI_SPEECH_MODELS: list[str] = ["universal-3-5-pro", "universal-2"]
-    # Speaker diarization is a hard requirement for board-meeting transcripts.
     ASSEMBLYAI_SPEAKER_LABELS: bool = True
     ASSEMBLYAI_LANGUAGE_CODE: str = "en"
     ASSEMBLYAI_POLL_INTERVAL_SECONDS: int = 15
-    # Must stay under the SMALLEST Celery soft limit that could apply, so the
-    # task is never killed mid-poll AFTER paying for transcription:
-    #   celery_app.conf task_soft_time_limit = 3000s  (global default)
-    #   celery-scraper --soft-time-limit      = 6000s  (its own queue)
-    # 2400s leaves 600s of headroom under the global 3000s. Ample in practice:
-    # transcription runs at ~1.1s per minute of audio, so even a 300-minute
-    # recording (the duration cap) completes in ~330s.
     ASSEMBLYAI_POLL_TIMEOUT_SECONDS: int = 2400
 
     # --- Transcription: audio handling ---
-    # "url_direct" (DEFAULT): hand the media URL to AssemblyAI, which fetches
-    #   it itself. No download, no ffmpeg, no temp disk, ~0 CPU. The duration
-    #   cap is still enforced first via a remote ffprobe header read (~1.5s).
-    # "preprocess": download -> ffmpeg denoise -> upload. Fallback for URLs
-    #   AssemblyAI cannot reach, or if measurement shows denoising helps.
     TRANSCRIPTION_AUDIO_MODE: str = "url_direct"
     TRANSCRIPTION_FFMPEG_PATH: str = "ffmpeg"
     TRANSCRIPTION_FFPROBE_PATH: str = "ffprobe"
@@ -430,79 +366,32 @@ class Settings(BaseSettings):
     TRANSCRIPTION_SAMPLE_RATE_HZ: int = 16000
     TRANSCRIPTION_HIGHPASS_HZ: int = 80
     TRANSCRIPTION_DENOISE_ENABLED: bool = True
-    # LINEAR gain only. Never loudnorm/dynaudnorm — compression lifts
-    # background noise more than speech and measurably LOWERS SNR.
     TRANSCRIPTION_GAIN_DB: float = 0.0
     TRANSCRIPTION_FFMPEG_TIMEOUT_SECONDS: int = 1800
-    # Transcript chunking. Chunks are packed on utterance boundaries and a
-    # single segment is never split, so start_ms/end_ms stay exact.
     TRANSCRIPTION_CHUNK_TARGET_SECONDS: int = 90
     TRANSCRIPTION_CHUNK_MAX_CHARS: int = 4000
 
     # --- Transcription: caps / cost control ---
     SCHOOL_SCRAPER_MEDIA_MAX_DOWNLOAD_MB: int = 1024
     SCHOOL_SCRAPER_MEDIA_MAX_DURATION_MINUTES: int = 300
-    # Relative on purpose: the validator below resolves it against the project
-    # root, which is /app in the container and the repo directory locally. An
-    # absolute "/app/..." default cannot be created outside Docker.
     SCHOOL_SCRAPER_MEDIA_TEMP_DIR: str = "./temp_uploads/media"
-    # Skip files with no audio stream. School CMS templates ship decorative
-    # video loops with no audio track at all; providers bill per audio-hour
-    # submitted regardless, so without this the template layer of every
-    # school website becomes a recurring charge returning nothing.
     SCHOOL_SCRAPER_MEDIA_REQUIRE_AUDIO: bool = True
-    # Floor in seconds. DISABLED by default (0), deliberately: duration is a
-    # poor proxy for "not a meeting". The clip that motivated a floor turned
-    # out to be 28s of DIGITAL SILENCE (-91 dB across its whole length), so
-    # the real defect was silence, not brevity — and a floor would also drop
-    # genuine short content such as a 40s public statement. Skipping it saves
-    # ~$0.002 per file, which does not justify that risk. Enable only with a
-    # threshold derived from measured data.
     SCHOOL_SCRAPER_MEDIA_MIN_DURATION_SECONDS: int = 0
 
     # --- Transcription: YouTube ---
-    # Captions (manual OR auto) are always free. Only a video with NO
-    # captions at all ever reaches paid transcription.
     SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED: bool = True
     SCHOOL_SCRAPER_YOUTUBE_SUBTITLE_LANGS: list[str] = ["en", "en-US", "en-GB"]
-    # youtube-transcript-api raises IpBlocked when YouTube rate-limits a
-    # datacenter IP. Set a residential/rotating proxy here if that happens.
     SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
-    # Max free caption API calls per worker process before switching every
-    # subsequent YouTube item to Supadata (paid, server-side fetch).
-    # YouTube commonly rate-limits datacenter IPs after ~10 requests.
     SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
-    # Video-year lookup and playlist/channel expansion (see
-    # youtube_data_api.py) use the official YouTube Data API v3 rather than
-    # yt-dlp — a sanctioned, API-keyed request that cannot be bot-blocked,
-    # unlike yt-dlp scraping YouTube's own pages. Read-only public data needs
-    # only an API key, no OAuth: console.cloud.google.com -> enable "YouTube
-    # Data API v3" -> create an API key. videos.list and playlistItems.list
-    # cost 1 unit each against the free 10,000-units/day quota.
     YOUTUBE_DATA_API_KEY: str = ""
     YOUTUBE_DATA_API_BASE_URL: str = "https://www.googleapis.com/youtube/v3"
 
     # --- Transcription: Supadata (YouTube fallback tier 2) ---
-    # When youtube-transcript-api has no captions (or is blocked), Supadata
-    # fetches the transcript server-side on its own infrastructure — YouTube
-    # never sees our IP, unlike the old yt-dlp-download-then-AssemblyAI path
-    # (and the PO Token / proxy workarounds that path needed, which were
-    # confirmed to still hit IP-reputation blocks — see git history on this
-    # branch prior to this change).
     SUPADATA_API_KEY: str = ""
     SUPADATA_BASE_URL: str = "https://api.supadata.ai/v1"
-    # Kill switch: off means captions-fail -> no_transcript, no Supadata call.
     SCHOOL_SCRAPER_SUPADATA_ENABLED: bool = True
 
     # --- Transcription: neutral gate names ---
-    # The gates above were written when the scraper was the only caller, so
-    # they carry SCHOOL_SCRAPER_ names. Tenant uploads use the same gates, and
-    # firing a paid API under a scraper-named flag is how a limit gets raised
-    # for one caller and silently raised for the other too.
-    #
-    # These override the legacy names when set. Left as None (the default)
-    # every deployed .env keeps working unchanged — resolution happens in the
-    # `transcription_*` properties below, which is what all callers read.
     TRANSCRIPTION_ENABLED: bool | None = None
     TRANSCRIPTION_MAX_DURATION_MINUTES: int | None = None
     TRANSCRIPTION_MIN_DURATION_SECONDS: int | None = None
@@ -512,15 +401,8 @@ class Settings(BaseSettings):
 
     # --- Media ingest: tenant uploads and pasted links ---
     MEDIA_INGEST_TEMP_DIR: str = "./temp_uploads/media_ingest"
-    # How long the presigned URL handed to the transcription provider stays
-    # valid. Must outlast the provider's own fetch + queue wait, not just the
-    # request: AssemblyAI downloads the media itself under url_direct.
     MEDIA_INGEST_PRESIGN_EXPIRY_SECONDS: int = 7200
-    # Per-tenant monthly transcription budget, in minutes of billable audio.
-    # Free YouTube captions never count against it. 0 disables the cap.
     TENANT_MEDIA_MONTHLY_MINUTES_LIMIT: int = 600
-    # Used only to report spend in usage records; not a billing source of
-    # truth. Keep in step with the AssemblyAI contract.
     TRANSCRIPTION_COST_PER_AUDIO_HOUR_USD: float = 0.23
 
     # Email / SMTP
