@@ -271,6 +271,7 @@ def _keep_media(
     name: str | None,
     page_url: str,
     file_extension: str,
+    media_type: str = "document",
     allow_unknown_year: bool = False,
 ) -> dict | None:
     year, should_keep, skip_reason = evaluate_media_year(
@@ -288,7 +289,7 @@ def _keep_media(
         "name": name,
         "url": url,
         "file_extension": file_extension,
-        "media_type": "document",
+        "media_type": media_type,
         "size_bytes": None,
         "source_page_url": page_url,
         "doc_year": year,
@@ -388,14 +389,23 @@ def media_from_google_drive_file(
     page_url: str,
     name: str | None = None,
     allow_unknown_year: bool = False,
+    media_type: str | None = None,
+    file_extension: str | None = None,
 ) -> dict | None:
-    """Build a media dict for a single Drive file id."""
+    """Build a media dict for a single Drive file id.
+
+    ``media_type``/``file_extension`` let a caller pass a real detected
+    kind (e.g. a probed ``audio/mpeg`` content-type) instead of the
+    ``document``/``.pdf`` default, which is otherwise assumed for every
+    Drive link regardless of what the file actually is.
+    """
     download = drive_uc_download_url(file_id)
     return _keep_media(
         url=download,
         name=name,
         page_url=page_url,
-        file_extension=_extension_from_name(name),
+        file_extension=file_extension or _extension_from_name(name),
+        media_type=media_type or "document",
         allow_unknown_year=allow_unknown_year,
     )
 
