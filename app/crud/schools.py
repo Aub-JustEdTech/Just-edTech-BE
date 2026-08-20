@@ -323,6 +323,11 @@ async def deactivate_scrape_url(
 # Scraped media + dedup
 # ---------------------------------------------------------------------------
 
+# Statuses a rescrape is allowed to reset and retry. Excludes "skipped_year"
+# (own dedicated re-evaluation path, /backfill-years) and "completed" (never
+# re-spend on a success).
+_RETRYABLE_SCRAPED_MEDIA_STATUSES = {"failed", "no_transcript"}
+
 
 async def get_scraped_media_by_url_hash(
     db: AsyncSession, school_id: int, url_hash_value: str
@@ -359,6 +364,19 @@ async def create_scraped_media(
     re-crawl of a page with 16 known items and 2 new ones must queue exactly
     2 — without this, every monthly crawl re-pays for the entire corpus.
 
+    An existing row with a status in ``_RETRYABLE_SCRAPED_MEDIA_STATUSES`` is
+    the one exception: dedup matches purely on url_hash, so without this a
+    link that failed once (e.g. a transient yt-dlp/network error, or a
+    caption-provider IP block that resolves itself, marks it "no_transcript")
+    would be skipped as a duplicate forever, with no way for a routine
+    re-crawl to ever retry it. Such rows are reset to ``status="discovered"``
+    and reported as created so the caller enqueues them again.
+
+    Deliberately excludes ``skipped_year`` — that has its own dedicated
+    re-evaluation path (``/backfill-years``) since it needs the year to be
+    re-inferred, not just blindly retried — and ``completed``, which should
+    never be re-spent on.
+
     YouTube URLs are canonicalised before hashing, so ``youtu.be/X``,
     ``/embed/X`` and ``watch?v=X&t=90`` collapse onto one row.
     """
@@ -376,6 +394,15 @@ async def create_scraped_media(
 
     existing = await get_scraped_media_by_url_hash(db, school.id, url_hash_value)
     if existing:
+        if existing.status in _RETRYABLE_SCRAPED_MEDIA_STATUSES:
+            existing.status = "discovered"
+            existing.error_message = ""
+            if commit:
+                await db.commit()
+                await db.refresh(existing)
+            else:
+                await db.flush()
+            return existing, True
         return existing, False
 
     sm = ScrapedMedia(
@@ -415,7 +442,8 @@ async def bulk_create_scraped_media(
     """Create many rows in one commit. Returns ``(created_rows, skipped)``.
 
     Only the newly created rows come back, so the caller can enqueue exactly
-    those and nothing else.
+    those and nothing else. "Created" also includes previously ``failed``
+    rows reset for retry — see ``create_scraped_media``.
     """
     created: list[ScrapedMedia] = []
     skipped = 0
