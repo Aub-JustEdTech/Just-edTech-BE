@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.celery_app import celery_app
@@ -191,19 +192,36 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                         db,
                         sm.id,
                         status="skipped_duplicate",
-                        content_hash=content_h,
                     )
                     return {
                         "scraped_media_id": scraped_media_id,
                         "status": "skipped_duplicate",
                     }
 
-            await update_scraped_media(
-                db,
-                sm.id,
-                status="ingesting",
-                content_hash=content_h,
-            )
+            try:
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="ingesting",
+                    content_hash=content_h,
+                )
+            except IntegrityError:
+                # Concurrent race: another worker processing a different row
+                # for the same school with identical content committed its
+                # content_hash between our dedup check above and this UPDATE.
+                # We lost the race — mark this row as a duplicate WITHOUT
+                # writing content_hash (the winning row already owns it under
+                # uq_scraped_media_school_content).
+                await db.rollback()
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="skipped_duplicate",
+                )
+                return {
+                    "scraped_media_id": scraped_media_id,
+                    "status": "skipped_duplicate",
+                }
 
             # Everything past this point runs AFTER transcription has already
             # been paid for. An S3 or DB failure here must NOT propagate to the
