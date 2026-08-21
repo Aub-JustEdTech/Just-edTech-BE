@@ -1,11 +1,17 @@
 """Transcription orchestration — the cost gates, in cheapest-first order.
 
-    is it YouTube? -> has captions? -> has audio? -> long enough? -> under cap?
-         free            free           free          free           paid
+Non-YouTube media (AssemblyAI path):
 
-Every gate after the caption check comes from a single ffprobe header read
-(~1.5s, no download), so the whole chain is free to apply. Only an item that
-passes all of them costs money (~$0.23/audio-hour).
+    has audio? -> long enough? -> under cap?
+        free          free          free / paid
+
+Every gate here comes from a single ffprobe header read (~1.5s, no
+download), so the whole chain is free to apply. Only an item that passes all
+of them costs money (~$0.23/audio-hour).
+
+YouTube media skips these gates entirely and instead tries free captions,
+then Supadata (paid, server-side — see ``transcribe_youtube``). Neither tier
+downloads the video, so there is nothing for ffprobe to gate.
 """
 
 from __future__ import annotations
@@ -28,11 +34,8 @@ from app.services.transcription.media_downloader import (
     stream_download_to_disk,
 )
 from app.services.transcription.schemas import TranscriptResult
-from app.services.transcription.youtube import (
-    download_youtube_audio,
-    fetch_youtube_transcript,
-    probe_youtube_duration,
-)
+from app.services.transcription.supadata import fetch_supadata_transcript
+from app.services.transcription.youtube import fetch_youtube_transcript
 
 logger = logging.getLogger(__name__)
 
@@ -116,55 +119,39 @@ class TranscriptionService:
         *,
         workdir: Path | None = None,
     ) -> TranscriptResult:
-        """Gate 2 + Gate 3: captions if they exist, otherwise paid audio.
+        """Gate 2 + Gate 3: free captions, then Supadata. No third attempt.
 
         Captions are tried first when the per-process budget allows. After
         ``SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET`` attempts, or when YouTube
-        rate-limits us, caption fetch is skipped and AssemblyAI is used.
+        rate-limits us, caption fetch is skipped and Supadata is used
+        instead — Supadata fetches the transcript server-side on its own
+        infrastructure, so YouTube never sees our IP. If Supadata also has
+        nothing, the item is terminal: no further fallback is attempted.
+
+        ``workdir`` is accepted for signature compatibility with the other
+        media branches but unused here — Supadata never downloads anything.
         """
         result = await fetch_youtube_transcript(url)
         if result is not None:
             return result
 
         # No captions, budget exhausted, or rate-limited. Everything below costs money.
-        if not settings.transcription_youtube_audio_fallback_enabled:
+        if not settings.SCHOOL_SCRAPER_SUPADATA_ENABLED:
             raise NoTranscriptAvailableError(
-                f"No captions for {url} and the audio fallback is disabled"
+                f"No captions for {url} and Supadata is disabled"
             )
         if not settings.transcription_enabled:
             raise NoTranscriptAvailableError(
                 f"No captions for {url} and transcription is disabled"
             )
-        if workdir is None:
-            raise NoTranscriptAvailableError(
-                f"No captions for {url} and no workdir was provided for audio"
-            )
 
-        # Gate on YouTube's OWN metadata first — one cheap API call, no bytes
-        # transferred. Downloading first would let an 8-hour livestream fill
-        # the shared temp_uploads volume before being rejected, and that volume
-        # is shared with the documents worker.
-        duration = await probe_youtube_duration(url)
-        if duration is not None:
-            self._enforce_duration_bounds(url, duration)
-        else:
-            logger.warning(
-                "Could not read duration metadata for %s; downloading without "
-                "a length gate (size is still capped)",
-                url,
-            )
+        result = await fetch_supadata_transcript(url)
+        if result is not None:
+            return result
 
-        logger.warning(
-            "PAID PATH: downloading audio for caption-less YouTube video %s", url
+        raise NoTranscriptAvailableError(
+            f"No transcript for {url} via captions or Supadata"
         )
-        audio_path = await download_youtube_audio(url, workdir)
-        # Re-probe the downloaded file: it is the artifact actually being sent,
-        # and its duration may differ from the advertised metadata.
-        probe = await self.enforce_media_gates(str(audio_path))
-        result = await self._transcribe_local_file(audio_path, workdir)
-        if result.duration_seconds is None:
-            result.duration_seconds = probe.duration_seconds or duration
-        return result
 
     async def transcribe_media_url(
         self,

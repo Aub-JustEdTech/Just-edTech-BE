@@ -422,27 +422,27 @@ class Settings(BaseSettings):
     # datacenter IP. Set a residential/rotating proxy here if that happens.
     SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
     # Max free caption API calls per worker process before switching every
-    # subsequent YouTube item to AssemblyAI (audio download + paid transcribe).
+    # subsequent YouTube item to Supadata (paid, server-side fetch).
     # YouTube commonly rate-limits datacenter IPs after ~10 requests.
     SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
-    # yt-dlp is used ONLY to fetch audio for videos with no captions.
-    # A Netscape cookies.txt defeats "Sign in to confirm you're not a bot".
+    # yt-dlp here is metadata/expansion only (upload year, playlist/channel
+    # listing) — it never downloads audio or video bytes. A Netscape
+    # cookies.txt defeats "Sign in to confirm you're not a bot" for these
+    # metadata calls too.
     SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
     SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS: int = 900
-    # Separate from SCHOOL_SCRAPER_YOUTUBE_PROXY_URL above: that one only
-    # routes the free caption API. This routes yt-dlp's own audio download
-    # request. Confirmed via manual testing that even a valid PO Token +
-    # JS runtime still gets HTTP 403 from googlevideo.com on this server's
-    # IP — the download itself needs a non-datacenter egress IP, which only
-    # a proxy provides. See docs/PO_TOKEN_IMPLEMENTATION_PLAN.md.
-    SCHOOL_SCRAPER_YTDLP_PROXY_URL: str = ""
-    # Base URL of a bgutil-ytdlp-pot-provider sidecar (see docker-compose.yml
-    # service "pot-provider"). YouTube now gates downloads behind a
-    # proof-of-origin token that a real browser generates automatically;
-    # without this, yt-dlp's audio download gets HTTP 403 from a datacenter
-    # IP even when cookies are set. Left empty by default so local dev
-    # without the sidecar running degrades gracefully instead of hard-failing.
-    SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL: str = ""
+
+    # --- Transcription: Supadata (YouTube fallback tier 2) ---
+    # When youtube-transcript-api has no captions (or is blocked), Supadata
+    # fetches the transcript server-side on its own infrastructure — YouTube
+    # never sees our IP, unlike the old yt-dlp-download-then-AssemblyAI path
+    # (and the PO Token / proxy workarounds that path needed, which were
+    # confirmed to still hit IP-reputation blocks — see git history on this
+    # branch prior to this change).
+    SUPADATA_API_KEY: str = ""
+    SUPADATA_BASE_URL: str = "https://api.supadata.ai/v1"
+    # Kill switch: off means captions-fail -> no_transcript, no Supadata call.
+    SCHOOL_SCRAPER_SUPADATA_ENABLED: bool = True
 
     # --- Transcription: neutral gate names ---
     # The gates above were written when the scraper was the only caller, so
