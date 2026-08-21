@@ -88,14 +88,6 @@ RUN useradd --create-home --shell /bin/bash app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# JS runtime for yt-dlp's YouTube signature/PO-token challenge solving.
-# Without one, yt-dlp falls back to degraded extraction paths and warns
-# "YouTube extraction without a JS runtime has been deprecated" — see
-# docs/PO_TOKEN_IMPLEMENTATION_PLAN.md. Copied as a single static binary
-# (official denoland/deno:bin image) so no separate install step/curl is
-# needed here.
-COPY --from=denoland/deno:bin /deno /usr/local/bin/deno
-
 # Copy only what's needed at runtime
 COPY --chown=app:app app ./app
 COPY --chown=app:app alembic ./alembic

@@ -46,30 +46,6 @@ services:
       retries: 5
       start_period: 10s
 
-  # bgutil-ytdlp-pot-provider sidecar: generates the YouTube proof-of-origin
-  # token yt-dlp needs to avoid HTTP 403 on audio downloads from a
-  # datacenter IP. Only celery-scraper talks to it (see
-  # SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL). Docs: docs/PO_TOKEN_IMPLEMENTATION_PLAN.md
-  pot-provider:
-    image: brainicism/bgutil-ytdlp-pot-provider:latest
-    restart: always
-    ports:
-      - "4416:4416"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.3"
-          memory: 256M
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/4416' || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   # FastAPI Application
   api:
     container_name: just-edtech
@@ -195,15 +171,12 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - VECTOR_STORE_TYPE=qdrant
       - SCHOOL_SCRAPER_ALLOWED_YEARS=[2023,2024,2025,2026]
-      - SCHOOL_SCRAPER_YOUTUBE_POT_PROVIDER_URL=http://pot-provider:4416
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       redis:
         condition: service_healthy
       qdrant:
-        condition: service_healthy
-      pot-provider:
         condition: service_healthy
     volumes:
       - temp_uploads:/app/temp_uploads
