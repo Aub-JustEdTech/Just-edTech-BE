@@ -514,11 +514,19 @@ def render_state_vocab_pack(state: str | None) -> str | None:
     pack = get_pack(state)
     parts: list[str] = []
     if pack.state_curricula:
-        parts.append("State curricula (tag as topic_tags with these subtopics):")
+        parts.append(
+            "State curricula (emit as topic_tags with category + subtopic "
+            "exactly as written — subtopic may itself contain dots):"
+        )
         for cur in pack.state_curricula:
-            parts.append(f"- {cur.category}.{cur.subtopic}: {cur.description}")
+            parts.append(
+                f'- {{"category": "{cur.category}", "subtopic": "{cur.subtopic}"}}'
+                f": {cur.description}"
+            )
     if pack.state_orgs:
-        parts.append("Named advocacy orgs (use for advocacy.external_org_mentioned):")
+        parts.append(
+            "Named advocacy orgs (use for advocacy/external_org_mentioned):"
+        )
         for org in pack.state_orgs:
             parts.append(f"- {org}")
     if not parts:

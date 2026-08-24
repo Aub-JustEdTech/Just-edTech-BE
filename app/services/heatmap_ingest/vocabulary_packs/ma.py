@@ -20,17 +20,18 @@ from app.services.heatmap_ingest.vocabulary_packs.core import TopicSubtopic
 MA_CURRICULA: tuple[TopicSubtopic, ...] = (
     TopicSubtopic(
         category="sexed",
-        subtopic="curriculum_3rs",
+        # Dotted names match prompt.py TOPIC_TAGS (literal strings).
+        subtopic="curriculum.3rs",
         description="3 Rs curriculum (MA sex ed framework).",
     ),
     TopicSubtopic(
         category="sexed",
-        subtopic="curriculum_get_real",
+        subtopic="curriculum.get_real",
         description="Get Real curriculum (MA sex ed framework).",
     ),
     TopicSubtopic(
         category="sexed",
-        subtopic="curriculum_chpe_framework",
+        subtopic="curriculum.chpe_framework",
         description="CHPE Framework (Comprehensive Health & PE, MA).",
     ),
 )

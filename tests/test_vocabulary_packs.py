@@ -54,9 +54,9 @@ def test_none_state_falls_back_to_ma():
 def test_ma_pack_has_3rs_get_real_chpe():
     subtopics = {s.subtopic for s in get_pack("MA").state_curricula}
     assert {
-        "curriculum_3rs",
-        "curriculum_get_real",
-        "curriculum_chpe_framework",
+        "curriculum.3rs",
+        "curriculum.get_real",
+        "curriculum.chpe_framework",
     } <= subtopics
 
 

@@ -50,9 +50,11 @@ SEX_ED = TopicCategory(
         _sub("sexed", "opt_in_policy", "Opt-in enrollment policy."),
         _sub("sexed", "opt_out_policy", "Opt-out enrollment policy."),
         _sub("sexed", "parental_notification", "Parental notification policy."),
-        _sub("sexed", "change_expansion", "Curriculum expansion."),
-        _sub("sexed", "change_reduction", "Curriculum reduction."),
-        _sub("sexed", "change_under_review", "Curriculum under review."),
+        # Dotted names match prompt.py TOPIC_TAGS closed vocabulary (literal
+        # strings — "change.expansion" is one subtopic, not a nested path).
+        _sub("sexed", "change.expansion", "Curriculum expansion."),
+        _sub("sexed", "change.reduction", "Curriculum reduction."),
+        _sub("sexed", "change.under_review", "Curriculum under review."),
         _sub("sexed", "public_comment", "Public comment on sex ed policy."),
     ),
 )
@@ -120,7 +122,6 @@ ADVOCACY = TopicCategory(
         ),
         _sub("advocacy", "presentation_or_testimony", "Presentation or testimony given."),
         _sub("advocacy", "petition_or_campaign_referenced", "Petition or campaign referenced."),
-        _sub("advocacy", "public_comment_surge", "Public comment surge."),
     ),
 )
 

@@ -219,10 +219,12 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app/app
+      - celerybeat_data:/data
     command: >
       celery -A app.celery_app beat
       --loglevel=info
       --pidfile=/tmp/celerybeat.pid
+      --schedule=/data/celerybeat-schedule
 
   # Flower - Celery Monitoring Dashboard
   # REMOVED to match production and save ~150-300MB RAM
@@ -233,3 +235,4 @@ volumes:
   redis_data:
   qdrant_data:
   temp_uploads:
+  celerybeat_data:
