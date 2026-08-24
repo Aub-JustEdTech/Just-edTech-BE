@@ -315,7 +315,7 @@ class Settings(BaseSettings):
         ".ppt",
     ]
     SCHOOL_SCRAPER_MAX_CANDIDATES: int = 10
-    SCHOOL_SCRAPER_MAX_CRAWL_DEPTH: int = 2
+    SCHOOL_SCRAPER_MAX_CRAWL_DEPTH: int = 4
     SCHOOL_SCRAPER_MAX_PAGES_PER_CRAWL: int = 20
     # How many top candidate pages to follow for sub-link discovery
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
@@ -350,7 +350,12 @@ class Settings(BaseSettings):
     # results. Switching back to "keyword" is a zero-code rollback.
     SCHOOL_SCRAPER_RANKING_MODE: str = "both"  # keyword | llm | both
     # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
-    SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 10
+    SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 15
+    # Maximum hop depth the schema-driven crawler will descend from the seed
+    # before depth_penalty makes further links unattractive. Matches the
+    # Layer-2 crawl_depth ceiling so discovery and media scrape reach the same
+    # depth, and so a confirmed hub found at depth N is reachable at depth N+2.
+    SCHOOL_SCRAPER_LLM_MAX_DEPTH: int = 4
     SCHOOL_SCRAPER_LLM_CONFIDENCE_THRESHOLD: float = 0.5
     # Archive pages (e.g. "school-committee-document-archives",
     # "archived-agendas-meeting-packets") are frequently the ONLY place a

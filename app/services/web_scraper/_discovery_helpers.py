@@ -47,6 +47,13 @@ _JS_RENDER_SIGNALS: tuple[str, ...] = (
     "sharpschool.com",       # SharpSchool / Blackboard CMS
     "ContentItemModern",     # SharpSchool document explorer scripts
     'id="documentList"',     # SharpSchool ContentItem folder widget
+    # WAF / bot-protection interstitials (Imperva Incapsula, Akamai, etc.).
+    # These return a 200 + tiny JS challenge page instead of real content.
+    # The challenge solves itself in a real browser, so treating it as a
+    # "needs Playwright" signal escalates past the block. Verified against
+    # stoughtonschools.org and whittiertech.org.
+    "<title>Client Challenge</title>",
+    "JavaScript is disabled in your browser",
 )
 
 # Type alias: an async callable that takes a URL and returns the response body

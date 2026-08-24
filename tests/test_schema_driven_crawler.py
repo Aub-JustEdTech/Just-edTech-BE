@@ -314,3 +314,57 @@ async def test_e2e_crawl_with_canned_relevant_pages():
     assert result.data_pages[0].url == "https://example.com/minutes"
     assert result.data_pages[0].data_page_info.data_type == "board_minutes"
     assert len(result.visited_pages) == 2
+
+
+# ---------------------------------------------------------------------------
+# max_pages_limit_reached flag
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_max_pages_limit_reached_true_when_budget_cuts_exploration():
+    """Flag flips when max_pages is hit while unvisited URLs remain on the frontier."""
+    crawler = SchemaDrivenCrawler(max_pages=2, confidence_threshold=0.4)
+    # Each page suggests a fresh next page, so after 2 crawls the frontier
+    # still holds p2 (unvisited) — budget, not the site, stopped us.
+    pages = [
+        _page(
+            f"https://example.com/p{i}",
+            candidates=[(f"https://example.com/p{i+1}", 0.9)],
+        )
+        for i in range(10)
+    ]
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=pages)
+    crawler.classifier = mock_classifier
+
+    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://example.com/p0")
+
+    assert result.pages_crawled == 2
+    assert result.max_pages_limit_reached is True
+
+
+@pytest.mark.asyncio
+async def test_max_pages_limit_reached_false_when_frontier_empties():
+    """Flag stays False when the crawl finishes because the frontier ran out."""
+    crawler = SchemaDrivenCrawler(max_pages=5, confidence_threshold=0.4)
+    # Homepage suggests one data page that suggests nothing — frontier empties
+    # well before the 5-page budget.
+    home = _page(
+        "https://example.com/",
+        has_data=False,
+        candidates=[("https://example.com/minutes", 0.9)],
+    )
+    minutes = _page("https://example.com/minutes")
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=[home, minutes])
+    crawler.classifier = mock_classifier
+
+    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://example.com")
+
+    assert result.pages_crawled == 2
+    assert result.max_pages_limit_reached is False

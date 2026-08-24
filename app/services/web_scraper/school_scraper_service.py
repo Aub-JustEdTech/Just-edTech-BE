@@ -48,6 +48,7 @@ from app.services.web_scraper._discovery_helpers import (
 from app.services.web_scraper._discovery_helpers import (
     parse_sitemap_xml as _parse_sitemap_xml_helper,
 )
+from app.services.web_scraper.url_keywords import is_meeting_related_url
 from app.services.web_scraper.year_filter import (
     filter_media_files_async,
     should_crawl_page_url,
@@ -1075,12 +1076,37 @@ class SchoolScraperService:
                     ):
                         pass
                     else:
-                        # Collect same-domain sub-paths for depth crawling
-                        if (
+                        # A plain <a href> to a Google Drive *folder* (not a
+                        # file) is not handled by _append_google_drive_link_media
+                        # (which only does file/open/gdoc). Enqueue it as a
+                        # sub-page so the BFS loop's google_kind=="folder"
+                        # branch walks it via crawl_google_drive_folder — same
+                        # treatment an embedded folder iframe gets.
+                        from app.services.web_scraper.playwright_interactions import (
+                            classify_google_url,
+                        )
+
+                        g_kind, _g_id = classify_google_url(full_url)
+                        if g_kind == "folder":
+                            sub_pages.append(full_url)
+                        elif (
                             parsed.netloc == base_domain
-                            and full_url.startswith(page_prefix)
                             and full_url != page_url
+                            and (
+                                full_url.startswith(page_prefix)
+                                or is_meeting_related_url(full_url)
+                            )
                         ):
+                            # Collect same-domain links for depth crawling.
+                            # Two cases:
+                            #  (a) a sub-path of the current page (the usual
+                            #      year/folder drill-down), OR
+                            #  (b) a *sibling* path that looks meeting-related
+                            #      (e.g. hub `/school-committee` reaching
+                            #      `/agendas/2024/`). Without (b), deeper sites
+                            #      whose data lives 2-3 hops off the confirmed
+                            #      hub never get followed. Same-domain only;
+                            #      off-domain board platforms are handled above.
                             sub_pages.append(full_url)
 
         # Extract <object data="..."> URLs (common for embedded Granicus calendars)
@@ -1097,11 +1123,16 @@ class SchoolScraperService:
             # If it's a board platform URL (cross-domain allowed), add as sub-page
             if is_board_platform_url(full_url) and full_url != page_url:
                 sub_pages.append(full_url)
-            # Or if it's same-domain, add as sub-page
+            # Or if it's same-domain: a sub-path of the current page OR a
+            # meeting-related sibling (see _extract_media_from_page for why
+            # sibling links must be followed to reach data 2-3 hops off the hub).
             elif (
                 parsed.netloc == base_domain
-                and full_url.startswith(page_prefix)
                 and full_url != page_url
+                and (
+                    full_url.startswith(page_prefix)
+                    or is_meeting_related_url(full_url)
+                )
             ):
                 sub_pages.append(full_url)
 

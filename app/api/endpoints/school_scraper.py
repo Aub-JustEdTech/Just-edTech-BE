@@ -308,6 +308,7 @@ async def discover_urls(
         total_candidates=len(candidates),
         candidates=candidates,
         ranking_mode=result.get("ranking_mode", "keyword"),
+        max_pages_limit_reached=result.get("max_pages_limit_reached", False),
     )
 
 
@@ -332,8 +333,8 @@ async def scrape_media(
     addition to recorded meeting audio/video).
 
     It also follows same-domain sub-page links (e.g. year-archive pages like
-    `/meeting-archives/2024/`) up to `crawl_depth` levels deep (default 1,
-    max 3).
+    `/meeting-archives/2024/`) up to `crawl_depth` levels deep (default 4,
+    max 4).
 
     **Supported media types (current):**
     - Video: `.mp4`, `.mov`, `.webm`
@@ -348,7 +349,7 @@ async def scrape_media(
     curl -X POST "http://localhost:8000/api/v1/school-scraper/scrape-media" \\
       -H "Authorization: Bearer YOUR_TOKEN" \\
       -H "Content-Type: application/json" \\
-      -d '{"url": "https://www.akfcs.org/meeting-archives/", "crawl_depth": 1}'
+      -d '{"url": "https://www.akfcs.org/meeting-archives/", "crawl_depth": 4}'
     ```
     """
     scrape_url = None

@@ -125,7 +125,7 @@ def _clicks_to_depth(clicks: int | None) -> int:
     """Map review ``clicks needed`` to scrape ``crawl_depth`` (probe convention)."""
     if clicks is None:
         return DEFAULT_CRAWL_DEPTH
-    return max(0, min(3, int(clicks) - 1))
+    return max(0, min(4, int(clicks) - 1))
 
 
 def _url_key(url: str) -> str:

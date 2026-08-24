@@ -46,6 +46,8 @@ async def discover_with_ranking_mode(
                 base_url=base_url, max_candidates=max_candidates
             )
         result["ranking_mode"] = "keyword"
+        # Keyword path has no page budget; never hits a limit.
+        result.setdefault("max_pages_limit_reached", False)
         return result
 
     if mode == "llm":
@@ -54,6 +56,7 @@ async def discover_with_ranking_mode(
             base_url=base_url, max_candidates=max_candidates
         )
         result["ranking_mode"] = "llm"
+        result.setdefault("max_pages_limit_reached", False)
         return result
 
     # both: run keyword + LLM and union candidates by URL, keeping LLM
@@ -93,4 +96,9 @@ async def discover_with_ranking_mode(
         + llm_result.get("total_urls_scanned", 0),
         "candidates": candidates,
         "ranking_mode": "both",
+        # `both` ran the LLM crawler, so its budget flag applies. Keyword has
+        # no equivalent, so it cannot have hit a limit.
+        "max_pages_limit_reached": bool(
+            llm_result.get("max_pages_limit_reached", False)
+        ),
     }

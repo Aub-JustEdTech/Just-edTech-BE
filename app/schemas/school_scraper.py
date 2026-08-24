@@ -62,13 +62,18 @@ class DiscoverResponse(BaseModel):
     # Which ranking mode produced these candidates. Mirrors the
     # SCHOOL_SCRAPER_RANKING_MODE setting: "keyword" (default), "llm", or "both".
     ranking_mode: str = "keyword"
+    # True only when the schema-driven crawler stopped because
+    # SCHOOL_SCRAPER_LLM_MAX_PAGES was hit while unvisited candidates remained
+    # on its frontier — i.e. the page budget, not the site, ended discovery.
+    # Always False for the keyword path, which has no page budget.
+    max_pages_limit_reached: bool = False
 
 
 class ScrapeMediaRequest(BaseModel):
     """Request body for the media-scraping step."""
 
     url: str
-    crawl_depth: int = 1
+    crawl_depth: int = 4
     school_id: int | None = Field(
         None,
         description="School to attach discovered media to. Required when "
@@ -90,7 +95,7 @@ class ScrapeMediaRequest(BaseModel):
     @field_validator("crawl_depth")
     @classmethod
     def clamp_depth(cls, v: int) -> int:
-        return max(0, min(v, 3))
+        return max(0, min(v, 4))
 
 
 class MediaFileResult(BaseModel):
@@ -142,12 +147,12 @@ class ScrapeMediaBatchRequest(BaseModel):
 
     school_id: int
     scrape_url_ids: list[int] = Field(..., min_length=1)
-    crawl_depth: int = 1
+    crawl_depth: int = 4
 
     @field_validator("crawl_depth")
     @classmethod
     def clamp_depth(cls, v: int) -> int:
-        return max(0, min(v, 3))
+        return max(0, min(v, 4))
 
 
 class ScrapeMediaBatchResponse(BaseModel):
