@@ -33,7 +33,9 @@ class QdrantStore(VectorStore):
         try:
             # Disable version check for compatibility with older servers
             self.client = QdrantClient(
-                url=self.url, check_compatibility=False
+                url=self.url,
+                check_compatibility=False,
+                timeout=settings.QDRANT_CLIENT_TIMEOUT_SECONDS,
             )
             logger.info(f"Qdrant initialized with URL: {self.url}")
         except Exception as e:
@@ -342,6 +344,10 @@ class QdrantStore(VectorStore):
         behaviour of swallowing the exception and returning ``[]`` produced
         documents stuck at COMPLETED with a ``chunk_count`` that disagreed
         with Qdrant (the "MISSING" category in tenant_qdrant_chunk_audit).
+
+        Upserts are batched (``QDRANT_UPSERT_BATCH_SIZE`` points/call) so a
+        large document does not exceed the client's write timeout in a
+        single request. A failed batch is raised, not swallowed.
         """
         # Input validation: these are caller bugs, not transient Qdrant
         # failures. Raise so they surface immediately rather than silently
@@ -416,22 +422,29 @@ class QdrantStore(VectorStore):
                 }
             )
 
-        try:
-            await asyncio.to_thread(
-                self.client.upsert,
-                collection_name=collection_name, points=points, wait=True,
-            )
-        except UnexpectedResponse as e:
-            if "PointInsertOperations" in str(e):
-                logger.debug(
-                    "Standard upsert failed due to server version incompatibility, "
-                    "using individual point inserts via REST API"
-                )
+        batch_size = settings.QDRANT_UPSERT_BATCH_SIZE
+        for start in range(0, len(points), batch_size):
+            batch = points[start : start + batch_size]
+            try:
                 await asyncio.to_thread(
-                    self._upsert_points_individually, collection_name, points,
+                    self.client.upsert,
+                    collection_name=collection_name,
+                    points=batch,
+                    wait=True,
                 )
-            else:
-                raise
+            except UnexpectedResponse as e:
+                if "PointInsertOperations" in str(e):
+                    logger.debug(
+                        "Standard upsert failed due to server version incompatibility, "
+                        "using individual point inserts via REST API"
+                    )
+                    await asyncio.to_thread(
+                        self._upsert_points_individually,
+                        collection_name,
+                        batch,
+                    )
+                else:
+                    raise
 
         logger.info(
             f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
@@ -859,36 +872,36 @@ class QdrantStore(VectorStore):
     async def update_metadata(
         self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int
     ) -> bool:
-        """Update metadata for chunks"""
-        try:
-            collection_name = self._get_collection_name(tenant_id)
+        """Update metadata for chunks.
 
-            points = await asyncio.to_thread(
-                self.client.retrieve,
+        Raises on failure rather than swallowing it -- callers (e.g. the
+        batch-classification apply step) rely on the exception to mark a
+        chunk 'failed' instead of treating a no-op write as success.
+        """
+        collection_name = self._get_collection_name(tenant_id)
+
+        points = await asyncio.to_thread(
+            self.client.retrieve,
+            collection_name=collection_name,
+            ids=chunk_ids,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        for point in points:
+            existing_payload = point.payload or {}
+            updated_payload = {**existing_payload, **metadata}
+            updated_payload["tenant_id"] = tenant_id
+
+            await asyncio.to_thread(
+                self.client.set_payload,
                 collection_name=collection_name,
-                ids=chunk_ids,
-                with_payload=True,
-                with_vectors=False,
+                payload=updated_payload,
+                points=[point.id],
             )
 
-            for point in points:
-                existing_payload = point.payload or {}
-                updated_payload = {**existing_payload, **metadata}
-                updated_payload["tenant_id"] = tenant_id
-
-                await asyncio.to_thread(
-                    self.client.set_payload,
-                    collection_name=collection_name,
-                    payload=updated_payload,
-                    points=[point.id],
-                )
-
-            logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error updating metadata: {e}", exc_info=True)
-            return False
+        logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
+        return True
 
     async def add_image_captions(
         self,

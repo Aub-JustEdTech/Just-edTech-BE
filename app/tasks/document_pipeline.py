@@ -724,9 +724,9 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
                     f"meeting_date year={document.meeting_date.year} "
                     f"not in {allowed} (pre-summarization gate)"
                 )
-                document.processing_status = ProcessingStatus.FAILED
+                document.processing_status = ProcessingStatus.SKIPPED
                 document.error_message = f"skipped_year: {skip_reason}"
-                await _update_job_status(db, ctx.job_id, JobStatus.FAILED)
+                await _update_job_status(db, ctx.job_id, JobStatus.SKIPPED)
                 ctx.skip_remaining = True
                 ctx.skip_reason = skip_reason
                 logger.info(
@@ -890,9 +890,9 @@ async def _step2_6_classify_async(ctx: PipelineContext, redis_tracker) -> None:
                     f"meeting_date year={document.meeting_date.year} "
                     f"not in {allowed}"
                 )
-            document.processing_status = ProcessingStatus.FAILED
+            document.processing_status = ProcessingStatus.SKIPPED
             document.error_message = f"skipped_year: {skip_reason}"
-            await _update_job_status(db, ctx.job_id, JobStatus.FAILED)
+            await _update_job_status(db, ctx.job_id, JobStatus.SKIPPED)
             ctx.skip_remaining = True
             ctx.skip_reason = skip_reason
             logger.info(

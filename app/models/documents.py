@@ -19,6 +19,9 @@ class ProcessingStatus(str, enum.Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    # Intentionally excluded from the pipeline (e.g. the post-classification
+    # year gate) -- distinct from FAILED, which means something broke.
+    SKIPPED = "skipped"
 
 
 # PostgreSQL enum type matching the database schema
@@ -27,6 +30,7 @@ _processing_status_enum = PG_ENUM(
     "processing",
     "completed",
     "failed",
+    "skipped",
     name="processingstatus",
     create_type=False,  # Use existing type, don't create
 )
