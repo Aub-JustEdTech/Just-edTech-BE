@@ -73,14 +73,11 @@ class SchoolOut(BaseModel):
     website: str | None
     last_scrapped_at: datetime | None
     is_active: bool
-    scrape_url_id: int | None
     notes: str | None
     created_at: datetime
     updated_at: datetime
     scrape_urls: list[SchoolScrapeUrlOut] = Field(default_factory=list)
     scraped_media_count: int = 0
-    has_confirmed_scrape_url: bool = False
-    confirmed_scrape_url: str | None = None
 
 
 class SchoolListOut(BaseModel):
@@ -105,10 +102,6 @@ class ScrapeUrlCreate(BaseModel):
     url: str
     crawl_depth: int = Field(1, ge=0, le=3)
     use_playwright: bool = False
-    is_primary: bool = Field(
-        False,
-        description="If True, set this as the school's scrape_url_id.",
-    )
 
     @field_validator("url")
     @classmethod
@@ -125,7 +118,6 @@ class ScrapeUrlUpdate(BaseModel):
     crawl_depth: int | None = Field(None, ge=0, le=3)
     use_playwright: bool | None = None
     is_active: bool | None = None
-    is_primary: bool | None = None
 
     @field_validator("url")
     @classmethod
@@ -292,9 +284,7 @@ class SchoolCandidateReviewOut(BaseModel):
     name: str
     website: str | None = None
     in_database: bool = False
-    has_confirmed_scrape_url: bool = False
-    confirmed_scrape_url: str | None = None
-    confirmed_scrape_url_id: int | None = None
+    has_scrape_urls: bool = False
     discovery_method: str | None = None
     total_urls_scanned: int = 0
     total_candidates: int = 0

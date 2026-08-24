@@ -39,6 +39,23 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
+    # Separate Celery broker/backend Redis. When unset, falls back to the
+    # app-cache Redis (REDIS_HOST:REDIS_PORT / db 2) — preserving the old
+    # single-Redis behavior for local dev. In prod (docker-compose.prod.yml)
+    # this points at a dedicated redis-broker container so a cache-heavy burst
+    # cannot evict in-flight Celery messages (the root cause of the
+    # allkeys-lru silent-chain-break incident) and the broker's noeviction
+    # policy doesn't make app-cache writes fail loudly.
+    CELERY_BROKER_REDIS_HOST: str | None = None
+    CELERY_BROKER_REDIS_PORT: int | None = None
+    CELERY_BROKER_REDIS_DB: int = 2
+    CELERY_BROKER_REDIS_PASSWORD: str | None = None
+    # Result backend (often same as broker). Separate override only if needed.
+    CELERY_BACKEND_REDIS_HOST: str | None = None
+    CELERY_BACKEND_REDIS_PORT: int | None = None
+    CELERY_BACKEND_REDIS_DB: int | None = None
+    CELERY_BACKEND_REDIS_PASSWORD: str | None = None
+
     # CORS
     BACKEND_CORS_ORIGINS: list[AnyHttpUrl]
     # RAG Configuration
@@ -50,9 +67,7 @@ class Settings(BaseSettings):
     CHATBOT_DEFAULT_NAME: str = "New Chatbot"
     CHATBOT_DEFAULT_TITLE: str = "Assistant"
     CHATBOT_DEFAULT_WELCOME_MESSAGE: str = "Hi there! How can I help you today?"
-    CHATBOT_DEFAULT_SYSTEM_PROMPT: str = (
-        "You are a helpful assistant that answers using the organization's knowledge base."
-    )
+    CHATBOT_DEFAULT_SYSTEM_PROMPT: str = "You are a helpful assistant that answers using the organization's knowledge base."
     CHATBOT_DEFAULT_CHAT_MODEL: str = "openai/gpt-4o-mini"
     CHATBOT_DEFAULT_CHAT_TEMPERATURE: float = 0.7
     CHATBOT_DEFAULT_RAG_TOP_K: int = 3
@@ -72,7 +87,9 @@ class Settings(BaseSettings):
     # Multimodal RAG Configuration
     CHATBOT_DEFAULT_ENABLE_MULTIMODAL: bool = True
     CHATBOT_DEFAULT_MAX_IMAGES: int = 2
-    CHATBOT_DEFAULT_IMAGE_CONTEXT_CHARS: int = 200  # Characters before/after image for context
+    CHATBOT_DEFAULT_IMAGE_CONTEXT_CHARS: int = (
+        200  # Characters before/after image for context
+    )
 
     # Vector Database Configuration
     VECTOR_STORE_TYPE: str = "qdrant"  # chroma, qdrant, pinecone, weaviate, etc.
@@ -302,11 +319,31 @@ class Settings(BaseSettings):
     # discover_candidate_urls (default, unchanged behavior). "llm" = use the
     # schema-driven crawler for discovery. "both" = run both and union the
     # results. Switching back to "keyword" is a zero-code rollback.
-    SCHOOL_SCRAPER_RANKING_MODE: str = "keyword"  # keyword | llm | both
+    SCHOOL_SCRAPER_RANKING_MODE: str = "both"  # keyword | llm | both
     # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
     SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 10
     SCHOOL_SCRAPER_LLM_CONFIDENCE_THRESHOLD: float = 0.5
-    SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = True
+    # Archive pages (e.g. "school-committee-document-archives",
+    # "archived-agendas-meeting-packets") are frequently the ONLY place a
+    # district publishes meeting minutes/agendas, so they are kept by
+    # default. Set to True to restore the old behavior of dropping any page
+    # the LLM marks is_archive=true (e.g. for routine scrapes that only want
+    # the current school year).
+    SCHOOL_SCRAPER_LLM_SKIP_ARCHIVAL: bool = False
+    # Off-domain board-meeting platforms the crawler is allowed to follow a
+    # single hop into when discovered on a school site (BoardDocs, Diligent
+    # Community, BoardOnTrack). These are JS/iframe-heavy SPAs whose document
+    # download links are frequently session-bound — see
+    # app/services/web_scraper/board_platforms.py.
+    SCHOOL_SCRAPER_BOARD_PLATFORM_DOMAINS: list[str] = [
+        "boarddocs.com",
+        "diligentoneplatform.com",
+        "boardontrack.com",
+        "granicus.com",
+    ]
+    # Hard cap on meetings visited per board-platform portal per scrape
+    # (Diligent/BoardOnTrack calendars can span 10+ years of history).
+    SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS: int = 24
     # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"
@@ -384,6 +421,10 @@ class Settings(BaseSettings):
     # youtube-transcript-api raises IpBlocked when YouTube rate-limits a
     # datacenter IP. Set a residential/rotating proxy here if that happens.
     SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
+    # Max free caption API calls per worker process before switching every
+    # subsequent YouTube item to AssemblyAI (audio download + paid transcribe).
+    # YouTube commonly rate-limits datacenter IPs after ~10 requests.
+    SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
     # yt-dlp is used ONLY to fetch audio for videos with no captions.
     # A Netscape cookies.txt defeats "Sign in to confirm you're not a bot".
     SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
@@ -587,10 +628,40 @@ class Settings(BaseSettings):
 
     @property
     def REDIS_URL(self) -> str:
-        """Construct Redis URL"""
+        """Construct Redis URL for app cache (tokens, OTP, invites)."""
         if self.REDIS_PASSWORD:
             return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
+    @property
+    def CELERY_BROKER_URL(self) -> str:
+        """Celery broker URL. Falls back to app-cache Redis db/2 when unset."""
+        host = self.CELERY_BROKER_REDIS_HOST or self.REDIS_HOST
+        port = self.CELERY_BROKER_REDIS_PORT or self.REDIS_PORT
+        password = self.CELERY_BROKER_REDIS_PASSWORD or self.REDIS_PASSWORD
+        db = self.CELERY_BROKER_REDIS_DB
+        if password:
+            return f"redis://:{password}@{host}:{port}/{db}"
+        return f"redis://{host}:{port}/{db}"
+
+    @property
+    def CELERY_BACKEND_URL(self) -> str:
+        """Celery result-backend URL. Defaults to the broker URL."""
+        host = self.CELERY_BACKEND_REDIS_HOST or self.CELERY_BROKER_REDIS_HOST or self.REDIS_HOST
+        port = self.CELERY_BACKEND_REDIS_PORT or self.CELERY_BROKER_REDIS_PORT or self.REDIS_PORT
+        password = (
+            self.CELERY_BACKEND_REDIS_PASSWORD
+            or self.CELERY_BROKER_REDIS_PASSWORD
+            or self.REDIS_PASSWORD
+        )
+        db = (
+            self.CELERY_BACKEND_REDIS_DB
+            if self.CELERY_BACKEND_REDIS_DB is not None
+            else self.CELERY_BROKER_REDIS_DB
+        )
+        if password:
+            return f"redis://:{password}@{host}:{port}/{db}"
+        return f"redis://{host}:{port}/{db}"
 
     class Config:
         env_file = ".env"

@@ -21,6 +21,7 @@ poetry run celery -A app.celery_app beat --loglevel=info
 docker compose up -d --build
 docker compose exec api bash
 docker compose logs -f celery-scraper
+docker compose logs -f celery-ingest
 
 # Migrations
 alembic upgrade head
@@ -51,7 +52,7 @@ python scripts/seed_roles.py --with-defaults
 
 These are not obvious from the config and each one costs an hour if unknown.
 
-**PostgreSQL is not a Compose service.** `docker-compose.yml` defines only `redis`, `qdrant`, `api`, `celery-worker`, `celery-scraper`, `celery-beat`. Postgres is expected to already be running (locally: natively on the host). Containers reach it via `POSTGRES_SERVER=host.docker.internal` (all four app services declare `extra_hosts`), which does **not** resolve from a host shell — so host-side `alembic`/`pytest` need `POSTGRES_SERVER=localhost` overriding it.
+**PostgreSQL is not a Compose service.** `docker-compose.yml` defines only `redis`, `qdrant`, `api`, `celery-ingest`, `celery-scraper`, `celery-beat`. Postgres is expected to already be running (locally: natively on the host). Containers reach it via `POSTGRES_SERVER=host.docker.internal` (all four app services declare `extra_hosts`), which does **not** resolve from a host shell — so host-side `alembic`/`pytest` need `POSTGRES_SERVER=localhost` overriding it.
 
 **Published host ports are non-standard** — they avoid colliding with other local stacks:
 
@@ -135,23 +136,30 @@ The pipeline is a 6-stage Celery chain. Three conventions are load-bearing and e
 
 Reading one file makes this look like a single flow; it is two, with a human step between them.
 
-**Layer 1 — which page?** (built) One confirmed URL per district.
+**Layer 1 — which pages?** (built, run once per district) Each school has one
+district homepage (`schools.website`) and zero or more confirmed scrapable
+archive URLs (`school_scrape_urls`). Discovery starts from `website`; humans
+confirm one or more candidates into `school_scrape_urls`.
 ```
-POST /school-scraper/discover
+POST /school-scraper/discover   (input: school website URL)
   → /wp-sitemap.xml → /sitemap.xml → robots.txt → homepage nav crawl
   → keyword filter, then ranking per SCHOOL_SCRAPER_RANKING_MODE (keyword | llm | both)
   → candidates JSON (SCHOOL_URL_CANDIDATES_JSON_PATH)
-  → human verification → school_scrape_urls
+  → human verification → school_scrape_urls (may be multiple per district)
 ```
 `llm`/`both` modes route through `schema_driven_crawler.py` + `page_classifier.py`; `keyword` is the zero-cost default and switching back is a config-only rollback.
 
-**Layer 2 — what's on it?** ~15 media items per district, re-crawled as new meetings post.
+**Layer 2 — what's on it?** Media on each confirmed scrapable URL, re-crawled as
+new meetings post. Periodic fetches **only** walk active `school_scrape_urls`
+rows — they do not re-run Layer 1 discovery.
 ```
 POST /school-scraper/scrape-media   (persist=false → preview only; the default)
   → scraped_media rows (persist=true, needs school_id)
   → ingest_scraped_media → transcript/text → Document → document pipeline
 ```
-`sweep_school_media` runs Layer 2 across many districts. It is intentionally **not** in `beat_schedule` — run it manually and check the created/skipped counts first.
+`sweep_school_media` runs Layer 2 across every active scrape URL for every
+district. It is intentionally **not** in `beat_schedule` — run it manually and
+check the created/skipped counts first.
 
 Idempotency is the cost control: `create_scraped_media` returns `(row, created)` and **only rows with `created=True` may be enqueued**, or every re-crawl re-pays for the whole corpus. Dedup is `(school_id, url_hash)` and `(school_id, content_hash)` — **per school**, so two districts sharing a URL each pay separately.
 
@@ -203,11 +211,28 @@ Routing lives in `celery_app.conf.task_routes`; a task with no route lands on `c
 
 | Service | Queues | Concurrency | Soft limit | Carries |
 |---|---|---|---|---|
-| `celery-worker` | `celery`, `documents` | 2 | 3000 s | Document pipeline, billing aggregation |
-| `celery-scraper` | `scraping` | **1** | 6000 s | School scraping + transcription |
+| `celery-ingest` | `celery`, `documents` | 1 | 3000 s | Document pipeline, billing aggregation |
+| `celery-scraper` | `scraping` | **1 per replica** | 6000 s | School scraping + transcription |
 | `celery-beat` | — | — | — | Scheduler only |
 
-**`celery-scraper` at concurrency 1 is the throughput ceiling** for anything scraping- or transcription-related: a 3-hour video blocks the queue. A dedicated higher-concurrency `transcription` queue is the fix when that becomes a problem. Both worker services share the `temp_uploads` volume, so a leaked multi-GB temp file takes down both — always clean up in a `finally`.
+**Bulk ingest:** scale worker *replicas*, not `--concurrency`. On **t4g.2xlarge (8 vCPU, 32 GiB)**:
+
+```bash
+# Batch ingest (3 doc pipelines + 2 scrape/transcribe lanes in parallel)
+docker compose -f docker-compose.prod.yml up -d \
+  --scale celery-ingest=3 --scale celery-scraper=2
+
+# Steady state after batch
+docker compose -f docker-compose.prod.yml up -d \
+  --scale celery-ingest=1 --scale celery-scraper=1
+```
+
+| t4g.2xlarge layout | Replicas | Concurrency | Parallel lanes |
+|---|---|---|---|
+| `celery-ingest` | 3 | 1 | 3 document pipelines |
+| `celery-scraper` | 2 | 1 | 2 download/transcribe jobs |
+
+**`celery-scraper` at concurrency 1 per replica** is intentional — Playwright/transcription is memory-heavy. A 3-hour video still blocks one replica, not the whole fleet. Both worker services share the `temp_uploads` volume, so a leaked multi-GB temp file takes down both — always clean up in a `finally`.
 
 ### Registering a task
 

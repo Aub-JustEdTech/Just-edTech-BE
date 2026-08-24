@@ -38,7 +38,14 @@ class School(BaseModel):
 
     Seeded from scripts/school_data/output/school_names.json (396 MA
     districts). Scoped per-tenant via (tenant_id, org_code) uniqueness.
-    `last_scrapped_at` is denormalized for fast FE display.
+
+    Each school has one district homepage (`website`) and many confirmed
+    scrapable archive pages (`scrape_urls`). Discovery uses `website` as
+    the crawl entry point; periodic media sweeps only revisit active rows
+    in `school_scrape_urls` — they never re-run URL discovery.
+
+    `last_scrapped_at` is denormalized for fast FE display (updated when
+    any scrape URL for this school is crawled).
     """
 
     __tablename__ = "schools"
@@ -62,11 +69,6 @@ class School(BaseModel):
     website = Column(Text, nullable=True)
     last_scrapped_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
-    scrape_url_id = Column(
-        BigInteger,
-        ForeignKey("school_scrape_urls.id", ondelete="SET NULL"),
-        nullable=True,
-    )
     notes = Column(Text, nullable=True)
 
     tenant = relationship("Tenant", backref="schools")
@@ -75,12 +77,6 @@ class School(BaseModel):
         back_populates="school",
         cascade="all, delete-orphan",
         foreign_keys="SchoolScrapeUrl.school_id",
-    )
-    primary_scrape_url = relationship(
-        "SchoolScrapeUrl",
-        foreign_keys=[scrape_url_id],
-        post_update=True,
-        uselist=False,
     )
     scraped_media = relationship(
         "ScrapedMedia",
@@ -91,7 +87,11 @@ class School(BaseModel):
 
 
 class SchoolScrapeUrl(BaseModel):
-    """A confirmed archive-page URL configured for scraping per school."""
+    """A confirmed scrapable archive-page URL for one school.
+
+    A district may have several (e.g. minutes, agendas, BoardDocs). All
+    active rows are crawled on periodic fetches; there is no primary URL.
+    """
 
     __tablename__ = "school_scrape_urls"
     __table_args__ = (

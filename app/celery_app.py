@@ -7,8 +7,8 @@ from app.core.config import settings
 
 celery_app = Celery(
     "just-edtech",
-    broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/2",
-    backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/2",
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_BACKEND_URL,
 )
 
 celery_app.conf.update(
@@ -32,6 +32,16 @@ celery_app.conf.update(
     # Task routing
     task_routes={
         "app.tasks.document_tasks.process_document_task": {"queue": "documents"},
+        "pipeline.process_document": {"queue": "documents"},
+        "pipeline.download_from_s3": {"queue": "documents"},
+        "pipeline.extract_text": {"queue": "documents"},
+        "pipeline.summarize_document": {"queue": "documents"},
+        "pipeline.classify_document": {"queue": "documents"},
+        "pipeline.chunk_text": {"queue": "documents"},
+        "pipeline.contextualize_chunks": {"queue": "documents"},
+        "pipeline.generate_embeddings": {"queue": "documents"},
+        "pipeline.store_vectors": {"queue": "documents"},
+        "pipeline.accumulate_batch": {"queue": "documents"},
         "app.tasks.school_scraper_tasks.ingest_scraped_media": {
             "queue": "scraping"
         },
@@ -92,6 +102,16 @@ celery_app.conf.update(
             "task": "reconcile_heatmap_aggregate",
             "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
             "options": {"expires": 2 * 3600},
+        },
+        # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
+        # PENDING past the staleness threshold. Catches the silent orphan
+        # failure mode where a Celery chain continuation was lost (broker
+        # eviction under allkeys-lru, or OOM rejection under noeviction)
+        # and no _mark_stage_failed ever ran.
+        "reconcile-stuck-documents": {
+            "task": "reconcile_stuck_documents",
+            "schedule": crontab(minute=15),  # Hourly at :15
+            "options": {"expires": 1800},
         },
         # Weekly sweep of every active school source URL, tenant-agnostic
         # (no school_ids filter = all schools). Runs Monday 1:00 AM UTC,

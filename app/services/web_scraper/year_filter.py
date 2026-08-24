@@ -118,6 +118,12 @@ async def evaluate_media_year_async(
     )
 
     if is_youtube_url(url):
+        # When YouTube ingest is off, skip yt-dlp metadata fetches entirely.
+        # Scrape persist and Celery ingest both call this; without the guard
+        # SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED=false only blocks
+        # transcription, not year-filter bot-check noise on EC2.
+        if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            return inferred, should_process, skip_reason
         fallback_year = await fetch_youtube_upload_year(url)
     else:
         fallback_year = await fetch_url_last_modified_year(url)
@@ -145,13 +151,27 @@ def should_crawl_page_url(url: str) -> bool:
 
 def filter_media_files(media_files: list[dict]) -> list[dict]:
     """Drop media dicts whose inferred year is outside the allowed set."""
+    from app.services.transcription.youtube import is_youtube_url
+
     kept: list[dict] = []
     for media in media_files:
-        _, should_process, _ = evaluate_media_year(
-            url=media["url"],
-            filename=media.get("name"),
-            source_page_url=media.get("source_page_url"),
-        )
+        if is_youtube_url(media["url"]) and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            continue
+        # If doc_year is already set (e.g., from board platform expanders that
+        # extracted year from meeting dates), use it directly instead of re-inferring
+        existing_year = media.get("doc_year")
+        if existing_year is not None:
+            # Already has a year - just check if it's in the allowed range
+            allowed = allowed_calendar_years()
+            should_process = existing_year in allowed
+        else:
+            # No year set yet - infer from URL/filename
+            _, should_process, _ = evaluate_media_year(
+                url=media["url"],
+                filename=media.get("name"),
+                source_page_url=media.get("source_page_url"),
+            )
+        
         if should_process:
             kept.append(media)
     return kept
@@ -166,8 +186,12 @@ async def filter_media_files_async(media_files: list[dict]) -> list[dict]:
     per-item re-checks in ``run_scrape_districts.py`` / the ingest task,
     because by then it's already gone.
     """
+    from app.services.transcription.youtube import is_youtube_url
+
     kept: list[dict] = []
     for media in media_files:
+        if is_youtube_url(media["url"]) and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            continue
         _, should_process, _ = await evaluate_media_year_async(
             url=media["url"],
             filename=media.get("name"),

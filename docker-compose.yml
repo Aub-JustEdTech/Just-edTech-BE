@@ -41,7 +41,7 @@ services:
           memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/6333' || exit 1"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
       retries: 5
       start_period: 10s
@@ -99,15 +99,15 @@ services:
       timeout: 10s
       retries: 3
 
-  # Celery Worker for Document Processing (OPTIMIZED)
+  # Document pipeline + billing (chunk, embed, Qdrant, batch-classification poll).
   # OCR is memory-heavy: concurrency=1 + 2G avoids SIGKILL OOM during page renders.
-  celery-worker:
+  # Scale for bulk ingest: docker compose up -d --scale celery-ingest=4
+  celery-ingest:
     build: .
     restart: always
     env_file:
       - .env
     deploy:
-      replicas: 6
       resources:
         limits:
           cpus: "1.0"
@@ -149,17 +149,15 @@ services:
       timeout: 10s
       retries: 3
 
-  # Celery Worker for School Scraping (Playwright + downloads + transcription)
-  # Dedicated queue `scraping` isolates long-running scraper work from
-  # document processing. Uses the same image (Chromium is pre-installed
-  # via the Dockerfile) but with higher memory for Playwright/Whisper.
+  # School scrape ingest: Playwright crawl, media download, transcription.
+  # Dedicated queue `scraping` — scale replicas, not --concurrency (memory).
+  # Scale for bulk ingest: docker compose up -d --scale celery-scraper=3
   celery-scraper:
     build: .
     restart: always
     env_file:
       - .env
     deploy:
-      replicas: 1
       resources:
         limits:
           cpus: "1.5"

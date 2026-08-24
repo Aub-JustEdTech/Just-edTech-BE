@@ -88,13 +88,12 @@ async def _scrape_url_or_404(
     return scrape_url
 
 
-def _confirmed_scrape_url(school: School) -> str | None:
-    if not school.scrape_url_id:
-        return None
-    for scrape_url in school.scrape_urls:
-        if scrape_url.id == school.scrape_url_id and scrape_url.is_active:
-            return scrape_url.url
-    return None
+async def _enrich_school(db: AsyncSession, school: School) -> SchoolOut:
+    """Build a SchoolOut with denormalized counts."""
+    media_count = await crud.count_scraped_media(db, school.id)
+    out = SchoolOut.model_validate(school)
+    out.scraped_media_count = media_count
+    return out
 
 
 async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
@@ -157,16 +156,6 @@ async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
             )
             continue
         item.s3_url = url
-
-
-async def _enrich_school(db: AsyncSession, school: School) -> SchoolOut:
-    """Build a SchoolOut with denormalized counts."""
-    media_count = await crud.count_scraped_media(db, school.id)
-    out = SchoolOut.model_validate(school)
-    out.scraped_media_count = media_count
-    out.confirmed_scrape_url = _confirmed_scrape_url(school)
-    out.has_confirmed_scrape_url = school.scrape_url_id is not None
-    return out
 
 
 # ---------------------------------------------------------------------------

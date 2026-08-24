@@ -213,16 +213,23 @@ async def record_scrape_result(
     Also touches the parent School's denormalized `last_scrapped_at` so FE
     list views don't need to fan out over every scrape_urls[] entry.
     """
+    # Callers often pass a detached instance loaded in another session
+    # (e.g. run_scrape_districts). Mutating that object here raises
+    # "Instance is not persistent within this Session".
+    row = await db.get(SchoolScrapeUrl, scrape_url.id)
+    if row is None:
+        raise ValueError(f"SchoolScrapeUrl {scrape_url.id} not found")
+
     when = datetime.now(timezone.utc)
-    scrape_url.last_scraped_at = when
-    scrape_url.last_http_status = http_status
-    scrape_url.last_crawl_page_count = page_count
-    school = await db.get(School, scrape_url.school_id)
+    row.last_scraped_at = when
+    row.last_http_status = http_status
+    row.last_crawl_page_count = page_count
+    school = await db.get(School, row.school_id)
     if school:
         school.last_scrapped_at = when
     await db.commit()
-    await db.refresh(scrape_url)
-    return scrape_url
+    await db.refresh(row)
+    return row
 
 
 # ---------------------------------------------------------------------------
@@ -253,11 +260,6 @@ async def add_scrape_url(
         existing.confirmed_by_user_id = user_id
         existing.confirmed_at = datetime.now(timezone.utc)
         existing.is_active = True
-        await db.flush()
-        # Only promote when explicitly requested — adding a manual candidate
-        # must not silently become the primary scrape URL.
-        if data.is_primary:
-            school.scrape_url_id = existing.id
         await db.commit()
         await db.refresh(existing)
         return existing
@@ -273,8 +275,6 @@ async def add_scrape_url(
     )
     db.add(url)
     await db.flush()
-    if data.is_primary:
-        school.scrape_url_id = url.id
     await db.commit()
     await db.refresh(url)
     return url
@@ -299,8 +299,6 @@ async def update_scrape_url(
         scrape_url.use_playwright = data.use_playwright
     if data.is_active is not None:
         scrape_url.is_active = data.is_active
-    if data.is_primary:
-        school.scrape_url_id = scrape_url.id
     try:
         await db.commit()
     except IntegrityError as exc:
@@ -316,19 +314,9 @@ async def deactivate_scrape_url(
     db: AsyncSession, school: School, scrape_url: SchoolScrapeUrl
 ) -> SchoolScrapeUrl:
     scrape_url.is_active = False
-    if school.scrape_url_id == scrape_url.id:
-        school.scrape_url_id = None
     await db.commit()
     await db.refresh(scrape_url)
     return scrape_url
-
-
-async def clear_primary_scrape_url(db: AsyncSession, school: School) -> School:
-    """Unset the school's primary scrape URL without deactivating stored rows."""
-    school.scrape_url_id = None
-    await db.commit()
-    await db.refresh(school)
-    return school
 
 
 # ---------------------------------------------------------------------------

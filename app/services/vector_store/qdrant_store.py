@@ -335,92 +335,108 @@ class QdrantStore(VectorStore):
         Used by the heatmap ingest pipeline (step6_accumulate_batch) which
         needs the per-chunk point IDs to write pending_classifications rows
         and later apply batch results via set_payload.
+
+        Contract: raises on failure instead of returning ``[]``. Callers
+        (notably ``step5_store_vectors``) treat this as a fatal stage and
+        mark the document FAILED via ``_mark_stage_failed`` — the previous
+        behaviour of swallowing the exception and returning ``[]`` produced
+        documents stuck at COMPLETED with a ``chunk_count`` that disagreed
+        with Qdrant (the "MISSING" category in tenant_qdrant_chunk_audit).
         """
-        try:
-            if not chunks or not embeddings or not metadatas:
-                logger.warning("Empty chunks, embeddings, or metadatas provided")
-                return []
-
-            if len(chunks) != len(embeddings) != len(metadatas):
-                logger.error("Mismatch in lengths of chunks, embeddings, and metadatas")
-                return []
-
-            # Get tenant_id from first metadata
-            tenant_id = metadatas[0].get("tenant_id")
-            if not tenant_id:
-                logger.error("tenant_id not found in metadata")
-                return []
-
-            vector_size = len(embeddings[0]) if embeddings else 1536
-            collection_name = await self._get_or_create_collection(tenant_id, vector_size)
-
-            # Prepare points for Qdrant
-            # Use dict format for better compatibility with older server versions
-            points = []
-            point_ids: list[str] = []
-            for i, (chunk, embedding, metadata) in enumerate(
-                zip(chunks, embeddings, metadatas)
-            ):
-                # Generate a proper UUID for the point ID
-                # Qdrant only accepts unsigned integers or valid UUIDs
-                # We generate a unique UUID4 for each chunk
-                point_id = str(uuid.uuid4())
-                point_ids.append(point_id)
-
-                # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
-                # Qdrant payload can contain: str, int, float, bool, list, dict
-                normalized_metadata = {}
-                for key, value in metadata.items():
-                    if value is None:
-                        continue  # Skip None values
-                    elif isinstance(value, (str, int, float, bool)):
-                        normalized_metadata[key] = value
-                    elif isinstance(value, (list, dict)):
-                        # Qdrant supports nested structures
-                        normalized_metadata[key] = value
-                    else:
-                        normalized_metadata[key] = str(value)
-
-                # Ensure tenant_id is consistent
-                normalized_metadata["tenant_id"] = tenant_id
-                normalized_metadata["document_id"] = document_id
-                normalized_metadata["text"] = chunk  # Store text in payload
-                normalized_metadata["chunk_index"] = i  # Store index for reference
-
-                # Use dict format for compatibility with older Qdrant server versions
-                points.append(
-                    {
-                        "id": point_id,
-                        "vector": embedding,
-                        "payload": normalized_metadata,
-                    }
-                )
-
-            try:
-                await asyncio.to_thread(
-                    self.client.upsert,
-                    collection_name=collection_name, points=points, wait=True,
-                )
-            except UnexpectedResponse as e:
-                if "PointInsertOperations" in str(e):
-                    logger.debug(
-                        "Standard upsert failed due to server version incompatibility, "
-                        "using individual point inserts via REST API"
-                    )
-                    await asyncio.to_thread(
-                        self._upsert_points_individually, collection_name, points,
-                    )
-                else:
-                    raise
-
-            logger.info(
-                f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
+        # Input validation: these are caller bugs, not transient Qdrant
+        # failures. Raise so they surface immediately rather than silently
+        # marking the doc COMPLETED with zero chunks.
+        if not chunks or not embeddings or not metadatas:
+            raise ValueError(
+                f"add_chunks_returning_ids: empty input for document {document_id} "
+                f"(chunks={len(chunks)}, embeddings={len(embeddings)}, "
+                f"metadatas={len(metadatas)})"
             )
-            return point_ids
 
-        except Exception as e:
-            logger.error(f"Error adding chunks to Qdrant: {e}", exc_info=True)
-            return []
+        if (
+            len(chunks) != len(embeddings)
+            or len(embeddings) != len(metadatas)
+        ):
+            raise ValueError(
+                f"add_chunks_returning_ids: length mismatch for document {document_id} "
+                f"(chunks={len(chunks)}, embeddings={len(embeddings)}, "
+                f"metadatas={len(metadatas)})"
+            )
+
+        # Get tenant_id from first metadata
+        tenant_id = metadatas[0].get("tenant_id")
+        if not tenant_id:
+            raise ValueError(
+                f"add_chunks_returning_ids: tenant_id missing from metadata "
+                f"for document {document_id}"
+            )
+
+        vector_size = len(embeddings[0]) if embeddings else 1536
+        collection_name = await self._get_or_create_collection(tenant_id, vector_size)
+
+        # Prepare points for Qdrant
+        # Use dict format for better compatibility with older server versions
+        points = []
+        point_ids: list[str] = []
+        for i, (chunk, embedding, metadata) in enumerate(
+            zip(chunks, embeddings, metadatas)
+        ):
+            # Generate a proper UUID for the point ID
+            # Qdrant only accepts unsigned integers or valid UUIDs
+            # We generate a unique UUID4 for each chunk
+            point_id = str(uuid.uuid4())
+            point_ids.append(point_id)
+
+            # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
+            # Qdrant payload can contain: str, int, float, bool, list, dict
+            normalized_metadata = {}
+            for key, value in metadata.items():
+                if value is None:
+                    continue  # Skip None values
+                elif isinstance(value, (str, int, float, bool)):
+                    normalized_metadata[key] = value
+                elif isinstance(value, (list, dict)):
+                    # Qdrant supports nested structures
+                    normalized_metadata[key] = value
+                else:
+                    normalized_metadata[key] = str(value)
+
+            # Ensure tenant_id is consistent
+            normalized_metadata["tenant_id"] = tenant_id
+            normalized_metadata["document_id"] = document_id
+            normalized_metadata["text"] = chunk  # Store text in payload
+            normalized_metadata["chunk_index"] = i  # Store index for reference
+
+            # Use dict format for compatibility with older Qdrant server versions
+            points.append(
+                {
+                    "id": point_id,
+                    "vector": embedding,
+                    "payload": normalized_metadata,
+                }
+            )
+
+        try:
+            await asyncio.to_thread(
+                self.client.upsert,
+                collection_name=collection_name, points=points, wait=True,
+            )
+        except UnexpectedResponse as e:
+            if "PointInsertOperations" in str(e):
+                logger.debug(
+                    "Standard upsert failed due to server version incompatibility, "
+                    "using individual point inserts via REST API"
+                )
+                await asyncio.to_thread(
+                    self._upsert_points_individually, collection_name, points,
+                )
+            else:
+                raise
+
+        logger.info(
+            f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
+        )
+        return point_ids
 
     async def search(
         self,

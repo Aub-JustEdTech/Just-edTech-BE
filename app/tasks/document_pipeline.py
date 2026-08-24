@@ -642,15 +642,32 @@ def step2_5_summarize_document(self, context_dict: dict[str, Any]) -> dict[str, 
 
         loop.run_until_complete(_step2_5_summarize_async(ctx, redis_tracker))
 
-        redis_tracker.update_stage(ctx.document_id, "summarizing", "completed")
-        redis_tracker.set_document_status(
-            ctx.document_id,
-            stage="summarizing",
-            status="completed",
-            progress=40.0,
-        )
-
-        logger.info(f"[Doc {ctx.document_id}] Stage 2.5 completed")
+        # If the pre-LLM year gate set skip_remaining, report the stage as
+        # skipped (not "completed") so the pipeline status reflects the early
+        # exit. The downstream stages all check ctx.skip_remaining and noop.
+        if ctx.skip_remaining:
+            redis_tracker.update_stage(
+                ctx.document_id, "summarizing", "skipped"
+            )
+            redis_tracker.set_document_status(
+                ctx.document_id,
+                stage="summarizing",
+                status="skipped",
+                progress=40.0,
+            )
+            logger.info(
+                f"[Doc {ctx.document_id}] Stage 2.5 skipped "
+                f"({ctx.skip_reason})"
+            )
+        else:
+            redis_tracker.update_stage(ctx.document_id, "summarizing", "completed")
+            redis_tracker.set_document_status(
+                ctx.document_id,
+                stage="summarizing",
+                status="completed",
+                progress=40.0,
+            )
+            logger.info(f"[Doc {ctx.document_id}] Stage 2.5 completed")
 
     except Exception as exc:
         # Non-fatal: log and continue the pipeline.
@@ -678,6 +695,51 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
 
         document = await db.get(Document, ctx.document_id)
         doc_name = document.name if document else ""
+
+        # Pre-LLM year gate (school_scraper docs only). If the document already
+        # has a meeting_date from the scraper and it falls outside
+        # SCHOOL_SCRAPER_ALLOWED_YEARS, skip summarization entirely — avoids
+        # the wasted LLM call + Qdrant summary write for documents that
+        # step2_6_classify_document would mark FAILED moments later anyway.
+        # This is the dominant cause of the "summaries without chunks" pattern
+        # originally reported (out-of-year docs paying for a summary before
+        # being discarded).
+        #
+        # Docs with meeting_date=None here still need the post-LLM gate in
+        # step2_6_classify_document, because their meeting_date is only known
+        # after classification — that gate stays in place as the authoritative
+        # fallback for the unknown-year case.
+        if (
+            ctx.source_type == "school_scraper"
+            and document is not None
+            and document.meeting_date is not None
+        ):
+            from app.services.web_scraper.year_filter import (
+                is_meeting_date_in_range,
+            )
+
+            if not is_meeting_date_in_range(document.meeting_date):
+                allowed = sorted(settings.SCHOOL_SCRAPER_ALLOWED_YEARS)
+                skip_reason = (
+                    f"meeting_date year={document.meeting_date.year} "
+                    f"not in {allowed} (pre-summarization gate)"
+                )
+                document.processing_status = ProcessingStatus.FAILED
+                document.error_message = f"skipped_year: {skip_reason}"
+                await _update_job_status(db, ctx.job_id, JobStatus.FAILED)
+                ctx.skip_remaining = True
+                ctx.skip_reason = skip_reason
+                logger.info(
+                    f"[Doc {ctx.document_id}] Skipping remaining pipeline stages "
+                    f"({skip_reason})"
+                )
+                await _update_stage_status(
+                    db,
+                    stage_record.id,
+                    StageStatus.COMPLETED,
+                    output_size=0,
+                )
+                return
 
         summarizer = DocumentSummarizer()
         await summarizer.summarize(
@@ -913,6 +975,18 @@ def step3_chunk_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
             metadata={"chunks_created": len(ctx.chunks)},
         )
 
+        # Drop extracted_text from the chain payload. Stage 3 is the last
+        # consumer: stage 4 (embed) reads ctx.chunks + ctx.chunk_metadatas,
+        # not extracted_text; stages 5 and 6 likewise. Carrying the full
+        # document text through Redis between every subsequent stage was a
+        # primary driver of the broker OOM incidents (a 100-school batch
+        # serializes ~hundreds of MB of text per chain hop). Set to empty
+        # string (not None) so to_dict()/from_dict() stay type-stable.
+        # On a stage-3 retry, Celery re-invokes this task with the
+        # previous stage's output (which still has extracted_text), so
+        # dropping here only affects the success path's downstream payload.
+        ctx.extracted_text = ""
+
         return ctx.to_dict()
 
     except Exception as exc:
@@ -1043,6 +1117,15 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
 
         if not ctx.chunks:
             raise ValueError("No chunks generated from document")
+
+        # Drop large pre-chunk payloads from doc_metadata now that chunking
+        # is done. _pdf_pages_text (a list of full per-page text) is no
+        # longer needed by any downstream stage — chunks + chunk_metadatas
+        # carry everything step 4/5/6 need. Without this pop, the full
+        # document text is duplicated in the chain payload (once as chunks,
+        # once as _pdf_pages_text), roughly doubling Redis memory per PDF.
+        # (Transcript/xlsx pre-chunks were already popped above.)
+        ctx.doc_metadata.pop("_pdf_pages_text", None)
 
         # Update stage to completed
         await _update_stage_status(
@@ -1417,6 +1500,18 @@ def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
         # Remove from active jobs
         redis_tracker.remove_active_job(ctx.document_id)
 
+        # Drop embeddings + chunks from the chain payload. Stage 5 was the
+        # last consumer of ctx.embeddings (stage 6 reads qdrant_point_ids,
+        # chunk_metadatas, and chunks — chunks are still needed by stage 6
+        # for pending_classifications.chunk_text, so keep those). Embeddings
+        # are the single largest field per-document (1536-3072 floats × N
+        # chunks, JSON-serialized) and were driving broker OOM on the
+        # 100-school batch. Also drop chunk_metadatas now that stage 5 has
+        # already merged them into the Qdrant payload — stage 6 only reads
+        # page_number from them, which it can re-derive if needed; but to
+        # avoid breaking stage 6's page_number lookup, we keep chunk_metadatas.
+        ctx.embeddings = []
+
         # Cleanup temp file
         if ctx.temp_file_path and os.path.exists(ctx.temp_file_path):
             os.remove(ctx.temp_file_path)
@@ -1463,6 +1558,41 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
 
         # Update stage to in_progress
         await _update_stage_status(db, stage_record.id, StageStatus.IN_PROGRESS)
+
+        # Delete-before-recreate: any prior Qdrant chunks and summary for
+        # this document are removed before writing new ones. This is the
+        # single point of truth — every reprocess path (manual retry
+        # endpoint, reprocess_failed_documents.py, the new stuck-document
+        # reconciliation beat task) funnels through here, so callers no
+        # longer need to remember to delete. Without this, reprocessing a
+        # document accumulates duplicate chunks/summaries (Qdrant upserts
+        # by fresh random point-id; add_* never dedupes), which is what
+        # produced tenant 2's inflated summary count.
+        vector_store = VectorStoreFactory.create(
+            VectorStoreType(settings.VECTOR_STORE_TYPE)
+        )
+        try:
+            await vector_store.delete_document(
+                document_id=ctx.doc_uuid, tenant_id=ctx.tenant_id
+            )
+        except Exception as exc:
+            # Delete failures are not fatal for a fresh document (no prior
+            # points to delete); log and continue. The subsequent upsert
+            # will surface real Qdrant connectivity issues.
+            logger.warning(
+                f"[Doc {ctx.document_id}] Pre-store chunk delete failed "
+                f"(continuing anyway): {exc}"
+            )
+        if hasattr(vector_store, "delete_document_summary"):
+            try:
+                await vector_store.delete_document_summary(
+                    ctx.document_id, ctx.tenant_id
+                )
+            except Exception as exc:
+                logger.warning(
+                    f"[Doc {ctx.document_id}] Pre-store summary delete failed "
+                    f"(continuing anyway): {exc}"
+                )
 
         # Prepare metadata for vector store.
         # Strip internal pipeline keys before spreading onto every chunk.
@@ -1558,10 +1688,8 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
                 chunk_metadata.setdefault("classified", False)
             metadatas.append(chunk_metadata)
 
-        # Store in vector database
-        vector_store = VectorStoreFactory.create(
-            VectorStoreType(settings.VECTOR_STORE_TYPE)
-        )
+        # Store in vector database. `vector_store` was created above for
+        # the delete-before-recreate step.
         # Use add_chunks_returning_ids so we can capture the per-chunk
         # Qdrant point IDs for the heatmap batch classifier (step6).
         if hasattr(vector_store, "add_chunks_returning_ids"):

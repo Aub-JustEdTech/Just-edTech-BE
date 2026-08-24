@@ -225,6 +225,21 @@ class DocumentSummarizer:
                 VectorStoreType(settings.VECTOR_STORE_TYPE)
             )
 
+            # Delete-before-recreate: remove any prior summary for this doc
+            # before writing the new one. add_document_summary always inserts
+            # a fresh point-id, so without this a reprocessed document
+            # accumulates orphaned summary points (one per pipeline run).
+            if hasattr(vector_store, "delete_document_summary"):
+                try:
+                    await vector_store.delete_document_summary(
+                        document_id, tenant_id
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        f"[Doc {document_id}] Pre-index summary delete failed "
+                        f"(continuing anyway): {exc}"
+                    )
+
             if hasattr(vector_store, "add_document_summary"):
                 await vector_store.add_document_summary(
                     document_id=document_id,

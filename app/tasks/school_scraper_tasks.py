@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.celery_app import celery_app
@@ -85,6 +86,18 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         if not sm:
             logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
+
+        if sm.media_type == "youtube" and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+            await update_scraped_media(
+                db,
+                sm.id,
+                status="no_transcript",
+                error_message="YouTube ingestion disabled (batch: documents only)",
+            )
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "no_transcript",
+            }
 
         inferred_year, should_process, skip_reason = await evaluate_media_year_async(
             url=sm.source_media_url,
@@ -179,19 +192,36 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                         db,
                         sm.id,
                         status="skipped_duplicate",
-                        content_hash=content_h,
                     )
                     return {
                         "scraped_media_id": scraped_media_id,
                         "status": "skipped_duplicate",
                     }
 
-            await update_scraped_media(
-                db,
-                sm.id,
-                status="ingesting",
-                content_hash=content_h,
-            )
+            try:
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="ingesting",
+                    content_hash=content_h,
+                )
+            except IntegrityError:
+                # Concurrent race: another worker processing a different row
+                # for the same school with identical content committed its
+                # content_hash between our dedup check above and this UPDATE.
+                # We lost the race — mark this row as a duplicate WITHOUT
+                # writing content_hash (the winning row already owns it under
+                # uq_scraped_media_school_content).
+                await db.rollback()
+                await update_scraped_media(
+                    db,
+                    sm.id,
+                    status="skipped_duplicate",
+                )
+                return {
+                    "scraped_media_id": scraped_media_id,
+                    "status": "skipped_duplicate",
+                }
 
             # Everything past this point runs AFTER transcription has already
             # been paid for. An S3 or DB failure here must NOT propagate to the
@@ -245,6 +275,10 @@ async def _materialize_media(sm, workdir: Path) -> MediaPayload:
 
     from app.services.transcription.service import transcription_service
     from app.services.transcription.youtube import extract_youtube_id
+    from app.services.web_scraper.board_platforms import (
+        fetch_document_via_playwright_session,
+        is_board_platform_url,
+    )
 
     # --- YouTube: captions first, always free ---
     if sm.media_type == "youtube":
@@ -288,7 +322,24 @@ async def _materialize_media(sm, workdir: Path) -> MediaPayload:
             size_bytes=transcript.source_size_bytes,
         )
 
-    # --- Documents: unchanged. Small, fast, already working. ---
+    # --- Documents: board platforms need a Playwright session; others use httpx ---
+    # Board-platform downloads require cookies/referrer from a real browser
+    # session. A cold httpx.GET from this Celery worker is typically redirected
+    # to a login/error page. Non-document media on these platforms is rare;
+    # if it occurs, fall through to the httpx/transcription paths above.
+    board_doc_url = sm.source_media_url or sm.source_page_url or ""
+    if sm.media_type == "document" and is_board_platform_url(board_doc_url):
+        raw = await fetch_document_via_playwright_session(
+            sm.source_page_url,
+            sm.source_media_url,
+        )
+        return MediaPayload(
+            text=_extract_text_from_document(raw, sm.file_extension),
+            content_hash=hashlib.sha256(raw).hexdigest(),
+            size_bytes=len(raw),
+            raw_bytes=raw,
+        )
+
     async with httpx.AsyncClient(
         timeout=settings.WEB_SCRAPER_TIMEOUT_SECONDS,
         headers={"User-Agent": settings.SCHOOL_SCRAPER_USER_AGENT},
@@ -528,11 +579,12 @@ async def _create_document_and_enqueue(
     max_retries=3,
 )
 def sweep_school_media(self, school_ids: list[int] | None = None) -> dict:
-    """Walk confirmed school URLs, persist what is found, enqueue only new rows.
+    """Walk every active school_scrape_urls row, persist media, enqueue new rows.
 
-    Deliberately NOT in beat_schedule: run it manually and confirm the
-    created/skipped counts look right before letting it fire unattended
-    against several hundred district sites.
+    Does not re-run URL discovery — only the human-confirmed scrapable URLs
+    paired with each school are crawled. Deliberately NOT in beat_schedule:
+    run it manually and confirm the created/skipped counts look right before
+    letting it fire unattended against several hundred district sites.
     """
     try:
         loop = get_event_loop()
