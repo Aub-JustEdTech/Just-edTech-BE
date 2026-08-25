@@ -43,6 +43,7 @@ from app.utils.dependencies import (
     get_db,
     get_effective_tenant_id,
 )
+from app.utils.response import success_response
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -321,7 +322,7 @@ async def scrape_media(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_tenant_user),
     tenant_id: int = Depends(get_effective_tenant_id),
-) -> ScrapeMediaResponse:
+):
     """
     Step 2 — Media Scraping.
 
@@ -401,7 +402,7 @@ async def scrape_media(
             ingest_scraped_media.delay(row.id)
             response.enqueued += 1
 
-    return response
+    return success_response(data=response)
 
 
 @router.post(
