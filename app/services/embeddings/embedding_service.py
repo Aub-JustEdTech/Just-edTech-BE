@@ -20,6 +20,41 @@ _VALID_EMBEDDING_MODELS = {
 _EMBEDDING_MAX_TOKENS_PER_REQUEST = 250_000
 _EMBEDDING_MAX_TEXTS_PER_REQUEST = 128
 
+# OpenAI's hard per-input cap for every embedding model above is 8192 tokens;
+# one token of headroom avoids an off-by-one at the boundary. A single
+# oversized chunk (e.g. a transcript segment with no natural break point)
+# would otherwise get rejected outright and permanently fail the document
+# after retries, since resending the same text always fails the same way.
+_EMBEDDING_MAX_TOKENS_PER_TEXT = 8191
+
+_TOKEN_ENCODER = None
+
+
+def _get_token_encoder():
+    """Cached tiktoken encoder for the cl100k_base BPE used by these models."""
+    global _TOKEN_ENCODER
+    if _TOKEN_ENCODER is None:
+        import tiktoken
+
+        _TOKEN_ENCODER = tiktoken.get_encoding("cl100k_base")
+    return _TOKEN_ENCODER
+
+
+def _truncate_to_token_limit(text: str, max_tokens: int) -> str:
+    """Hard-truncate text to at most max_tokens BPE tokens."""
+    encoder = _get_token_encoder()
+    tokens = encoder.encode(text)
+    if len(tokens) <= max_tokens:
+        return text
+    logger.warning(
+        "Text is %s tokens, over the %s-token embedding limit; truncating "
+        "(this text's stored/citation content is unaffected — only the "
+        "embedded vector loses coverage of the truncated tail).",
+        len(tokens),
+        max_tokens,
+    )
+    return encoder.decode(tokens[:max_tokens])
+
 
 def _estimate_tokens(text: str) -> int:
     return max(1, len(text) // 4)
@@ -81,6 +116,10 @@ class EmbeddingService:
             )
 
         try:
+            texts = [
+                _truncate_to_token_limit(text, _EMBEDDING_MAX_TOKENS_PER_TEXT)
+                for text in texts
+            ]
             batches = _batch_texts_for_embedding(texts)
             logger.info(
                 f"Generating embeddings for {len(texts)} texts "
