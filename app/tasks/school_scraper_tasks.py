@@ -235,6 +235,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                     "transcription was paid for; not retrying to avoid re-billing",
                     scraped_media_id,
                 )
+                await db.rollback()
                 await update_scraped_media(
                     db,
                     sm.id,
