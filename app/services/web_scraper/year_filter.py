@@ -118,10 +118,10 @@ async def evaluate_media_year_async(
     )
 
     if is_youtube_url(url):
-        # When YouTube ingest is off, skip yt-dlp metadata fetches entirely.
+        # When YouTube ingest is off, skip the metadata fetch entirely.
         # Scrape persist and Celery ingest both call this; without the guard
         # SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED=false only blocks
-        # transcription, not year-filter bot-check noise on EC2.
+        # transcription, not this fallback call.
         if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
             return inferred, should_process, skip_reason
         fallback_year = await fetch_youtube_upload_year(url)

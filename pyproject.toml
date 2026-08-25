@@ -52,8 +52,6 @@ pytesseract = "^0.3.10"
 # Marker is required: the package declares python <3.15 while this project's
 # range is <4.0, so Poetry cannot resolve it without an explicit bound.
 youtube-transcript-api = { version = "^1.2.4", python = ">=3.12,<3.15" }
-# Audio download, used ONLY when a YouTube video has no captions at all.
-yt-dlp = "^2025.1.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

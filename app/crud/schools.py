@@ -366,7 +366,7 @@ async def create_scraped_media(
 
     An existing row with a status in ``_RETRYABLE_SCRAPED_MEDIA_STATUSES`` is
     the one exception: dedup matches purely on url_hash, so without this a
-    link that failed once (e.g. a transient yt-dlp/network error, or a
+    link that failed once (e.g. a transient network error, or a
     caption-provider IP block that resolves itself, marks it "no_transcript")
     would be skipped as a duplicate forever, with no way for a routine
     re-crawl to ever retry it. Such rows are reset to ``status="discovered"``
