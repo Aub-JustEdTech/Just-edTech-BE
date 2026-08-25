@@ -321,8 +321,11 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
 
     # School scraper pipeline (knowledge base) settings.
-    # Fetch YouTube transcripts via yt-dlp (no video download) when True.
-    # When False, youtube media items are recorded but skipped at ingest.
+    # Master switch for all YouTube handling: transcript fetch
+    # (youtube-transcript-api / Supadata) and metadata/expansion (YouTube
+    # Data API v3, see youtube_data_api.py). When False, youtube media items
+    # are recorded but skipped at ingest, and no YouTube API of any kind is
+    # called.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
     # Master switch for audio/video transcription. When False, audio/video
     # media items are recorded but no transcript is produced. Named "WHISPER"
@@ -454,12 +457,15 @@ class Settings(BaseSettings):
     # subsequent YouTube item to Supadata (paid, server-side fetch).
     # YouTube commonly rate-limits datacenter IPs after ~10 requests.
     SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
-    # yt-dlp here is metadata/expansion only (upload year, playlist/channel
-    # listing) — it never downloads audio or video bytes. A Netscape
-    # cookies.txt defeats "Sign in to confirm you're not a bot" for these
-    # metadata calls too.
-    SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
-    SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS: int = 900
+    # Video-year lookup and playlist/channel expansion (see
+    # youtube_data_api.py) use the official YouTube Data API v3 rather than
+    # yt-dlp — a sanctioned, API-keyed request that cannot be bot-blocked,
+    # unlike yt-dlp scraping YouTube's own pages. Read-only public data needs
+    # only an API key, no OAuth: console.cloud.google.com -> enable "YouTube
+    # Data API v3" -> create an API key. videos.list and playlistItems.list
+    # cost 1 unit each against the free 10,000-units/day quota.
+    YOUTUBE_DATA_API_KEY: str = ""
+    YOUTUBE_DATA_API_BASE_URL: str = "https://www.googleapis.com/youtube/v3"
 
     # --- Transcription: Supadata (YouTube fallback tier 2) ---
     # When youtube-transcript-api has no captions (or is blocked), Supadata

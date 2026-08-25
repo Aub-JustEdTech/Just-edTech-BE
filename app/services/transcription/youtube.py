@@ -52,6 +52,10 @@ from app.services.transcription.schemas import (
     TranscriptResult,
     TranscriptSegment,
 )
+from app.services.transcription.youtube_data_api import (
+    fetch_video_upload_year,
+    list_channel_or_playlist_video_ids,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +210,13 @@ def youtube_caption_budget_exhausted() -> bool:
 
 
 async def list_youtube_video_urls(url: str) -> list[str]:
-    """Expand a YouTube video, playlist, or channel URL to canonical watch URLs."""
+    """Expand a YouTube video, playlist, or channel URL to canonical watch URLs.
+
+    Playlist/channel expansion goes through the official YouTube Data API
+    (see youtube_data_api.py) rather than yt-dlp — a sanctioned, API-keyed
+    request that cannot be bot-blocked the way scraping YouTube's own pages
+    can be.
+    """
     if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
         return []
 
@@ -217,63 +227,16 @@ async def list_youtube_video_urls(url: str) -> list[str]:
         canonical = canonical_youtube_url(url)
         return [canonical] if canonical else []
 
-    return await asyncio.to_thread(_list_youtube_videos_sync, url)
-
-
-def _list_youtube_videos_sync(url: str) -> list[str]:
-    """Blocking playlist/channel expansion via yt-dlp (no downloads)."""
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
-    except ImportError:  # pragma: no cover
-        logger.warning("yt-dlp not installed; cannot expand YouTube playlist %s", url)
-        canonical = canonical_youtube_url(url)
-        return [canonical] if canonical else []
-
-    opts = _ytdlp_options()
-    opts.update(
-        {
-            "extract_flat": "in_playlist",
-            "skip_download": True,
-            "ignoreerrors": True,
-            "quiet": True,
-        }
-    )
-
-    try:
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Could not expand YouTube URL %s: %s", url, exc)
-        canonical = canonical_youtube_url(url)
-        return [canonical] if canonical else []
-
-    if not info:
-        return []
-
-    entries = info.get("entries")
-    if not entries:
-        vid = info.get("id")
-        if isinstance(vid, str) and _VIDEO_ID_RE.match(vid):
-            return [f"https://www.youtube.com/watch?v={vid}"]
-        canonical = canonical_youtube_url(url)
-        return [canonical] if canonical else []
+    playlist_id = extract_playlist_id(url)
+    video_ids = await list_channel_or_playlist_video_ids(url, playlist_id=playlist_id)
 
     urls: list[str] = []
     seen: set[str] = set()
-    for entry in entries:
-        if not entry:
-            continue
-        candidate: str | None = None
-        entry_id = entry.get("id")
-        if isinstance(entry_id, str) and _VIDEO_ID_RE.match(entry_id):
-            candidate = f"https://www.youtube.com/watch?v={entry_id}"
-        else:
-            entry_url = entry.get("url") or entry.get("webpage_url")
-            if isinstance(entry_url, str):
-                candidate = canonical_youtube_url(entry_url)
-        if candidate and candidate not in seen:
-            seen.add(candidate)
-            urls.append(candidate)
+    for video_id in video_ids:
+        canonical = canonical_youtube_url(f"https://www.youtube.com/watch?v={video_id}")
+        if canonical and canonical not in seen:
+            seen.add(canonical)
+            urls.append(canonical)
     return urls
 
 
@@ -522,22 +485,6 @@ def _build_api(api_cls):
         return api_cls()
 
 
-def _ytdlp_options() -> dict[str, object]:
-    """Shared yt-dlp options, for the metadata/expansion calls only — no
-    audio download happens through this module anymore (see supadata.py).
-    Cookies defeat "confirm you're not a bot" for those metadata calls.
-    """
-    opts: dict[str, object] = {
-        "quiet": True,
-        "no_warnings": True,
-        "noprogress": True,
-        "socket_timeout": settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
-    }
-    if settings.SCHOOL_SCRAPER_YTDLP_COOKIES_FILE:
-        opts["cookiefile"] = settings.SCHOOL_SCRAPER_YTDLP_COOKIES_FILE
-    return opts
-
-
 async def fetch_youtube_upload_year(url: str) -> int | None:
     """Video upload year from YouTube's metadata — no bytes transferred.
 
@@ -548,29 +495,14 @@ async def fetch_youtube_upload_year(url: str) -> int | None:
     date. Only worth calling once URL/filename/page-context inference has
     already failed, since it costs a metadata round-trip per video.
 
-    Returns None if the metadata cannot be read.
+    Fetched via the official YouTube Data API (see youtube_data_api.py)
+    rather than yt-dlp. Returns None if the metadata cannot be read.
     """
     if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
         return None
 
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
-    except ImportError:  # pragma: no cover
+    video_id = extract_youtube_id(url)
+    if not video_id:
         return None
 
-    def _extract() -> int | None:
-        with YoutubeDL(_ytdlp_options()) as ydl:
-            info = ydl.extract_info(url, download=False) or {}
-        upload_date = info.get("upload_date")  # "YYYYMMDD" string, or None
-        if isinstance(upload_date, str) and upload_date[:4].isdigit():
-            return int(upload_date[:4])
-        return None
-
-    try:
-        return await asyncio.wait_for(
-            asyncio.to_thread(_extract),
-            timeout=settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
-        )
-    except Exception as exc:  # noqa: BLE001 — advisory only, never fatal
-        logger.warning("Could not read YouTube upload date for %s: %s", url, exc)
-        return None
+    return await fetch_video_upload_year(video_id)
