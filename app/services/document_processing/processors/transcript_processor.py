@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any
 
 from app.core.config import settings
@@ -27,6 +28,68 @@ from app.services.document_processing.base import DocumentProcessor
 from app.services.transcription.schemas import TranscriptResult
 
 logger = logging.getLogger(__name__)
+
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+
+
+def _split_oversized_segment(
+    seg: Any, max_chars: int
+) -> list[dict[str, Any]]:
+    """Split a single segment far larger than ``max_chars`` on sentence
+    boundaries, interpolating each piece's timestamps linearly by character
+    offset within the segment's own ``[start_ms, end_ms]`` range.
+
+    Happens when diarization collapses an entire long recording into one
+    "utterance" (e.g. a shared boardroom mic feed with no detected speaker
+    changes) — AssemblyAI gives no timing finer than that single range, so a
+    piece's timestamp is an approximation, not an exact per-sentence value.
+    Still far better than either failing the whole document (today's
+    behaviour) or leaving every citation pointing at the same instant.
+    """
+    text = seg.text
+    total_chars = len(text) or 1
+    duration = seg.end_ms - seg.start_ms
+
+    def interpolate(char_offset: int) -> int:
+        return seg.start_ms + int(duration * char_offset / total_chars)
+
+    pieces: list[dict[str, Any]] = []
+    buffer = ""
+    buffer_start_offset = 0
+    offset = 0
+
+    for sentence in _SENTENCE_SPLIT_RE.split(text):
+        if not sentence:
+            continue
+        candidate = f"{buffer} {sentence}".strip() if buffer else sentence
+        if buffer and len(candidate) > max_chars:
+            pieces.append(
+                {
+                    "text": buffer.strip(),
+                    "start_ms": interpolate(buffer_start_offset),
+                    "end_ms": interpolate(offset),
+                    "speaker": seg.speaker,
+                    "timestamp_approximate": True,
+                }
+            )
+            buffer_start_offset = offset
+            buffer = sentence
+        else:
+            buffer = candidate
+        offset += len(sentence) + 1
+
+    if buffer:
+        pieces.append(
+            {
+                "text": buffer.strip(),
+                "start_ms": interpolate(buffer_start_offset),
+                "end_ms": seg.end_ms,
+                "speaker": seg.speaker,
+                "timestamp_approximate": True,
+            }
+        )
+
+    return pieces
 
 
 class TranscriptProcessor(DocumentProcessor):
@@ -141,8 +204,21 @@ class TranscriptProcessor(DocumentProcessor):
             end_ms = 0
             speakers = []
 
+        oversized_segments = 0
         for seg in result.segments:
             seg_chars = len(seg.text) + 1
+
+            # A single segment far larger than the packing cap can't be
+            # packed normally — most often a diarization failure that
+            # collapsed hours of speech into one "utterance". Flush whatever
+            # was buffered first, then split this segment on its own with
+            # interpolated timestamps (see _split_oversized_segment).
+            if seg_chars > max_chars:
+                flush()
+                chunks.extend(_split_oversized_segment(seg, max_chars))
+                oversized_segments += 1
+                continue
+
             would_overflow = buffer and (
                 (seg.end_ms - start_ms) > target_ms
                 or (buf_chars + seg_chars) > max_chars
@@ -160,6 +236,13 @@ class TranscriptProcessor(DocumentProcessor):
 
         flush()
 
+        if oversized_segments:
+            logger.warning(
+                "%s oversized segment(s) force-split with interpolated "
+                "timestamps (likely a diarization failure) while chunking "
+                "transcript",
+                oversized_segments,
+            )
         logger.info(
             "Chunked transcript into %s chunks from %s segments",
             len(chunks),
