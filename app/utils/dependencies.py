@@ -162,33 +162,37 @@ async def resolve_effective_tenant_id(
 ) -> int:
     """Resolve the tenant_id a request should be scoped to, for a JWT user.
 
-    tenant_user / regular tenant_admin: always their own `tenant_id`, the
-    `tenant_id` query param is ignored.
-    Cross-tenant admins (`tenant_id` is NULL — access granted via
-    `user_tenant_access`): the `tenant_id` query param is required and must
-    be one of their granted tenants.
+    super_admin / tenant_admin: an explicit `tenant_id` query param is
+    honored (validated against `user_tenant_access` for tenant_admin;
+    super_admin bypasses that check) so they can switch tenants regardless
+    of whether they also have their own `tenant_id` set.
+    Everyone else (or an admin who omits the query param): falls back to
+    their own `tenant_id` column.
     """
+    is_super = user.is_super_admin(current_user)
+    is_switchable_admin = is_super or user.is_tenant_admin(current_user)
+
+    if tenant_id is not None and is_switchable_admin:
+        if is_super:
+            return tenant_id
+
+        has = await user_tenant_access.has_access(
+            db, user_id=current_user.id, tenant_id=tenant_id
+        )
+        if not has:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: tenant not in your access list",
+            )
+        return tenant_id
+
     if current_user.tenant_id is not None:
         return current_user.tenant_id
 
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="tenant_id query parameter is required for admins with access to multiple tenants",
-        )
-
-    if user.is_super_admin(current_user):
-        return tenant_id
-
-    has = await user_tenant_access.has_access(
-        db, user_id=current_user.id, tenant_id=tenant_id
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="tenant_id query parameter is required for admins with access to multiple tenants",
     )
-    if not has:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: tenant not in your access list",
-        )
-    return tenant_id
 
 
 async def get_effective_tenant_id(
