@@ -480,9 +480,17 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
         # Update stage to in_progress
         await _update_stage_status(db, stage_record.id, StageStatus.IN_PROGRESS)
 
-        # Extract text using appropriate processor
+        # Extract text using appropriate processor.
+        # Merge file metadata into existing doc_metadata — do NOT replace.
+        # Step 1 may already have copied Document.source_metadata
+        # (school_id, school_org_code, …); assigning over it used to wipe
+        # those ingest keys and leave Qdrant chunks without school_id
+        # (see Aub-JustEdTech/Just-edTech-BE#29).
         processor = ProcessorFactory.get_processor(ctx.temp_file_path)
-        ctx.doc_metadata = processor.extract_metadata(ctx.temp_file_path)
+        extracted = processor.extract_metadata(ctx.temp_file_path) or {}
+        for k, v in extracted.items():
+            if k not in ctx.doc_metadata:
+                ctx.doc_metadata[k] = v
 
         # For PDFs, preserve per-page text so chunking can attach page_number metadata.
         # PDFProcessor may run OCR fallback when digital text is empty/sparse.
@@ -1613,6 +1621,19 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
         heatmap_doc_meta: dict[str, Any] = {}
         if ctx.source_type == "school_scraper":
             source_meta = document.source_metadata or {}
+            # school_id must be an int so must_match={"school_id": school.id}
+            # filters (heatmap citations, reconcile) hit the KEYWORD index.
+            raw_school_id = source_meta.get("school_id")
+            school_id: int | None = None
+            if raw_school_id is not None:
+                try:
+                    school_id = int(raw_school_id)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        f"[Doc {ctx.document_id}] source_metadata.school_id="
+                        f"{raw_school_id!r} is not int-coercible; omitting "
+                        f"from Qdrant payload"
+                    )
             heatmap_doc_meta = {
                 "state": document.state,
                 "district_name": document.district_name,
@@ -1626,6 +1647,12 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
                     if document.meeting_date
                     else None
                 ),
+                # District identity for payload pre-filters (issue #29).
+                # source_metadata is the source of truth — documents has no
+                # school_id column.
+                "school_id": school_id,
+                "school_org_code": source_meta.get("school_org_code"),
+                "school_name": source_meta.get("school_name"),
                 # Original scraped media + discovery page (denormalized for
                 # citation hydrate without a DB round-trip).
                 "source_media_url": source_meta.get("source_media_url"),
