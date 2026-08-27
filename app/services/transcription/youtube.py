@@ -24,6 +24,24 @@ blocks in production — see this branch's git history prior to this change.
 
 Hence the rule enforced here: **every fall-through to Supadata logs a
 WARNING** that distinguishes "captions genuinely absent" from "captions
+(``n_SOB-VqQh0``): yt-dlp's default client reported "no captions available"
+for a video that has 900 of them, while this library returned all 900. That
+failure mode is silent and dangerous: it is indistinguishable from a video
+genuinely lacking captions, so it would route the entire corpus to *paid*
+transcription with normal-looking logs and a bill an order of magnitude too
+large.
+
+When this free path fails — captions genuinely absent, or the request
+itself gets blocked — the fallback is Supadata (``supadata.py``), which
+fetches the transcript server-side on its own infrastructure rather than us
+downloading anything. There is no third attempt: if Supadata also has
+nothing, the item is terminal. This replaces an earlier yt-dlp-download +
+AssemblyAI fallback that needed a PO Token, a JS runtime and a residential
+proxy to work around YouTube's bot-detection, and still hit IP-reputation
+blocks in production — see this branch's git history prior to this change.
+
+Hence the rule enforced here: **every fall-through to Supadata logs a
+WARNING** that distinguishes "captions genuinely absent" from "captions
 unreachable".
 
 Speaker labels: YouTube captions carry none, so segments from this path have

@@ -328,6 +328,11 @@ async def deactivate_scrape_url(
 # re-spend on a success).
 _RETRYABLE_SCRAPED_MEDIA_STATUSES = {"failed", "no_transcript"}
 
+# Statuses a rescrape is allowed to reset and retry. Excludes "skipped_year"
+# (own dedicated re-evaluation path, /backfill-years) and "completed" (never
+# re-spend on a success).
+_RETRYABLE_SCRAPED_MEDIA_STATUSES = {"failed", "no_transcript"}
+
 
 async def get_scraped_media_by_url_hash(
     db: AsyncSession, school_id: int, url_hash_value: str

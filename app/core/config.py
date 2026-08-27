@@ -459,6 +459,7 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
     # Max free caption API calls per worker process before switching every
     # subsequent YouTube item to Supadata (paid, server-side fetch).
+    # subsequent YouTube item to Supadata (paid, server-side fetch).
     # YouTube commonly rate-limits datacenter IPs after ~10 requests.
     SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
     # Video-year lookup and playlist/channel expansion (see
