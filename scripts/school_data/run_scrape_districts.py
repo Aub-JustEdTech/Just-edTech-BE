@@ -17,6 +17,11 @@ while plain sitemap pages stay on httpx.
 
 Idempotent: re-running skips media URLs already recorded for a school.
 
+Set SCHOOL_SCRAPER_AV_ONLY_MODE=true in the environment to persist only
+audio/video/youtube ScrapedMedia rows and skip documents entirely (for
+backfilling AV coverage without re-touching already-correct document
+counts). Default is false — all media types persist, as before.
+
 Usage:
     python scripts/school_data/run_scrape_districts.py
     python scripts/school_data/run_scrape_districts.py --dry-run
@@ -32,6 +37,7 @@ import argparse
 import asyncio
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 from sqlalchemy import select
@@ -184,8 +190,10 @@ async def _scrape_one_url(
         "pages_crawled": 0,
         "media_found": 0,
         "media_new": 0,
+        "media_new_by_type": Counter(),
         "media_skipped": 0,
         "media_skipped_year": 0,
+        "media_skipped_doc_type": 0,
         "enqueue_count": 0,
         "error": None,
     }
@@ -206,6 +214,10 @@ async def _scrape_one_url(
     media_files = scrape_result.get("media_files", [])
     result["pages_crawled"] = scrape_result.get("pages_crawled", 0)
     result["media_found"] = len(media_files)
+    result["media_found_by_type"] = Counter(
+        _classify_media_type(mf.get("media_type"), mf.get("file_extension"))
+        for mf in media_files
+    )
 
     if dry_run:
         docs = sum(1 for m in media_files if m.get("media_type") == "document")
@@ -229,6 +241,12 @@ async def _scrape_one_url(
                 media_type = _classify_media_type(
                     mf.get("media_type"), mf.get("file_extension")
                 )
+                if (
+                    settings.SCHOOL_SCRAPER_AV_ONLY_MODE
+                    and media_type == "document"
+                ):
+                    result["media_skipped_doc_type"] += 1
+                    continue
                 if (
                     media_type == "youtube"
                     and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED
@@ -274,6 +292,7 @@ async def _scrape_one_url(
                 db.add(sm)
                 await db.commit()
                 result["media_new"] += 1
+                result["media_new_by_type"][media_type] += 1
 
                 if enqueue:
                     # Commit above (not just flush) matters: the Celery worker
@@ -302,6 +321,7 @@ async def _scrape_one_url(
         f"found={result['media_found']} new={result['media_new']} "
         f"skipped={result['media_skipped']} "
         f"skipped_year={result['media_skipped_year']} "
+        f"skipped_doc_type={result['media_skipped_doc_type']} "
         f"enqueued={result['enqueue_count']}"
     )
     return result
@@ -337,16 +357,27 @@ async def _scrape_one_school(
         )
 
     # Aggregate per-URL results into a school-level summary.
+    media_new_by_type: Counter = Counter()
+    media_found_by_type: Counter = Counter()
+    for r in url_results:
+        media_new_by_type.update(r.get("media_new_by_type") or {})
+        media_found_by_type.update(r.get("media_found_by_type") or {})
+
     return {
         "org_code": school.org_code,
         "name": school.name,
         "urls_scraped": len(url_results),
         "pages_crawled": sum(r.get("pages_crawled", 0) for r in url_results),
         "media_found": sum(r.get("media_found", 0) for r in url_results),
+        "media_found_by_type": media_found_by_type,
         "media_new": sum(r.get("media_new", 0) for r in url_results),
+        "media_new_by_type": media_new_by_type,
         "media_skipped": sum(r.get("media_skipped", 0) for r in url_results),
         "media_skipped_year": sum(
             r.get("media_skipped_year", 0) for r in url_results
+        ),
+        "media_skipped_doc_type": sum(
+            r.get("media_skipped_doc_type", 0) for r in url_results
         ),
         "enqueue_count": sum(r.get("enqueue_count", 0) for r in url_results),
         "url_errors": sum(1 for r in url_results if r.get("error")),
@@ -394,6 +425,7 @@ async def run_scrape_districts(
     print(f"  enqueue     : {enqueue and not dry_run}")
     print(f"  skip_scraped: {skip_scraped}")
     print(f"  revisit_max : {revisit_max_docs}")
+    print(f"  av_only_mode: {settings.SCHOOL_SCRAPER_AV_ONLY_MODE}")
     print("=" * 60)
 
     if not pairs:
@@ -428,7 +460,9 @@ async def run_scrape_districts(
                     "urls_scraped": 0,
                     "pages_crawled": 0,
                     "media_found": 0,
+                    "media_found_by_type": Counter(),
                     "media_new": 0,
+                    "media_new_by_type": Counter(),
                     "media_skipped": 0,
                     "media_skipped_year": 0,
                     "enqueue_count": 0,
@@ -436,6 +470,19 @@ async def run_scrape_districts(
             )
         else:
             results.append(item)
+
+    media_new_by_type: Counter = Counter()
+    media_found_by_type: Counter = Counter()
+    for r in results:
+        media_new_by_type.update(r.get("media_new_by_type") or {})
+        media_found_by_type.update(r.get("media_found_by_type") or {})
+
+    def _av_total(counter: Counter) -> int:
+        return (
+            counter.get("audio", 0)
+            + counter.get("video", 0)
+            + counter.get("youtube", 0)
+        )
 
     stats = {
         "schools": len(results),
@@ -448,10 +495,23 @@ async def run_scrape_districts(
             1 for r in results if r.get("url_errors") and r.get("urls_scraped", 0) == r.get("url_errors", 0)
         ),
         "media_found": sum(r.get("media_found", 0) for r in results),
+        "media_found_audio_video_youtube": _av_total(media_found_by_type),
+        "media_found_youtube": media_found_by_type.get("youtube", 0),
+        "media_found_video": media_found_by_type.get("video", 0),
+        "media_found_audio": media_found_by_type.get("audio", 0),
+        "media_found_document": media_found_by_type.get("document", 0),
         "media_new": sum(r.get("media_new", 0) for r in results),
+        "media_new_audio_video_youtube": _av_total(media_new_by_type),
+        "media_new_youtube": media_new_by_type.get("youtube", 0),
+        "media_new_video": media_new_by_type.get("video", 0),
+        "media_new_audio": media_new_by_type.get("audio", 0),
+        "media_new_document": media_new_by_type.get("document", 0),
         "media_skipped": sum(r.get("media_skipped", 0) for r in results),
         "media_skipped_year": sum(
             r.get("media_skipped_year", 0) for r in results
+        ),
+        "media_skipped_doc_type": sum(
+            r.get("media_skipped_doc_type", 0) for r in results
         ),
         "enqueue_count": sum(r.get("enqueue_count", 0) for r in results),
     }

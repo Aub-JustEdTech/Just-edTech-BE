@@ -327,6 +327,10 @@ class Settings(BaseSettings):
     # are recorded but skipped at ingest, and no YouTube API of any kind is
     # called.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
+    # When True, run_scrape_districts.py persists only audio/video/youtube
+    # ScrapedMedia rows and skips documents entirely (used to backfill AV
+    # coverage without re-touching already-correct document counts).
+    SCHOOL_SCRAPER_AV_ONLY_MODE: bool = False
     # Master switch for audio/video transcription. When False, audio/video
     # media items are recorded but no transcript is produced. Named "WHISPER"
     # for backwards compatibility with deployed .env files; the provider is
