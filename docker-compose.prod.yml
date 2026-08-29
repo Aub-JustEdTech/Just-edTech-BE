@@ -13,21 +13,24 @@
 #                   orphaned documents at processing_status=PROCESSING
 #                   forever during the 100-school incident). An OOM here
 #                   fails loudly instead of losing data.
-#                   Sized at 2G: the broker also holds Celery result
+#                   Sized at 4G (bumped from 2G, which itself was bumped
+#                   from 512M): the broker also holds Celery result
 #                   backend entries (task_track_started + result_expires=1h
 #                   means a 6-stage chain × N docs can accumulate tens of
 #                   thousands of result stubs before expiry reaps them).
 #                   512M was too tight for a bulk-scrape enqueue burst and
 #                   OOM-rejected process_document_pipeline.delay() /
 #                   ingest_scraped_media.delay() calls, silently orphaning
-#                   ~2500 ScrapedMedia rows and ~400 Document chains.
+#                   ~2500 ScrapedMedia rows and ~400 Document chains. 2G
+#                   OOM'd again during the batch-3 bulk ingest at full
+#                   3+2 worker scale — same failure mode, larger corpus.
 #
 # RAM budget on t4g.2xlarge (~32 GiB):
-#   api 4G + qdrant 6G + redis 0.5G + redis-broker 2G + beat 0.3G = 12.8G
+#   api 4G + qdrant 6G + redis 0.5G + redis-broker 4G + beat 0.3G = 14.8G
 #   celery-ingest  ×N @ 2G    (document pipeline)
 #   celery-scraper ×N @ 2.5G (download/transcribe/Playwright)
-#   3 scraper + 2 ingest = 11.5G  -> ~7.7G headroom
-#   2 scraper + 3 ingest = 11.0G  -> ~8.2G headroom
+#   3 scraper + 2 ingest = 11.5G  -> ~5.7G headroom
+#   2 scraper + 3 ingest = 11.0G  -> ~6.2G headroom
 #
 # Bulk school ingest (recommended for this instance):
 #   docker compose -f docker-compose.prod.yml up -d \
@@ -75,8 +78,11 @@ services:
   ##################################################
   # Redis Broker — Celery broker + result backend only.
   # noeviction: an in-flight task message must NEVER be evicted.
-  # Sized small: with payload shrinkage in document_pipeline.py the
-  # broker only carries in-flight chain messages + result stubs.
+  # Bumped 2gb -> 4gb after the batch-3 bulk ingest OOM'd this broker
+  # (task_track_started + result_expires=1h let result-backend stubs pile
+  # up across tens of thousands of documents in flight through 6-stage
+  # chains, well beyond the original "in-flight messages + result stubs
+  # only" sizing assumption below).
   ##################################################
   redis-broker:
     image: redis:7-alpine
@@ -89,7 +95,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 2gb
+      --maxmemory 4gb
       --maxmemory-policy noeviction
 
     volumes:
