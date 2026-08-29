@@ -24,6 +24,9 @@ apply_batch_results.
 
 Subcommands:
 
+  count          Count classified vs. unclassified chunks for a tenant in
+                 Qdrant, plus the pending_classifications breakdown (by
+                 status) for that tenant's documents. Read-only.
   export-qdrant  Scroll a tenant's local Qdrant chunks collection and build
                  an input.jsonl using the current prompt.py. Primarily for
                  small pilots (use --limit). Does NOT touch pending_classifications.
@@ -145,6 +148,140 @@ def _add_prompt_cache_key(body: dict[str, Any], key: str | None) -> dict[str, An
         body = dict(body)
         body["prompt_cache_key"] = key
     return body
+
+
+# ---------------------------------------------------------------------------
+# count
+# ---------------------------------------------------------------------------
+
+
+async def cmd_count(args: argparse.Namespace) -> None:
+    """Count classified vs. unclassified chunks for a tenant (read-only).
+
+    Two independent counts are printed because they can legitimately
+    disagree:
+
+      - Qdrant `classified` payload field, scrolled per-point. This is the
+        ground truth for "does this vector still need topic tags".
+      - `pending_classifications` rows joined to this tenant's documents,
+        grouped by status. This is what `submit_pending_batch` /
+        `export-pending` actually operate on. A chunk can be
+        classified=false in Qdrant with no pending row at all (e.g. the
+        step6_accumulate_batch insert failed or predates this feature) --
+        that gap is reported explicitly so it isn't silently missed.
+
+    Also reports pending rows belonging to OTHER tenants, since
+    submit_pending_batch()/BatchClassifier pull status='pending' globally
+    (no tenant filter) -- if other tenants have pending rows, a manual
+    submit for "tenant 4" will also drain theirs.
+    """
+    from sqlalchemy import func
+
+    from app.models.documents import Document
+    from app.models.pending_classification import PendingClassification
+
+    client = _get_qdrant_client()
+    collection_name = _collection_name(args.tenant_id)
+
+    try:
+        info = await asyncio.to_thread(client.get_collection, collection_name)
+    except Exception as exc:
+        raise SystemExit(f"Could not open collection '{collection_name}': {exc}")
+
+    total_points = info.points_count
+    classified_true = await asyncio.to_thread(
+        client.count,
+        collection_name=collection_name,
+        count_filter=qdrant_models.Filter(
+            must=[
+                qdrant_models.FieldCondition(
+                    key="classified", match=qdrant_models.MatchValue(value=True)
+                )
+            ]
+        ),
+        exact=True,
+    )
+    classified_false = await asyncio.to_thread(
+        client.count,
+        collection_name=collection_name,
+        count_filter=qdrant_models.Filter(
+            must=[
+                qdrant_models.FieldCondition(
+                    key="classified", match=qdrant_models.MatchValue(value=False)
+                )
+            ]
+        ),
+        exact=True,
+    )
+    classified_true_n = classified_true.count
+    classified_false_n = classified_false.count
+    no_field_n = total_points - classified_true_n - classified_false_n
+
+    print("=" * 70)
+    print(f"Qdrant collection: {collection_name}")
+    print("=" * 70)
+    print(f"  total chunks            : {total_points}")
+    print(f"  classified = true       : {classified_true_n}")
+    print(f"  classified = false      : {classified_false_n}  <-- needs classification")
+    print(f"  classified field absent : {no_field_n}  (non-school_scraper docs, not gated)")
+
+    async with AsyncSessionLocal() as db:
+        tenant_rows = (
+            await db.execute(
+                select(PendingClassification.status, func.count())
+                .join(Document, Document.id == PendingClassification.document_id)
+                .where(Document.tenant_id == args.tenant_id)
+                .group_by(PendingClassification.status)
+            )
+        ).all()
+        other_tenant_pending = (
+            await db.execute(
+                select(func.count())
+                .select_from(PendingClassification)
+                .join(Document, Document.id == PendingClassification.document_id)
+                .where(
+                    Document.tenant_id != args.tenant_id,
+                    PendingClassification.status == "pending",
+                )
+            )
+        ).scalar_one()
+
+    tenant_by_status = dict(tenant_rows)
+    tenant_total = sum(tenant_by_status.values())
+
+    print()
+    print(f"pending_classifications for tenant {args.tenant_id} (by status):")
+    for status in ("pending", "submitted", "applied", "failed", "dead_letter"):
+        print(f"  {status:12s}: {tenant_by_status.get(status, 0)}")
+    for status, n in tenant_by_status.items():
+        if status not in ("pending", "submitted", "applied", "failed", "dead_letter"):
+            print(f"  {status:12s}: {n}")
+    print(f"  {'total':12s}: {tenant_total}")
+
+    print()
+    if other_tenant_pending:
+        print(
+            f"WARNING: {other_tenant_pending} pending_classifications row(s) belong to "
+            f"OTHER tenants (status='pending'). submit_pending_batch has no tenant "
+            f"filter -- a manual submit will pull those in too."
+        )
+    else:
+        print("No pending_classifications rows for other tenants (status='pending').")
+
+    gap = classified_false_n - tenant_by_status.get("pending", 0) - tenant_by_status.get("submitted", 0)
+    print()
+    print(
+        f"Qdrant classified=false ({classified_false_n}) vs. tenant pending+submitted "
+        f"({tenant_by_status.get('pending', 0) + tenant_by_status.get('submitted', 0)}): "
+        f"gap = {gap}"
+    )
+    if gap > 0:
+        print(
+            "  A positive gap means some classified=false chunks have no active "
+            "pending_classifications row -- they will NOT be picked up by "
+            "submit_pending_batch/export-pending. Use `export-qdrant "
+            "--skip-classified` to inspect/export them directly."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -737,6 +874,13 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = ap.add_subparsers(dest="cmd", required=True)
+
+    c = sub.add_parser(
+        "count",
+        help="count classified vs. unclassified chunks for a tenant (read-only)",
+    )
+    c.add_argument("--tenant-id", type=int, required=True)
+    c.set_defaults(func=cmd_count)
 
     e = sub.add_parser(
         "export-qdrant",
