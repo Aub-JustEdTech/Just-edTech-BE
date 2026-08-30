@@ -118,7 +118,12 @@ def _openai_model() -> str:
 
 
 def _get_qdrant_client() -> QdrantClient:
-    return QdrantClient(url=settings.QDRANT_URL, check_compatibility=False)
+    # count_points/scroll can take longer than the client's short default
+    # timeout while Qdrant is mid-optimization from concurrent batch-apply
+    # writes (status=YELLOW) -- seen timing out during an active backfill.
+    return QdrantClient(
+        url=settings.QDRANT_URL, check_compatibility=False, timeout=120
+    )
 
 
 def _collection_name(tenant_id: int) -> str:
