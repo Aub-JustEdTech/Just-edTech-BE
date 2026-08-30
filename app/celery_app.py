@@ -65,64 +65,55 @@ celery_app.conf.update(
     worker_disable_rate_limits=True,  # Disable rate limits for better performance
     broker_pool_limit=10,  # Increase Redis connection pool
     broker_connection_retry_on_startup=True,  # Retry connection on startup
-    # Periodic task schedule (beat schedule)
+    # Periodic task schedule (beat schedule).
+    #
+    # Removed entirely (not wanted, not just paused):
+    #   - aggregate-daily-token-usage (aggregate_daily_token_usage)
+    #   - aggregate-monthly-billing (aggregate_monthly_billing)
+    #
+    # All other entries below are PAUSED (commented out) while the tenant-4
+    # heatmap backfill is under manual control -- re-enable by uncommenting
+    # the relevant block(s) once the manual backfill work is done. No task
+    # code was removed; only these beat entries are inactive, so any of them
+    # can still be triggered manually via `<task>.delay(...)`.
     beat_schedule={
-        "aggregate-daily-token-usage": {
-            "task": "aggregate_daily_token_usage",
-            "schedule": crontab(hour=2, minute=0),  # Run daily at 2:00 AM UTC
-            "options": {
-                "expires": 3600,  # Task expires after 1 hour if not picked up
-            },
-        },
-        "aggregate-monthly-billing": {
-            "task": "aggregate_monthly_billing",
-            "schedule": crontab(
-                hour=3, minute=0, day_of_month=1
-            ),  # Run on 1st of each month at 3:00 AM UTC
-            "options": {
-                "expires": 7200,  # Task expires after 2 hours if not picked up
-            },
-        },
-        # Heatmap batch classification lifecycle.
-        # Submit daily at 4 AM UTC. Poll every 15 min so completed batches
-        # are applied promptly.
-        "submit-pending-batch-classification": {
-            "task": "submit_pending_batch_classification",
-            "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
-            "options": {"expires": 3600},
-        },
-        "poll-batch-classification": {
-            "task": "poll_batch_classification",
-            "schedule": crontab(minute="*/15"),  # Every 15 minutes
-            "options": {"expires": 900},
-        },
-        # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
-        # to catch drift from failed set_payload calls or manual edits.
-        "reconcile-heatmap-aggregate": {
-            "task": "reconcile_heatmap_aggregate",
-            "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
-            "options": {"expires": 2 * 3600},
-        },
-        # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
-        # PENDING past the staleness threshold. Catches the silent orphan
-        # failure mode where a Celery chain continuation was lost (broker
-        # eviction under allkeys-lru, or OOM rejection under noeviction)
-        # and no _mark_stage_failed ever ran.
-        "reconcile-stuck-documents": {
-            "task": "reconcile_stuck_documents",
-            "schedule": crontab(minute=15),  # Hourly at :15
-            "options": {"expires": 1800},
-        },
-        # Weekly sweep of every active school source URL, tenant-agnostic
-        # (no school_ids filter = all schools). Runs Monday 1:00 AM UTC,
-        # ahead of the 2:00-4:00 AM jobs above so they don't compete for the DB.
-        "sweep-school-media": {
-            "task": "app.tasks.school_scraper_tasks.sweep_school_media",
-            "schedule": crontab(
-                hour=1, minute=0, day_of_week=1
-            ),  # Weekly, Monday 1:00 AM UTC
-            "options": {"expires": 3 * 3600},
-        },
+        # "submit-pending-batch-classification": {
+        #     "task": "submit_pending_batch_classification",
+        #     "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
+        #     "options": {"expires": 3600},
+        # },
+        # "poll-batch-classification": {
+        #     "task": "poll_batch_classification",
+        #     "schedule": crontab(minute="*/15"),  # Every 15 minutes
+        #     "options": {"expires": 900},
+        # },
+        # # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
+        # # to catch drift from failed set_payload calls or manual edits.
+        # "reconcile-heatmap-aggregate": {
+        #     "task": "reconcile_heatmap_aggregate",
+        #     "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
+        #     "options": {"expires": 2 * 3600},
+        # },
+        # # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
+        # # PENDING past the staleness threshold. Catches the silent orphan
+        # # failure mode where a Celery chain continuation was lost (broker
+        # # eviction under allkeys-lru, or OOM rejection under noeviction)
+        # # and no _mark_stage_failed ever ran.
+        # "reconcile-stuck-documents": {
+        #     "task": "reconcile_stuck_documents",
+        #     "schedule": crontab(minute=15),  # Hourly at :15
+        #     "options": {"expires": 1800},
+        # },
+        # # Weekly sweep of every active school source URL, tenant-agnostic
+        # # (no school_ids filter = all schools). Runs Monday 1:00 AM UTC,
+        # # ahead of the 2:00-4:00 AM jobs above so they don't compete for the DB.
+        # "sweep-school-media": {
+        #     "task": "app.tasks.school_scraper_tasks.sweep_school_media",
+        #     "schedule": crontab(
+        #         hour=1, minute=0, day_of_week=1
+        #     ),  # Weekly, Monday 1:00 AM UTC
+        #     "options": {"expires": 3 * 3600},
+        # },
     },
 )
 

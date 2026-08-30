@@ -330,6 +330,13 @@ services:
       CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
+    volumes:
+      # Batch hotfix path: git pull updates the beat_schedule without
+      # waiting for an ECR rebuild -- same pattern as celery-ingest/
+      # celery-scraper/api. Before this, changing app/celery_app.py needed
+      # a full image rebuild+redeploy since beat had no live-code mount.
+      - ./app:/app/app
+
     depends_on:
       redis:
         condition: service_healthy
