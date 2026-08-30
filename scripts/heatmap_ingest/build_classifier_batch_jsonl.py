@@ -62,7 +62,9 @@ import logging
 import sys
 import time
 from collections import Counter
+from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from qdrant_client import QdrantClient
@@ -87,10 +89,55 @@ logging.basicConfig(
 logger = logging.getLogger("build_classifier_batch_jsonl")
 
 SCROLL_BATCH = 1024
-# OpenAI Batch hard caps: 50,000 requests and 200 MB per input file.
-# Our ~24 KB system prompt yields ~35 KB/line, so the file-size cap bites
-# at ~5,700 lines — well below 50,000. Keep a safety margin under 200 MB.
+# OpenAI Batch hard caps (universal, not tier-specific): 50,000 requests and
+# 200 MB per input file. Our ~24 KB system prompt yields ~35 KB/line, so the
+# file-size cap bites well below 50,000 requests. Keep a safety margin under
+# 200 MB regardless of tier.
 DEFAULT_MAX_BYTES = 180 * 1024 * 1024
+HARD_MAX_REQUESTS_PER_BATCH = 50_000
+HARD_MAX_FILE_BYTES = 200 * 1024 * 1024
+
+# Tier-3 gpt-4o-mini Batch *queue* limit: 40,000,000 input tokens enqueued
+# (waiting/in-progress) at once across all batches for that model. This is
+# separate from the per-batch request/file caps above and from the
+# tier's synchronous RPM/TPM limits (irrelevant to Batch). Since each
+# submitted batch stays enqueued until it completes -- and completion can
+# take up to the 24h completion window -- Tier 3 can realistically only
+# have ONE batch this size in flight at a time; submits must be sequential
+# (submit -> wait -> apply -> submit next), never fire-and-forget in a loop.
+# We target 80% of the hard cap (not 100%) because per-request token counts
+# below are an estimate (cl100k_base encode of the full JSONL line, which
+# over-counts slightly vs. the model's actual o200k_base tokenizer) --
+# the margin absorbs that estimation error plus any concurrent submission
+# from the scheduled Celery tasks (submit_pending_batch_classification /
+# poll_batch_classification) that also draw from this same queue limit.
+TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS = 40_000_000
+DEFAULT_SHARD_MAX_TOKENS = int(TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS * 0.8)
+
+_TOKEN_ENCODER = None
+
+
+def _estimate_tokens(text: str) -> int:
+    """Best-effort input-token estimate for one JSONL line (system prompt +
+    schema + chunk text combined). Uses tiktoken cl100k_base (same encoding
+    the rest of this codebase uses for token-mode chunking -- see
+    app/services/document_processing/chunker.py) as a stand-in for
+    gpt-4o-mini's actual o200k_base tokenizer. Encoding the whole line
+    (including JSON punctuation/keys) over-counts a little, which is the
+    conservative direction we want for a queue-limit safety margin.
+    Falls back to a chars/4 heuristic if tiktoken is unavailable.
+    """
+    global _TOKEN_ENCODER
+    if _TOKEN_ENCODER is None:
+        try:
+            import tiktoken
+
+            _TOKEN_ENCODER = tiktoken.get_encoding("cl100k_base")
+        except Exception:  # noqa: BLE001
+            _TOKEN_ENCODER = False
+    if _TOKEN_ENCODER is False:
+        return len(text) // 4
+    return len(_TOKEN_ENCODER.encode(text, disallowed_special=()))
 # Stable prompt_cache_key so requests sharing the static SYSTEM_PROMPT prefix
 # route to the same cache. Batch fans work across workers, so hits are
 # unreliable — do not budget cost as if cache hits (see SKILL.md pitfall).
@@ -289,15 +336,156 @@ async def cmd_count(args: argparse.Namespace) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def cmd_export_qdrant(args: argparse.Namespace) -> None:
-    """Scroll a tenant's Qdrant chunks collection and write a batch input JSONL.
+class _ShardWriter:
+    """Rotates output files (+ manifests) once a shard hits --shard-max-bytes.
 
-    The exported JSONL is for inspection / pilot submission only — custom_id is
-    `qdrant:{point_id}`, which BatchClassifier.apply_batch_results CANNOT join
-    (it joins on str(pending_classifications.id)). To apply results back to
-    Qdrant, use the enqueue + submit-pending + apply path (Phase 2 in the plan),
-    not this export.
+    A single Qdrant Batch input file is capped well below the 200 MB/50k-request
+    OpenAI limits by DEFAULT_MAX_BYTES (~5,000-7,000 lines), which itself sits
+    just under the Tier-3 gpt-4o-mini batch *queue* limit (40,000,000 enqueued
+    tokens) -- see module docstring. A large backlog (hundreds of thousands of
+    chunks) therefore has to land in dozens of shard files, submitted and
+    applied one at a time (Tier-3 can really only have ~one such shard in
+    flight before hitting the queue cap).
     """
+
+    def __init__(
+        self,
+        out_dir: Path,
+        prefix: str,
+        max_bytes: int,
+        with_manifest: bool,
+        max_tokens: int = DEFAULT_SHARD_MAX_TOKENS,
+        max_requests: int = HARD_MAX_REQUESTS_PER_BATCH,
+        exact_path: Path | None = None,
+    ):
+        """
+        exact_path: when set (single-file/non-shard mode), the first (and,
+        given max_bytes/max_tokens effectively unlimited in that mode, only)
+        shard is written to exactly this path -- preserving `--out`'s
+        historical exact-filename behavior instead of the numbered
+        `{prefix}_0001.jsonl` naming --shard uses.
+        """
+        self.out_dir = out_dir
+        self.prefix = prefix
+        self.max_bytes = min(max_bytes, HARD_MAX_FILE_BYTES)
+        self.max_tokens = max_tokens
+        self.max_requests = max_requests
+        self.with_manifest = with_manifest
+        self.exact_path = exact_path
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        self.shard_index = 0
+        self.shard_bytes = 0
+        self.shard_lines = 0
+        self.shard_tokens = 0
+        self.total_lines = 0
+        self.total_tokens = 0
+        self.paths: list[Path] = []
+        self.shard_summaries: list[dict[str, int]] = []
+        self._out_fp = None
+        self._manifest_fp = None
+        self._open_next_shard()
+
+    def _shard_path(self, suffix: str) -> Path:
+        if self.exact_path is not None and self.shard_index == 1:
+            if suffix == ".jsonl":
+                return self.exact_path
+            return self.exact_path.with_suffix(suffix)
+        return self.out_dir / f"{self.prefix}_{self.shard_index:04d}{suffix}"
+
+    def _open_next_shard(self) -> None:
+        self._record_shard_summary()
+        self._close_current()
+        self.shard_index += 1
+        self.shard_bytes = 0
+        self.shard_lines = 0
+        self.shard_tokens = 0
+        out_path = self._shard_path(".jsonl")
+        self.paths.append(out_path)
+        self._out_fp = open(out_path, "w", encoding="utf-8")
+        if self.with_manifest:
+            self._manifest_fp = open(
+                self._shard_path(".manifest.jsonl"), "w", encoding="utf-8"
+            )
+
+    def _record_shard_summary(self) -> None:
+        if self.shard_lines > 0:
+            self.shard_summaries.append(
+                {
+                    "shard": self.shard_index,
+                    "lines": self.shard_lines,
+                    "bytes": self.shard_bytes,
+                    "est_tokens": self.shard_tokens,
+                }
+            )
+
+    def _close_current(self) -> None:
+        if self._out_fp is not None:
+            self._out_fp.close()
+            self._out_fp = None
+        if self._manifest_fp is not None:
+            self._manifest_fp.close()
+            self._manifest_fp = None
+
+    def write(self, line: str, manifest_record: dict[str, Any] | None) -> None:
+        line_bytes = len(line.encode("utf-8")) + 1
+        line_tokens = _estimate_tokens(line)
+        would_exceed = self.shard_lines > 0 and (
+            self.shard_bytes + line_bytes > self.max_bytes
+            or self.shard_tokens + line_tokens > self.max_tokens
+            or self.shard_lines + 1 > self.max_requests
+        )
+        if would_exceed:
+            self._open_next_shard()
+        self._out_fp.write(line + "\n")
+        self.shard_bytes += line_bytes
+        self.shard_lines += 1
+        self.shard_tokens += line_tokens
+        self.total_lines += 1
+        self.total_tokens += line_tokens
+        if self._manifest_fp is not None and manifest_record is not None:
+            self._manifest_fp.write(json.dumps(manifest_record, ensure_ascii=False) + "\n")
+
+    def close(self) -> None:
+        self._record_shard_summary()
+        self._close_current()
+
+
+async def cmd_export_qdrant(args: argparse.Namespace) -> None:
+    """Scroll a tenant's Qdrant chunks collection and write batch input JSONL.
+
+    The exported JSONL is for inspection / pilot submission by default --
+    custom_id is `qdrant:{point_id}`, which BatchClassifier.apply_batch_results
+    (the pending_classifications-based path) CANNOT join. Apply results from
+    this export with the `apply-qdrant` subcommand, which parses the
+    `qdrant:{point_id}` custom_id directly and writes straight to that point --
+    no pending_classifications row required. Pass --manifest (default when
+    --shard is set) so apply-qdrant has document_id/state/meeting_date/
+    entity_type per point.
+
+    Without --shard, writes a single file honoring --limit (small pilots).
+    With --shard, scrolls the collection rotating to a new numbered file
+    under --out-dir every --shard-max-bytes/--shard-max-tokens/
+    --shard-max-requests -- use this to export a full backlog for sequential
+    Tier-3-safe submission. --limit still applies as a total cap across all
+    shards when set (e.g. to run a smaller batch of the backlog first); pass
+    --limit 0 (or omit it) for no cap, i.e. the entire matching set.
+    """
+    if args.shard and not args.out_dir:
+        raise SystemExit("--out-dir is required with --shard")
+    if not args.shard and not args.out:
+        raise SystemExit("--out is required (or pass --shard --out-dir instead)")
+
+    # --limit means different things by mode: a small-pilot default of 200
+    # without --shard (unchanged historical behavior); unlimited by default
+    # with --shard (export the whole matching set), but still respected as a
+    # total cap across all shards when explicitly set -- e.g. to run a
+    # smaller slice of a large backlog first.
+    total_limit = args.limit
+    if total_limit is None:
+        total_limit = 200 if not args.shard else None
+    elif total_limit <= 0:
+        total_limit = None
+
     _refuse_openrouter()
     model = _openai_model()
     client = _get_qdrant_client()
@@ -312,142 +500,152 @@ async def cmd_export_qdrant(args: argparse.Namespace) -> None:
     except Exception as exc:
         raise SystemExit(f"Could not open collection '{collection_name}': {exc}")
 
-    written = 0
     skipped = 0
-    bytes_written = 0
     seen_custom_ids: set[str] = set()
     state_cache: dict[int, str | None] = {}
 
-    out_path = Path(args.out)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path = (
-        out_path.with_suffix(".manifest.jsonl") if args.manifest else None
-    )
-
-    with open(out_path, "w", encoding="utf-8") as out:
-        manifest_fp = (
-            open(manifest_path, "w", encoding="utf-8")
-            if manifest_path
-            else None
+    if args.shard:
+        writer = _ShardWriter(
+            out_dir=Path(args.out_dir),
+            prefix=args.prefix,
+            max_bytes=args.shard_max_bytes,
+            max_tokens=args.shard_max_tokens,
+            max_requests=args.shard_max_requests,
+            with_manifest=True,
         )
-        try:
-            offset = None
-            async with AsyncSessionLocal() as db:
-                while True:
-                    batch, offset = await asyncio.to_thread(
-                        client.scroll,
-                        collection_name=collection_name,
-                        limit=SCROLL_BATCH,
-                        offset=offset,
-                        with_payload=qdrant_models.PayloadSelectorInclude(
-                            include=[
-                                "text",
-                                "document_id",
-                                "chunk_index",
-                                "entity_type",
-                                "meeting_date",
-                                "classified",
-                            ]
-                        ),
-                        with_vectors=False,
+    else:
+        out_path = Path(args.out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        writer = _ShardWriter(
+            out_dir=out_path.parent,
+            prefix=out_path.stem,
+            max_bytes=10**18,  # effectively unlimited: single file
+            max_tokens=10**18,
+            max_requests=HARD_MAX_REQUESTS_PER_BATCH,
+            with_manifest=args.manifest,
+            exact_path=out_path,
+        )
+
+    try:
+        offset = None
+        async with AsyncSessionLocal() as db:
+            while True:
+                batch, offset = await asyncio.to_thread(
+                    client.scroll,
+                    collection_name=collection_name,
+                    limit=SCROLL_BATCH,
+                    offset=offset,
+                    with_payload=qdrant_models.PayloadSelectorInclude(
+                        include=[
+                            "text",
+                            "document_id",
+                            "chunk_index",
+                            "entity_type",
+                            "meeting_date",
+                            "classified",
+                        ]
+                    ),
+                    with_vectors=False,
+                )
+                for point in batch:
+                    payload = point.payload or {}
+                    chunk_text = payload.get("text")
+                    if not chunk_text:
+                        skipped += 1
+                        continue
+                    if args.only_classified and not payload.get("classified"):
+                        skipped += 1
+                        continue
+                    if args.skip_classified and payload.get("classified"):
+                        skipped += 1
+                        continue
+
+                    document_id = payload.get("document_id")
+                    if document_id is not None:
+                        document_id = int(document_id)
+                    if document_id not in state_cache:
+                        state_cache[document_id] = await _state_for_doc_id(
+                            db, document_id
+                        )
+                    state = state_cache[document_id]
+
+                    meeting_date = payload.get("meeting_date")
+                    if isinstance(meeting_date, str):
+                        meeting_date_iso = meeting_date
+                    elif meeting_date is not None:
+                        meeting_date_iso = str(meeting_date)
+                    else:
+                        meeting_date_iso = None
+
+                    custom_id = f"qdrant:{point.id}"
+                    if custom_id in seen_custom_ids:
+                        logger.warning(
+                            "Duplicate custom_id %s — skipping", custom_id
+                        )
+                        skipped += 1
+                        continue
+                    seen_custom_ids.add(custom_id)
+
+                    request = build_batch_request_line(
+                        custom_id=custom_id,
+                        chunk_text=chunk_text,
+                        entity_type=payload.get("entity_type"),
+                        meeting_date=meeting_date_iso,
+                        state=state,
+                        model=model,
                     )
-                    for point in batch:
-                        payload = point.payload or {}
-                        chunk_text = payload.get("text")
-                        if not chunk_text:
-                            skipped += 1
-                            continue
-                        if args.only_classified and not payload.get("classified"):
-                            skipped += 1
-                            continue
-                        if args.skip_classified and payload.get("classified"):
-                            skipped += 1
-                            continue
+                    request["body"] = _add_prompt_cache_key(
+                        request["body"], args.prompt_cache_key
+                    )
+                    line = serialize_batch_line(request)
+                    manifest_record = {
+                        "custom_id": custom_id,
+                        "point_id": str(point.id),
+                        "document_id": document_id,
+                        "chunk_index": payload.get("chunk_index"),
+                        "entity_type": payload.get("entity_type"),
+                        "meeting_date": meeting_date_iso,
+                        "state": state,
+                        "classified": payload.get("classified"),
+                    }
+                    writer.write(line, manifest_record)
 
-                        document_id = payload.get("document_id")
-                        if document_id is not None:
-                            document_id = int(document_id)
-                        if document_id not in state_cache:
-                            state_cache[document_id] = await _state_for_doc_id(
-                                db, document_id
-                            )
-                        state = state_cache[document_id]
-
-                        meeting_date = payload.get("meeting_date")
-                        if isinstance(meeting_date, str):
-                            meeting_date_iso = meeting_date
-                        elif meeting_date is not None:
-                            meeting_date_iso = str(meeting_date)
-                        else:
-                            meeting_date_iso = None
-
-                        custom_id = f"qdrant:{point.id}"
-                        if custom_id in seen_custom_ids:
-                            logger.warning(
-                                "Duplicate custom_id %s — skipping", custom_id
-                            )
-                            skipped += 1
-                            continue
-                        seen_custom_ids.add(custom_id)
-
-                        request = build_batch_request_line(
-                            custom_id=custom_id,
-                            chunk_text=chunk_text,
-                            entity_type=payload.get("entity_type"),
-                            meeting_date=meeting_date_iso,
-                            state=state,
-                            model=model,
+                    if total_limit is not None and writer.total_lines >= total_limit:
+                        logger.info(
+                            "Reached --limit %d; stopping scroll", total_limit
                         )
-                        request["body"] = _add_prompt_cache_key(
-                            request["body"], args.prompt_cache_key
-                        )
-                        line = serialize_batch_line(request)
-                        out.write(line + "\n")
-                        bytes_written += len(line.encode("utf-8")) + 1
-
-                        if manifest_fp is not None:
-                            manifest_fp.write(
-                                json.dumps(
-                                    {
-                                        "custom_id": custom_id,
-                                        "point_id": str(point.id),
-                                        "document_id": document_id,
-                                        "chunk_index": payload.get("chunk_index"),
-                                        "state": state,
-                                        "classified": payload.get("classified"),
-                                    },
-                                    ensure_ascii=False,
-                                )
-                                + "\n"
-                            )
-
-                        written += 1
-                        if written >= args.limit:
-                            logger.info(
-                                "Reached --limit %d; stopping scroll", args.limit
-                            )
-                            break
-
-                    if written >= args.limit or offset is None:
                         break
-        finally:
-            if manifest_fp is not None:
-                manifest_fp.close()
+
+                if (total_limit is not None and writer.total_lines >= total_limit) or offset is None:
+                    break
+    finally:
+        writer.close()
 
     logger.info(
-        "Wrote %d lines (%.1f MB) to %s; skipped %d",
-        written,
-        bytes_written / 1024 / 1024,
-        out_path,
+        "Wrote %d lines (~%d est. input tokens) across %d file(s) under %s; skipped %d",
+        writer.total_lines,
+        writer.total_tokens,
+        len(writer.paths),
+        writer.out_dir,
         skipped,
     )
-    if manifest_path is not None:
-        logger.info("Wrote manifest to %s", manifest_path)
-    if bytes_written > DEFAULT_MAX_BYTES:
-        logger.warning(
-            "Output is %.1f MB — over the 200 MB Batch file cap. Split it "
-            "before submitting (see --max-bytes on a future split subcommand).",
-            bytes_written / 1024 / 1024,
+    for p, summary in zip(writer.paths, writer.shard_summaries):
+        size_mb = summary["bytes"] / 1024 / 1024
+        pct_of_cap = 100 * summary["est_tokens"] / TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS
+        logger.info(
+            "  %s: %d lines, %.1f MB, ~%d est. tokens (%.0f%% of Tier-3 40M queue cap)",
+            p,
+            summary["lines"],
+            size_mb,
+            summary["est_tokens"],
+            pct_of_cap,
+        )
+    if args.shard:
+        logger.info(
+            "Submit these shards SEQUENTIALLY (submit -> wait -> apply-qdrant -> "
+            "next shard). Tier 3's 40,000,000-token batch queue limit for "
+            "gpt-4o-mini means having more than one of these in flight at once "
+            "risks a queue-limit rejection."
         )
 
 
@@ -611,10 +809,48 @@ def cmd_submit(args: argparse.Namespace) -> None:
 
     size_mb = input_path.stat().st_size / 1024 / 1024
     logger.info("Uploading %s (%.1f MB)", input_path, size_mb)
-    if size_mb > 200:
+    if size_mb > HARD_MAX_FILE_BYTES / 1024 / 1024:
         raise SystemExit(
-            f"Input file is {size_mb:.1f} MB — over the 200 MB Batch cap. "
-            "Split it before submitting."
+            f"Input file is {size_mb:.1f} MB — over the "
+            f"{HARD_MAX_FILE_BYTES // 1024 // 1024} MB Batch cap (universal, "
+            "all tiers). Split it before submitting (see `export-qdrant --shard`)."
+        )
+
+    n_lines = 0
+    est_tokens = 0
+    with open(input_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            n_lines += 1
+            est_tokens += _estimate_tokens(line)
+    if n_lines > HARD_MAX_REQUESTS_PER_BATCH:
+        raise SystemExit(
+            f"Input file has {n_lines} requests — over the "
+            f"{HARD_MAX_REQUESTS_PER_BATCH} Batch per-file request cap "
+            "(universal, all tiers). Split it before submitting."
+        )
+    pct_of_cap = 100 * est_tokens / TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS
+    logger.info(
+        "%d requests, ~%d est. input tokens (%.0f%% of the Tier-3 gpt-4o-mini "
+        "40,000,000-token batch queue limit)",
+        n_lines,
+        est_tokens,
+        pct_of_cap,
+    )
+    if est_tokens > TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS and not args.force:
+        raise SystemExit(
+            f"Estimated ~{est_tokens} input tokens exceeds the Tier-3 "
+            f"gpt-4o-mini batch queue limit ({TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS}) "
+            "on its own -- OpenAI will likely reject this submission (or it "
+            "will block any other batch for this model from being enqueued). "
+            "Split it before submitting (see `export-qdrant --shard`), or pass "
+            "--force if you are certain your org is on a higher tier."
+        )
+    if est_tokens > TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS:
+        logger.warning(
+            "--force set: submitting despite exceeding the Tier-3 queue limit estimate."
         )
 
     with open(input_path, "rb") as f:
@@ -827,6 +1063,175 @@ def _log_usage(batch) -> None:
 
 
 # ---------------------------------------------------------------------------
+# apply-qdrant
+# ---------------------------------------------------------------------------
+
+
+async def cmd_apply_qdrant(args: argparse.Namespace) -> None:
+    """Apply a completed batch's output straight to Qdrant, by point id.
+
+    Counterpart to `export-qdrant`: that export's custom_id is
+    `qdrant:{point_id}`, which BatchClassifier.apply_batch_results (the
+    pending_classifications-based path) cannot join. This command parses
+    that custom_id directly, so it needs no DB row per chunk -- it writes
+    to Qdrant using --manifest (from export-qdrant --manifest, matching the
+    exact shard) purely to recover document_id/state/meeting_date/entity_type
+    for the same payload shape + heatmap_aggregate upsert that
+    BatchClassifier.apply_batch_results produces.
+
+    Reuses BatchClassifier._build_payload_metadata / _upsert_heatmap_aggregate
+    (private, but pure/DB-only helpers with no OpenAI/S3 side effects) so the
+    Qdrant payload shape and aggregate math stay identical to the normal
+    pending_classifications path -- duplicating that logic here would be a
+    correctness risk for no benefit.
+
+    Also reconciles pending_classifications: any row whose qdrant_point_id
+    matches an applied point (regardless of its current status) is flipped
+    to 'applied', so a stale/orphaned row from a reprocessed document stops
+    showing up in `count`'s pending total and can't be redundantly
+    resubmitted by the daily submit_pending_batch_classification cron.
+    """
+    from sqlalchemy import update
+
+    from app.models.pending_classification import PendingClassification
+    from app.services.heatmap_ingest.batch_classifier import BatchClassifier
+    from app.services.heatmap_ingest.taxonomy import ChunkClassification
+    from app.services.vector_store.factory import VectorStoreFactory, VectorStoreType
+
+    manifest: dict[str, dict[str, Any]] = {}
+    with open(args.manifest, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            manifest[row["custom_id"]] = row
+
+    classifier = BatchClassifier()
+    vector_store = VectorStoreFactory.create(VectorStoreType(settings.VECTOR_STORE_TYPE))
+
+    stats = {"applied": 0, "failed": 0, "skipped_no_manifest": 0}
+    per_doc_classifications: dict[int, list[tuple[Any, ChunkClassification]]] = {}
+    reconciled_point_ids: list[str] = []
+
+    with open(args.output, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                result = json.loads(line)
+            except json.JSONDecodeError as exc:
+                logger.warning("Skipping unparseable output line: %s", exc)
+                stats["failed"] += 1
+                continue
+
+            custom_id = result.get("custom_id")
+            manifest_row = manifest.get(custom_id)
+            if manifest_row is None:
+                logger.warning(
+                    "custom_id %s not found in manifest %s -- skipping",
+                    custom_id,
+                    args.manifest,
+                )
+                stats["skipped_no_manifest"] += 1
+                continue
+
+            point_id = manifest_row["point_id"]
+            document_id = manifest_row.get("document_id")
+
+            error = result.get("error")
+            if error:
+                logger.warning("point %s: batch error %s", point_id, error)
+                stats["failed"] += 1
+                continue
+
+            try:
+                body = result["response"]["body"]
+                content = body["choices"][0]["message"]["content"]
+                payload = json.loads(content)
+                classification = ChunkClassification.model_validate(payload)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("point %s: parse error %s", point_id, exc)
+                stats["failed"] += 1
+                continue
+
+            metadata = classifier._build_payload_metadata(
+                classification, row_entity_type=manifest_row.get("entity_type")
+            )
+            try:
+                await classifier._update_metadata_with_retry(
+                    vector_store,
+                    chunk_ids=[point_id],
+                    metadata=metadata,
+                    tenant_id=args.tenant_id,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.error("point %s: qdrant set_payload failed: %s", point_id, exc)
+                stats["failed"] += 1
+                continue
+
+            stats["applied"] += 1
+            reconciled_point_ids.append(point_id)
+
+            if document_id is not None:
+                meeting_date = None
+                meeting_date_str = manifest_row.get("meeting_date")
+                if meeting_date_str:
+                    try:
+                        meeting_date = date.fromisoformat(meeting_date_str[:10])
+                    except ValueError:
+                        meeting_date = None
+                fake_pending = SimpleNamespace(
+                    document_id=document_id, meeting_date=meeting_date
+                )
+                per_doc_classifications.setdefault(document_id, []).append(
+                    (fake_pending, classification)
+                )
+
+    logger.info(
+        "Applied %d point(s) to Qdrant; %d failed; %d skipped (no manifest match)",
+        stats["applied"],
+        stats["failed"],
+        stats["skipped_no_manifest"],
+    )
+
+    async with AsyncSessionLocal() as db:
+        try:
+            await classifier._upsert_heatmap_aggregate(db, per_doc_classifications)
+            await db.commit()
+            logger.info(
+                "Upserted heatmap_aggregate for %d document(s)",
+                len(per_doc_classifications),
+            )
+        except Exception:  # noqa: BLE001
+            await db.rollback()
+            logger.error(
+                "heatmap_aggregate upsert failed -- Qdrant payloads above are "
+                "still applied and safe; nightly reconcile_heatmap_aggregate "
+                "will backfill the aggregate.",
+                exc_info=True,
+            )
+
+        # Reconcile pending_classifications so stale/orphaned rows (see
+        # `count`'s gap warning) stop being re-submitted by the daily cron.
+        if reconciled_point_ids and not args.no_reconcile_pending:
+            result = await db.execute(
+                update(PendingClassification)
+                .where(
+                    PendingClassification.qdrant_point_id.in_(reconciled_point_ids),
+                    PendingClassification.status != "applied",
+                )
+                .values(status="applied", error_message=None)
+            )
+            await db.commit()
+            logger.info(
+                "Reconciled %d pending_classifications row(s) to status='applied'",
+                result.rowcount,
+            )
+
+
+# ---------------------------------------------------------------------------
 # status
 # ---------------------------------------------------------------------------
 
@@ -887,8 +1292,54 @@ def main() -> None:
         help="Scroll a tenant's Qdrant chunks and build a batch input JSONL",
     )
     e.add_argument("--tenant-id", type=int, required=True)
-    e.add_argument("--limit", type=int, default=200, help="max chunks to export")
-    e.add_argument("--out", required=True, help="output .jsonl path")
+    e.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="max chunks to export, total across all shards if --shard is set "
+        "(default: 200 without --shard for small pilots; unlimited -- the "
+        "entire matching set -- with --shard)",
+    )
+    e.add_argument("--out", default=None, help="output .jsonl path (single-file mode, no --shard)")
+    e.add_argument(
+        "--shard",
+        action="store_true",
+        help="export the ENTIRE matching set, rotating to a new numbered file "
+        "under --out-dir every --shard-max-bytes (for full-backlog exports)",
+    )
+    e.add_argument(
+        "--out-dir",
+        default=None,
+        help="directory for shard files (required with --shard)",
+    )
+    e.add_argument(
+        "--prefix",
+        default="shard",
+        help="filename prefix for shard files, e.g. tenant4 -> tenant4_0001.jsonl",
+    )
+    e.add_argument(
+        "--shard-max-bytes",
+        type=int,
+        default=DEFAULT_MAX_BYTES,
+        help=f"bytes per shard before rotating (default {DEFAULT_MAX_BYTES}, "
+        f"hard-capped at {HARD_MAX_FILE_BYTES} — the universal 200 MB Batch file limit)",
+    )
+    e.add_argument(
+        "--shard-max-tokens",
+        type=int,
+        default=DEFAULT_SHARD_MAX_TOKENS,
+        help=f"estimated input tokens per shard before rotating (default "
+        f"{DEFAULT_SHARD_MAX_TOKENS} = 80% of the Tier-3 gpt-4o-mini batch queue "
+        f"limit of {TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS}; lower this if on "
+        "a lower tier, e.g. Tier 1 -> 1_600_000, Tier 2 -> 16_000_000)",
+    )
+    e.add_argument(
+        "--shard-max-requests",
+        type=int,
+        default=HARD_MAX_REQUESTS_PER_BATCH,
+        help=f"requests per shard before rotating (hard-capped at "
+        f"{HARD_MAX_REQUESTS_PER_BATCH} — the universal Batch per-file request limit)",
+    )
     e.add_argument(
         "--only-classified",
         action="store_true",
@@ -946,6 +1397,12 @@ def main() -> None:
     s = sub.add_parser("submit", help="upload + create an OpenAI Batch")
     s.add_argument("--input", required=True, help="input .jsonl path")
     s.add_argument("--meta", required=True, help="where to write batch metadata")
+    s.add_argument(
+        "--force",
+        action="store_true",
+        help="submit even if the estimated input tokens exceed the Tier-3 "
+        "gpt-4o-mini batch queue limit (40,000,000)",
+    )
     s.set_defaults(func=cmd_submit)
 
     w = sub.add_parser(
@@ -961,6 +1418,25 @@ def main() -> None:
     )
     w.add_argument("--poll-seconds", type=int, default=30)
     w.set_defaults(func=cmd_wait)
+
+    aq = sub.add_parser(
+        "apply-qdrant",
+        help="apply a completed batch's output.jsonl straight to Qdrant by point id "
+        "(counterpart to export-qdrant; no pending_classifications row required)",
+    )
+    aq.add_argument("--output", required=True, help="output.jsonl from `wait`")
+    aq.add_argument(
+        "--manifest",
+        required=True,
+        help="matching <shard>.manifest.jsonl from export-qdrant --manifest",
+    )
+    aq.add_argument("--tenant-id", type=int, required=True)
+    aq.add_argument(
+        "--no-reconcile-pending",
+        action="store_true",
+        help="skip flipping matching pending_classifications rows to 'applied'",
+    )
+    aq.set_defaults(func=cmd_apply_qdrant)
 
     st = sub.add_parser(
         "status", help="one-shot retrieve: status, counts, file ids"
