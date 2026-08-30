@@ -79,6 +79,42 @@ class BatchClassifier:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
 
+    async def _wait_for_file_processed(
+        self,
+        file_id: str,
+        *,
+        poll_interval_s: float = 1.0,
+        timeout_s: float = 60.0,
+    ) -> None:
+        """Block until an uploaded Files API object reaches status='processed'.
+
+        Immediately calling batches.create with a freshly-created file_id can
+        fail with "Cannot find file ... or organization does not have access
+        to it" even though the file is valid and shows status='processed'
+        moments later -- OpenAI's file-create and batch-create paths read
+        from backends that aren't always consistent within the first second.
+        A short poll here avoids burning a whole batch (and a retry_count) on
+        that race.
+        """
+        elapsed = 0.0
+        while elapsed < timeout_s:
+            file_obj = await self._client.files.retrieve(file_id)
+            if file_obj.status == "processed":
+                return
+            if file_obj.status in ("error",):
+                raise RuntimeError(
+                    f"File {file_id} failed processing on OpenAI's side "
+                    f"(status={file_obj.status})."
+                )
+            await asyncio.sleep(poll_interval_s)
+            elapsed += poll_interval_s
+        logger.warning(
+            "File %s did not reach status='processed' within %ss; "
+            "proceeding anyway.",
+            file_id,
+            timeout_s,
+        )
+
     # ------------------------------------------------------------------
     # 1. Submit
     # ------------------------------------------------------------------
@@ -180,6 +216,13 @@ class BatchClassifier:
             file=("input.jsonl", io.BytesIO(jsonl_bytes), "application/jsonl"),
             purpose="batch",
         )
+        # files.create can return before the file is queryable by
+        # batches.create on OpenAI's backend -- calling batches.create
+        # immediately intermittently fails with "Cannot find file ... or
+        # organization does not have access to it" even though the file
+        # shows status="processed" moments later via files.retrieve/list.
+        # Poll the file's own status until it flips to "processed" first.
+        await self._wait_for_file_processed(file_obj.id)
         batch = await self._client.batches.create(
             input_file_id=file_obj.id,
             endpoint="/v1/chat/completions",
