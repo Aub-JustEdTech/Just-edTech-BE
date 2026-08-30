@@ -463,14 +463,28 @@ async def cmd_export_qdrant(args: argparse.Namespace) -> None:
     entity_type per point.
 
     Without --shard, writes a single file honoring --limit (small pilots).
-    With --shard, ignores --limit and scrolls the *entire* collection,
-    rotating to a new numbered file under --out-dir every --shard-max-bytes --
-    use this to export a full backlog for sequential Tier-3-safe submission.
+    With --shard, scrolls the collection rotating to a new numbered file
+    under --out-dir every --shard-max-bytes/--shard-max-tokens/
+    --shard-max-requests -- use this to export a full backlog for sequential
+    Tier-3-safe submission. --limit still applies as a total cap across all
+    shards when set (e.g. to run a smaller batch of the backlog first); pass
+    --limit 0 (or omit it) for no cap, i.e. the entire matching set.
     """
     if args.shard and not args.out_dir:
         raise SystemExit("--out-dir is required with --shard")
     if not args.shard and not args.out:
         raise SystemExit("--out is required (or pass --shard --out-dir instead)")
+
+    # --limit means different things by mode: a small-pilot default of 200
+    # without --shard (unchanged historical behavior); unlimited by default
+    # with --shard (export the whole matching set), but still respected as a
+    # total cap across all shards when explicitly set -- e.g. to run a
+    # smaller slice of a large backlog first.
+    total_limit = args.limit
+    if total_limit is None:
+        total_limit = 200 if not args.shard else None
+    elif total_limit <= 0:
+        total_limit = None
 
     _refuse_openrouter()
     model = _openai_model()
@@ -596,13 +610,13 @@ async def cmd_export_qdrant(args: argparse.Namespace) -> None:
                     }
                     writer.write(line, manifest_record)
 
-                    if not args.shard and writer.total_lines >= args.limit:
+                    if total_limit is not None and writer.total_lines >= total_limit:
                         logger.info(
-                            "Reached --limit %d; stopping scroll", args.limit
+                            "Reached --limit %d; stopping scroll", total_limit
                         )
                         break
 
-                if (not args.shard and writer.total_lines >= args.limit) or offset is None:
+                if (total_limit is not None and writer.total_lines >= total_limit) or offset is None:
                     break
     finally:
         writer.close()
@@ -1278,7 +1292,14 @@ def main() -> None:
         help="Scroll a tenant's Qdrant chunks and build a batch input JSONL",
     )
     e.add_argument("--tenant-id", type=int, required=True)
-    e.add_argument("--limit", type=int, default=200, help="max chunks to export (ignored with --shard)")
+    e.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="max chunks to export, total across all shards if --shard is set "
+        "(default: 200 without --shard for small pilots; unlimited -- the "
+        "entire matching set -- with --shard)",
+    )
     e.add_argument("--out", default=None, help="output .jsonl path (single-file mode, no --shard)")
     e.add_argument(
         "--shard",
