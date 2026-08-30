@@ -501,6 +501,7 @@ async def cmd_export_qdrant(args: argparse.Namespace) -> None:
         raise SystemExit(f"Could not open collection '{collection_name}': {exc}")
 
     skipped = 0
+    malformed_document_id = 0
     seen_custom_ids: set[str] = set()
     state_cache: dict[int, str | None] = {}
 
@@ -560,9 +561,34 @@ async def cmd_export_qdrant(args: argparse.Namespace) -> None:
                         skipped += 1
                         continue
 
-                    document_id = payload.get("document_id")
-                    if document_id is not None:
-                        document_id = int(document_id)
+                    document_id_raw = payload.get("document_id")
+                    document_id = None
+                    if document_id_raw is not None:
+                        try:
+                            document_id = int(document_id_raw)
+                        except (TypeError, ValueError):
+                            # A handful of chunks carry a non-numeric
+                            # `document_id` payload value (e.g.
+                            # "school-03420000-<hash>") -- almost certainly
+                            # a source-system identifier from doc_metadata
+                            # that leaked in and shadowed our own integer
+                            # document_id key at ingest time (see
+                            # document_pipeline.py's `**doc_meta_clean`
+                            # spread). Still export/classify the chunk text
+                            # itself (it's unaffected); just drop state
+                            # lookup and skip this chunk's contribution to
+                            # heatmap_aggregate later in apply-qdrant (its
+                            # nightly reconcile job backfills from Qdrant
+                            # regardless).
+                            malformed_document_id += 1
+                            if malformed_document_id <= 5:
+                                logger.warning(
+                                    "point %s: non-numeric document_id payload "
+                                    "%r -- exporting chunk without state/"
+                                    "aggregate linkage",
+                                    point.id,
+                                    document_id_raw,
+                                )
                     if document_id not in state_cache:
                         state_cache[document_id] = await _state_for_doc_id(
                             db, document_id
@@ -629,6 +655,14 @@ async def cmd_export_qdrant(args: argparse.Namespace) -> None:
         writer.out_dir,
         skipped,
     )
+    if malformed_document_id:
+        logger.warning(
+            "%d chunk(s) had a non-numeric document_id payload -- exported "
+            "for classification, but excluded from heatmap_aggregate in "
+            "apply-qdrant (nightly reconcile_heatmap_aggregate backfills it "
+            "from Qdrant). See earlier warnings for sample point/value pairs.",
+            malformed_document_id,
+        )
     for p, summary in zip(writer.paths, writer.shard_summaries):
         size_mb = summary["bytes"] / 1024 / 1024
         pct_of_cap = 100 * summary["est_tokens"] / TIER3_GPT4O_MINI_BATCH_QUEUE_LIMIT_TOKENS
