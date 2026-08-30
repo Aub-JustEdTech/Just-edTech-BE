@@ -20,6 +20,12 @@ Run detached (the run spans hours):
 
 For Tier 2 (20M limit), pass --batch-max-mb 70 to use ~2,000-chunk batches.
 
+Pass --max-chunks N to stop after ~N chunks have been submitted this run
+instead of draining the entire pending pool (e.g. --max-chunks 111000 for a
+first, smaller pass). The cap is checked before each batch, so the final
+batch can slightly overshoot N. Remaining pending rows are left untouched --
+re-run later (with a higher/no cap) to continue.
+
 Tail progress:
 
     docker exec just-edtech-api cat /tmp/heatmap_submit.log
@@ -104,10 +110,29 @@ async def wait_for_initial_batch(client: OpenAI, batch_id: str) -> str:
     return b.status
 
 
-async def submit_loop(classifier: BatchClassifier) -> None:
-    """Submit batches one at a time until the pending pool is drained."""
+async def submit_loop(
+    classifier: BatchClassifier, max_chunks: int | None = None
+) -> None:
+    """Submit batches one at a time until the pending pool is drained.
+
+    max_chunks: stop once this many chunks have been *submitted* (checked
+    before each new submit, not mid-batch -- the last batch can slightly
+    overshoot since submit_pending_batch pulls a fixed-size slice). Pass
+    None (default) to drain the entire pending pool, matching the original
+    batch-1 behavior.
+    """
     batch_num = 0
+    total_chunks_submitted = 0
     while True:
+        if max_chunks is not None and total_chunks_submitted >= max_chunks:
+            logger.info(
+                "Reached --max-chunks %s (%s submitted); stopping before the "
+                "next batch. Remaining pending rows are untouched -- re-run "
+                "without --max-chunks (or with a higher value) to continue.",
+                max_chunks,
+                total_chunks_submitted,
+            )
+            return
         try:
             async with AsyncSessionLocal() as db:
                 job = await classifier.submit_pending_batch(db)
@@ -115,11 +140,13 @@ async def submit_loop(classifier: BatchClassifier) -> None:
                     logger.info("No more pending; done.")
                     return
                 batch_num += 1
+                total_chunks_submitted += job.chunk_count
                 logger.info(
-                    "[%s] Submitted %s (%s chunks)",
+                    "[%s] Submitted %s (%s chunks, %s total this run)",
                     batch_num,
                     job.batch_id,
                     job.chunk_count,
+                    total_chunks_submitted,
                 )
 
                 while True:
@@ -177,6 +204,18 @@ async def main() -> int:
             "Use 70 for Tier 2 (20M limit, ~2,000 chunks/batch)."
         ),
     )
+    parser.add_argument(
+        "--max-chunks",
+        type=int,
+        default=None,
+        help=(
+            "Stop submitting once this many chunks have been submitted this "
+            "run (checked before each batch, so the last batch can slightly "
+            "overshoot). Default: drain the entire pending pool (original "
+            "batch-1 behavior). Remaining pending rows are left untouched -- "
+            "re-run later (with a higher value or no cap) to continue."
+        ),
+    )
     args = parser.parse_args()
 
     if uses_openrouter():
@@ -198,8 +237,11 @@ async def main() -> int:
     if args.initial_batch_id:
         await wait_for_initial_batch(client, args.initial_batch_id)
 
+    if args.max_chunks is not None:
+        logger.info("Capping this run at %s chunks (--max-chunks)", args.max_chunks)
+
     classifier = BatchClassifier()
-    await submit_loop(classifier)
+    await submit_loop(classifier, max_chunks=args.max_chunks)
     return 0
 
 
