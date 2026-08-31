@@ -898,6 +898,39 @@ class SchoolScraperService:
         )
         return True
 
+    def _append_zoom_media(
+        self,
+        media_files: list[dict],
+        seen_media: set[str],
+        *,
+        url: str,
+        page_url: str,
+        name: str | None = None,
+    ) -> None:
+        """Record a Zoom recording link as ``media_type="zoom"``.
+
+        Zoom recordings are never fetchable here — the real download is a
+        signed, sometimes passcode-gated URL on the share page, not a
+        fetchable file — so ingestion must recognize this type and skip it
+        immediately rather than attempt a fetch. Persisting the link (rather
+        than silently dropping it, as before) means it shows up in a normal
+        query instead of only a one-off log line, so a human can audit
+        whether anything relevant was missed.
+        """
+        if url in seen_media:
+            return
+        seen_media.add(url)
+        media_files.append(
+            {
+                "name": name or url,
+                "url": url,
+                "file_extension": None,
+                "media_type": "zoom",
+                "size_bytes": None,
+                "source_page_url": page_url,
+            }
+        )
+
     async def _extract_youtube_from_text(
         self,
         text: str,
@@ -1174,13 +1207,16 @@ class SchoolScraperService:
                     ):
                         pass
                     elif self._is_zoom_recording_url(full_url):
-                        # Zoom recordings are out of scope — see _ZOOM_HOST_RE.
-                        logger.warning(
-                            "Skipping Zoom recording link %s — Zoom recordings "
-                            "are not supported (the real download is a signed, "
-                            "sometimes passcode-gated URL on the share page, "
-                            "not a fetchable file)",
-                            full_url,
+                        # Recorded (not dropped) — see _ZOOM_HOST_RE and
+                        # _append_zoom_media. Ingestion skips media_type="zoom"
+                        # immediately since the real download is a signed,
+                        # sometimes passcode-gated URL, not a fetchable file.
+                        self._append_zoom_media(
+                            media_files,
+                            seen_media,
+                            url=full_url,
+                            page_url=page_url,
+                            name=link_text,
                         )
                     elif self._is_shortlink_candidate(base_domain, parsed.netloc):
                         # A same-organization vanity short link (e.g.
@@ -1190,11 +1226,12 @@ class SchoolScraperService:
                         if not resolved:
                             pass
                         elif self._is_zoom_recording_url(resolved):
-                            logger.warning(
-                                "Skipping short link %s -> Zoom recording %s — "
-                                "Zoom recordings are not supported",
-                                full_url,
-                                resolved,
+                            self._append_zoom_media(
+                                media_files,
+                                seen_media,
+                                url=resolved,
+                                page_url=page_url,
+                                name=link_text,
                             )
                         elif await self._append_youtube_media(
                             media_files,
