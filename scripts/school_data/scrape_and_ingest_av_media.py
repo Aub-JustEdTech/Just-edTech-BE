@@ -92,6 +92,7 @@ async def scrape_and_ingest(
     logger.info("Step 2/2 — ingest (fetch + transcribe + ingest, in-process)")
     logger.info("=" * 70)
     ingest_stats = await run_ingest_av_media(
+        tenant_id=tenant_id,
         extensions=ingest_extensions,
         statuses=ingest_statuses,
         school_id=None,

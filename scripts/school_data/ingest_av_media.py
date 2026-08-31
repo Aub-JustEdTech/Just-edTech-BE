@@ -13,7 +13,15 @@ are the same app.core.config.settings the API/Celery workers use, so the
 script behaves the same in local and production as long as the environment
 is configured the same way.
 
-Env vars (all optional, all have safe local-friendly defaults):
+``--tenant-id`` (or ``AV_INGEST_TENANT_ID``) is REQUIRED — this script has no
+tenant-scoping otherwise, and would silently ingest/upload another tenant's
+rows if one were ever left sitting at a matching status. Always scope it
+explicitly, on both local and production runs.
+
+Env vars (all optional except AV_INGEST_TENANT_ID; the rest have safe
+local-friendly defaults):
+    AV_INGEST_TENANT_ID    REQUIRED. Only ScrapedMedia rows for this tenant
+                            are considered.
     AV_INGEST_EXTENSIONS   Comma list of file extensions treated as
                             "audio/video" (default: .mp4,.webm,.mp3)
     AV_INGEST_STATUSES     Comma list of scraped_media.status values to pick
@@ -29,16 +37,16 @@ Env vars (all optional, all have safe local-friendly defaults):
 
 Usage:
     # Local dry-run, see what would be picked up
-    AV_INGEST_DRY_RUN=true python scripts/school_data/ingest_av_media.py
+    AV_INGEST_DRY_RUN=true python scripts/school_data/ingest_av_media.py --tenant-id 2
 
     # Local real run, small batch
-    AV_INGEST_LIMIT=5 python scripts/school_data/ingest_av_media.py
+    python scripts/school_data/ingest_av_media.py --tenant-id 2 --limit 5
 
-    # Production run (same script, env vars set in the prod environment)
-    python scripts/school_data/ingest_av_media.py
+    # Production run (same script — just the tenant id differs)
+    python scripts/school_data/ingest_av_media.py --tenant-id 4
 
     # CLI flags override the env vars above if both are given
-    python scripts/school_data/ingest_av_media.py --dry-run --limit 5 --concurrency 3
+    python scripts/school_data/ingest_av_media.py --tenant-id 4 --dry-run --limit 5 --concurrency 3
 """
 
 from __future__ import annotations
@@ -162,6 +170,7 @@ def _apply_classification(bucket: dict, classification: str) -> None:
 
 async def _fetch_candidate_rows(
     *,
+    tenant_id: int,
     extensions: list[str],
     statuses: list[str],
     school_id: int | None,
@@ -169,6 +178,7 @@ async def _fetch_candidate_rows(
 ) -> list[ScrapedMedia]:
     async with AsyncSessionLocal() as db:
         conditions = [
+            ScrapedMedia.tenant_id == tenant_id,
             ScrapedMedia.status.in_(statuses),
             or_(
                 ScrapedMedia.media_type == YOUTUBE,
@@ -218,6 +228,7 @@ async def _ingest_one(sm_id: int, semaphore: asyncio.Semaphore) -> tuple[float, 
 
 async def run(
     *,
+    tenant_id: int,
     extensions: list[str],
     statuses: list[str],
     school_id: int | None,
@@ -227,6 +238,7 @@ async def run(
 ) -> dict:
     logger.info("=" * 70)
     logger.info("YouTube + Audio/Video ingest")
+    logger.info("  tenant_id    : %s", tenant_id)
     logger.info("  extensions   : %s", extensions)
     logger.info("  statuses     : %s", statuses)
     logger.info("  school_id    : %s", school_id or "(all)")
@@ -236,7 +248,11 @@ async def run(
     logger.info("=" * 70)
 
     rows = await _fetch_candidate_rows(
-        extensions=extensions, statuses=statuses, school_id=school_id, limit=limit
+        tenant_id=tenant_id,
+        extensions=extensions,
+        statuses=statuses,
+        school_id=school_id,
+        limit=limit,
     )
 
     youtube_rows = [r for r in rows if r.media_type == YOUTUBE]
@@ -330,6 +346,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Fetch + ingest youtube and audio/video ScrapedMedia rows."
     )
+    parser.add_argument(
+        "--tenant-id",
+        type=int,
+        default=None,
+        help="REQUIRED (or set AV_INGEST_TENANT_ID). Only this tenant's rows are ingested.",
+    )
     parser.add_argument("--extensions", type=str, default=None, help="Comma list, overrides AV_INGEST_EXTENSIONS")
     parser.add_argument("--statuses", type=str, default=None, help="Comma list, overrides AV_INGEST_STATUSES")
     parser.add_argument("--school-id", type=int, default=None)
@@ -338,6 +360,14 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", default=None)
     parser.add_argument("--log-dir", type=str, default=None)
     args = parser.parse_args()
+
+    tenant_id = args.tenant_id if args.tenant_id is not None else _env_int("AV_INGEST_TENANT_ID", None)
+    if tenant_id is None:
+        parser.error(
+            "--tenant-id is required (or set AV_INGEST_TENANT_ID) — this "
+            "script has no tenant scoping otherwise and would ingest/upload "
+            "any tenant's matching rows."
+        )
 
     extensions = (
         [e.strip() for e in args.extensions.split(",")]
@@ -361,6 +391,7 @@ def main() -> None:
     try:
         stats = asyncio.run(
             run(
+                tenant_id=tenant_id,
                 extensions=extensions,
                 statuses=statuses,
                 school_id=school_id,
