@@ -2,12 +2,19 @@
 
 When ``youtube-transcript-api`` has no captions, or YouTube blocks the
 request outright, this fetches the transcript from Supadata instead of
-downloading the video ourselves. Supadata does its own audio extraction
-server-side (native captions first, ASR fallback), so YouTube's bot-detection
-becomes Supadata's infrastructure problem, not ours — the failure mode this
-replaces (yt-dlp getting 403'd or IP-blocked, even with a PO Token, JS
-runtime and proxy in front of it) cannot happen here because we never talk
-to YouTube directly for this step.
+downloading the video ourselves. Supadata fetches server-side, so YouTube's
+bot-detection becomes Supadata's infrastructure problem, not ours — the
+failure mode this replaces (yt-dlp getting 403'd or IP-blocked, even with a
+PO Token, JS runtime and proxy in front of it) cannot happen here because we
+never talk to YouTube directly for this step.
+
+Uses ``mode=native`` — existing/official captions only. A video with no
+native captions (e.g. music-only content with no speech) returns nothing
+from Supadata rather than falling back to Supadata's own AI-generated
+transcription (``mode=auto``/``mode=generate``), which is billed per minute
+of video regardless of whether it finds usable speech. That fallback would
+otherwise re-run on every retry of a `no_transcript` row, paying repeatedly
+for videos that will never have a transcript.
 
 Ported from the POC in ``scripts/school_data/supadata_trial.py`` once that
 trial confirmed the integration works; the standalone script is retired.
@@ -60,7 +67,9 @@ async def fetch_supadata_transcript(url: str) -> TranscriptResult | None:
     headers = {"x-api-key": settings.SUPADATA_API_KEY}
     params = {
         "url": url,
-        "mode": "auto",
+        # native = existing captions only, never falls back to Supadata's
+        # paid AI generation. See module docstring.
+        "mode": "native",
         # False keeps per-segment offset/duration timestamps; True would
         # flatten to one string and throw away click-to-jump timing.
         "text": "false",
