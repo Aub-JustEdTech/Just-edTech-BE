@@ -38,54 +38,24 @@ from app.services.web_scraper.markdown_converter import MarkdownConverter
 from app.services.web_scraper.page_classifier import PageClassifier
 from app.services.web_scraper.page_schemas import RelevantPage
 from app.services.web_scraper.playwright_interactions import merge_iframe_content
+from app.services.web_scraper.url_keywords import (
+    _STRONG_KEYWORDS as _MOM_KEYWORDS_STRONG,
+    _WEAK_KEYWORDS as _MOM_KEYWORDS_WEAK,
+    _WEAK_MIN_HITS,
+)
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, Playwright
 
 logger = logging.getLogger(__name__)
 
-# Deterministic URL-path keyword boost applied on top of the LLM's own
-# confidence when pushing a candidate link onto the frontier. The LLM is
-# good at structured extraction but is inconsistent at ranking — a page
-# whose URL path literally contains "meeting-minutes" or "board-of-trustees"
-# should be visited early even if the LLM was cautious about the link text.
-# STRONG matches (unambiguous path segments) get a bigger bump than WEAK
-# matches (generic terms that need to co-occur to mean anything).
-_MOM_KEYWORDS_STRONG: tuple[str, ...] = (
-    "meeting-minutes",
-    "meeting_minutes",
-    "meetingminutes",
-    "agendas-minutes",
-    "agendas_minutes",
-    "minutes-agendas",
-    "minutes-archive",
-    "minutes_archive",
-    "meeting-packets",
-    "meeting_packets",
-    "board-packets",
-    "archived-agendas",
-    "archived_agendas",
-    "document-archives",
-    "document_archives",
-    "board-of-trustees",
-    "board_of_trustees",
-    "school-committee",
-    "school_committee",
-    "supervisory_committee",
-    "supervisory-committee",
-)
-_MOM_KEYWORDS_WEAK: tuple[str, ...] = (
-    "minutes",
-    "agenda",
-    "committee",
-    "board",
-    "trustees",
-    "archive",
-    "packets",
-)
+# Confidence bumps applied on top of the LLM's own confidence when pushing a
+# candidate link onto the frontier. STRONG matches (unambiguous path segments)
+# get a bigger bump than WEAK matches (generic terms that need to co-occur).
+# The keyword sets themselves live in url_keywords.py so the media crawl and
+# discovery ranking cannot drift apart.
 _STRONG_BOOST = 0.25
 _WEAK_BOOST = 0.10
-_WEAK_MIN_HITS = 2
 
 # HTTP status codes that indicate a WAF/bot-protection block rather than a
 # genuine "page doesn't exist" response. On these we retry with an alternate
@@ -168,6 +138,12 @@ class CrawlResult:
     visited_pages: list[RelevantPage] = field(default_factory=list)
     llm_calls: int = 0
     errors: list[str] = field(default_factory=list)
+    # True when the crawl stopped only because max_pages was hit while the
+    # frontier still had unvisited candidates — i.e. the page budget cut
+    # exploration short. Surfaced on DiscoverResponse so operators can tell
+    # "nothing more to find" from "we ran out of budget". False when the
+    # frontier emptied naturally (or only failed-fetches remained).
+    max_pages_limit_reached: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -177,6 +153,7 @@ class CrawlResult:
             "data_pages": [p.model_dump() for p in self.data_pages],
             "visited_pages": [p.model_dump() for p in self.visited_pages],
             "errors": self.errors,
+            "max_pages_limit_reached": self.max_pages_limit_reached,
         }
 
 
@@ -418,6 +395,22 @@ class SchemaDrivenCrawler:
                             0.0, boosted_confidence - self.depth_penalty * overshoot
                         )
                     frontier.append((abs_url, effective_confidence, child_depth))
+
+        # Did the page budget — not the frontier — stop us? True only when we
+        # hit max_pages AND there were still URLs we never got to classify.
+        # Entries already in `visited` (fetch_failed / classify_failed still
+        # count as visited) are excluded; only genuinely unvisited frontier
+        # entries indicate "more to explore, budget ran out".
+        if result.pages_crawled >= self.max_pages and any(
+            url not in visited for url, _, _ in frontier
+        ):
+            result.max_pages_limit_reached = True
+            logger.warning(
+                "SchemaDrivenCrawler: max_pages budget (%d) reached for %s "
+                "with unvisited frontier remaining; raising max_pages_limit_reached",
+                self.max_pages,
+                seed_url,
+            )
 
         return result
 

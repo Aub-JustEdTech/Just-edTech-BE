@@ -604,6 +604,50 @@ class TestScrapeMediaFiles:
 
         await svc.close()
 
+    async def test_sibling_meeting_link_followed_even_when_not_subpath(self):
+        """A same-domain sibling that looks meeting-related is followed.
+
+        Hub is /school-committee (no trailing content). It links to
+        /agendas/2024/ — a sibling path, NOT under /school-committee. Before
+        the subpath relaxation this link was dropped; now the meeting keyword
+        boost lets it enter the depth crawl.
+        """
+        hub_html = textwrap.dedent("""\
+            <html><body>
+              <a href="/agendas/2024/">2024 Agendas</a>
+              <a href="/about/">About</a>
+            </body></html>
+        """)
+        agendas_html = textwrap.dedent("""\
+            <html><body>
+              <a href="/files/jan2024.pdf">January 2024 Agenda</a>
+            </body></html>
+        """)
+        fetch_map = {
+            "https://example.com/school-committee": hub_html,
+            "https://example.com/agendas/2024/": agendas_html,
+        }
+        fetched: list[str] = []
+
+        async def fake_fetch(url: str) -> str | None:
+            fetched.append(url)
+            return fetch_map.get(url)
+
+        svc = SchoolScraperService()
+        with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
+            result = await svc.scrape_media_files(
+                "https://example.com/school-committee", crawl_depth=1
+            )
+
+        assert result["pages_crawled"] == 2
+        media_urls = [m["url"] for m in result["media_files"]]
+        assert any(u.endswith("/files/jan2024.pdf") for u in media_urls)
+        # /about/ is same-domain but not meeting-related and not a subpath,
+        # so it must not be crawled.
+        assert "https://example.com/about/" not in fetched
+
+        await svc.close()
+
 
 # ---------------------------------------------------------------------------
 # Robots.txt parsing — unit test
@@ -787,3 +831,99 @@ async def test_live_scrape_media_on_best_candidate(base_url: str):
         assert m["file_extension"].startswith(".")
         assert m["url"].startswith("http")
         assert "source_page_url" in m
+
+
+# ---------------------------------------------------------------------------
+# crawl_depth clamps — schema-level (no network)
+# ---------------------------------------------------------------------------
+
+
+def test_scrape_media_request_depth_default_is_four():
+    from app.schemas.school_scraper import ScrapeMediaRequest
+
+    req = ScrapeMediaRequest(url="https://example.com/")
+    assert req.crawl_depth == 4
+
+
+def test_scrape_media_request_depth_clamps_to_four():
+    from app.schemas.school_scraper import ScrapeMediaRequest
+
+    assert ScrapeMediaRequest(url="https://example.com/", crawl_depth=5).crawl_depth == 4
+    assert ScrapeMediaRequest(url="https://example.com/", crawl_depth=4).crawl_depth == 4
+    assert ScrapeMediaRequest(url="https://example.com/", crawl_depth=0).crawl_depth == 0
+
+
+def test_scrape_url_create_accepts_depth_four_rejects_five():
+    from app.schemas.schools import ScrapeUrlCreate
+
+    assert ScrapeUrlCreate(url="https://example.com/", crawl_depth=4).crawl_depth == 4
+    with pytest.raises(ValueError):
+        ScrapeUrlCreate(url="https://example.com/", crawl_depth=5)
+
+
+# ---------------------------------------------------------------------------
+# WAF "Client Challenge" detection + Google Drive folder <a> links
+# ---------------------------------------------------------------------------
+
+CLIENT_CHALLENGE_HTML = textwrap.dedent("""\
+    <html><head><title>Client Challenge</title></head>
+    <body>
+      <div id="loading-error" role="alert">
+        JavaScript is disabled in your browser. Please enable JavaScript to proceed.
+      </div>
+      <p>A required part of this site couldn't load.</p>
+    </body></html>
+""")
+
+
+def test_client_challenge_html_triggers_playwright_detection():
+    """WAF interstitials must be detected so the scraper escalates to Playwright."""
+    from app.services.web_scraper._discovery_helpers import html_needs_playwright
+
+    assert html_needs_playwright(CLIENT_CHALLENGE_HTML) is True
+    # And the service-level helper delegates to the same function.
+    svc = SchoolScraperService()
+    assert svc._html_needs_playwright(CLIENT_CHALLENGE_HTML) is True
+    # A real (non-challenge) page is not falsely flagged by these signals.
+    assert svc._html_needs_playwright(MEETING_PAGE_HTML) is False
+
+
+@pytest.mark.asyncio
+async def test_google_drive_folder_anchor_is_enqueued_as_subpage():
+    """A plain <a href> to a Drive folder is enqueued for BFS folder crawling.
+
+    Previously _append_google_drive_link_media returned False for folders
+    (it only handles file/open/gdoc), and the off-domain URL was dropped by
+    the same-domain subpath gate. Now it enters sub_pages so the BFS loop's
+    google_kind=="folder" branch walks it via crawl_google_drive_folder.
+    """
+    hub_html = textwrap.dedent("""\
+        <html><body>
+          <a href="https://drive.google.com/drive/folders/1YsVu0KilcUApxMFLaeHjvPqHqaso79m1">
+            Meeting Minutes Folder
+          </a>
+        </body></html>
+    """)
+    fetch_map = {"https://example.com/school-committee": hub_html}
+
+    async def fake_fetch(url: str) -> str | None:
+        return fetch_map.get(url)
+
+    svc = SchoolScraperService()
+    # Patch _fetch_text so the hub page is returned; the Drive folder URL
+    # would be crawled by crawl_google_drive_folder in a real run, but here
+    # we only assert it was enqueued (we mock the folder crawl to return []).
+    with patch.object(svc, "_fetch_text", side_effect=fake_fetch), \
+         patch(
+             "app.services.web_scraper.playwright_interactions.crawl_google_drive_folder",
+             new=AsyncMock(return_value=[]),
+         ):
+        result = await svc.scrape_media_files(
+            "https://example.com/school-committee", crawl_depth=1
+        )
+
+    # pages_crawled == 2 means the folder URL was enqueued and visited
+    # (the hub page + the Drive folder crawl), not just the hub alone.
+    assert result["pages_crawled"] == 2
+
+    await svc.close()

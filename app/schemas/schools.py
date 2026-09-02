@@ -100,7 +100,7 @@ def _normalize_url(v: str) -> str:
 
 class ScrapeUrlCreate(BaseModel):
     url: str
-    crawl_depth: int = Field(1, ge=0, le=3)
+    crawl_depth: int = Field(4, ge=0, le=4)
     use_playwright: bool = False
 
     @field_validator("url")
@@ -115,7 +115,7 @@ class ScrapeUrlUpdate(BaseModel):
         description="New URL text. Resets last_http_status/last_crawl_page_count"
         " since the edited page is unverified.",
     )
-    crawl_depth: int | None = Field(None, ge=0, le=3)
+    crawl_depth: int | None = Field(None, ge=0, le=4)
     use_playwright: bool | None = None
     is_active: bool | None = None
 

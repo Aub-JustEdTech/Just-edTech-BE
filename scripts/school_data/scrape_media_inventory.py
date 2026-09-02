@@ -385,7 +385,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    args.crawl_depth = max(0, min(args.crawl_depth, 3))
+    args.crawl_depth = max(0, min(args.crawl_depth, 4))
     args.concurrency = max(1, args.concurrency)
 
     return asyncio.run(run(args))

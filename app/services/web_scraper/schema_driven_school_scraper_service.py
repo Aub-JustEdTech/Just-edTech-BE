@@ -46,11 +46,13 @@ class SchemaDrivenSchoolScraperService:
         classifier: PageClassifier | None = None,
         *,
         max_pages: int | None = None,
+        max_depth: int | None = None,
         confidence_threshold: float | None = None,
         skip_archival: bool | None = None,
     ):
         self.classifier = classifier or PageClassifier()
         self.max_pages = max_pages or settings.SCHOOL_SCRAPER_LLM_MAX_PAGES
+        self.max_depth = max_depth or settings.SCHOOL_SCRAPER_LLM_MAX_DEPTH
         self.confidence_threshold = (
             confidence_threshold
             if confidence_threshold is not None
@@ -77,6 +79,7 @@ class SchemaDrivenSchoolScraperService:
         crawler = SchemaDrivenCrawler(
             classifier=self.classifier,
             max_pages=self.max_pages,
+            max_depth=self.max_depth,
             confidence_threshold=self.confidence_threshold,
             skip_archival=self.skip_archival,
         )
@@ -144,4 +147,5 @@ class SchemaDrivenSchoolScraperService:
             "discovery_method": "schema-driven-llm",
             "total_urls_scanned": result.pages_crawled,
             "candidates": candidates,
+            "max_pages_limit_reached": result.max_pages_limit_reached,
         }
