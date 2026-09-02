@@ -18,7 +18,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.schemas.heatmap_engine import TimeframePreset, TopicCategory
+from app.schemas.heatmap_engine import CitationSort, TimeframePreset, TopicCategory
 from app.services.heatmap_engine import heatmap_engine_service
 from app.utils.dependencies import get_effective_tenant_id
 from app.utils.response import success_response
@@ -96,6 +96,7 @@ async def get_district_citations(
     page_size: int = Query(default=10, le=25),
     start_date: date | None = None,
     end_date: date | None = None,
+    sort: CitationSort = CitationSort.DEFAULT,
     tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """Return paginated chunk citations for a single district + filters.
@@ -104,6 +105,10 @@ async def get_district_citations(
     their respective subtopics). District is looked up by `org_code`. Pass
     `start_date`/`end_date` (both required together) for a custom
     day-level date range instead of `timeframe`.
+
+    `sort=date_desc` returns the most recent citations first (used by the
+    report export's "most recent snippets" section) instead of the
+    default vector-store return order.
     """
     _validate_date_range(start_date, end_date)
     citations, meta = await heatmap_engine_service.get_district_citations(
@@ -115,5 +120,6 @@ async def get_district_citations(
         page_size=page_size,
         start_date=start_date,
         end_date=end_date,
+        sort=sort,
     )
     return success_response(data=citations.model_dump(mode="json"), extra=meta)

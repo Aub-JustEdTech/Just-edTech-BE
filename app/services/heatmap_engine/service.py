@@ -23,6 +23,7 @@ from app.db.connector import AsyncSessionLocal
 from app.models.documents import Document
 from app.models.school import School
 from app.schemas.heatmap_engine import (
+    CitationSort,
     DistrictCitationsEngineResponse,
     DistrictCountItem,
     DistrictCountResponse,
@@ -287,6 +288,12 @@ class HeatmapEngineService:
             f"active_districts={len(active)} probe_calls={probe_calls}"
         )
 
+    # Bound on how many chunks `sort=date_desc` fetches before sorting.
+    # Fetching more than this to find the true most-recent items would cost
+    # an unbounded vector-store scan; in practice a single district's
+    # matching chunk count comfortably fits under this cap.
+    _REPORT_SORT_FETCH_CAP = 200
+
     async def get_district_citations(
         self,
         *,
@@ -298,6 +305,7 @@ class HeatmapEngineService:
         page_size: int,
         start_date: date | None = None,
         end_date: date | None = None,
+        sort: CitationSort = CitationSort.DEFAULT,
     ) -> tuple[DistrictCitationsEngineResponse, dict]:
         """
         Return paginated chunk citations for one district + filter set.
@@ -312,6 +320,13 @@ class HeatmapEngineService:
         Qdrant payload fields written at ingest, with a
         Document.source_metadata fallback until existing points are
         backfilled.
+
+        `sort=date_desc` (used by the report export's "most recent
+        snippets" section) fetches a larger bounded batch up front and
+        sorts by `meeting_date` descending before paging, instead of the
+        default vector-store return order — otherwise a high-activity
+        district's true most-recent citations could sit past whatever
+        page the default (unsorted) fetch happened to cover.
         """
         vector_store = self._get_vector_store()
 
@@ -336,12 +351,27 @@ class HeatmapEngineService:
             )
 
             offset = (page - 1) * page_size
-            fetch_limit = offset + page_size
-            chunks = await vector_store.filter_chunks(
-                tenant_id=tenant_id,
-                **fragments,
-                limit=fetch_limit,
-            )
+
+            if sort == CitationSort.DATE_DESC:
+                chunks = await vector_store.filter_chunks(
+                    tenant_id=tenant_id,
+                    **fragments,
+                    limit=self._REPORT_SORT_FETCH_CAP,
+                )
+                # Missing/unparseable dates sort last (oldest) rather than
+                # erroring or floating to the top.
+                chunks = sorted(
+                    chunks,
+                    key=lambda ch: ch.get("metadata", {}).get("meeting_date") or "",
+                    reverse=True,
+                )
+            else:
+                fetch_limit = offset + page_size
+                chunks = await vector_store.filter_chunks(
+                    tenant_id=tenant_id,
+                    **fragments,
+                    limit=fetch_limit,
+                )
             page_chunks = chunks[offset : offset + page_size]
 
             # Batch-fetch Document rows for the documents referenced by

@@ -95,3 +95,10 @@ class DistrictCitationsEngineResponse(BaseModel):
     timeframe: TimeframePreset
     categories: list[TopicCategory]
     citations: list[EngineCitationItem]
+
+
+class CitationSort(str, Enum):
+    """Ordering for `GET /districts/{org_code}/citations`."""
+
+    DEFAULT = "default"
+    DATE_DESC = "date_desc"
