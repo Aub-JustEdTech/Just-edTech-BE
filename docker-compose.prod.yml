@@ -95,7 +95,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 4gb
+      --maxmemory 8gb
       --maxmemory-policy noeviction
 
     volumes:

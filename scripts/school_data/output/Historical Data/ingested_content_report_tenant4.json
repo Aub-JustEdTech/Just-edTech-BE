@@ -1,0 +1,4489 @@
+[
+  {
+    "school_id": 399,
+    "school_name": "Abington",
+    "school_url": "https://www.abingtonps.org",
+    "finalised_urls": [
+      "https://www.abingtonps.org",
+      "https://www.abingtonps.org/page/2026-2027-school-committee-agendas",
+      "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies"
+    ],
+    "total_documents": 43,
+    "per_url": [
+      {
+        "url": "https://www.abingtonps.org/documents/central-office/abington-public-schools-policy-manual/651341",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.abingtonps.org/documents/community/building-use/650729",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.abingtonps.org/documents/community/community-links/650733",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.abingtonps.org/documents/technology-resources/technology-guides/650331",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.abingtonps.org/live-feed",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies",
+        "doc_count": 23
+      },
+      {
+        "url": "https://www.abingtonps.org/page/central-office-staff",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.abingtonps.org/page/two-mile-limit",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 400,
+    "school_name": "Agawam",
+    "school_url": "https://www.agawamed.org/",
+    "finalised_urls": [
+      "https://us-east-2.protection.sophos.com/?d=cablecast.tv&u=aHR0cDovL2FnYXdhbXZvZC5jYWJsZWNhc3QudHYvaW50ZXJuZXRjaGFubmVsL3NlYXJjaD9zaXRlPTEmcXVlcnk9U2Nob29sK0NvbW1pdHRlZSZmdWxsVGV4dD1mYWxzZQ==&i=NWViYzJmYzZkZDY5M2YxNzYxOTE0MjJm&t=YVd3dFhEZzYvdlRFd012N2dyYnFwOUFuRFFTc2JwVWtTcm53Q3N4cVZrRT0=&h=920d1e9b9d7f49469b38c33d60f94246&s=AVNPUEhUT0NFTkNSWVBUSVZsNSX5DmkmLtVZk6T_g_T-QRE8lB3ZyVFxSYsrE34cVQ",
+      "https://www.agawamed.org/browse/145146",
+      "https://www.agawamed.org/browse/145147",
+      "https://www.agawamed.org/page/school-committee"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 401,
+    "school_name": "Ashland",
+    "school_url": "http://www.ashland.k12.ma.us",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/0B0n1npGCorhBfmhtQWxrdmZnOTNJN29vUFVFVENGWGp2aENNeWpvbTNWVkwtOE9ob3EzRTQ?resourcekey=0-GYd5V1ZeMsg1sodIhkeJIg&usp=sharing",
+      "http://www.ashland.k12.ma.us/school-committee",
+      "http://www.ashland.k12.ma.us/school-committee/meeting-agendas-minutes-meeting-video-links/meeting-agendas-minutes-video-links"
+    ],
+    "total_documents": 104,
+    "per_url": [
+      {
+        "url": "http://www.ashland.k12.ma.us/school-committee",
+        "doc_count": 66
+      },
+      {
+        "url": "http://www.ashland.k12.ma.us/school-committee/ashland-school-committee/meeting-agendas-minutes-video-links-2024-2025",
+        "doc_count": 9
+      },
+      {
+        "url": "http://www.ashland.k12.ma.us/school-committee/ashland-school-committee/school-choice-seats-2026-2027",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.ashland.k12.ma.us/school-committee/meeting-agendas-minutes-meeting-video-links/meeting-agendas-minutes-video-links",
+        "doc_count": 28
+      }
+    ]
+  },
+  {
+    "school_id": 402,
+    "school_name": "Belchertown",
+    "school_url": "https://www.belchertownps.org",
+    "finalised_urls": [
+      "https://www.belchertownps.org/agenda-minutes",
+      "https://www.belchertownps.org/school-committee",
+      "https://www.belchertownps.org/school-committee-document-archives"
+    ],
+    "total_documents": 215,
+    "per_url": [
+      {
+        "url": "https://www.belchertownps.org/agenda-minutes",
+        "doc_count": 37
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives",
+        "doc_count": 176
+      }
+    ]
+  },
+  {
+    "school_id": 403,
+    "school_name": "Belmont",
+    "school_url": "https://www.belmont.k12.ma.us",
+    "finalised_urls": [
+      "https://www.belmont.k12.ma.us",
+      "https://www.belmont.k12.ma.us/page/minutes-archive",
+      "https://www.belmont.k12.ma.us/page/notices-agendas",
+      "https://www.belmont.k12.ma.us/page/policies",
+      "https://www.belmont.k12.ma.us/page/sc-archive-public-documents",
+      "https://www.belmont.k12.ma.us/page/school-committee",
+      "https://www.belmont.k12.ma.us/page/sc-public-documents"
+    ],
+    "total_documents": 548,
+    "per_url": [
+      {
+        "url": "https://www.belmont.k12.ma.us/o/bbes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/bes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/bms",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/bps/page/bps-calendar",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/bps/page/school-budget",
+        "doc_count": 16
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/cues",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/wbes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/o/wes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/athletics",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/athletics-training",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/business-office-payroll",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/climate-survey",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/collective-bargaining-2025",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/curriculum-instruction",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/dei-news",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/dei-news-archive-2024-2025",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/district-attendance-policy",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/employment-forms",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/facilities-rental-information",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/for-substitutes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/health-forms-and-resources",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/mtss-overview",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/notices-agendas",
+        "doc_count": 494
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/professional-development",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/resources",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/school-committee",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/strategic-initiatives",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/strategic-plan",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/summer-program",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/wellness",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 478,
+    "school_name": "Berlin-Boylston",
+    "school_url": "https://www.bbrsd.org",
+    "finalised_urls": [
+      "https://www.bbrsd.org",
+      "https://www.bbrsd.org/school-committee/all-agendas",
+      "https://www.bbrsd.org/school-committee/all-minutes",
+      "https://www.bbrsd.org/school-committee/archived-agendas"
+    ],
+    "total_documents": 333,
+    "per_url": [
+      {
+        "url": "https://www.bbrsd.org",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/bullying-prevention-policy",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-curriculum-and-grants-grades-6-12/bbrsd-curriculum-review-process",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-curriculum-and-grants-grades-6-12/bullying-prevention-plan-and-intervention-plan",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-curriculum-and-grants-grades-6-12/director-of-curriculum-and-grants-grades-6-12-home",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-curriculum-and-grants-grades-6-12/job-shadow-and-internship-program-at-tahanto-regional-middle-high-school",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-curriculum-and-grants-grades-6-12/professional-development-plan",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-facilities/cleaning-products-msds",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-finance-and-operations/bid-documents",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-finance-and-operations/wheres-my-kid-app-instructions",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/director-of-pupil-personnel-services/coordinated-program-review-docs",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/district-health-services/mandated-screenings",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/district-health-services/ma-required-school-immunizations",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/food-services/elementary-school-lunch-packet",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/food-services/free-and-reduced-application-english",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/food-services/free-and-reduced-application-spanish",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/food-services/tahanto-school-lunch-packet",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/administration/superintendents-corner/grief-support-resources",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/information-for-current-employees/dental-plan-information",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/information-for-current-employees/employee-assistance-program",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/information-for-current-employees/flexible-spending-accounts",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/information-for-current-employees/insurance-rates",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/information-for-current-employees/vision-plan-forms",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/information-for-current-employees/vision-plan-information",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/our-district/our-goals",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/2024-election-information",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-agendas",
+        "doc_count": 116
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-agendas/archived-agendas",
+        "doc_count": 52
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-minutes",
+        "doc_count": 107
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/current-meeting-schedule",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/fy25-budget-information",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/fy26-budget-information",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/fy27-budget-information",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/guidlines-for-public-comment",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/home",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/school-committee-handbook",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 404,
+    "school_name": "Beverly",
+    "school_url": "https://www.beverlyschools.org",
+    "finalised_urls": [
+      "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d",
+      "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d&pREC_ID=2285699",
+      "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083160&type=d&pREC_ID=2133568"
+    ],
+    "total_documents": 6,
+    "per_url": [
+      {
+        "url": "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d&pREC_ID=2285699",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083160&type=d&pREC_ID=2133568",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 479,
+    "school_name": "Blackstone-Millville",
+    "school_url": "https://www.bmrsd.net",
+    "finalised_urls": [
+      "https://www.bmrsd.net/o/bmrsd/page/school-committee-agendas-and-minutes",
+      "https://www.youtube.com/playlist?list=PLZFzagk00pfdRNZSJzQQwo3MlBZHfCxHP"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://www.bmrsd.net/o/bmrsd/page/school-committee-agendas-and-minutes",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 405,
+    "school_name": "Boston",
+    "school_url": "https://www.bostonpublicschools.org",
+    "finalised_urls": [
+      "https://www.bostonpublicschools.org/school-committee/meeting-archives"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://www.bostonpublicschools.org/school-committee/meeting-archives",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 468,
+    "school_name": "Boston Preparatory Charter Public (District)",
+    "school_url": "https://www.bostonprep.org",
+    "finalised_urls": [
+      "https://www.bostonprep.org",
+      "https://www.bostonprep.org/about/board-of-trustees/committee-minutes-archive",
+      "https://www.bostonprep.org/about/board-of-trustees/meeting-minutes"
+    ],
+    "total_documents": 112,
+    "per_url": [
+      {
+        "url": "https://www.bostonprep.org",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bostonprep.org/about/annual-report",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.bostonprep.org/about/back-to-school-information",
+        "doc_count": 12
+      },
+      {
+        "url": "https://www.bostonprep.org/about/board-of-trustees/committee-minutes-archive",
+        "doc_count": 38
+      },
+      {
+        "url": "https://www.bostonprep.org/about/board-of-trustees/meeting-minutes",
+        "doc_count": 23
+      },
+      {
+        "url": "https://www.bostonprep.org/about/reports-and-accountability",
+        "doc_count": 14
+      },
+      {
+        "url": "https://www.bostonprep.org/academics/2026-summer-reading",
+        "doc_count": 8
+      },
+      {
+        "url": "https://www.bostonprep.org/academics/course-catalog",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bostonprep.org/academics/persistence-project",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bostonprep.org/enrollment/enrollment-overview",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.bostonprep.org/families/",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.bostonprep.org/student-experience/student-resources",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bostonprep.org/student-experience/student-support/the-nurses-corner",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 406,
+    "school_name": "Bourne",
+    "school_url": "https://www.bourneps.org/",
+    "finalised_urls": [
+      "https://www.bourneps.org",
+      "https://www.bourneps.org/our-school-committee/school-committee-meetings-agendas-and-documents",
+      "https://www.bourneps.org/our-school-committee/school-committee-minutes",
+      "https://www.bourneps.org/our-school-committee/sub-committee-minutes"
+    ],
+    "total_documents": 260,
+    "per_url": [
+      {
+        "url": "https://www.bourneps.org",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.bourneps.org/2025-2030-strategic-plan",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.bourneps.org/about-us/district-report-card-2026",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/about-us/school-wellness-advisory-committee",
+        "doc_count": 8
+      },
+      {
+        "url": "https://www.bourneps.org/about-us/student-opportunities-act-plan",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/curriculum-supports/district-curriculum-accommodation-plan",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/curriculum-supports/elementary-curriculum-guides",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/curriculum-supports/program-of-studies",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.bourneps.org/curriculum-supports/special-education-and-student-services",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/formsrequestspayments/district-forms-for-public-use",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.bourneps.org/formsrequestspayments/medicaldental-forms",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/for-parents-caregivers/curriculum-tips-for-elementary-parents",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/for-parents-caregivers/school-choice-application",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/for-parents-caregivers/student-and-caregiver-handbooks",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/a-foundations-and-commitments",
+        "doc_count": 7
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/b-school-board-governance-and-operations-2-174-2",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/c-general-school-administration",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/d-fiscal-management",
+        "doc_count": 15
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/e-support-services",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/g-personnel",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/i-instruction",
+        "doc_count": 7
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/jd-job-descriptions",
+        "doc_count": 14
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/j-students",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/bourne-public-schools-committee-policies/k-community-relations",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-meetings-agendas-and-documents",
+        "doc_count": 43
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/sub-committee-minutes",
+        "doc_count": 118
+      },
+      {
+        "url": "https://www.bourneps.org/staff/reimbursement-forms",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.bourneps.org/staff/staff-resource-handbook",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 469,
+    "school_name": "Bridge Boston Charter School (District)",
+    "school_url": "https://www.bridgebostoncs.org",
+    "finalised_urls": [
+      "https://www.bridgebostoncs.org/public-meeting-materials"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 407,
+    "school_name": "Brimfield",
+    "school_url": "https://www.tantasqua.org",
+    "finalised_urls": [
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409521",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2499140",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2594396",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2699058",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2754983"
+    ],
+    "total_documents": 156,
+    "per_url": [
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d",
+        "doc_count": 31
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409521",
+        "doc_count": 26
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2499140",
+        "doc_count": 26
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2594396",
+        "doc_count": 43
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2699058",
+        "doc_count": 30
+      }
+    ]
+  },
+  {
+    "school_id": 408,
+    "school_name": "Brockton",
+    "school_url": "https://www.bpsma.org",
+    "finalised_urls": [
+      "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4408287&type=d",
+      "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2645118",
+      "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2753897"
+    ],
+    "total_documents": 224,
+    "per_url": [
+      {
+        "url": "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4408287&type=d",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4408287&type=d&pREC_ID=2636984",
+        "doc_count": 220
+      },
+      {
+        "url": "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2753897",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 409,
+    "school_name": "Brookline",
+    "school_url": "http://www.brookline.k12.ma.us/",
+    "finalised_urls": [
+      "http://www.brookline.k12.ma.us/district/school-committee/archived-meeting-materials",
+      "http://www.brookline.k12.ma.us/district/school-committee/meeting-materials",
+      "http://www.brookline.k12.ma.us/district/school-committee/meetings-and-public-comment"
+    ],
+    "total_documents": 6,
+    "per_url": [
+      {
+        "url": "http://www.brookline.k12.ma.us/district/school-committee/meeting-materials",
+        "doc_count": 6
+      }
+    ]
+  },
+  {
+    "school_id": 480,
+    "school_name": "Chesterfield-Goshen",
+    "school_url": "https://www.hr-k12.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+      "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+      "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0",
+      "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6"
+    ],
+    "total_documents": 714,
+    "per_url": [
+      {
+        "url": "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+        "doc_count": 714
+      }
+    ]
+  },
+  {
+    "school_id": 410,
+    "school_name": "Chicopee",
+    "school_url": "https://www.chicopeeps.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1AeT6RcMoS4UFuA33TZNieFgM1BxbRnob",
+      "https://www.chicopeeps.org/en-US/school-committee-9aceadb1"
+    ],
+    "total_documents": 92,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1AeT6RcMoS4UFuA33TZNieFgM1BxbRnob",
+        "doc_count": 35
+      },
+      {
+        "url": "https://www.chicopeeps.org/en-US/school-committee-9aceadb1",
+        "doc_count": 57
+      }
+    ]
+  },
+  {
+    "school_id": 411,
+    "school_name": "Cohasset",
+    "school_url": "http://www.cohassetk12.org",
+    "finalised_urls": [
+      "http://www.cohassetk12.org",
+      "http://www.cohassetk12.org/school-committee/minutes-and-agendas"
+    ],
+    "total_documents": 603,
+    "per_url": [
+      {
+        "url": "http://www.cohassetk12.org/departments/curriculum-instruction-assessment/assessment",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/curriculum-instruction-assessment/curriculum-frameworks",
+        "doc_count": 8
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/curriculum-instruction-assessment/home-schooling",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/curriculum-instruction-assessment/professional-development",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/curriculum-instruction-assessment/student-opportunity-act",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/curriculum-instruction-assessment/title-ix",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/finance-and-operations/budget-information",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/finance-and-operations/budget-information/fy23-budget-information",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/finance-and-operations/capital-projects",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/finance-and-operations/monthly-finance-reports",
+        "doc_count": 33
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/finance-and-operations/transportation",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/finance-and-operations/use-of-facilities",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/nutrition-lunch-program",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/nutrition-lunch-program/free-and-reduced-lunch",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/office-of-student-services",
+        "doc_count": 12
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/office-of-student-services/integrated-preschool",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/technology/technology-curriculum",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/departments/technology/technology-policies",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/district-calendar",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/our-district/district-accommodation-plan",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/our-district/memorandum-of-understanding-between-cohasset-police-department",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/our-district/protocols-and-policies",
+        "doc_count": 8
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/budget",
+        "doc_count": 16
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/documents",
+        "doc_count": 6
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/minutes-and-agendas",
+        "doc_count": 224
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/policy-manual",
+        "doc_count": 249
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/schedule-of-meetings",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/school-committee-goals",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/school-committee-information",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/school-facilities-committee",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.cohassetk12.org/students-families/student-family-handbooks",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.cohassetk12.org/superintendent/school-improvement-plans",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.cohassetk12.org/superintendent/strategic-plan",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 481,
+    "school_name": "Concord-Carlisle",
+    "school_url": "https://www.concordps.org",
+    "finalised_urls": [
+      "https://www.concordps.org/school-committee/meeting-archives",
+      "https://www.concordps.org/school-committee/meetings-and-minutes"
+    ],
+    "total_documents": 758,
+    "per_url": [
+      {
+        "url": "https://www.concordps.org/school-committee/meeting-archives",
+        "doc_count": 754
+      },
+      {
+        "url": "https://www.concordps.org/school-committee/meetings-and-minutes",
+        "doc_count": 4
+      }
+    ]
+  },
+  {
+    "school_id": 412,
+    "school_name": "Conway",
+    "school_url": "https://www.frsu38.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/116XYaRY0O7yLVIEHkeE2K1iqTBZrtPi8?usp=drive_link",
+      "https://drive.google.com/drive/folders/12Bzh4Kvnmu_1EmnxxvP5_ynDmp-GWFzG?usp=drive_link",
+      "https://drive.google.com/drive/folders/1CHuSV4K84FkQjlHJU0gUhG-aOomSMIlc?usp=drive_link",
+      "https://drive.google.com/drive/folders/1n7OBrRgUEHgCiAw-urPOYgBQbuWPw96I?usp=sharing",
+      "https://www.frsu38.org/conway-school-committee"
+    ],
+    "total_documents": 19,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/116XYaRY0O7yLVIEHkeE2K1iqTBZrtPi8?usp=drive_link",
+        "doc_count": 14
+      },
+      {
+        "url": "https://www.frsu38.org/conway-school-committee",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 413,
+    "school_name": "Dartmouth",
+    "school_url": "https://www.dartmouth.school",
+    "finalised_urls": [
+      "https://www.dartmouth.school/our-district/school-committee/meeting-dates-and-agenda",
+      "https://www.dartmouth.school/our-district/school-committee/minutes"
+    ],
+    "total_documents": 60,
+    "per_url": [
+      {
+        "url": "https://www.dartmouth.school/our-district/school-committee/meeting-dates-and-agenda",
+        "doc_count": 55
+      },
+      {
+        "url": "https://www.dartmouth.school/our-district/school-committee/minutes",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 414,
+    "school_name": "Deerfield",
+    "school_url": "https://www.frsu38.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1fvrrl8mRRZvcQPdP6eRmH-OCOuVLHPy6?usp=drive_link",
+      "https://drive.google.com/drive/folders/1pzFGOF_mSY6QwLJaRmqeqw3x-SI8JRb7?usp=sharing",
+      "https://drive.google.com/drive/folders/1R_Qfowi1HVs1kkQJ8hUIbtGWb7GSCRyg?usp=drive_link",
+      "https://www.frsu38.org/deerfield-school-committee-2"
+    ],
+    "total_documents": 21,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1fvrrl8mRRZvcQPdP6eRmH-OCOuVLHPy6?usp=drive_link",
+        "doc_count": 16
+      },
+      {
+        "url": "https://www.frsu38.org/deerfield-school-committee-2",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 482,
+    "school_name": "Dighton-Rehoboth",
+    "school_url": "https://www.drregional.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1Tuhn9zGtN6b_1KzSRk7f2_crHtp0pgMu",
+      "https://www.drregional.org/documents/school-committee/18838602",
+      "https://www.drregional.org/documents/school-committee/agenda-minutes/18838607",
+      "https://www.drregional.org/page/agenda-and-minutes",
+      "https://www.drregional.org/page/yearly-budget-information"
+    ],
+    "total_documents": 5,
+    "per_url": [
+      {
+        "url": "https://www.drregional.org/page/agenda-and-minutes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.drregional.org/page/yearly-budget-information",
+        "doc_count": 4
+      }
+    ]
+  },
+  {
+    "school_id": 415,
+    "school_name": "Douglas",
+    "school_url": "https://www.douglasps.net",
+    "finalised_urls": [
+      "https://www.douglasps.net/documents/school-committee/school-committee-agendas/795568",
+      "https://www.douglasps.net/documents/school-committee/school-committee-minutes/22224956"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 416,
+    "school_name": "Dover",
+    "school_url": "http://www.doversherborn.org",
+    "finalised_urls": [
+      "https://www.doversherborn.org/school-committee",
+      "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee",
+      "http://www.doversherborn.org/school-committee/dover-school-committee",
+      "http://www.doversherborn.org/school-committee/sherborn-school-committee"
+    ],
+    "total_documents": 263,
+    "per_url": [
+      {
+        "url": "https://www.doversherborn.org/school-committee",
+        "doc_count": 46
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/august-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/december-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/february-14-2024",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/february-6-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/january-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/march-20-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/march-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/may-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/may-2024/june-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/november-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/october-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/december-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/february-2025",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/january-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/june-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/march-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/may-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/november-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/october-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/september-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/december-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/february-11-2026",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/february-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/march-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/may-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/november-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/october-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/september-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/april-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/january-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/june-2024",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/march-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/may-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/november-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/october-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/january-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/june-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/march-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/may-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/october-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/september-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/february-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/february-24-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/february-3-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/march-2026",
+        "doc_count": 5
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/may-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/november-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/october-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/september-2025-clone",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2026-2027",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/april-2024",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/august-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/february-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/june-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/march-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/may-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/november-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/october-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/february-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/june-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/march-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/may-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/november-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/october-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/september-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/december-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/february-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/march-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/may-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/october-2025",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 417,
+    "school_name": "Duxbury",
+    "school_url": "https://www.duxbury.k12.ma.us",
+    "finalised_urls": [
+      "https://www.duxbury.k12.ma.us/documents/school-committee/21074242",
+      "https://www.duxbury.k12.ma.us/documents/school-committee/agendas/21074277",
+      "https://www.duxbury.k12.ma.us/documents/school-committee/minutes/21074276",
+      "https://www.duxbury.k12.ma.us/documents/school-committee/packet/21074278"
+    ],
+    "total_documents": 169,
+    "per_url": [
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/agendas/21074277",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/minutes/21074276",
+        "doc_count": 93
+      },
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/packet/21074278",
+        "doc_count": 72
+      }
+    ]
+  },
+  {
+    "school_id": 418,
+    "school_name": "Easthampton",
+    "school_url": "https://www.epsd.us",
+    "finalised_urls": [
+      "https://www.easthamptonma.gov/AgendaCenter",
+      "https://www.epsd.us/about/school-committee",
+      "https://www.youtube.com/channel/UCqgiWk-zGkX97R48xsqeKSA"
+    ],
+    "total_documents": 11,
+    "per_url": [
+      {
+        "url": "https://www.epsd.us/about/school-committee",
+        "doc_count": 11
+      }
+    ]
+  },
+  {
+    "school_id": 419,
+    "school_name": "Easton",
+    "school_url": "https://eastonmaschools.org",
+    "finalised_urls": [
+      "https://eastonmaschools.org/school-committee",
+      "https://eastontownma.documents-on-demand.com/?l=b8615993b73a47f9926aaa2924852ac3"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 420,
+    "school_name": "Edgartown",
+    "school_url": "https://mvyps.org",
+    "finalised_urls": [
+      "https://mvyps.org",
+      "https://mvyps.org/school-committee/agendas",
+      "https://mvyps.org/school-committee/meetings",
+      "https://mvyps.org/school-committee/minutes"
+    ],
+    "total_documents": 230,
+    "per_url": [
+      {
+        "url": "https://mvyps.org",
+        "doc_count": 2
+      },
+      {
+        "url": "https://mvyps.org/calendar/",
+        "doc_count": 8
+      },
+      {
+        "url": "https://mvyps.org/employment/forms/",
+        "doc_count": 4
+      },
+      {
+        "url": "https://mvyps.org/policy/",
+        "doc_count": 6
+      },
+      {
+        "url": "https://mvyps.org/school-committee/agendas",
+        "doc_count": 3
+      },
+      {
+        "url": "https://mvyps.org/school-committee/minutes/minutes-all-island/",
+        "doc_count": 50
+      },
+      {
+        "url": "https://mvyps.org/school-committee/minutes/minutes-mvrhs/",
+        "doc_count": 65
+      },
+      {
+        "url": "https://mvyps.org/school-committee/minutes/minutes-tisbury/",
+        "doc_count": 36
+      },
+      {
+        "url": "https://mvyps.org/school-committee/minutes/minutes-west-tisbury/",
+        "doc_count": 53
+      },
+      {
+        "url": "https://mvyps.org/student-services/title-i/",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 499,
+    "school_name": "Essex North Shore Agricultural and Technical School District",
+    "school_url": "https://essexnorthshore.org",
+    "finalised_urls": [
+      "https://essexnorthshore.org/about/school-committee",
+      "https://go.boarddocs.com/ma/ens/Board.nsf/Private",
+      "https://go.boarddocs.com/ma/ens/Board.nsf/Public",
+      "https://go.boarddocs.com/ma/ens/Board.nsf/Public#tab-meetings"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 421,
+    "school_name": "Everett",
+    "school_url": "https://www.everettpublicschools.org/",
+    "finalised_urls": [
+      "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2306489",
+      "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2696829",
+      "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2699654"
+    ],
+    "total_documents": 66,
+    "per_url": [
+      {
+        "url": "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2306489",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2696829",
+        "doc_count": 32
+      },
+      {
+        "url": "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2699654",
+        "doc_count": 30
+      }
+    ]
+  },
+  {
+    "school_id": 422,
+    "school_name": "Fall River",
+    "school_url": "https://www.fallriverschools.org",
+    "finalised_urls": [
+      "https://www.fallriverschools.org",
+      "https://www.fallriverschools.org/school-committee",
+      "https://www.fallriverschools.org/school-committee/locations-and-agendas",
+      "https://www.fallriverschools.org/school-committee/sc-minutes"
+    ],
+    "total_documents": 209,
+    "per_url": [
+      {
+        "url": "https://www.fallriverschools.org/departments/assistant-superintendent-of-student-services",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/cao",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/cao/home-school-information",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/cao/professional-development-for-staff/currentpdps",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/cfo",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/cfo/budget",
+        "doc_count": 50
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/ell/dual-language-spanishenglish",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/food-services",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/hr",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/nurse/head-lice",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/parent-resources",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/parent-resources/mckinney-vento-homeless-education-act",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/parent-resources/resource-page-for-immigrant-families",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/sped",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/technology-services",
+        "doc_count": 9
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/technology-services/aspen/aspen-resources/teacher-info-gradebook/teacher-gradebook",
+        "doc_count": 16
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/technology-services/direct-print",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/title-1/21st-cclc-program",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/departments/transportation/bus-routes",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/district-calendar",
+        "doc_count": 9
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/policies-and-procedures",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/policies-and-procedures/handbooks",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/resources/2024-summer-math-and-reading-work",
+        "doc_count": 38
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/resources/academic-resources",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/resources/bullying-resources",
+        "doc_count": 13
+      },
+      {
+        "url": "https://www.fallriverschools.org/district-information/resources/sel",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/employment/contracts",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/employment/current-job-postings",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.fallriverschools.org/school-committee/locations-and-agendas",
+        "doc_count": 17
+      }
+    ]
+  },
+  {
+    "school_id": 423,
+    "school_name": "Falmouth",
+    "school_url": "https://www.falmouth.k12.ma.us",
+    "finalised_urls": [
+      "https://www.falmouth.k12.ma.us/school_committee/meeting_packets"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 483,
+    "school_name": "Farmington River Reg",
+    "school_url": "https://www.frrsd.org",
+    "finalised_urls": [
+      "https://frrsd.org/district-information/school-committee-members/agenda",
+      "https://frrsd.org/district-information/school-committee-members/approved-minutes",
+      "https://www.frrsd.org"
+    ],
+    "total_documents": 208,
+    "per_url": [
+      {
+        "url": "https://frrsd.org/district-information/school-committee-members/agenda",
+        "doc_count": 193
+      },
+      {
+        "url": "https://frrsd.org/district-information/school-committee-members/approved-minutes",
+        "doc_count": 10
+      },
+      {
+        "url": "https://www.frrsd.org",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 424,
+    "school_name": "Foxborough",
+    "school_url": "http://www.foxborough.k12.ma.us",
+    "finalised_urls": [
+      "https://video.fcatv.org/videoscategory/school-committee",
+      "https://www.foxborough.k12.ma.us/cms/One.aspx?portalId=1548092&pageId=6857723#",
+      "https://www.foxborough.k12.ma.us/school_committee/2025-2026_operating_protocols",
+      "https://www.foxborough.k12.ma.us/school_committee/StreamingVideoLibrary"
+    ],
+    "total_documents": 41,
+    "per_url": [
+      {
+        "url": "https://www.foxborough.k12.ma.us/cms/One.aspx?portalId=1548092&pageId=6857723#",
+        "doc_count": 41
+      }
+    ]
+  },
+  {
+    "school_id": 474,
+    "school_name": "Francis W. Parker Charter Essential (District)",
+    "school_url": "https://www.theparkerschool.org",
+    "finalised_urls": [
+      "https://app2.boardontrack.com/public/AZLeOG/home",
+      "https://app2.boardontrack.com/public/AZLeOG/meetingsList",
+      "https://app2.boardontrack.com/public/AZLeOG/year?syid=2025-07&et=b",
+      "https://app2.boardontrack.com/public/AZLeOG/year?syid=2025-07&et=c",
+      "https://www.theparkerschool.org/about/board-trustees",
+      "https://www.theparkerschool.org/about/documents-and-records"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 484,
+    "school_name": "Frontier",
+    "school_url": "https://www.frsu38.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/18yB5Fx-j5Vr4d-tyxoV1wu-ChVuubtxe?usp=drive_link",
+      "https://drive.google.com/drive/folders/1pfmXFA3N_uhITGLnBB59RKSjKeiL5nqo",
+      "https://drive.google.com/drive/folders/1tPUDrqzrRu1u2MGfAe73AO2hw38DLnEt?usp=drive_link",
+      "https://drive.google.com/drive/folders/1Zd6FkLSGmMFlM4DbOZe1qZHeFmxKo0_g?usp=sharing",
+      "https://www.frsu38.org/frontier-regional-school-committee"
+    ],
+    "total_documents": 38,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1pfmXFA3N_uhITGLnBB59RKSjKeiL5nqo",
+        "doc_count": 4
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1tPUDrqzrRu1u2MGfAe73AO2hw38DLnEt?usp=drive_link",
+        "doc_count": 29
+      },
+      {
+        "url": "https://www.frsu38.org/frontier-regional-school-committee",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 425,
+    "school_name": "Gardner",
+    "school_url": "https://www.gardnerk12.org",
+    "finalised_urls": [
+      "https://www.gardnerk12.org/AgendaCenter/School-Committee-30"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 485,
+    "school_name": "Gateway",
+    "school_url": "https://www.grsd.org",
+    "finalised_urls": [
+      "https://www.grsd.org/school-committee"
+    ],
+    "total_documents": 92,
+    "per_url": [
+      {
+        "url": "https://www.grsd.org/school-committee",
+        "doc_count": 92
+      }
+    ]
+  },
+  {
+    "school_id": 426,
+    "school_name": "Georgetown",
+    "school_url": "https://georgetown.k12.ma.us",
+    "finalised_urls": [
+      "https://georgetown.k12.ma.us/school-committee",
+      "https://www.georgetownma.gov/government/boards___commissions/school_committee/agendas___minutes.php"
+    ],
+    "total_documents": 3,
+    "per_url": [
+      {
+        "url": "https://georgetown.k12.ma.us/school-committee",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 504,
+    "school_name": "Greater Commonwealth Virtual District",
+    "school_url": "https://www.gcvs.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1qmCtK6rz4evPvzz0rx7B48nzvSehWb5F?usp=drive_link",
+      "https://drive.google.com/drive/folders/1WyDJ63QIpYGbH3HLvuUM_6iso3X0jIst?usp=sharing",
+      "https://www.gcvs.org/board-of-trustees"
+    ],
+    "total_documents": 126,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1qmCtK6rz4evPvzz0rx7B48nzvSehWb5F?usp=drive_link",
+        "doc_count": 24
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1WyDJ63QIpYGbH3HLvuUM_6iso3X0jIst?usp=sharing",
+        "doc_count": 92
+      },
+      {
+        "url": "https://www.gcvs.org/board-of-trustees",
+        "doc_count": 10
+      }
+    ]
+  },
+  {
+    "school_id": 500,
+    "school_name": "Greater Fall River Regional Vocational Technical",
+    "school_url": "https://www.dimanregional.org",
+    "finalised_urls": [
+      "https://www.dimanregional.org/about/school-committee"
+    ],
+    "total_documents": 146,
+    "per_url": [
+      {
+        "url": "https://www.dimanregional.org/about/school-committee",
+        "doc_count": 146
+      }
+    ]
+  },
+  {
+    "school_id": 477,
+    "school_name": "Hampden Charter School of Science (District)",
+    "school_url": "http://www.hampdencharter.org",
+    "finalised_urls": [
+      "https://www.hampdencharter.org/welcome"
+    ],
+    "total_documents": 2,
+    "per_url": [
+      {
+        "url": "https://www.hampdencharter.org/welcome",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 486,
+    "school_name": "Hampden-Wilbraham",
+    "school_url": "https://www.hwrsd.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/14zsSm1joa7Xb9S39SUChHQHq3aLgQ4_a",
+      "https://drive.google.com/drive/folders/1g2bEBKJPT2eXO9qGBhZqDlLHXBajR8Xh",
+      "https://drive.google.com/file/d/1DfPpcr1FjTIDaBFJzCJj1aCWMBhoZvrF/view",
+      "https://www.hwrsd.org/departments/school-committee"
+    ],
+    "total_documents": 390,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/14zsSm1joa7Xb9S39SUChHQHq3aLgQ4_a",
+        "doc_count": 171
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1g2bEBKJPT2eXO9qGBhZqDlLHXBajR8Xh",
+        "doc_count": 218
+      },
+      {
+        "url": "https://drive.google.com/file/d/1DfPpcr1FjTIDaBFJzCJj1aCWMBhoZvrF/view",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 487,
+    "school_name": "Hampshire",
+    "school_url": "https://www.hr-k12.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/11SaydKzrG5NxtCiZGQZ9uFP1gXjvOnx4",
+      "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+      "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+      "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0?usp=sharing",
+      "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6"
+    ],
+    "total_documents": 715,
+    "per_url": [
+      {
+        "url": "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+        "doc_count": 715
+      }
+    ]
+  },
+  {
+    "school_id": 427,
+    "school_name": "Hatfield",
+    "school_url": "http://www.hatfieldps.net",
+    "finalised_urls": [
+      "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d",
+      "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d&termREC_ID=&pREC_ID=1195505",
+      "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d&termREC_ID=&pREC_ID=1195506"
+    ],
+    "total_documents": 3,
+    "per_url": [
+      {
+        "url": "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 488,
+    "school_name": "Hawlemont",
+    "school_url": "https://www.mtrsd.org/",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+      "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/agendas",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/minutes",
+      "https://www.mtrsd.org/school-committees"
+    ],
+    "total_documents": 16,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+        "doc_count": 12
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings",
+        "doc_count": 1
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 471,
+    "school_name": "Hill View Montessori Charter Public (District)",
+    "school_url": "https://www.hillviewmontessori.org",
+    "finalised_urls": [
+      "https://app2.boardontrack.com/public/GqCfpR/home",
+      "https://drive.google.com/drive/folders/1m-SP64oklrMaZ3-Dau2dnr9KoSRIn57x",
+      "https://www.hillviewmontessori.org/boardoftrustees"
+    ],
+    "total_documents": 85,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1m-SP64oklrMaZ3-Dau2dnr9KoSRIn57x",
+        "doc_count": 85
+      }
+    ]
+  },
+  {
+    "school_id": 428,
+    "school_name": "Holliston",
+    "school_url": "https://www.holliston.k12.ma.us",
+    "finalised_urls": [
+      "https://www.holliston.k12.ma.us/about/newsletters",
+      "https://www.holliston.k12.ma.us/about/school-committee",
+      "https://www.holliston.k12.ma.us/about/school-committee/20242025-archived-newsletters"
+    ],
+    "total_documents": 52,
+    "per_url": [
+      {
+        "url": "https://www.holliston.k12.ma.us/about/school-committee",
+        "doc_count": 48
+      },
+      {
+        "url": "https://www.holliston.k12.ma.us/about/school-committee/20242025-archived-newsletters",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.holliston.k12.ma.us/about/school-committee/special-election-override",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 429,
+    "school_name": "Hopedale",
+    "school_url": "https://www.hopedaleschools.org",
+    "finalised_urls": [
+      "https://www.hopedaleschools.org/documents/school-committee/agendas/326492",
+      "https://www.hopedaleschools.org/documents/school-committee/minutes/326469",
+      "https://www.hopedaleschools.org/page/school-committee"
+    ],
+    "total_documents": 45,
+    "per_url": [
+      {
+        "url": "https://www.hopedaleschools.org/page/school-committee",
+        "doc_count": 45
+      }
+    ]
+  },
+  {
+    "school_id": 430,
+    "school_name": "Hull",
+    "school_url": "https://www.hullpublicschools.org/",
+    "finalised_urls": [
+      "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682727",
+      "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682913",
+      "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682929"
+    ],
+    "total_documents": 286,
+    "per_url": [
+      {
+        "url": "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682913",
+        "doc_count": 147
+      },
+      {
+        "url": "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682929",
+        "doc_count": 139
+      }
+    ]
+  },
+  {
+    "school_id": 470,
+    "school_name": "Innovation Academy Charter (District)",
+    "school_url": "https://www.innovationcharter.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/0B3DdUkk4N5Mxb2l4Wk9fUDJmVTQ?resourcekey=0-0njVB9dyvn9xOY0k1cOFsg",
+      "https://www.innovationcharter.org/about-iacs/board-committees/meetings"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 431,
+    "school_name": "Ipswich",
+    "school_url": "http://www.ipsk12.net",
+    "finalised_urls": [
+      "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/agendas",
+      "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/minutes",
+      "http://www.ipsk12.net/school-committee/agendas-minutes-and-folders",
+      "http://www.ipsk12.net/school-committee/ipswich-school-committee/meeting-schedule"
+    ],
+    "total_documents": 144,
+    "per_url": [
+      {
+        "url": "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/agendas",
+        "doc_count": 71
+      },
+      {
+        "url": "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/minutes",
+        "doc_count": 72
+      },
+      {
+        "url": "http://www.ipsk12.net/school-committee/agendas-minutes-and-folders",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 475,
+    "school_name": "Learning First Charter Public School (District)",
+    "school_url": "https://learningfirstcharter.org",
+    "finalised_urls": [
+      "https://4.files.edl.io/6274/04/27/26/170715-d9ba0212-91bb-4c32-b7c2-5e14cf2ce33f.pdf",
+      "https://learningfirstcharter.org/apps/pages/index.jsp?uREC_ID=4376421&type=d&pREC_ID=2579523"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://learningfirstcharter.org/apps/pages/index.jsp?uREC_ID=4376421&type=d&pREC_ID=2579523",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 432,
+    "school_name": "Lee",
+    "school_url": "https://www.leepublicschools.net",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/0B0LYbpc8AC8ESDlYZEdzeG1YeGM?resourcekey=0-lCeXL6kTfFw04TPyx9DQXA",
+      "https://drive.google.com/drive/folders/0B0LYbpc8AC8ESjl0T3YtajlaYWs?resourcekey=0-x7HudL_YPk4v1qJAqQejMQ",
+      "https://drive.google.com/drive/folders/17RRDw7ems6j_D5Kz3ZRQDO2Teedpr93y?usp=drive_link",
+      "https://drive.google.com/drive/folders/18slIBIs2mYC4sX1WR3-78L53t4Tj6Mwg?usp=drive_link",
+      "https://drive.google.com/drive/folders/1ABfCx7E3gy8L2j-3x8DEEHFCoCsX9-xD?usp=drive_link",
+      "https://drive.google.com/drive/folders/1bvR1WPtTaQJQv83xtSzyRi6uFL__s9f-?usp=drive_link",
+      "https://drive.google.com/drive/folders/1e4wssgIZ0TEuVe8DWQLx8wLnhvVDms1g?usp=drive_link",
+      "https://drive.google.com/drive/folders/1NSqm3QYNayjgJ5BbWaVXNNIdqFh-RnoR?usp=drive_link",
+      "https://drive.google.com/drive/folders/1pag8etCyZXK2WpS4thIzAJgcjcNTZWBT?usp=drive_link",
+      "https://drive.google.com/drive/folders/1qK1rOLQIZAkjqkUZbUJOp5UN9lle7YMX?usp=drive_link",
+      "https://drive.google.com/drive/folders/1UccxQKtmD6h3T1jPd6PRC8ZBhmGpKTnP?usp=drive_link",
+      "https://drive.google.com/drive/folders/1zrh72SLcI9cfNjkhXnvQwsxFgtRAPz8e?usp=drive_link",
+      "https://www.leepublicschools.net/pages/f029fb77-db7e-4cd9-973b-c8dacbb8cb51"
+    ],
+    "total_documents": 15,
+    "per_url": [
+      {
+        "url": "https://www.leepublicschools.net/pages/f029fb77-db7e-4cd9-973b-c8dacbb8cb51",
+        "doc_count": 15
+      }
+    ]
+  },
+  {
+    "school_id": 433,
+    "school_name": "Leicester",
+    "school_url": "https://www.leicester.k12.ma.us",
+    "finalised_urls": [
+      "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes"
+    ],
+    "total_documents": 3,
+    "per_url": [
+      {
+        "url": "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 434,
+    "school_name": "Lexington",
+    "school_url": "https://www.lexingtonma.org/",
+    "finalised_urls": [
+      "https://docs.google.com/document/d/1aOXgdGLHRPyj5PP-IqBAaJ22WMieSSxxie2lCfCDHnw/edit?usp=sharing",
+      "https://docs.google.com/document/d/1KVckXF3aGTFF5xEZ3gJHUS10gaK96vXR2G89dRK4ZYo/edit?usp=sharing",
+      "https://docs.google.com/document/d/1wngAO9WwwrtffXxnnJBDtTbObIcMUVp8jbXHE3TZKTI/edit?usp=sharing",
+      "https://docs.google.com/document/d/1YTafAln0LxK0UekseK1jCn0HDg0-EsooAXMKwU_ypag/edit?usp=sharing",
+      "https://docs.google.com/document/d/1Z98-kUifLD7RDvyTmN9bjRcNEoL_GQ2ikdQZGBLpZrA/edit?usp=sharing",
+      "https://www.lexingtonma.org/lps-school-committee"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 435,
+    "school_name": "Lynnfield",
+    "school_url": "http://www.lynnfield.k12.ma.us",
+    "finalised_urls": [
+      "https://docs.google.com/document/d/1DqKiMzvGyl0JJkbQxidJ_utk9zImF1QPlsV--S-rddE/edit?tab=t.0",
+      "https://docs.google.com/document/d/1GBFUYDF03aaP-3bqcnPdHtlibi6ry42qUzKqvb6rSVQ/edit?tab=t.0",
+      "https://docs.google.com/document/d/1lFdVSGubVReXKqk6suUwHB2WmcHasb7ZGdmh92Y8qn8/edit?usp=sharing",
+      "http://www.lynnfield.k12.ma.us/pages/9be46b89-ebe5-4169-a910-d2c36fe039d0",
+      "http://www.lynnfield.k12.ma.us/school-committee-a905c1e5"
+    ],
+    "total_documents": 4,
+    "per_url": [
+      {
+        "url": "http://www.lynnfield.k12.ma.us/pages/9be46b89-ebe5-4169-a910-d2c36fe039d0",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.lynnfield.k12.ma.us/school-committee-a905c1e5",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 436,
+    "school_name": "Marlborough",
+    "school_url": "https://www.mps-edu.org",
+    "finalised_urls": [
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendas-minutesvideos",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2023-2024",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2024-2025",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2025-2026",
+      "https://www.mps-edu.org/page/school-committee",
+      "https://www.mps-edu.org/page/school-committee-meeting-agendasminutesvideos-2026-2027"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2025-2026",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 437,
+    "school_name": "Marshfield",
+    "school_url": "http://www.mpsd.org",
+    "finalised_urls": [
+      "https://www.mpsd.org/documents/school-committee/2023-2024-agendas/22678683",
+      "https://www.mpsd.org/documents/school-committee/2023-2024-minutes/22678686",
+      "https://www.mpsd.org/documents/school-committee/2024-2025-agendas/22678694",
+      "https://www.mpsd.org/documents/school-committee/2024-2025-minutes/22678697",
+      "https://www.mpsd.org/documents/school-committee/2025-2026-agendas/22678700",
+      "https://www.mpsd.org/documents/school-committee/2025-2026-minutes/22678702",
+      "https://www.mpsd.org/documents/school-committee/2026-2027-agendas/28339525",
+      "https://www.mpsd.org/documents/school-committee/22678613",
+      "https://www.mpsd.org/documents/school-committee/important-information/334634"
+    ],
+    "total_documents": 149,
+    "per_url": [
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2023-2024-agendas/22678683",
+        "doc_count": 24
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2023-2024-minutes/22678686",
+        "doc_count": 21
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2024-2025-agendas/22678694",
+        "doc_count": 23
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2024-2025-minutes/22678697",
+        "doc_count": 19
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2025-2026-agendas/22678700",
+        "doc_count": 25
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2025-2026-minutes/22678702",
+        "doc_count": 16
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2026-2027-agendas/28339525",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/22678613",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/important-information/334634",
+        "doc_count": 18
+      }
+    ]
+  },
+  {
+    "school_id": 489,
+    "school_name": "Masconomet",
+    "school_url": "https://www.masconomet.org",
+    "finalised_urls": [
+      "https://www.masconomet.org",
+      "https://www.masconomet.org/school-committee/meeting-agenda-minutes-documents/minutes-agendas-and-documents",
+      "https://www.masconomet.org/school-committee/subcommittees/community-relations",
+      "https://www.masconomet.org/school-committee/subcommittees/district-capital-improvementbudget",
+      "https://www.masconomet.org/school-committee/subcommittees/negotiations",
+      "https://www.masconomet.org/school-committee/subcommittees/policy",
+      "https://www.masconomet.org/school-committee/subcommittees/superintendent-search",
+      "https://www.masconomet.org/school-committee/subcommittees/town-liaisons",
+      "https://www.masconomet.org/school-committee/subcommittees/views-on-climate-and-learning-vocal"
+    ],
+    "total_documents": 507,
+    "per_url": [
+      {
+        "url": "https://www.masconomet.org/about-out-district/district-report-card/2023-district-report-card",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/about-out-district/vision-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.masconomet.org/calendar-fa",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.masconomet.org/departments/athletics/resources",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.masconomet.org/departments/business-computer-ed/department-homepage",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/departments/wellness/department-homepage",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.masconomet.org/departments/wellness/vaping-cessation-resources",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/district-offices/human-resources/staff-forms-and-agreements",
+        "doc_count": 7
+      },
+      {
+        "url": "https://www.masconomet.org/district-offices/teaching-and-learning/educator-evaluation",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.masconomet.org/district-offices/teaching-and-learning/professional-development/pd-partners",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.masconomet.org/district-offices/transportation",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/district-offices/use-of-facilities/use-of-facilities",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/masco-planning/fy26-masconomet-budget",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/masco-planning/masconomet-capital-improvement-plan",
+        "doc_count": 9
+      },
+      {
+        "url": "https://www.masconomet.org/masco-planning/masconomet-strategic-plan-2023-2028",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/masco-planning/portrait-of-a-learner-competencies",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/meeting-agenda-minutes-documents/minutes-agendas-and-documents",
+        "doc_count": 186
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/meeting-schedule",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/community-relations",
+        "doc_count": 71
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/district-capital-improvementbudget",
+        "doc_count": 64
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/negotiations",
+        "doc_count": 30
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/policy",
+        "doc_count": 49
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/superintendent-search",
+        "doc_count": 24
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/turf-field-task-force",
+        "doc_count": 8
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/views-on-climate-and-learning-vocal",
+        "doc_count": 29
+      }
+    ]
+  },
+  {
+    "school_id": 438,
+    "school_name": "Maynard",
+    "school_url": "https://www.maynard.k12.ma.us",
+    "finalised_urls": [
+      "https://www.maynard.k12.ma.us/documents/school-committee/25070188",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2023-2024-sc-agendas/25070297",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas(1)/25070301",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas/25070298",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2025-2026-sc-agendas/25070306",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2026-2027-sc-agendas/28328224",
+      "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2023-2024-sc-minutes/25070256",
+      "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2024-2025-sc-minutes/25070257",
+      "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2025-2026-sc-minutes/25070260",
+      "https://www.maynard.k12.ma.us/o/maynard-public-schools/browse/24423",
+      "https://www.maynard.k12.ma.us/o/maynard-public-schools/browse/24431"
+    ],
+    "total_documents": 229,
+    "per_url": [
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/25070188",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2023-2024-sc-agendas/25070297",
+        "doc_count": 69
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas(1)/25070301",
+        "doc_count": 60
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2025-2026-sc-agendas/25070306",
+        "doc_count": 41
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2026-2027-sc-agendas/28328224",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2023-2024-sc-minutes/25070256",
+        "doc_count": 22
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2024-2025-sc-minutes/25070257",
+        "doc_count": 19
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2025-2026-sc-minutes/25070260",
+        "doc_count": 14
+      }
+    ]
+  },
+  {
+    "school_id": 439,
+    "school_name": "Medfield",
+    "school_url": "https://www.medfield.net",
+    "finalised_urls": [
+      "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/775/Medfield_Public_Schools/63bd39d0-abc7-4f8f-9455-dafb74473e5b/Approved-2026-2027-School-Committee-Meeting.pdf?disposition=inline",
+      "https://www.medfield.net/documents/school-committee/agendas/2023---2024/25595296",
+      "https://www.medfield.net/documents/school-committee/agendas/2024---2025/25595301",
+      "https://www.medfield.net/documents/school-committee/agendas/2025---2026/25595306",
+      "https://www.medfield.net/documents/school-committee/agendas/67053",
+      "https://www.medfield.net/documents/school-committee/minutes/2023-2024/25595360",
+      "https://www.medfield.net/documents/school-committee/minutes/2024-2025/25595368",
+      "https://www.medfield.net/documents/school-committee/minutes/2025-2026/25595375",
+      "https://www.medfield.net/documents/school-committee/minutes/25595312",
+      "https://www.medfield.net/documents/school-committee/school-committee-meeting-dates/25596155",
+      "https://www.medfield.net/documents/school-committee/school-committee-meeting-documents/25595394",
+      "https://www.youtube.com/playlist?list=PLypOllJHc4M2EgOMD_XarFqL3EXJi8KCv"
+    ],
+    "total_documents": 133,
+    "per_url": [
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/2023---2024/25595296",
+        "doc_count": 30
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/2024---2025/25595301",
+        "doc_count": 17
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/2025---2026/25595306",
+        "doc_count": 24
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/2023-2024/25595360",
+        "doc_count": 25
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/2024-2025/25595368",
+        "doc_count": 17
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/2025-2026/25595375",
+        "doc_count": 18
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/school-committee-meeting-dates/25596155",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 490,
+    "school_name": "Mendon-Upton",
+    "school_url": "https://www.mursd.org",
+    "finalised_urls": [
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/budget-subcommittee-2023-2024/22509498",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/capital-planning-subcommittee-2023-2024/22509501",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/golden-apple-subcommittee-2023-2024/22509511",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/negotiations-subcommittee--2023-2024/22509504",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/policy-subcommittee-2023-2024/22509500",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/school-committee-meetings-2023-2024/22509508",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/superintendent-evaluation-subcommittee-2023-2024/22509506",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/budget-subcommittee-2024-2025/22509522",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/building-committee-2024-2025/22509537",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/capital-planning-subcommittee-2024-2025/22509519",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/golden-apple-subcommittee-2024-2025/22509531",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/multi-board-subcommittee-2024-2025/22509549",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/policy-subcommittee-2024-2025/22509518",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-meetings-2024-2025/22509517",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-workshop-2024-2025/22509545",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/superintendent-evaluation-subcommittee-2024-2025/22509523",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/840247",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/budget-subcommittee-meetings--2025-2026/22509573",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/building-committee-meetings-2025-2026/22509558",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/policy-subcommittee-meetings-2025-2026/22509564",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/school-committee--meetings-2025-2026/22509555",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/superintendent-evaluation-meetings-2025-2026/22509574"
+    ],
+    "total_documents": 213,
+    "per_url": [
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/budget-subcommittee-2023-2024/22509498",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/capital-planning-subcommittee-2023-2024/22509501",
+        "doc_count": 7
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/golden-apple-subcommittee-2023-2024/22509511",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/negotiations-subcommittee--2023-2024/22509504",
+        "doc_count": 17
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/policy-subcommittee-2023-2024/22509500",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/school-committee-meetings-2023-2024/22509508",
+        "doc_count": 38
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/superintendent-evaluation-subcommittee-2023-2024/22509506",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/budget-subcommittee-2024-2025/22509522",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/building-committee-2024-2025/22509537",
+        "doc_count": 7
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/capital-planning-subcommittee-2024-2025/22509519",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/golden-apple-subcommittee-2024-2025/22509531",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/multi-board-subcommittee-2024-2025/22509549",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/policy-subcommittee-2024-2025/22509518",
+        "doc_count": 11
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-meetings-2024-2025/22509517",
+        "doc_count": 38
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-workshop-2024-2025/22509545",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/superintendent-evaluation-subcommittee-2024-2025/22509523",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/budget-subcommittee-meetings--2025-2026/22509573",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/building-committee-meetings-2025-2026/22509558",
+        "doc_count": 17
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/policy-subcommittee-meetings-2025-2026/22509564",
+        "doc_count": 8
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/school-committee--meetings-2025-2026/22509555",
+        "doc_count": 36
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/superintendent-evaluation-meetings-2025-2026/22509574",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 440,
+    "school_name": "Middleborough",
+    "school_url": "https://www.middleboro.k12.ma.us",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1-UQ9ji-Pa3VbwFtNnkQrFElRcdgszBG6?usp=sharing",
+      "https://www.middleboro.k12.ma.us",
+      "https://www.middleboroughtv.com/category/video/school-committee/"
+    ],
+    "total_documents": 416,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1-UQ9ji-Pa3VbwFtNnkQrFElRcdgszBG6?usp=sharing",
+        "doc_count": 245
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/community/facility-rental/rental-application",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/community/facility-rental/rental-fees-costs",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/business-finance/bids",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/business-finance/budget/fy-2025-2026-budget-booklet-clone",
+        "doc_count": 8
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/curriculum-instruction/english-for-speakers-of-other-languages-program",
+        "doc_count": 15
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/curriculum-instruction/english-for-speakers-of-other-languages-program/ell-progress-reports",
+        "doc_count": 57
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/curriculum-instruction/homeschool",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/department-of-special-education/specialized-transportation",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/food-service/meal-modification",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/health-service/helpful-links",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/health-service/medical-forms",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/health-service/policies-and-protocols",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/human-resources/human-resource-forms",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/human-resources/mandatory-training-for-staff",
+        "doc_count": 22
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/one-middleborough",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/report-cards",
+        "doc_count": 10
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/school-committee/public-participation-at-school-committee-meetings",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/student-services/social-emotional-learning-sel/panorama/student-competency-well-being-measures-survey-grades-3-5",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/supt-office/superintendent-search-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/technology-dept/connecting-your-school-windows-device-to-your-home-wifi",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/technology-dept/learn-about-your-device",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/technology-dept/printing-with-papercut",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/technology-dept/tech-tips/digital-learning/google-suite-for-education",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/technology-dept/tech-toolbox/webinars-resources/setting-up-classroom-phones-brightlinks-and-document-camera",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/our-district/technology-dept/updating-contact-information-in-aspen",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/bullying-harrassment-descrimination",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/bullying-harrassment-descrimination/interim-addendum-for-parents-and-guardians-and-student-handbooks",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/bullying-harrassment-descrimination/introduction-to-the-anti-bullying-law",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/calendars-a-glace",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/extended-learning-homepage",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/extended-learning-homepage/zoom-as-a-participant",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/handbooks",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/parents-guardian-help-center/reading-3rd-grade-5th-grade",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/parents-guardian-help-center/reading-kindergarten-2nd-grade",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/parents-guardian-help-center/writing-3rd-grade-5th-grade",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/parents-guardian-help-center/writing-kindergarten-2nd-grade",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/student-accident-medical-insurence",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/student-registration",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.middleboro.k12.ma.us/students-sevices/student-registration/school-assignments-by-street",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 441,
+    "school_name": "Milton",
+    "school_url": "https://www.miltonps.org",
+    "finalised_urls": [
+      "https://www.miltonps.org",
+      "https://www.miltonps.org/documents/school-committee/school-committee-minutes/647544",
+      "https://www.miltonps.org/o/mps/page/school-committee-meetings",
+      "https://www.miltonps.org/o/mps/page/school-committee-meetings-copy",
+      "https://www.miltonps.org/page/sc-agenda"
+    ],
+    "total_documents": 30,
+    "per_url": [
+      {
+        "url": "https://www.miltonps.org/documents/mps-one-page-calendar/24637636",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.miltonps.org/documents/school-committee/sc-policies/647600",
+        "doc_count": 13
+      },
+      {
+        "url": "https://www.miltonps.org/documents/school-committee/sc-presentations/647606",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.miltonps.org/o/mps/page/mps-back-to-school-2026",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.miltonps.org/page/community-schools",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.miltonps.org/page/englishlanguagearts",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.miltonps.org/page/food-services",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.miltonps.org/page/preschool",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.miltonps.org/page/school-counseling",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.miltonps.org/page/superintendent",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.miltonps.org/page/transportation",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 491,
+    "school_name": "Mohawk Trail",
+    "school_url": "https://www.mtrsd.org/",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+      "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/agendas",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/minutes",
+      "https://www.mtrsd.org/school-committees"
+    ],
+    "total_documents": 16,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+        "doc_count": 12
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings",
+        "doc_count": 1
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+        "doc_count": 3
+      }
+    ]
+  },
+  {
+    "school_id": 472,
+    "school_name": "Mystic Valley Regional Charter (District)",
+    "school_url": "https://www.mvrcs.com",
+    "finalised_urls": [
+      "https://www.mvrcs.com/apps/pages/index.jsp?uREC_ID=248982&type=d",
+      "https://www.mvrcs.com/ourpages/auto/2014/10/11/51899905/NOTICE%20OF%20ANNUAL%20MEETING%20June%20%2022%202026.pdf?rnd=1781736806393",
+      "https://www.mvrcs.com/ourpages/auto/2014/10/11/51899905/Notice%20of%20MVRCS%20Board%20Meeting%20October%2015%20%202025%20for%20October%2020%202025%20Meeting%20.pdf?rnd=1760539099097"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 442,
+    "school_name": "Nantucket",
+    "school_url": "https://www.npsk.org",
+    "finalised_urls": [
+      "https://www.npsk.org/school-committee/agendas-minutes"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 492,
+    "school_name": "Narragansett",
+    "school_url": "https://www.nrsd.org",
+    "finalised_urls": [
+      "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 493,
+    "school_name": "Nashoba",
+    "school_url": "https://www.nrsd.net",
+    "finalised_urls": [
+      "https://www.nrsd.net/documents/school-committee/23858960"
+    ],
+    "total_documents": 2,
+    "per_url": [
+      {
+        "url": "https://www.nrsd.net/documents/school-committee/23858960",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 443,
+    "school_name": "Natick",
+    "school_url": "https://www.natickps.org",
+    "finalised_urls": [
+      "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/4910/Nps/9d43ac24-72db-4d5a-a5fe-9f635ac25091/2025-2026_SCHOOL_COMMITTEE_MEETINGS_.docx__2__.pdf?disposition=inline",
+      "https://www.natickps.org/documents/school-committee/24282560",
+      "https://www.natickps.org/documents/school-committee/memorial-school-building-committee-(msbc)-documents/24282720",
+      "https://www.natickps.org/documents/school-committee/school-committee-policy-manual/24282533"
+    ],
+    "total_documents": 33,
+    "per_url": [
+      {
+        "url": "https://www.natickps.org/documents/school-committee/24282560",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.natickps.org/documents/school-committee/memorial-school-building-committee-(msbc)-documents/24282720",
+        "doc_count": 18
+      },
+      {
+        "url": "https://www.natickps.org/documents/school-committee/school-committee-policy-manual/24282533",
+        "doc_count": 13
+      }
+    ]
+  },
+  {
+    "school_id": 503,
+    "school_name": "Norfolk County Agricultural",
+    "school_url": "https://www.norfolkaggie.org",
+    "finalised_urls": [
+      "https://www.norfolkaggie.org/about-us",
+      "https://www.norfolkaggie.org/about-us/board-of-trustees",
+      "https://www.norfolkaggie.org/about-us/calendars"
+    ],
+    "total_documents": 3,
+    "per_url": [
+      {
+        "url": "https://www.norfolkaggie.org/about-us/board-of-trustees",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.norfolkaggie.org/about-us/forms-policies-and-handbooks",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 444,
+    "school_name": "North Attleborough",
+    "school_url": "https://www.naschools.net",
+    "finalised_urls": [
+      "https://www.naschools.net/documents/our-district/school-committee/370187",
+      "https://www.naschools.net/documents/school-committee/minutes/22676255"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://www.naschools.net/documents/our-district/school-committee/370187",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 445,
+    "school_name": "Northbridge",
+    "school_url": "https://www.nps.org",
+    "finalised_urls": [
+      "https://northbridgetv.org/CablecastPublicSite/?channel=10",
+      "https://www.nps.org",
+      "https://www.nps.org/page/meeting-minutes",
+      "https://www.nps.org/page/sc-agendas"
+    ],
+    "total_documents": 3,
+    "per_url": [
+      {
+        "url": "https://www.nps.org",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.nps.org/o/nps/page/budget-information",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 446,
+    "school_name": "North Brookfield",
+    "school_url": "https://www.nbschools.org",
+    "finalised_urls": [
+      "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255603&type=d&pREC_ID=2518107",
+      "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255615&type=d&pREC_ID=2518116"
+    ],
+    "total_documents": 91,
+    "per_url": [
+      {
+        "url": "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255603&type=d&pREC_ID=2518107",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255615&type=d&pREC_ID=2518116",
+        "doc_count": 90
+      }
+    ]
+  },
+  {
+    "school_id": 494,
+    "school_name": "North Middlesex",
+    "school_url": "http://www.nmrsd.org",
+    "finalised_urls": [
+      "https://www.youtube.com/playlist?list=PL9d0lQubEUXmSwx0JhU7-V1Xwqe0XuU8s",
+      "http://www.nmrsd.org/school-committee/meetings/meeting-recordings"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 447,
+    "school_name": "Norwell",
+    "school_url": "https://www.norwellschools.org",
+    "finalised_urls": [
+      "https://www.norwellschools.org/school-committee/members-meeting-information",
+      "https://www.norwellschools.org/school-committee/prior-year-school-committee-meeting-videos",
+      "https://www.norwellschools.org/school-committee/schedule"
+    ],
+    "total_documents": 18,
+    "per_url": [
+      {
+        "url": "https://www.norwellschools.org/school-committee/members-meeting-information",
+        "doc_count": 18
+      }
+    ]
+  },
+  {
+    "school_id": 448,
+    "school_name": "Norwood",
+    "school_url": "https://www.norwood.k12.ma.us",
+    "finalised_urls": [
+      "https://www.norwood.k12.ma.us/sc",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2013-2014",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2014-2015",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2015-2016",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2016-2017",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2017-2018",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2018-2019",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2019-2020",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2020-2021",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2021-2022",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2022-2023",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2023-2024",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2024-2025",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2025-2026",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2026-2027",
+      "https://www.norwood.k12.ma.us/sc/schedules-minutes"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 449,
+    "school_name": "Pembroke",
+    "school_url": "https://www.pembrokek12.org",
+    "finalised_urls": [
+      "https://www.pembrokek12.org",
+      "https://www.pembrokek12.org/district/school-committee/minutes-of-the-psc",
+      "https://www.pembrokek12.org/district/school-committee/policy-sub-committee-meeting-minutes",
+      "https://www.pembrokek12.org/district/school-committee/school-committee-meeting-agendas"
+    ],
+    "total_documents": 178,
+    "per_url": [
+      {
+        "url": "https://www.pembrokek12.org",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.pembrokek12.org/departments/student-services/bullying-prevention-and-intervention",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/district-policies/athletics-handbook",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/district-policies/handbooks",
+        "doc_count": 13
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/district-policies/school-committee-policy-manual",
+        "doc_count": 11
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/hobomock-air",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/school-committee/minutes-of-the-psc",
+        "doc_count": 69
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/school-committee/policy-sub-committee-meeting-minutes",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/school-committee/school-committee-meeting-agendas",
+        "doc_count": 73
+      }
+    ]
+  },
+  {
+    "school_id": 476,
+    "school_name": "Pioneer Charter School of Science (District)",
+    "school_url": "https://www.pioneercss.org",
+    "finalised_urls": [
+      "https://www.pioneercss.org/apps/pages/index.jsp?uREC_ID=281022&type=d",
+      "https://www.pioneercss.org/apps/pages/index.jsp?uREC_ID=515234&type=d"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 495,
+    "school_name": "Pioneer Valley",
+    "school_url": "https://www.pvrsdk12.org",
+    "finalised_urls": [
+      "https://drive.google.com/open?id=1BVHUNfBqTgjGNale0iW4kp1Dk3Uin8vnx2mhSTsUCU8",
+      "https://drive.google.com/open?id=1Y2NDEmfCpy7s5Bw2ax76aQYRmBaiz5BRxZxyCPEhTkw",
+      "https://www.pvrsdk12.org/school-committee/meetings-materials"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 450,
+    "school_name": "Plainville",
+    "school_url": "http://www.plainville.k12.ma.us",
+    "finalised_urls": [
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2016-2017-meetings-agendas-and-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2017-2018-meetings-agendas-and-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2019-2020-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2020-2021-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2021-2022-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2022-2023-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2023-2024-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2024-2025-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2025-2026-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2026-2027-meetings-agendas-minutes"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2025-2026-meetings-agendas-minutes",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 451,
+    "school_name": "Plymouth",
+    "school_url": "https://www.plymouth.k12.ma.us",
+    "finalised_urls": [
+      "https://www.plymouth.k12.ma.us/documents/district/school-committee/480241",
+      "https://www.plymouth.k12.ma.us/page/school-committee"
+    ],
+    "total_documents": 5,
+    "per_url": [
+      {
+        "url": "https://www.plymouth.k12.ma.us/documents/district/school-committee/480241",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 498,
+    "school_name": "Quaboag Regional",
+    "school_url": "https://www.quaboagrsd.org",
+    "finalised_urls": [
+      "https://docs.google.com/document/d/136ey3U5mVDOo_K2Tbi86X18725pyRZIy/edit?usp=sharing&ouid=115358915884607093623&rtpof=true&sd=true",
+      "https://docs.google.com/document/d/1I852-11q0e1YUu_Xq6q2zUrReI64NWj1/edit?usp=sharing&ouid=114799213029061791404&rtpof=true&sd=true",
+      "https://docs.google.com/document/d/1R_ETv-MzJsiB_PGzmQT4j5bhlUc0LApS/edit?usp=sharing&ouid=114799213029061791404&rtpof=true&sd=true",
+      "https://www.quaboagrsd.org/district-depts/school-committee"
+    ],
+    "total_documents": 14,
+    "per_url": [
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee",
+        "doc_count": 14
+      }
+    ]
+  },
+  {
+    "school_id": 452,
+    "school_name": "Revere",
+    "school_url": "https://www.reverek12.org",
+    "finalised_urls": [
+      "http://reverema.iqm2.com/Citizens/Board/1048-Revere-School-Committee",
+      "https://www.reverek12.org",
+      "https://www.reverek12.org/apps/events/2026/8/18/47747614/?REC_ID=47747614&id=0",
+      "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191795&type=d&pREC_ID=2755634"
+    ],
+    "total_documents": 268,
+    "per_url": [
+      {
+        "url": "https://www.reverek12.org",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191700&type=d&pREC_ID=2188790",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191700&type=d&pREC_ID=2188791",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191701&type=d&pREC_ID=2696134",
+        "doc_count": 14
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191737&type=d",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191743&type=d",
+        "doc_count": 5
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191745&type=d&pREC_ID=2188856",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191746&type=d&pREC_ID=2188862",
+        "doc_count": 6
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191746&type=d&pREC_ID=2188863",
+        "doc_count": 12
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191746&type=d&pREC_ID=2188870",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191746&type=d&pREC_ID=2254929",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191757&type=d&pREC_ID=2652406&tota11y=true",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191795&type=d&pREC_ID=2188908",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191795&type=d&pREC_ID=2755634",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191797&type=d&pREC_ID=2188909",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191798&type=d&pREC_ID=2188912",
+        "doc_count": 11
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2286580&type=d",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2212947",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2212960",
+        "doc_count": 27
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2224472",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2278166",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2368521",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2396796",
+        "doc_count": 139
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2318541&type=d&pREC_ID=2427597",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2459566&type=d",
+        "doc_count": 3
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2732140&type=d&pREC_ID=2219046",
+        "doc_count": 4
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=3086599&type=d&pREC_ID=2677298",
+        "doc_count": 11
+      }
+    ]
+  },
+  {
+    "school_id": 453,
+    "school_name": "Seekonk",
+    "school_url": "https://www.seekonkschools.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1iSJ9mwh3_z5cUDlw8RlENQQIfHKXilmP",
+      "https://vimeo.com/channels/seekonkschoolcommittee/",
+      "https://www.seekonkschools.org/school-committee"
+    ],
+    "total_documents": 108,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1iSJ9mwh3_z5cUDlw8RlENQQIfHKXilmP",
+        "doc_count": 108
+      }
+    ]
+  },
+  {
+    "school_id": 454,
+    "school_name": "Sherborn",
+    "school_url": "http://www.doversherborn.org",
+    "finalised_urls": [
+      "http://www.doversherborn.org",
+      "http://www.doversherborn.org/school-committee/dover-school-committee",
+      "http://www.doversherborn.org/school-committee/sherborn-school-committee"
+    ],
+    "total_documents": 408,
+    "per_url": [
+      {
+        "url": "http://www.doversherborn.org",
+        "doc_count": 7
+      },
+      {
+        "url": "http://www.doversherborn.org/about-us/superintendent",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/about-us/whoarewe",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/calendar",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/finance-and-operations",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/human-resources",
+        "doc_count": 14
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/human-resources/benefits",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/human-resources/contracts",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/human-resources/policies-resources",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/student-services/health-services",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/student-services/school-counseling/mental-health-resources",
+        "doc_count": 6
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/student-services/special-education",
+        "doc_count": 9
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/student-services/title-ix",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/technology/how-do-i/add-a-networked-printer",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/technology/how-do-i/clear-my-cookies-and-cache",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/programs-and-services/technology/how-do-i/make-sure-my-software-is-up-to-date",
+        "doc_count": 12
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee",
+        "doc_count": 47
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/april-2024",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/january-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/june-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/march-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/may-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/november-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/october-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/january-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/june-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/march-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/may-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/october-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2024-2025/september-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/february-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/february-3-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/march-2026",
+        "doc_count": 5
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/may-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/november-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/october-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee/2025-2026/september-2025-clone",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/august-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/december-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/february-14-2024",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/february-6-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/january-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/march-20-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/march-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/may-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/may-2024/june-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/november-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/october-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/december-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/february-2025",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/january-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/june-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/march-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/may-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/november-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/october-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2024-2025/september-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/december-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/february-11-2026",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/february-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/march-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/may-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/november-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/october-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee/2025-2026/september-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/april-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/april-24-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/august-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/january-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/june-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/march-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2024-2025/april-2025",
+        "doc_count": 7
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2024-2025/april-2025/april-2-2025",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2024-2025/january-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2024-2025/june-2025",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2024-2025/september-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2025-2026/april-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2025-2026/august-2025-clone",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2025-2026/january-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2025-2026/march-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/joint-school-committee/2025-2026/september-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/policy-manual",
+        "doc_count": 5
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/april-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/august-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/february-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/june-2024",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/march-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/may-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/november-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/october-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2023-2024/september-2023",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/february-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/june-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/march-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/may-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/november-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/october-2024",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2024-2025/september-2024",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/december-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/february-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/february-24-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/june-2026",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/march-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/may-2026",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/october-2025",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2025-2026/september-2025",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee/2026-2027",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/students-families/bullying-reporting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.doversherborn.org/students-families/work-permits",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.doversherborn.org/teaching-learning",
+        "doc_count": 5
+      },
+      {
+        "url": "http://www.doversherborn.org/teaching-learning/elementary-school-learning",
+        "doc_count": 7
+      },
+      {
+        "url": "http://www.doversherborn.org/teaching-learning/elementary-school-learning/elementary-ela-program-review",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 455,
+    "school_name": "Shrewsbury",
+    "school_url": "https://schools.shrewsburyma.gov/",
+    "finalised_urls": [
+      "https://schools.shrewsburyma.gov/sc/2024-2025-school-committee-meeting-documents",
+      "https://schools.shrewsburyma.gov/sc/2025-2026-school-committee-meeting-documents",
+      "https://schools.shrewsburyma.gov/sc/2026-2027-school-committee-meeting-documents",
+      "https://schools.shrewsburyma.gov/sc/past-meeting-minutes"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 473,
+    "school_name": "Sizer School: A North Central Charter Essential (District)",
+    "school_url": "http://www.sizerschool.org",
+    "finalised_urls": [
+      "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d",
+      "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d&termREC_ID=&pREC_ID=1016992",
+      "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d&termREC_ID=&pREC_ID=1168972"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 456,
+    "school_name": "Somerset",
+    "school_url": "https://www.somersetschools.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1tHp1Fl_XYHKgz5CY45VVsTVJUtieLBVe?usp=sharing",
+      "https://www.somersetschools.org/School-Committee/Somerset-Public-Schools/index.html"
+    ],
+    "total_documents": 63,
+    "per_url": [
+      {
+        "url": "https://www.somersetschools.org/School-Committee/Somerset-Public-Schools/index.html",
+        "doc_count": 63
+      }
+    ]
+  },
+  {
+    "school_id": 496,
+    "school_name": "Somerset Berkley Regional School District",
+    "school_url": "https://somersetschools.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/16PXPWD4sB8uYu8cAsqbvpfnN7krigoHB?usp=sharing",
+      "https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/index.html",
+      "https://www.youtube.com/watch?v=kmwe7eAPYyM&list=PLvzaeZrgURbrvZGl-YsfCgDjSNOuKwYTC"
+    ],
+    "total_documents": 62,
+    "per_url": [
+      {
+        "url": "https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/index.html",
+        "doc_count": 62
+      }
+    ]
+  },
+  {
+    "school_id": 457,
+    "school_name": "Southampton",
+    "school_url": "http://www.hr-k12.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/11SaydKzrG5NxtCiZGQZ9uFP1gXjvOnx4",
+      "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+      "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+      "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0?usp=sharing",
+      "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6"
+    ],
+    "total_documents": 715,
+    "per_url": [
+      {
+        "url": "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+        "doc_count": 715
+      }
+    ]
+  },
+  {
+    "school_id": 501,
+    "school_name": "South Shore Regional Vocational Technical",
+    "school_url": "https://southshore.tech",
+    "finalised_urls": [
+      "https://southshore.tech/school-committee"
+    ],
+    "total_documents": 0,
+    "per_url": []
+  },
+  {
+    "school_id": 497,
+    "school_name": "Spencer-E Brookfield",
+    "school_url": "https://www.sebrsd.org",
+    "finalised_urls": [
+      "https://www.sebrsd.org/documents/3.-school-committee/145329",
+      "https://www.sebrsd.org/documents/3.-school-committee/school-committee-minutes/20657762"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://www.sebrsd.org/documents/3.-school-committee/145329",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 458,
+    "school_name": "Sunderland",
+    "school_url": "https://www.frsu38.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/123XakUfSpQOw3JMS5P-yn595lyw5Lanx?usp=drive_link",
+      "https://drive.google.com/drive/folders/1JMygSWzsRisb2KSn19zlOjz7wRq0oClc?usp=drive_link",
+      "https://drive.google.com/drive/folders/1r8squknmgV9LZilAQC8cou4PbcAQ_VKw?usp=drive_link",
+      "https://drive.google.com/drive/folders/1TEB78_rriYHSWna2iyBQ6J_jWbIlKr3I?usp=sharing",
+      "https://www.frsu38.org/sunderland-school-committee"
+    ],
+    "total_documents": 25,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1JMygSWzsRisb2KSn19zlOjz7wRq0oClc?usp=drive_link",
+        "doc_count": 1
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1r8squknmgV9LZilAQC8cou4PbcAQ_VKw?usp=drive_link",
+        "doc_count": 19
+      },
+      {
+        "url": "https://www.frsu38.org/sunderland-school-committee",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 502,
+    "school_name": "Tri-County Regional Vocational Technical",
+    "school_url": "https://www.tri-county.us",
+    "finalised_urls": [
+      "https://www.tri-county.us/documents/about-us/school-committee/documents/514662",
+      "https://www.tri-county.us/documents/about-us/school-committee/documents/agendas/16502095",
+      "https://www.tri-county.us/documents/about-us/school-committee/documents/meeting-minutes/16502091"
+    ],
+    "total_documents": 36,
+    "per_url": [
+      {
+        "url": "https://www.tri-county.us/documents/about-us/school-committee/documents/agendas/16502095",
+        "doc_count": 32
+      },
+      {
+        "url": "https://www.tri-county.us/documents/about-us/school-committee/documents/meeting-minutes/16502091",
+        "doc_count": 4
+      }
+    ]
+  },
+  {
+    "school_id": 459,
+    "school_name": "Truro",
+    "school_url": "https://www.truromass.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1f0sMIFYux1ctJUegkWzYIGAXY1fzHw_m?usp=drive_link",
+      "https://drive.google.com/drive/folders/1Rgp4_41GLWd63uZrNB7UvqXaaVXgJio2?usp=sharing",
+      "https://drive.google.com/drive/folders/1xE3yzlB_FvRB_8474nMRioRSX5uSrZKX?usp=sharing",
+      "https://www.truromass.org/apps/pages/index.jsp?uREC_ID=521706&type=d"
+    ],
+    "total_documents": 77,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1Rgp4_41GLWd63uZrNB7UvqXaaVXgJio2?usp=sharing",
+        "doc_count": 24
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1xE3yzlB_FvRB_8474nMRioRSX5uSrZKX?usp=sharing",
+        "doc_count": 40
+      },
+      {
+        "url": "https://www.truromass.org/apps/pages/index.jsp?uREC_ID=521706&type=d",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.truromass.org/apps/pages/index.jsp?uREC_ID=521706&type=d&termREC_ID=&pREC_ID=video",
+        "doc_count": 12
+      }
+    ]
+  },
+  {
+    "school_id": 460,
+    "school_name": "Walpole",
+    "school_url": "http://www.walpole.k12.ma.us/",
+    "finalised_urls": [
+      "https://www.walpole.k12.ma.us/documents/other-documents",
+      "https://www.walpole.k12.ma.us/documents/other-documents/school-committee",
+      "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887482",
+      "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887490"
+    ],
+    "total_documents": 57,
+    "per_url": [
+      {
+        "url": "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887482",
+        "doc_count": 11
+      },
+      {
+        "url": "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887490",
+        "doc_count": 46
+      }
+    ]
+  },
+  {
+    "school_id": 461,
+    "school_name": "Westfield",
+    "school_url": "https://www.schoolsofwestfield.org",
+    "finalised_urls": [
+      "https://www.schoolsofwestfield.org/browse/201110",
+      "https://www.schoolsofwestfield.org/o/wps/page/school-committee-2023"
+    ],
+    "total_documents": 1,
+    "per_url": [
+      {
+        "url": "https://www.schoolsofwestfield.org/o/wps/page/school-committee-2023",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 462,
+    "school_name": "Westford",
+    "school_url": "http://westfordk12.us/Pages/index",
+    "finalised_urls": [
+      "https://cloud.castus.tv/vod/westfordcat/playlist/School%20Committee?page=PLAYLIST",
+      "https://dms.westfordma.gov/myapi_nohead.php",
+      "https://westfordma.gov/767/Document-Management-System",
+      "https://westfordma.gov/AgendaCenter/School-Committee-39",
+      "http://westfordk12.us/about/school-committee"
+    ],
+    "total_documents": 2,
+    "per_url": [
+      {
+        "url": "http://westfordk12.us/about/school-committee",
+        "doc_count": 2
+      }
+    ]
+  },
+  {
+    "school_id": 463,
+    "school_name": "West Springfield",
+    "school_url": "https://www.wsps.org",
+    "finalised_urls": [
+      "https://cloud.castus.tv/vod/wsaccess/playlist/School%20Committee?page=PLAYLIST",
+      "https://drive.google.com/drive/folders/1eePK9KRf2XhCn5wMjdw26zHEX_47nTQI?usp=drive_link",
+      "https://drive.google.com/drive/folders/1RpjU2AKqNCr_xgCuJ-NpVrlnK1eh_X2i?usp=drive_link",
+      "https://www.wsps.org/District/School-Commitee"
+    ],
+    "total_documents": 90,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1eePK9KRf2XhCn5wMjdw26zHEX_47nTQI?usp=drive_link",
+        "doc_count": 4
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1RpjU2AKqNCr_xgCuJ-NpVrlnK1eh_X2i?usp=drive_link",
+        "doc_count": 86
+      }
+    ]
+  },
+  {
+    "school_id": 464,
+    "school_name": "Weymouth",
+    "school_url": "http://www.weymouthschools.org/",
+    "finalised_urls": [
+      "https://www.weymouth.tv/school-committee",
+      "http://www.weymouthschools.org/school-committee",
+      "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents",
+      "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026"
+    ],
+    "total_documents": 611,
+    "per_url": [
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents",
+        "doc_count": 177
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024",
+        "doc_count": 51
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/april-25-2024-meeting",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/april-4-2024-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/february-15-2024-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/june-13-2024-meeting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/june-20-2024-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/march-21-2024-meeting",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/may-23-2024-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2023-2024/may-9-2024-meeting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/april-10-2025-meetings",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/april-2-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/august-15-2024-meetings",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/december-5-2024-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/february-11-2025-policy-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/february-27-2025-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/february-5-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/february-6-2025-meeting",
+        "doc_count": 6
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/january-15-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/january-22-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/january-23-2025-meeting",
+        "doc_count": 5
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/january-27-2025-athletics-subcommittee-meeting",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/january-9-2025-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/june-16-2025-athletics-subcommittee-meeting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/june-25-2025-budget-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/june-26-2025-meeting",
+        "doc_count": 6
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/june-5-2025-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/march-13-2025-meeting-public-hearings",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/march-24-2025-athletics-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/march-27-2025-meeting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/march-5-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/may-1-2025-meeting",
+        "doc_count": 6
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/may-15-2025-meeting",
+        "doc_count": 6
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/may-7-2025-budget-subcommittee-meeting",
+        "doc_count": 7
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/november-7-2024-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/october-10-2024-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/october-24-2024-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2024-2025/september-12-2024-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/april-16-2026-policy-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/april-29-2026-budget-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/april-30-2026-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/april-9-2026-meeting",
+        "doc_count": 5
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/august-14-2025-athletics-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/august-14-2025-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/december-11-2025-policy-subcommittee-meeting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/december-18-2025-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/december-3-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/december-4-2025-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/february-12-2026-meeting",
+        "doc_count": 7
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/february-25-2026-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/february-4-2026-budget-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/february-5-2026-policy-subcommittee-meeting",
+        "doc_count": 8
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/january-14-2026-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/january-21-2026-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/january-22-2026-meeting",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/january-8-2026-meetings",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/june-16-2026-policy-subcommittee-meeting",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/june-24-2026-budget-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/june-25-2026-meeting",
+        "doc_count": 10
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/june-4-2026-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/march-12-2026-meeting-public-hearings",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/march-26-2026-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/march-4-2026-budget-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/may-14-2026-athletics-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/may-14-2026-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/may-6-2026-budget-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/november-12-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/november-13-2025-athletics-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/november-6-2025-meetings",
+        "doc_count": 3
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/october-23-2025-meeting",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/october-8-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/october-9-2025-meeting",
+        "doc_count": 9
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/september-11-2025-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/september-17-2025-budget-subcommittee-meeting",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026/september-24-2025-policy-subcommittee-meeting",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/budget-sub-committee",
+        "doc_count": 1
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/budget-sub-committee/agendas-and-documents",
+        "doc_count": 93
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/budget-sub-committee/budget-archive",
+        "doc_count": 70
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/budget-sub-committee/fy25-budget-documents",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/budget-sub-committee/fy26-budget-documents",
+        "doc_count": 2
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/budget-sub-committee/fy27-budget-development",
+        "doc_count": 4
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/collective-bargaining-sub-committee/current-contracts",
+        "doc_count": 18
+      }
+    ]
+  },
+  {
+    "school_id": 465,
+    "school_name": "Whately",
+    "school_url": "https://www.frsu38.org",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/14GuWGjL3m1uo1u57tomhJTeZBkriG6QR?usp=drive_link",
+      "https://drive.google.com/drive/folders/1iCzL1ELawsE8Xw4bFHFumqnpYoqiCzDl?usp=sharing",
+      "https://drive.google.com/drive/folders/1KBhzBUbtZ3YVmguUMhcr5w-CGf-MEddM?usp=drive_link",
+      "https://drive.google.com/drive/folders/1nq5jiiqV-tlJBvXY8HjoDKsmjfuC-9Zh?usp=drive_link",
+      "https://www.frsu38.org/whately-school-committee"
+    ],
+    "total_documents": 22,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/14GuWGjL3m1uo1u57tomhJTeZBkriG6QR?usp=drive_link",
+        "doc_count": 17
+      },
+      {
+        "url": "https://www.frsu38.org/whately-school-committee",
+        "doc_count": 5
+      }
+    ]
+  },
+  {
+    "school_id": 466,
+    "school_name": "Worcester",
+    "school_url": "https://www.worcesterschools.org",
+    "finalised_urls": [
+      "https://www.worcesterschools.org",
+      "https://www.worcesterschools.org/page/agenda-and-minutes",
+      "https://www.worcesterschools.org/page/live-and-archived-videos",
+      "https://www.worcesterschools.org/page/meeting-dates",
+      "https://www.youtube.com/playlist?list=PLZqyT6uNMVa9VWqRvrOSa9LZehdTuo0pA"
+    ],
+    "total_documents": 44,
+    "per_url": [
+      {
+        "url": "https://www.worcesterschools.org/o/wps/page/policies-and-procedures",
+        "doc_count": 2
+      },
+      {
+        "url": "https://www.worcesterschools.org/o/wps/page/summer-reading",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/agenda-and-minutes",
+        "doc_count": 35
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/data-privacy-frequently-asked-questions",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/immigration-resources",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/information-technology",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/loan-forgiveness-programs",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/meeting-dates",
+        "doc_count": 1
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/quick-facts",
+        "doc_count": 1
+      }
+    ]
+  },
+  {
+    "school_id": 467,
+    "school_name": "Wrentham",
+    "school_url": "https://wrentham.k12.ma.us",
+    "finalised_urls": [
+      "https://drive.google.com/drive/folders/1Ao6uvpt7JfsyEn58mekKMB1jlh3FjlX9",
+      "https://drive.google.com/drive/folders/1BvdFMw0dKqjXFGt1vG4YvUcn0TT7qnCO",
+      "https://drive.google.com/drive/folders/1fHzmRYh3GNdShXucwm2pvb7uucMzHyCa",
+      "https://drive.google.com/drive/folders/1gwIlccCovHZFD2hJ2NEb1zdXQku2pWsX",
+      "https://drive.google.com/drive/folders/1hx2dp7IGQARBG7X74iqJfWJJdYCQrpHR?usp=drive_link",
+      "https://drive.google.com/drive/folders/1iV1CNKj6Nug2vw-J2BiDqCsuis7xadcn",
+      "https://drive.google.com/drive/folders/1kk0gTKlb_amc3QNittVIUCJYELBEpef_?usp=drive_link",
+      "https://wrenthamcable8.com/wrentham-school-committee-meetings",
+      "https://wrentham.k12.ma.us/Our-District/School-Committee/index.html"
+    ],
+    "total_documents": 122,
+    "per_url": [
+      {
+        "url": "https://drive.google.com/drive/folders/1iV1CNKj6Nug2vw-J2BiDqCsuis7xadcn",
+        "doc_count": 33
+      },
+      {
+        "url": "https://wrentham.k12.ma.us/Our-District/School-Committee/index.html",
+        "doc_count": 89
+      }
+    ]
+  }
+]
