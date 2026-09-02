@@ -248,7 +248,9 @@ class PipelineContext:
 # ==================== Stage 1: Download from S3 ====================
 
 
-@celery_app.task(name="pipeline.download_from_s3", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.download_from_s3", bind=True, max_retries=3, ignore_result=True
+)
 def step1_download_from_s3(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 1: Download document from S3 to temporary file.
@@ -381,7 +383,9 @@ async def _step1_download_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 2: Extract Text ====================
 
 
-@celery_app.task(name="pipeline.extract_text", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.extract_text", bind=True, max_retries=3, ignore_result=True
+)
 def step2_extract_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 2: Extract text and metadata from document.
@@ -615,7 +619,9 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 2.5: Summarise Document ====================
 
 
-@celery_app.task(name="pipeline.summarize_document", bind=True, max_retries=1)
+@celery_app.task(
+    name="pipeline.summarize_document", bind=True, max_retries=1, ignore_result=True
+)
 def step2_5_summarize_document(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 2.5: Generate an LLM summary and index it in the summaries collection.
@@ -770,7 +776,9 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
 # ==================== Stage 2.6: Doc-level classification (heatmap) ===========
 
 
-@celery_app.task(name="pipeline.classify_document", bind=True, max_retries=2)
+@celery_app.task(
+    name="pipeline.classify_document", bind=True, max_retries=2, ignore_result=True
+)
 def step2_6_classify_document(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 2.6: Doc-level classification for heatmap-ingest documents.
@@ -929,7 +937,9 @@ async def _step2_6_classify_async(ctx: PipelineContext, redis_tracker) -> None:
 # ==================== Stage 3: Chunk Text ====================
 
 
-@celery_app.task(name="pipeline.chunk_text", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.chunk_text", bind=True, max_retries=3, ignore_result=True
+)
 def step3_chunk_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 3: Chunk text into smaller pieces.
@@ -1148,7 +1158,9 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 2.7: Contextual augmentation (heatmap) ===========
 
 
-@celery_app.task(name="pipeline.contextualize_chunks", bind=True, max_retries=1)
+@celery_app.task(
+    name="pipeline.contextualize_chunks", bind=True, max_retries=1, ignore_result=True
+)
 def step2_7_contextualize_chunks(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 2.7: Per-chunk contextual augmentation for heatmap-ingest docs.
@@ -1270,7 +1282,9 @@ async def _step2_7_contextualize_async(
 # ==================== Stage 4: Generate Embeddings ====================
 
 
-@celery_app.task(name="pipeline.generate_embeddings", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.generate_embeddings", bind=True, max_retries=3, ignore_result=True
+)
 def step4_generate_embeddings(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 4: Generate embeddings for chunks.
@@ -1453,7 +1467,9 @@ async def _step4_embed_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 5: Store in Vector DB ====================
 
 
-@celery_app.task(name="pipeline.store_vectors", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.store_vectors", bind=True, max_retries=3, ignore_result=True
+)
 def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 5: Store chunks and embeddings in vector database.
@@ -1779,7 +1795,9 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 6: Accumulate batch classification (heatmap) =====
 
 
-@celery_app.task(name="pipeline.accumulate_batch", bind=True, max_retries=2)
+@celery_app.task(
+    name="pipeline.accumulate_batch", bind=True, max_retries=2, ignore_result=True
+)
 def step6_accumulate_batch(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 6: Append this document's chunks to pending_classifications.
@@ -2103,7 +2121,7 @@ async def _mark_stage_failed(
 # ==================== Pipeline Orchestrator ====================
 
 
-@celery_app.task(name="pipeline.process_document")
+@celery_app.task(name="pipeline.process_document", ignore_result=True)
 def process_document_pipeline(
     document_id: int, job_id: int, batch_id: int | None = None
 ) -> None:
