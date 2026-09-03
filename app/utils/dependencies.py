@@ -207,6 +207,45 @@ async def get_effective_tenant_id(
     return await resolve_effective_tenant_id(current_user, tenant_id, db)
 
 
+async def get_authorized_tenant_id(
+    tenant_id: int = Query(
+        ...,
+        description=(
+            "Tenant ID to scope the request to. Required — the JWT claim is "
+            "not used because a user may have access to multiple tenants "
+            "(via user_tenant_access). super_admin bypasses the access check; "
+            "tenant_admin must have a row in user_tenant_access."
+        ),
+    ),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> int:
+    """Authorize a required `tenant_id` query param against user_tenant_access.
+
+    Unlike `get_effective_tenant_id`, there is no JWT fallback — the caller
+    must pass `tenant_id` explicitly. A user can have access to multiple
+    tenants, so the JWT's single `tenant_id` claim is not a safe default.
+    """
+    if user.is_super_admin(current_user):
+        return tenant_id
+
+    if user.is_tenant_admin(current_user):
+        has = await user_tenant_access.has_access(
+            db, user_id=current_user.id, tenant_id=tenant_id
+        )
+        if not has:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: tenant not in your access list",
+            )
+        return tenant_id
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Tenant admin access required",
+    )
+
+
 async def resolve_chat_tenant_id(
     principal: User | ChatConsumer,
     tenant_id: int | None,

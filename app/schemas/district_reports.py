@@ -12,6 +12,15 @@ class DistrictReportRequest(BaseModel):
         ...,
         description="Fixed query ID (Q1-Q7). See GET /district-reports/queries.",
     )
+    tenant_id: int = Field(
+        ...,
+        description=(
+            "Tenant ID to scope the report to. Required — the JWT claim is "
+            "not used because a user may have access to multiple tenants "
+            "(via user_tenant_access). super_admin bypasses the access "
+            "check; tenant_admin must have a row in user_tenant_access."
+        ),
+    )
     chatbot_config_id: int | None = Field(
         None,
         description=(

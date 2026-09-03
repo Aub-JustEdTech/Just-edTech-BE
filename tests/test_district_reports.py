@@ -340,15 +340,16 @@ def test_district_reports_post_rejects_unknown_query():
     from fastapi.testclient import TestClient
 
     from app.main import app
-    from app.utils.dependencies import get_current_tenant_user, get_effective_tenant_id
+    from app.utils.dependencies import get_current_tenant_user
 
-    app.dependency_overrides[get_current_tenant_user] = lambda: MagicMock(id=1, role="tenant_admin")
-    app.dependency_overrides[get_effective_tenant_id] = lambda: 4
+    app.dependency_overrides[get_current_tenant_user] = lambda: MagicMock(
+        id=1, role="tenant_admin"
+    )
     try:
         client = TestClient(app)
         resp = client.post(
             "/api/v1/district-reports",
-            json={"query_id": "Q99"},
+            json={"query_id": "Q99", "tenant_id": 4},
         )
         assert resp.status_code == 400
         body = resp.json()
