@@ -5,6 +5,7 @@ Creates appropriate LLM provider based on model/provider configuration.
 
 import logging
 
+from app.core.config import settings
 from app.services.llm.base import BaseLLMProvider
 from app.services.llm.openai_provider import OpenAIProvider
 
@@ -59,7 +60,9 @@ class LLMProviderFactory:
         Returns:
             Instance of the appropriate provider
         """
-        # Determine provider from model name
+        # Determine provider from model name or configured API provider
+        if settings.LLM_API_PROVIDER == "openrouter" or "/" in model_name:
+            return cls.create_provider("openai")
         if model_name.startswith("gpt"):
             return cls.create_provider("openai")
         elif model_name.startswith("claude"):

@@ -5,7 +5,7 @@ Enhanced for document ingestion and processing.
 
 import enum
 
-from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text, TypeDecorator
+from sqlalchemy import BigInteger, Column, Date, ForeignKey, Integer, String, Text, TypeDecorator
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM, JSONB
 from sqlalchemy.orm import relationship
 
@@ -19,6 +19,9 @@ class ProcessingStatus(str, enum.Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    # Intentionally excluded from the pipeline (e.g. the post-classification
+    # year gate) -- distinct from FAILED, which means something broke.
+    SKIPPED = "skipped"
 
 
 # PostgreSQL enum type matching the database schema
@@ -27,6 +30,7 @@ _processing_status_enum = PG_ENUM(
     "processing",
     "completed",
     "failed",
+    "skipped",
     name="processingstatus",
     create_type=False,  # Use existing type, don't create
 )
@@ -87,6 +91,34 @@ class Document(BaseModel):
     summary = Column(Text, nullable=True)
     doc_category = Column(String(100), nullable=True, index=True)
     doc_date_range = Column(String(100), nullable=True)
+
+    # Heatmap-ingest extensions (populated by step2_6_classify_document for
+    # school_scraper docs). meeting_date promotes the source_metadata JSONB
+    # value to a real column so we can index/filter on it.
+    content_hash = Column(String(64), nullable=True, index=True)
+    entity_type = Column(String(64), nullable=True, index=True)
+    doc_kind = Column(String(64), nullable=True)
+    meeting_date = Column(Date, nullable=True, index=True)
+
+    # Heatmap-ingest V1 metadata (see plan: Heatmap Ingest Metadata v1).
+    # Doc-level denormalized fields propagated from School + source_metadata
+    # + DocClassifier output, also mirrored onto every Qdrant chunk payload
+    # for payload pre-filtering and facet exploration.
+    state = Column(String(2), nullable=True, index=True)
+    district_name = Column(String(512), nullable=True, index=True)
+    school_year = Column(String(9), nullable=True, index=True)  # e.g. "2023-2024"
+    quarter_month = Column(String(7), nullable=True, index=True)  # e.g. "2024-03"
+    # Distinct from the file-extension document_type above. Populated by
+    # DocClassifier with one of the meeting_doc_type enum values (Minutes,
+    # Agenda, Agenda Attachment, Public Comment Transcript, Policy Document,
+    # Presentation Slide).
+    meeting_doc_type = Column(String(64), nullable=True, index=True)
+    meeting_body = Column(String(128), nullable=True, index=True)
+    # V1: default clean_digital for all docs. Real OCR-confidence detection
+    # is deferred; the field is in place so the schema is forward-compatible.
+    document_quality = Column(
+        String(32), nullable=False, server_default="clean_digital", index=True
+    )
 
     # Source tracking (populated by Box sync or other ingestors)
     source_id = Column(String(255), nullable=True, index=True)

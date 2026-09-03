@@ -13,12 +13,13 @@ import json
 import logging
 from typing import Any
 
-from openai import AsyncOpenAI
+from langsmith import traceable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.documents import Document
 from app.services.embeddings.embedding_service import EmbeddingService
+from app.services.llm.client import get_async_openai_client, normalize_model_name
 
 logger = logging.getLogger(__name__)
 
@@ -66,13 +67,12 @@ class DocumentSummarizer:
     )
     """
 
-    def __init__(self, model: str = "gpt-4o-mini"):
-        self._model = model
-        self._client = (
-            AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-            if settings.OPENAI_API_KEY
-            else None
-        )
+    def __init__(self, model: str | None = None):
+        self._model = normalize_model_name(model or settings.DOCUMENT_SUMMARIZER_MODEL)
+        try:
+            self._client = get_async_openai_client()
+        except ValueError:
+            self._client = None
         self._embedding_service = EmbeddingService()
 
     # ------------------------------------------------------------------
@@ -98,7 +98,7 @@ class DocumentSummarizer:
         """
         if not self._client:
             logger.warning(
-                f"[Doc {document_id}] OpenAI API key not configured – skipping summarisation."
+                f"[Doc {document_id}] LLM API key not configured – skipping summarisation."
             )
             return {}
 
@@ -120,6 +120,7 @@ class DocumentSummarizer:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    @traceable(name="document_summarizer_call_llm")
     async def _call_llm(
         self, text: str, document_id: int
     ) -> dict[str, Any] | None:
@@ -197,7 +198,10 @@ class DocumentSummarizer:
         tenant_id: int,
     ) -> None:
         """Generate a summary embedding and store it in the summaries collection."""
-        from app.services.vector_store.factory import VectorStoreFactory, VectorStoreType
+        from app.services.vector_store.factory import (
+            VectorStoreFactory,
+            VectorStoreType,
+        )
 
         # Build a rich text for embedding: type + date + topics + summary.
         topics = parsed.get("key_topics") or []
@@ -222,6 +226,21 @@ class DocumentSummarizer:
             vector_store = VectorStoreFactory.create(
                 VectorStoreType(settings.VECTOR_STORE_TYPE)
             )
+
+            # Delete-before-recreate: remove any prior summary for this doc
+            # before writing the new one. add_document_summary always inserts
+            # a fresh point-id, so without this a reprocessed document
+            # accumulates orphaned summary points (one per pipeline run).
+            if hasattr(vector_store, "delete_document_summary"):
+                try:
+                    await vector_store.delete_document_summary(
+                        document_id, tenant_id
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        f"[Doc {document_id}] Pre-index summary delete failed "
+                        f"(continuing anyway): {exc}"
+                    )
 
             if hasattr(vector_store, "add_document_summary"):
                 await vector_store.add_document_summary(

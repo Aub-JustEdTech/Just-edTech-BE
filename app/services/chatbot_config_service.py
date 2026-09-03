@@ -10,9 +10,12 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.crud.api_keys import api_keys
 from app.crud.chatbot_configs import chatbot_config
 from app.models.chatbot_configs import ChatbotConfig
 from app.models.llm_models import LLMModel
+from app.schemas.chatbot_configs import ChatbotConfigCreate
+from app.utils.api_keys import generate_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +97,7 @@ class ChatbotConfigService:
         return {
             "model": chat_model.name
             if chat_model
-            else settings.OPENAI_EMBEDDING_MODEL.replace("text-embedding", "gpt"),
+            else settings.CHATBOT_DEFAULT_CHAT_MODEL,
             "temperature": temperature,
             "max_tokens": chat_max_tokens,
             "system_prompt": system_prompt,
@@ -337,6 +340,44 @@ class ChatbotConfigService:
             "enable_multimodal": settings.CHATBOT_DEFAULT_ENABLE_MULTIMODAL,
             "max_images": settings.CHATBOT_DEFAULT_MAX_IMAGES,
         }
+
+
+    async def provision_default_chatbot(
+        self, db: AsyncSession, tenant_id: int, tenant_name: str
+    ) -> ChatbotConfig:
+        """
+        Create the single default chatbot a tenant gets automatically at
+        creation time. There is no user-facing chatbot creation flow anymore
+        — every tenant has exactly one chatbot, provisioned here.
+
+        Also provisions the tenant's first API key: the chat widget
+        bootstraps itself via `GET /api-keys/latest` (see api_keys.py), which
+        404s if no key exists yet. Without a key created here, every
+        freshly-provisioned tenant's chat is unusable until a tenant admin
+        manually visits the API Keys page — this closes that gap.
+
+        Args:
+            db: Database session
+            tenant_id: The newly created tenant's ID
+            tenant_name: Used as the chatbot's display title
+
+        Returns:
+            The created ChatbotConfig
+        """
+        chatbot = await chatbot_config.create(
+            db,
+            ChatbotConfigCreate(
+                tenant_id=tenant_id,
+                name="Default Assistant",
+                title=tenant_name,
+                welcome_message="Hi! How can I help you today?",
+                is_default=True,
+            ),
+        )
+
+        await api_keys.create(db, tenant_id=tenant_id, key=generate_api_key())
+
+        return chatbot
 
 
 # Global chatbot config service instance

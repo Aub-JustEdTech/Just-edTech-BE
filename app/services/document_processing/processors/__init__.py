@@ -6,5 +6,12 @@ from app.services.document_processing.processors.markdown_processor import (
     MarkdownProcessor,
 )
 from app.services.document_processing.processors.pdf_processor import PDFProcessor
+from app.services.document_processing.processors.pptx_processor import PPTXProcessor
 
-__all__ = ["PDFProcessor", "MarkdownProcessor", "DocxProcessor", "DocProcessor"]
+__all__ = [
+    "PDFProcessor",
+    "MarkdownProcessor",
+    "DocxProcessor",
+    "DocProcessor",
+    "PPTXProcessor",
+]

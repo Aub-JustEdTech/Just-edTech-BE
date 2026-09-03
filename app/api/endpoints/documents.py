@@ -40,19 +40,92 @@ from app.schemas.documents import (
     SearchResult,
     SortOrder,
 )
+from app.schemas.documents import MediaLinkIngestRequest, MediaUsageResponse
 from app.schemas.users import User
 from app.services.document_service import DocumentService
+from app.services.media_ingest_service import (
+    PENDING_MEDIA_DOCTYPES,
+    is_media_extension,
+    media_ingest_service,
+)
+from app.services.media_usage_service import (
+    MediaQuotaExceededError,
+    media_usage_service,
+)
 from app.services.web_scraper import MarkdownConverter, WebScraperService
 from app.tasks.document_pipeline import process_document_pipeline
+from app.tasks.media_transcription_tasks import transcribe_media_task
 from app.utils.dependencies import (
-    get_current_tenant_user,
     get_db,
+    get_effective_tenant_id,
     require_user_or_chat_consumer,
+    resolve_chat_tenant_id,
 )
 from app.utils.response import success_response
 from app.utils.s3 import S3Manager
 
 router = APIRouter()
+
+# Content types used when presigning an object for inline browser display.
+# The audio/video entries are what let a citation open a player instead of
+# triggering a download.
+MIME_BY_EXTENSION = {
+    ".pdf": "application/pdf",
+    ".md": "text/markdown; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+    ".text": "text/plain; charset=utf-8",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    # The stored transcript is a text file, not JSON — see TranscriptResult.
+    ".transcript": "text/plain; charset=utf-8",
+    # Media
+    ".mp3": "audio/mpeg",
+    ".m4a": "audio/mp4",
+    ".wav": "audio/wav",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webm": "video/webm",
+}
+
+
+def _resolve_playback_target(document: Document) -> tuple[str | None, str | None, str]:
+    """Where to point a viewer at this document, and how to serve it.
+
+    Returns ``(s3_key, external_url, content_type)`` — exactly one of the first
+    two is set.
+
+    A transcribed media document has had its ``s3_url`` repointed at the
+    transcript envelope, because that is what the pipeline consumes. Handing
+    that to a player would play nothing, so media resolves to the stored source
+    media instead, falling back to the original remote URL for items that were
+    never downloaded (scraper items under ``url_direct``, and every link
+    ingest, which has no stored copy by design).
+    """
+    meta = document.source_metadata or {}
+    doc_type = (document.document_type or "").lower()
+
+    if doc_type == ".transcript" or doc_type in settings.ALLOWED_MEDIA_TYPES:
+        raw_key = meta.get("s3_key_raw")
+        if raw_key:
+            raw_ext = os.path.splitext(raw_key)[1].lower()
+            return raw_key, None, MIME_BY_EXTENSION.get(raw_ext, "application/octet-stream")
+
+        external = meta.get("source_media_url")
+        if external:
+            # No stored copy exists — the original URL is the only playable
+            # pointer. Returned as-is; there is nothing to presign.
+            return None, external, "application/octet-stream"
+
+    prefix = f"s3://{settings.S3_BUCKET_NAME}/"
+    s3_key = (
+        document.s3_url[len(prefix) :]
+        if document.s3_url and document.s3_url.startswith(prefix)
+        else None
+    )
+    return s3_key, None, MIME_BY_EXTENSION.get(doc_type, "application/octet-stream")
+
 
 _document_service: DocumentService | None = None
 
@@ -73,27 +146,37 @@ def get_document_service() -> DocumentService:
 async def upload_document(
     file: UploadFile = File(..., description="Document file to upload"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
-    Upload a document for processing and embedding generation.
+    Upload a document or media file for processing and embedding generation.
 
-    Supported file types: PDF (.pdf), Markdown (.md), Text (.txt, .text), DOCX (.docx), DOC (.doc)
-    Maximum file size: Configured in settings (default 50MB)
+    Documents: PDF (.pdf), Markdown (.md), Text (.txt, .text), DOCX (.docx),
+    DOC (.doc), XLSX (.xlsx), XLS (.xls) — max MAX_FILE_SIZE_MB.
 
-    The document will be:
+    Media: MP3, MP4, WAV, M4A, WEBM, MOV — max MAX_MEDIA_FILE_SIZE_MB. Media is
+    transcribed first (a paid, minutes-long step), then follows the identical
+    path as any other document.
+
+    Both end up:
     1. Uploaded to S3 storage
     2. Queued for background processing
     3. Text extracted and chunked
     4. Embeddings generated
     5. Stored in vector database
     """
-    # Validate file extension
+    # Validate file extension. Media and documents have separate allow-lists
+    # and separate size ceilings, so the branch is decided here and honoured
+    # by everything below it.
     file_extension = os.path.splitext(file.filename)[1].lower()
-    if file_extension not in settings.ALLOWED_DOCUMENT_TYPES:
+    is_media = is_media_extension(file.filename)
+    if not is_media and file_extension not in settings.ALLOWED_DOCUMENT_TYPES:
+        supported = ", ".join(
+            [*settings.ALLOWED_DOCUMENT_TYPES, *settings.ALLOWED_MEDIA_TYPES]
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File type {file_extension} not allowed. Supported types: {', '.join(settings.ALLOWED_DOCUMENT_TYPES)}",
+            detail=f"File type {file_extension} not allowed. Supported types: {supported}",
         )
 
     # Get file size without reading entire file into memory
@@ -108,19 +191,21 @@ async def upload_document(
         ) from e
 
     # Validate file size
-    max_size = settings.MAX_FILE_SIZE_MB * 1024 * 1024
-    if file_size > max_size:
+    max_mb = (
+        settings.MAX_MEDIA_FILE_SIZE_MB if is_media else settings.MAX_FILE_SIZE_MB
+    )
+    if file_size > max_mb * 1024 * 1024:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds {settings.MAX_FILE_SIZE_MB}MB limit",
         )
 
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
+    if is_media:
+        return await _ingest_media_upload(
+            db=db,
+            file=file,
+            tenant_id=tenant_id,
+            file_size=file_size,
         )
 
     # Upload document using streaming (memory-efficient)
@@ -163,6 +248,121 @@ async def upload_document(
     )
 
 
+async def _ingest_media_upload(
+    *,
+    db: AsyncSession,
+    file: UploadFile,
+    tenant_id: int,
+    file_size: int,
+):
+    """Store an uploaded media file and queue it for transcription.
+
+    The quota is checked BEFORE the S3 upload, not after: a tenant who is out
+    of budget should be told so in the response, not after pushing 400MB over
+    the wire into a bucket the job will then refuse to process.
+    """
+    try:
+        await media_usage_service.assert_within_quota(db, tenant_id)
+    except MediaQuotaExceededError as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(e),
+        ) from e
+
+    try:
+        document, job = await media_ingest_service.create_upload(
+            db,
+            fileobj=file.file,
+            file_name=file.filename,
+            tenant_id=tenant_id,
+            file_size=file_size,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload media: {str(e)}",
+        ) from e
+
+    transcribe_media_task.delay(document.id, job.id)
+
+    return success_response(
+        data=DocumentUploadResponse.model_validate(document),
+        status_code=status.HTTP_201_CREATED,
+    )
+
+
+@router.post(
+    "/media-link",
+    response_model=DocumentUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def ingest_media_link(
+    payload: MediaLinkIngestRequest,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_effective_tenant_id),
+):
+    """
+    Ingest a YouTube video or a direct audio/video URL by link.
+
+    Nothing is uploaded — the transcription provider fetches the media itself.
+
+    YouTube videos that already have captions (manual or auto) are transcribed
+    for **free** and do not count against the tenant's monthly minutes. Only a
+    caption-less video, or a direct media URL, reaches the paid path.
+    """
+    try:
+        await media_usage_service.assert_within_quota(db, tenant_id)
+    except MediaQuotaExceededError as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)
+        ) from e
+
+    try:
+        document, job = await media_ingest_service.create_link(
+            db,
+            url=str(payload.url),
+            tenant_id=tenant_id,
+            name=payload.name,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+    transcribe_media_task.delay(document.id, job.id)
+
+    return success_response(
+        data=DocumentUploadResponse.model_validate(document),
+        status_code=status.HTTP_201_CREATED,
+    )
+
+
+@router.get("/media-usage", response_model=MediaUsageResponse)
+async def get_media_usage(
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_effective_tenant_id),
+):
+    """Transcription minutes used against this tenant's monthly cap."""
+    used_seconds = await media_usage_service.get_month_usage_seconds(db, tenant_id)
+    limit_minutes = settings.TENANT_MEDIA_MONTHLY_MINUTES_LIMIT
+    used_minutes = used_seconds // 60
+
+    return success_response(
+        data=MediaUsageResponse(
+            used_minutes=used_minutes,
+            limit_minutes=limit_minutes,
+            remaining_minutes=(
+                max(0, limit_minutes - used_minutes) if limit_minutes > 0 else None
+            ),
+            unlimited=limit_minutes <= 0,
+        )
+    )
+
+
 @router.post(
     "/scrape",
     response_model=DocumentScrapeResponse,
@@ -171,7 +371,7 @@ async def upload_document(
 async def scrape_document(
     scrape_request: DocumentScrapeRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Scrape a web page and convert it to a document for processing.
@@ -198,14 +398,6 @@ async def scrape_document(
     """
     from datetime import datetime
     from urllib.parse import urlparse
-
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
 
     try:
         # Initialize web scraper with custom timeout
@@ -390,7 +582,7 @@ async def bulk_upload_documents(
         None, description="Optional: Batch ID for tracking bulk uploads"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Upload multiple documents at once for processing and embedding generation.
@@ -453,14 +645,6 @@ async def bulk_upload_documents(
             f"Maximum allowed is {settings.BULK_UPLOAD_MAX_FILES}, but received {len(files)}.",
         )
 
-    # Get tenant_id from user
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Validate batch_id if provided
     upload_batch = None
     upload_batch_db_id = None
@@ -483,13 +667,18 @@ async def bulk_upload_documents(
     # Process each file
     for file in files:
         try:
-            # Validate file extension
+            # Validate file extension. Media has its own allow-list, size cap
+            # and ingest path — see _ingest_media_upload.
             file_extension = os.path.splitext(file.filename)[1].lower()
-            if file_extension not in settings.ALLOWED_DOCUMENT_TYPES:
+            is_media = is_media_extension(file.filename)
+            if not is_media and file_extension not in settings.ALLOWED_DOCUMENT_TYPES:
+                supported = ", ".join(
+                    [*settings.ALLOWED_DOCUMENT_TYPES, *settings.ALLOWED_MEDIA_TYPES]
+                )
                 failed_uploads.append(
                     {
                         "filename": file.filename,
-                        "error": f"File type {file_extension} not allowed. Supported types: {', '.join(settings.ALLOWED_DOCUMENT_TYPES)}",
+                        "error": f"File type {file_extension} not allowed. Supported types: {supported}",
                     }
                 )
                 continue
@@ -509,14 +698,45 @@ async def bulk_upload_documents(
                 continue
 
             # Validate file size
-            max_size = settings.MAX_FILE_SIZE_MB * 1024 * 1024
-            if file_size > max_size:
+            max_mb = (
+                settings.MAX_MEDIA_FILE_SIZE_MB
+                if is_media
+                else settings.MAX_FILE_SIZE_MB
+            )
+            if file_size > max_mb * 1024 * 1024:
                 failed_uploads.append(
                     {
                         "filename": file.filename,
-                        "error": f"File size exceeds {settings.MAX_FILE_SIZE_MB}MB limit",
+                        "error": f"File size exceeds {max_mb}MB limit",
                     }
                 )
+                continue
+
+            if is_media:
+                # Media goes to transcription first, not the document pipeline.
+                # The quota is checked per file rather than once for the batch:
+                # a batch that starts inside budget can exhaust it partway, and
+                # the files after that point must be refused, not charged.
+                try:
+                    await media_usage_service.assert_within_quota(db, tenant_id)
+                except MediaQuotaExceededError as e:
+                    failed_uploads.append(
+                        {"filename": file.filename, "error": str(e)}
+                    )
+                    continue
+
+                media_doc, media_job = await media_ingest_service.create_upload(
+                    db,
+                    fileobj=file.file,
+                    file_name=file.filename,
+                    tenant_id=tenant_id,
+                    file_size=file_size,
+                    upload_batch_id=upload_batch_db_id,
+                )
+                transcribe_media_task.delay(
+                    media_doc.id, media_job.id, upload_batch_db_id
+                )
+                uploaded_documents.append(media_doc)
                 continue
 
             # Upload document using streaming (memory-efficient)
@@ -607,7 +827,7 @@ async def list_documents(
         SortOrder.DESC, description="Sort order (ascending or descending)"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     List documents for the current user's tenant.
@@ -623,13 +843,6 @@ async def list_documents(
     - Searching by document name (case-insensitive)
     - Sorting by common document attributes
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     try:
         # When no explicit status filter: exclude failed by default so users see only "usable" docs
         exclude_failed = processing_status is None and not include_failed
@@ -668,18 +881,11 @@ async def list_documents(
 async def get_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get detailed information about a specific document.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     document = await db.get(Document, document_id)
     if not document:
         raise HTTPException(
@@ -711,16 +917,6 @@ async def get_document_presigned_url(
 
     Returns a temporary URL suitable for browser access (view/download).
     """
-    if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
-    else:
-        tenant_id = current_user_or_consumer.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     document = await db.get(Document, document_id)
     if not document:
         raise HTTPException(
@@ -728,26 +924,32 @@ async def get_document_presigned_url(
             detail="Document not found",
         )
 
+    # Resolved against the document's own tenant, same as get_chatbot -
+    # a cross-tenant super_admin/tenant_admin has no tenant_id of their own
+    # to compare against directly.
+    tenant_id = await resolve_chat_tenant_id(
+        current_user_or_consumer, document.tenant_id, db
+    )
     if document.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this document",
         )
 
-    if not document.s3_url:
+    # Media resolves to its playable source, not the transcript envelope its
+    # s3_url points at after transcription. See _resolve_playback_target.
+    s3_key, external_url, content_type = _resolve_playback_target(document)
+
+    if external_url:
+        return success_response(
+            data=PresignedUrlResponse(url=external_url, expires_in=expires_in)
+        )
+
+    if not s3_key:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Document does not have an associated S3 URL",
         )
-
-    prefix = f"s3://{settings.S3_BUCKET_NAME}/"
-    if not document.s3_url.startswith(prefix):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Invalid S3 URL stored for document",
-        )
-
-    s3_key = document.s3_url[len(prefix) :]
 
     try:
         s3_manager = S3Manager(
@@ -756,18 +958,6 @@ async def get_document_presigned_url(
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
-        # Determine MIME type from document extension for better inline rendering
-        ext = (document.document_type or "").lower()
-        mime_map = {
-            ".pdf": "application/pdf",
-            ".md": "text/markdown; charset=utf-8",
-            ".txt": "text/plain; charset=utf-8",
-            ".doc": "application/msword",
-            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            ".xls": "application/vnd.ms-excel",
-            ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        }
-        content_type = mime_map.get(ext, "application/octet-stream")
 
         # Force inline display; include filename when possible
         safe_name = (document.name or f"document_{document_id}").replace('"', "")
@@ -798,18 +988,11 @@ async def get_document_presigned_url(
 async def bulk_delete_documents(
     payload: DocumentBulkDeleteRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Delete multiple documents and associated data.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     seen_ids: set[int] = set()
     unique_document_ids: list[int] = []
     for document_id in payload.document_ids:
@@ -880,7 +1063,7 @@ async def bulk_delete_documents(
 async def delete_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Delete a document and all associated data.
@@ -890,13 +1073,6 @@ async def delete_document(
     2. Delete embeddings from vector store
     3. Delete database records (document and processing jobs)
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -933,7 +1109,7 @@ async def delete_document(
 async def search_documents(
     search_request: DocumentSearchRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Perform semantic search across documents.
@@ -941,13 +1117,6 @@ async def search_documents(
     Uses embeddings to find relevant document chunks based on the query.
     Results are ranked by semantic similarity (distance).
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Build filters
     filters = {}
     if search_request.document_types:
@@ -1003,20 +1172,13 @@ async def search_documents(
 async def get_document_processing_jobs(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get all processing jobs for a document.
 
     Useful for debugging and tracking document processing history.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -1048,7 +1210,7 @@ async def get_document_processing_jobs(
 async def get_document_chunks(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get all chunks for a specific document.
@@ -1059,13 +1221,6 @@ async def get_document_chunks(
     - Validating chunk size and overlap
     - Reviewing chunk content before RAG queries
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -1133,7 +1288,7 @@ async def get_document_chunks(
 async def reprocess_document(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Trigger reprocessing of a document.
@@ -1143,13 +1298,6 @@ async def reprocess_document(
     - Tenant configuration changed (chunk size, embedding model, etc.)
     - Document needs to be re-indexed
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     # Verify document exists and belongs to tenant
     document = await db.get(Document, document_id)
     if not document:
@@ -1179,16 +1327,177 @@ async def reprocess_document(
     await db.commit()
     await db.refresh(job)
 
-    # Queue background processing with Celery Pipeline
-    process_document_pipeline.delay(document.id, job.id)
+    # Media that never got a transcript has no text for the pipeline to
+    # extract, so it must re-enter at the transcription stage. Media that DID
+    # transcribe is already a .transcript document and reprocesses through the
+    # normal pipeline — reading the stored envelope, not paying again.
+    if document.document_type in PENDING_MEDIA_DOCTYPES:
+        transcribe_media_task.delay(document.id, job.id)
+        message = "Media queued for re-transcription"
+    else:
+        process_document_pipeline.delay(document.id, job.id)
+        message = "Document queued for reprocessing"
 
     return success_response(
         data={
-            "message": "Document queued for reprocessing",
+            "message": message,
             "document_id": document.id,
             "job_id": job.id,
         },
         status_code=status.HTTP_202_ACCEPTED,
+    )
+
+
+@router.get("/url/{doc_ref}")
+async def get_document_url_by_ref(
+    doc_ref: str,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_effective_tenant_id),
+    expires_in: int = Query(3600, ge=60, le=86400, description="URL expiry in seconds"),
+):
+    """
+    Return a presigned S3 URL for a document identified by doc_id (UUID) or name (filename).
+    Used by the HeatMap transcript viewer to render the raw PDF directly in the browser.
+    """
+    result = await db.execute(
+        select(Document)
+        .where(Document.doc_id == doc_ref, Document.tenant_id == tenant_id)
+        .limit(1)
+    )
+    document = result.scalar_one_or_none()
+
+    if not document:
+        result = await db.execute(
+            select(Document)
+            .where(Document.name == doc_ref, Document.tenant_id == tenant_id)
+            .limit(1)
+        )
+        document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    # Media resolves to its playable source, not the transcript envelope.
+    s3_key, external_url, content_type = _resolve_playback_target(document)
+
+    if external_url:
+        return success_response(
+            data={
+                "title": document.name,
+                "url": external_url,
+                "expires_in": expires_in,
+            }
+        )
+
+    if not s3_key:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Document does not have an associated S3 URL",
+        )
+
+    try:
+        s3_manager = S3Manager(
+            bucket_name=settings.S3_BUCKET_NAME,
+            region_name=settings.S3_REGION,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        )
+        safe_name = (document.name or f"document_{document.id}").replace('"', "")
+        url = await s3_manager.get_presigned_url(
+            s3_key=s3_key,
+            expiration=expires_in,
+            http_method="GET",
+            response_content_type=content_type,
+            response_content_disposition=f'inline; filename="{safe_name}"',
+        )
+        return success_response(
+            data={"title": document.name, "url": url, "expires_in": expires_in}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate presigned URL: {str(e)}",
+        ) from e
+
+
+@router.get("/text/{doc_ref}")
+async def get_document_text(
+    doc_ref: str,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_effective_tenant_id),
+):
+    """
+    Return the full text of a document assembled from its Qdrant chunks, grouped by page.
+    Used by the HeatMap "View full transcript" flow.
+
+    doc_ref may be either the document's doc_id (UUID) or its name/filename — whichever
+    the citation carries. Sample data uses the filename; live Qdrant data uses the UUID.
+    """
+    # Try by doc_id first; if not found, fall back to matching by name (filename).
+    result = await db.execute(
+        select(Document)
+        .where(Document.doc_id == doc_ref, Document.tenant_id == tenant_id)
+        .limit(1)
+    )
+    document = result.scalar_one_or_none()
+
+    if not document:
+        result = await db.execute(
+            select(Document)
+            .where(Document.name == doc_ref, Document.tenant_id == tenant_id)
+            .limit(1)
+        )
+        document = result.scalar_one_or_none()
+
+    if not document:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    if document.processing_status != ProcessingStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Document not fully processed yet. Status: {document.processing_status.value}",
+        )
+
+    try:
+        chunks = await get_document_service().vector_store.get_document_chunks(
+            document_id=document.doc_id,
+            tenant_id=tenant_id,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve document chunks: {str(e)}",
+        ) from e
+
+    if document.document_type == ".transcript":
+        # Transcripts have no real pages — chunks are split by utterance/duration,
+        # not by page. Render the whole thing as one block, ordered by chunk_index.
+        ordered = sorted(
+            chunks, key=lambda c: int(c.get("metadata", {}).get("chunk_index", 0))
+        )
+        full_text = "\n\n".join(c["text"] for c in ordered)
+        return success_response(
+            data={
+                "title": document.name,
+                "pages": [{"page_number": 1, "text": full_text}],
+            }
+        )
+
+    # Group chunks by page_number; fall back to chunk_index as a synthetic page
+    pages: dict[int, list[str]] = {}
+    for chunk in chunks:
+        meta = chunk.get("metadata", {})
+        page = int(meta.get("page_number", meta.get("chunk_index", 1)))
+        pages.setdefault(page, []).append(chunk["text"])
+
+    return success_response(
+        data={
+            "title": document.name,
+            "pages": [
+                {"page_number": pn, "text": "\n\n".join(texts)}
+                for pn, texts in sorted(pages.items())
+            ],
+        }
     )
 
 
