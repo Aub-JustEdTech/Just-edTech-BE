@@ -462,55 +462,98 @@ class QdrantStore(VectorStore):
         try:
             collection_name = self._get_collection_name(tenant_id)
 
-            # Build query filter
-            # Always include tenant_id filter for security
-            must_conditions = [
-                models.FieldCondition(
-                    key="tenant_id",
-                    match=models.MatchValue(value=tenant_id),
-                )
-            ]
+            # Two filter shapes are accepted, for backward compatibility:
+            #
+            # 1. Legacy: `filters={"document_id": {"$in": [...]},
+            #    "document_type": [".pdf", ...]}` — handled inline below.
+            #
+            # 2. Engine-style: `filters` carries any of
+            #    `must_match` / `must_match_any` / `nested_match_any` /
+            #    `nested_subtopic_match_any` / `range_match` — routed
+            #    through `_build_payload_filter` so the agentic RAG tools
+            #    can pass topic / district / date / action_type filters
+            #    without duplicating the Qdrant condition assembly here.
+            #
+            # The two shapes are mutually exclusive: when engine-style
+            # keys are present we route through `_build_payload_filter`
+            # and ignore the legacy keys. Otherwise we fall back to the
+            # inline document_id / document_type handling so existing
+            # callers (search_knowledge_base, search_tables,
+            # answer_faq_exact_match) keep working unchanged.
 
-            # Add document_id filter if provided
-            if filters and "document_id" in filters:
-                doc_filter = filters["document_id"]
-                if isinstance(doc_filter, dict) and "$in" in doc_filter:
-                    doc_ids = doc_filter["$in"]
-                    if doc_ids:
+            engine_keys = (
+                "must_match",
+                "must_match_any",
+                "nested_match_any",
+                "nested_subtopic_match_any",
+                "range_match",
+            )
+            filters = filters or {}
+            use_engine_shape = any(k in filters for k in engine_keys)
+
+            if use_engine_shape:
+                query_filter = self._build_payload_filter(
+                    tenant_id,
+                    must_match=filters.get("must_match"),
+                    must_match_any=filters.get("must_match_any"),
+                    nested_match_any=filters.get("nested_match_any"),
+                    nested_subtopic_match_any=filters.get(
+                        "nested_subtopic_match_any"
+                    ),
+                    nested_field_match_any=filters.get(
+                        "nested_field_match_any"
+                    ),
+                    range_match=filters.get("range_match"),
+                )
+            else:
+                # Build query filter inline.
+                # Always include tenant_id filter for security.
+                must_conditions = [
+                    models.FieldCondition(
+                        key="tenant_id",
+                        match=models.MatchValue(value=tenant_id),
+                    )
+                ]
+
+                # Add document_id filter if provided
+                if "document_id" in filters:
+                    doc_filter = filters["document_id"]
+                    if isinstance(doc_filter, dict) and "$in" in doc_filter:
+                        doc_ids = doc_filter["$in"]
+                        if doc_ids:
+                            must_conditions.append(
+                                models.FieldCondition(
+                                    key="document_id",
+                                    match=models.MatchAny(any=doc_ids),
+                                )
+                            )
+                    elif isinstance(doc_filter, str):
                         must_conditions.append(
                             models.FieldCondition(
                                 key="document_id",
-                                match=models.MatchAny(any=doc_ids),
+                                match=models.MatchValue(value=doc_filter),
                             )
                         )
-                elif isinstance(doc_filter, str):
-                    must_conditions.append(
-                        models.FieldCondition(
-                            key="document_id",
-                            match=models.MatchValue(value=doc_filter),
-                        )
-                    )
 
-            # Add document_type filter if provided (e.g. for search_tables)
-            if filters and "document_type" in filters:
-                type_filter = filters["document_type"]
-                if isinstance(type_filter, list) and type_filter:
-                    must_conditions.append(
-                        models.FieldCondition(
-                            key="document_type",
-                            match=models.MatchAny(any=type_filter),
+                # Add document_type filter if provided (e.g. for search_tables)
+                if "document_type" in filters:
+                    type_filter = filters["document_type"]
+                    if isinstance(type_filter, list) and type_filter:
+                        must_conditions.append(
+                            models.FieldCondition(
+                                key="document_type",
+                                match=models.MatchAny(any=type_filter),
+                            )
                         )
-                    )
-                elif isinstance(type_filter, str):
-                    must_conditions.append(
-                        models.FieldCondition(
-                            key="document_type",
-                            match=models.MatchValue(value=type_filter),
+                    elif isinstance(type_filter, str):
+                        must_conditions.append(
+                            models.FieldCondition(
+                                key="document_type",
+                                match=models.MatchValue(value=type_filter),
+                            )
                         )
-                    )
 
-            # Create filter with all conditions
-            query_filter = models.Filter(must=must_conditions)
+                query_filter = models.Filter(must=must_conditions)
 
             try:
                 try:
@@ -648,6 +691,8 @@ class QdrantStore(VectorStore):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        nested_subtopic_match_any: dict[str, list] | None = None,
+        nested_field_match_any: dict[str, dict[str, list]] | None = None,
         range_match: dict[str, dict[str, str]] | None = None,
     ) -> models.Filter:
         """
@@ -661,6 +706,18 @@ class QdrantStore(VectorStore):
           used for `topic_tags` (list of `{category, subtopic}` objects)
           where the key is the array field name and the values are the
           `category` strings to match.
+        - `nested_subtopic_match_any`: same shape as `nested_match_any`
+          but matches the nested `subtopic` sub-field. Used to filter
+          `topic_tags` by fine-grained subtopic (e.g. `comprehensive`,
+          `book_challenge_filed`, `transgender_student_policy`). Can be
+          combined with `nested_match_any` on the same `topic_tags`
+          field — both must match within the same nested object.
+        - `nested_field_match_any`: `{array_field: {sub_field: [values]}}`
+          — the general form for nested-object arrays whose sub-field
+          name is neither `category` nor `subtopic`. Used for
+          `speakers: [{name, role}]` so the agent can filter by
+          `speaker.name` or `speaker.role` without needing a dedicated
+          fragment shape for each.
         - `range_match`: `{field: {"gte": iso, "lte": iso}}` → FieldCondition
           with a `DatetimeRange`. Requires the field to have a `DATETIME`
           payload index (see `_ensure_payload_indexes`); used by the
@@ -706,28 +763,69 @@ class QdrantStore(VectorStore):
                 )
             )
 
-        # Nested array-of-objects filter (e.g. topic_tags[].category).
-        # Each key maps to a nested field; we match any object whose
-        # `category` sub-field is in the provided values.
+        # Nested array-of-objects filters (e.g. topic_tags[].category,
+        # topic_tags[].subtopic, speakers[].role). The legacy
+        # `nested_match_any` / `nested_subtopic_match_any` shapes are
+        # special-cased for `topic_tags`; the general
+        # `nested_field_match_any` covers every other nested-object
+        # array. When `nested_match_any` and `nested_subtopic_match_any`
+        # target the same field (e.g. both on `topic_tags`), we AND
+        # them inside one NestedCondition so the match must occur
+        # within the same nested object — a chunk tagged
+        # `[{category: sexed, subtopic: comprehensive}]` matches both
+        # but a chunk tagged `[{category: sexed, subtopic: abstinence},
+        # {category: lgbtq, subtopic: comprehensive}]` does not.
         nested_conditions: list[models.NestedCondition] = []
-        for nested_field, values in (nested_match_any or {}).items():
-            if not values:
-                continue
+        nested_field_to_idx: dict[str, int] = {}
+
+        def _ensure_nested(field_name: str) -> int:
+            """Get or create a NestedCondition for `field_name`."""
+            if field_name in nested_field_to_idx:
+                return nested_field_to_idx[field_name]
             nested_conditions.append(
                 models.NestedCondition(
                     nested=models.Nested(
-                        key=nested_field,
-                        filter=models.Filter(
-                            must=[
-                                models.FieldCondition(
-                                    key="category",
-                                    match=models.MatchAny(any=list(values)),
-                                )
-                            ]
-                        ),
+                        key=field_name,
+                        filter=models.Filter(must=[]),
                     )
                 )
             )
+            nested_field_to_idx[field_name] = len(nested_conditions) - 1
+            return nested_field_to_idx[field_name]
+
+        for nested_field, values in (nested_match_any or {}).items():
+            if not values:
+                continue
+            idx = _ensure_nested(nested_field)
+            nested_conditions[idx].nested.filter.must.append(
+                models.FieldCondition(
+                    key="category",
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        for nested_field, values in (nested_subtopic_match_any or {}).items():
+            if not values:
+                continue
+            idx = _ensure_nested(nested_field)
+            nested_conditions[idx].nested.filter.must.append(
+                models.FieldCondition(
+                    key="subtopic",
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        for nested_field, sub_fields in (nested_field_match_any or {}).items():
+            for sub_field, values in sub_fields.items():
+                if not values:
+                    continue
+                idx = _ensure_nested(nested_field)
+                nested_conditions[idx].nested.filter.must.append(
+                    models.FieldCondition(
+                        key=sub_field,
+                        match=models.MatchAny(any=list(values)),
+                    )
+                )
 
         return models.Filter(
             must=must_conditions,
@@ -741,6 +839,8 @@ class QdrantStore(VectorStore):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        nested_subtopic_match_any: dict[str, list] | None = None,
+        nested_field_match_any: dict[str, dict[str, list]] | None = None,
         range_match: dict[str, dict[str, str]] | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
@@ -758,6 +858,8 @@ class QdrantStore(VectorStore):
                 must_match=must_match,
                 must_match_any=must_match_any,
                 nested_match_any=nested_match_any,
+                nested_subtopic_match_any=nested_subtopic_match_any,
+                nested_field_match_any=nested_field_match_any,
                 range_match=range_match,
             )
 
@@ -822,6 +924,8 @@ class QdrantStore(VectorStore):
         must_match: dict[str, Any] | None = None,
         must_match_any: dict[str, list] | None = None,
         nested_match_any: dict[str, list] | None = None,
+        nested_subtopic_match_any: dict[str, list] | None = None,
+        nested_field_match_any: dict[str, dict[str, list]] | None = None,
         range_match: dict[str, dict[str, str]] | None = None,
     ) -> int:
         """
@@ -839,6 +943,8 @@ class QdrantStore(VectorStore):
                 must_match=must_match,
                 must_match_any=must_match_any,
                 nested_match_any=nested_match_any,
+                nested_subtopic_match_any=nested_subtopic_match_any,
+                nested_field_match_any=nested_field_match_any,
                 range_match=range_match,
             )
 

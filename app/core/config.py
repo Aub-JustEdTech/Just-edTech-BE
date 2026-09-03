@@ -253,9 +253,15 @@ class Settings(BaseSettings):
     BOX_ENTERPRISE_ID: str | None = None
 
     # Agent Configuration
-    AGENT_MAX_ITERATIONS: int = 5
-    AGENT_MAX_TOKENS_BUDGET: int = 50000
-    AGENT_TIMEOUT_SECONDS: int = 120
+    # Raised from (5 / 50000 / 120) to (12 / 120000 / 240) so the
+    # cross-district analytics archetype (taxonomy → count_districts_by_topic
+    # → get_district_citations per top-N → synthesise) has room to complete.
+    # Each count_districts_by_topic call is one tool round; each
+    # get_district_citations call is another; ~10 drill-downs + synthesis
+    # comfortably fits in 12 iterations and 120k tokens.
+    AGENT_MAX_ITERATIONS: int = 12
+    AGENT_MAX_TOKENS_BUDGET: int = 120000
+    AGENT_TIMEOUT_SECONDS: int = 240
 
     # Web Scraping Configuration
     WEB_SCRAPER_TIMEOUT_SECONDS: int = (
