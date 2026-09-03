@@ -56,6 +56,9 @@ celery_app.conf.update(
         # soft limit. The documents queue is sized for second-scale parses; a
         # long provider poll parked there would starve ordinary uploads.
         "pipeline.transcribe_media": {"queue": "scraping"},
+        # District analytics reports — retrieval + LLM writer + PDF render.
+        # Same shape as the documents queue (DB + LLM), not scraping.
+        "generate_district_report": {"queue": "documents"},
     },
     # Retry settings
     task_acks_late=True,  # Acknowledge after task completion

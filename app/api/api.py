@@ -13,6 +13,7 @@ from app.api.endpoints import (
     chatbots,
     conversations,
     daily_token_usage,
+    district_reports,
     documents,
     heatmap_engine,
     invitations,
@@ -63,4 +64,9 @@ api_router.include_router(
 )
 api_router.include_router(
     schools.router, prefix="/schools", tags=["Schools"]
+)
+api_router.include_router(
+    district_reports.router,
+    prefix="/district-reports",
+    tags=["District Reports"],
 )
