@@ -321,9 +321,16 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_MAX_CANDIDATE_FOLLOW_PAGES: int = 3
 
     # School scraper pipeline (knowledge base) settings.
-    # Fetch YouTube transcripts via yt-dlp (no video download) when True.
-    # When False, youtube media items are recorded but skipped at ingest.
+    # Master switch for all YouTube handling: transcript fetch
+    # (youtube-transcript-api / Supadata) and metadata/expansion (YouTube
+    # Data API v3, see youtube_data_api.py). When False, youtube media items
+    # are recorded but skipped at ingest, and no YouTube API of any kind is
+    # called.
     SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED: bool = True
+    # When True, run_scrape_districts.py persists only audio/video/youtube
+    # ScrapedMedia rows and skips documents entirely (used to backfill AV
+    # coverage without re-touching already-correct document counts).
+    SCHOOL_SCRAPER_AV_ONLY_MODE: bool = False
     # Master switch for audio/video transcription. When False, audio/video
     # media items are recorded but no transcript is produced. Named "WHISPER"
     # for backwards compatibility with deployed .env files; the provider is
@@ -456,13 +463,31 @@ class Settings(BaseSettings):
     # datacenter IP. Set a residential/rotating proxy here if that happens.
     SCHOOL_SCRAPER_YOUTUBE_PROXY_URL: str = ""
     # Max free caption API calls per worker process before switching every
-    # subsequent YouTube item to AssemblyAI (audio download + paid transcribe).
+    # subsequent YouTube item to Supadata (paid, server-side fetch).
+    # subsequent YouTube item to Supadata (paid, server-side fetch).
     # YouTube commonly rate-limits datacenter IPs after ~10 requests.
     SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET: int = 10
-    # yt-dlp is used ONLY to fetch audio for videos with no captions.
-    # A Netscape cookies.txt defeats "Sign in to confirm you're not a bot".
-    SCHOOL_SCRAPER_YTDLP_COOKIES_FILE: str = ""
-    SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS: int = 900
+    # Video-year lookup and playlist/channel expansion (see
+    # youtube_data_api.py) use the official YouTube Data API v3 rather than
+    # yt-dlp — a sanctioned, API-keyed request that cannot be bot-blocked,
+    # unlike yt-dlp scraping YouTube's own pages. Read-only public data needs
+    # only an API key, no OAuth: console.cloud.google.com -> enable "YouTube
+    # Data API v3" -> create an API key. videos.list and playlistItems.list
+    # cost 1 unit each against the free 10,000-units/day quota.
+    YOUTUBE_DATA_API_KEY: str = ""
+    YOUTUBE_DATA_API_BASE_URL: str = "https://www.googleapis.com/youtube/v3"
+
+    # --- Transcription: Supadata (YouTube fallback tier 2) ---
+    # When youtube-transcript-api has no captions (or is blocked), Supadata
+    # fetches the transcript server-side on its own infrastructure — YouTube
+    # never sees our IP, unlike the old yt-dlp-download-then-AssemblyAI path
+    # (and the PO Token / proxy workarounds that path needed, which were
+    # confirmed to still hit IP-reputation blocks — see git history on this
+    # branch prior to this change).
+    SUPADATA_API_KEY: str = ""
+    SUPADATA_BASE_URL: str = "https://api.supadata.ai/v1"
+    # Kill switch: off means captions-fail -> no_transcript, no Supadata call.
+    SCHOOL_SCRAPER_SUPADATA_ENABLED: bool = True
 
     # --- Transcription: neutral gate names ---
     # The gates above were written when the scraper was the only caller, so

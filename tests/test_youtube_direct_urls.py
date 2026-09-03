@@ -1,4 +1,4 @@
-"""Direct YouTube fixed URLs and caption-budget → AssemblyAI fallback."""
+"""Direct YouTube fixed URLs and caption-budget → Supadata fallback."""
 
 from __future__ import annotations
 
@@ -7,8 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.core.config import settings
+from app.services.transcription.exceptions import NoTranscriptAvailableError
 from app.services.transcription.schemas import (
-    SOURCE_ASSEMBLYAI,
+    SOURCE_SUPADATA,
     SOURCE_YOUTUBE_CAPTIONS,
     TranscriptResult,
     TranscriptSegment,
@@ -148,42 +149,42 @@ async def test_rate_limit_exhausts_budget_and_returns_none(monkeypatch):
     assert youtube_caption_budget_exhausted() is True
 
 
-async def test_transcribe_youtube_uses_assemblyai_when_budget_exhausted(monkeypatch, tmp_path):
+async def test_transcribe_youtube_uses_supadata_when_budget_exhausted(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET", 0)
     monkeypatch.setattr(settings, "SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED", True)
-    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YOUTUBE_AUDIO_FALLBACK_ENABLED", True)
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_SUPADATA_ENABLED", True)
 
-    paid_result = TranscriptResult(
-        source=SOURCE_ASSEMBLYAI,
-        text="paid transcript",
-        segments=[TranscriptSegment(0, 1000, "paid transcript", "A")],
-        speech_model="universal-2",
+    supadata_result = TranscriptResult(
+        source=SOURCE_SUPADATA,
+        text="supadata transcript",
+        segments=[TranscriptSegment(0, 1000, "supadata transcript", None)],
     )
 
     service = TranscriptionService(client=MagicMock())
     monkeypatch.setattr(
-        service,
-        "_transcribe_local_file",
-        AsyncMock(return_value=paid_result),
-    )
-    monkeypatch.setattr(
-        "app.services.transcription.service.probe_youtube_duration",
-        AsyncMock(return_value=120),
-    )
-    monkeypatch.setattr(
-        "app.services.transcription.service.download_youtube_audio",
-        AsyncMock(return_value=tmp_path / f"{VIDEO_ID}.m4a"),
-    )
-    monkeypatch.setattr(
-        service,
-        "enforce_media_gates",
-        AsyncMock(return_value=MagicMock(duration_seconds=120, size_bytes=1024)),
+        "app.services.transcription.service.fetch_supadata_transcript",
+        AsyncMock(return_value=supadata_result),
     )
 
     result = await service.transcribe_youtube(VIDEO_URL, workdir=tmp_path)
 
-    assert result.source == SOURCE_ASSEMBLYAI
-    service._transcribe_local_file.assert_awaited_once()
+    assert result.source == SOURCE_SUPADATA
+
+
+async def test_transcribe_youtube_terminal_when_supadata_also_empty(monkeypatch, tmp_path):
+    """No third attempt: captions and Supadata both empty -> terminal error."""
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_YOUTUBE_CAPTION_BUDGET", 0)
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_WHISPER_TRANSCRIPTION_ENABLED", True)
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_SUPADATA_ENABLED", True)
+
+    service = TranscriptionService(client=MagicMock())
+    monkeypatch.setattr(
+        "app.services.transcription.service.fetch_supadata_transcript",
+        AsyncMock(return_value=None),
+    )
+
+    with pytest.raises(NoTranscriptAvailableError):
+        await service.transcribe_youtube(VIDEO_URL, workdir=tmp_path)
 
 
 async def test_list_youtube_video_urls_single_video():

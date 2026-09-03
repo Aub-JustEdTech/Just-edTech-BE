@@ -1427,8 +1427,11 @@ async def get_document_text(
     tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
-    Return the full text of a document assembled from its Qdrant chunks, grouped by page.
-    Used by the HeatMap "View full transcript" flow.
+    Return the content of a document. Used by the HeatMap "View full transcript" flow.
+
+    For a ``.transcript`` document, returns ``{title, url, expires_in}`` — a presigned,
+    inline-display S3 URL to the stored transcript file. For every other document type,
+    returns the full text assembled from its Qdrant chunks, grouped by page.
 
     doc_ref may be either the document's doc_id (UUID) or its name/filename — whichever
     the citation carries. Sample data uses the filename; live Qdrant data uses the UUID.
@@ -1458,6 +1461,46 @@ async def get_document_text(
             detail=f"Document not fully processed yet. Status: {document.processing_status.value}",
         )
 
+    if document.document_type == ".transcript":
+        # Redirect to the stored transcript file directly, instead of
+        # reassembling it from Qdrant chunks — a presigned, inline-display
+        # URL means "View Transcript" opens the text in the browser rather
+        # than triggering a download.
+        prefix = f"s3://{settings.S3_BUCKET_NAME}/"
+        s3_key = (
+            document.s3_url[len(prefix) :]
+            if document.s3_url and document.s3_url.startswith(prefix)
+            else None
+        )
+        if not s3_key:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Transcript has no associated S3 object",
+            )
+        try:
+            s3_manager = S3Manager(
+                bucket_name=settings.S3_BUCKET_NAME,
+                region_name=settings.S3_REGION,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            )
+            safe_name = (document.name or f"document_{document.id}").replace('"', "")
+            url = await s3_manager.get_presigned_url(
+                s3_key=s3_key,
+                expiration=3600,
+                http_method="GET",
+                response_content_type="text/plain; charset=utf-8",
+                response_content_disposition=f'inline; filename="{safe_name}.txt"',
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to generate presigned URL: {str(e)}",
+            ) from e
+        return success_response(
+            data={"title": document.name, "url": url, "expires_in": 3600}
+        )
+
     try:
         chunks = await get_document_service().vector_store.get_document_chunks(
             document_id=document.doc_id,
@@ -1468,20 +1511,6 @@ async def get_document_text(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve document chunks: {str(e)}",
         ) from e
-
-    if document.document_type == ".transcript":
-        # Transcripts have no real pages — chunks are split by utterance/duration,
-        # not by page. Render the whole thing as one block, ordered by chunk_index.
-        ordered = sorted(
-            chunks, key=lambda c: int(c.get("metadata", {}).get("chunk_index", 0))
-        )
-        full_text = "\n\n".join(c["text"] for c in ordered)
-        return success_response(
-            data={
-                "title": document.name,
-                "pages": [{"page_number": 1, "text": full_text}],
-            }
-        )
 
     # Group chunks by page_number; fall back to chunk_index as a synthetic page
     pages: dict[int, list[str]] = {}

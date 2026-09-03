@@ -87,6 +87,22 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
             logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
 
+        if sm.media_type == "zoom":
+            # Zoom's real download is a signed, sometimes passcode-gated URL
+            # on the share page, not a fetchable file — never worth an
+            # attempt. Terminal and not in _RETRYABLE_SCRAPED_MEDIA_STATUSES,
+            # so a future re-scrape won't keep re-queuing it.
+            await update_scraped_media(
+                db,
+                sm.id,
+                status="skipped_zoom",
+                error_message="Zoom recordings are not supported (signed/passcode-gated URL, not a fetchable file)",
+            )
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "skipped_zoom",
+            }
+
         if sm.media_type == "youtube" and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
             await update_scraped_media(
                 db,
@@ -235,6 +251,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                     "transcription was paid for; not retrying to avoid re-billing",
                     scraped_media_id,
                 )
+                await db.rollback()
                 await update_scraped_media(
                     db,
                     sm.id,

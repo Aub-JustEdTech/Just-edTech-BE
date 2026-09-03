@@ -6,15 +6,42 @@ uploads have captions, so this path carries most of the corpus for $0.
 
 ``youtube-transcript-api`` is used rather than ``yt-dlp`` for captions. The
 difference is not cosmetic — verified against a real board-meeting video
-(``n_SOB-VqQh0``): yt-dlp's default client is gated behind YouTube's PO Token
-and reported "no captions available" for a video that has 900 of them, while
-this library returned all 900. That failure mode is silent and dangerous: it
-is indistinguishable from a video genuinely lacking captions, so it would
-route the entire corpus to *paid* transcription with normal-looking logs and
-a bill an order of magnitude too large.
+(``n_SOB-VqQh0``): yt-dlp's default client reported "no captions available"
+for a video that has 900 of them, while this library returned all 900. That
+failure mode is silent and dangerous: it is indistinguishable from a video
+genuinely lacking captions, so it would route the entire corpus to *paid*
+transcription with normal-looking logs and a bill an order of magnitude too
+large.
 
-Hence the rule enforced here: **every fall-through to paid transcription logs
-a WARNING** that distinguishes "captions genuinely absent" from "captions
+When this free path fails — captions genuinely absent, or the request
+itself gets blocked — the fallback is Supadata (``supadata.py``), which
+fetches the transcript server-side on its own infrastructure rather than us
+downloading anything. There is no third attempt: if Supadata also has
+nothing, the item is terminal. This replaces an earlier yt-dlp-download +
+AssemblyAI fallback that needed a PO Token, a JS runtime and a residential
+proxy to work around YouTube's bot-detection, and still hit IP-reputation
+blocks in production — see this branch's git history prior to this change.
+
+Hence the rule enforced here: **every fall-through to Supadata logs a
+WARNING** that distinguishes "captions genuinely absent" from "captions
+(``n_SOB-VqQh0``): yt-dlp's default client reported "no captions available"
+for a video that has 900 of them, while this library returned all 900. That
+failure mode is silent and dangerous: it is indistinguishable from a video
+genuinely lacking captions, so it would route the entire corpus to *paid*
+transcription with normal-looking logs and a bill an order of magnitude too
+large.
+
+When this free path fails — captions genuinely absent, or the request
+itself gets blocked — the fallback is Supadata (``supadata.py``), which
+fetches the transcript server-side on its own infrastructure rather than us
+downloading anything. There is no third attempt: if Supadata also has
+nothing, the item is terminal. This replaces an earlier yt-dlp-download +
+AssemblyAI fallback that needed a PO Token, a JS runtime and a residential
+proxy to work around YouTube's bot-detection, and still hit IP-reputation
+blocks in production — see this branch's git history prior to this change.
+
+Hence the rule enforced here: **every fall-through to Supadata logs a
+WARNING** that distinguishes "captions genuinely absent" from "captions
 unreachable".
 
 Speaker labels: YouTube captions carry none, so segments from this path have
@@ -29,7 +56,6 @@ import asyncio
 import logging
 import re
 import threading
-from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from app.core.config import settings
@@ -43,6 +69,10 @@ from app.services.transcription.schemas import (
     SOURCE_YOUTUBE_CAPTIONS,
     TranscriptResult,
     TranscriptSegment,
+)
+from app.services.transcription.youtube_data_api import (
+    fetch_video_upload_year,
+    list_channel_or_playlist_video_ids,
 )
 
 logger = logging.getLogger(__name__)
@@ -198,7 +228,13 @@ def youtube_caption_budget_exhausted() -> bool:
 
 
 async def list_youtube_video_urls(url: str) -> list[str]:
-    """Expand a YouTube video, playlist, or channel URL to canonical watch URLs."""
+    """Expand a YouTube video, playlist, or channel URL to canonical watch URLs.
+
+    Playlist/channel expansion goes through the official YouTube Data API
+    (see youtube_data_api.py) rather than yt-dlp — a sanctioned, API-keyed
+    request that cannot be bot-blocked the way scraping YouTube's own pages
+    can be.
+    """
     if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
         return []
 
@@ -209,63 +245,16 @@ async def list_youtube_video_urls(url: str) -> list[str]:
         canonical = canonical_youtube_url(url)
         return [canonical] if canonical else []
 
-    return await asyncio.to_thread(_list_youtube_videos_sync, url)
-
-
-def _list_youtube_videos_sync(url: str) -> list[str]:
-    """Blocking playlist/channel expansion via yt-dlp (no downloads)."""
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
-    except ImportError:  # pragma: no cover
-        logger.warning("yt-dlp not installed; cannot expand YouTube playlist %s", url)
-        canonical = canonical_youtube_url(url)
-        return [canonical] if canonical else []
-
-    opts = _ytdlp_options()
-    opts.update(
-        {
-            "extract_flat": "in_playlist",
-            "skip_download": True,
-            "ignoreerrors": True,
-            "quiet": True,
-        }
-    )
-
-    try:
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Could not expand YouTube URL %s: %s", url, exc)
-        canonical = canonical_youtube_url(url)
-        return [canonical] if canonical else []
-
-    if not info:
-        return []
-
-    entries = info.get("entries")
-    if not entries:
-        vid = info.get("id")
-        if isinstance(vid, str) and _VIDEO_ID_RE.match(vid):
-            return [f"https://www.youtube.com/watch?v={vid}"]
-        canonical = canonical_youtube_url(url)
-        return [canonical] if canonical else []
+    playlist_id = extract_playlist_id(url)
+    video_ids = await list_channel_or_playlist_video_ids(url, playlist_id=playlist_id)
 
     urls: list[str] = []
     seen: set[str] = set()
-    for entry in entries:
-        if not entry:
-            continue
-        candidate: str | None = None
-        entry_id = entry.get("id")
-        if isinstance(entry_id, str) and _VIDEO_ID_RE.match(entry_id):
-            candidate = f"https://www.youtube.com/watch?v={entry_id}"
-        else:
-            entry_url = entry.get("url") or entry.get("webpage_url")
-            if isinstance(entry_url, str):
-                candidate = canonical_youtube_url(entry_url)
-        if candidate and candidate not in seen:
-            seen.add(candidate)
-            urls.append(candidate)
+    for video_id in video_ids:
+        canonical = canonical_youtube_url(f"https://www.youtube.com/watch?v={video_id}")
+        if canonical and canonical not in seen:
+            seen.add(canonical)
+            urls.append(canonical)
     return urls
 
 
@@ -390,10 +379,10 @@ def _fetch_sync(video_id: str, url: str) -> TranscriptResult | None:
 
     except (NoTranscriptFound, TranscriptsDisabled):
         # Captions are GENUINELY absent. This is the only case that may fall
-        # through to paid transcription.
+        # through to Supadata.
         logger.warning(
             "No captions available for YouTube video %s (%s) — "
-            "falling through to PAID transcription. Captions genuinely absent.",
+            "falling through to Supadata. Captions genuinely absent.",
             video_id,
             url,
         )
@@ -413,7 +402,7 @@ def _fetch_sync(video_id: str, url: str) -> TranscriptResult | None:
             _caption_budget.exhaust()
             logger.warning(
                 "YouTube BLOCKED the caption request for %s (%s). Caption budget "
-                "exhausted — falling through to AssemblyAI. Set "
+                "exhausted — falling through to Supadata. Set "
                 "SCHOOL_SCRAPER_YOUTUBE_PROXY_URL to extend free caption usage.",
                 video_id,
                 name,
@@ -443,7 +432,7 @@ def _fetch_sync(video_id: str, url: str) -> TranscriptResult | None:
     if not segments:
         logger.warning(
             "YouTube video %s returned an empty caption track — falling "
-            "through to PAID transcription.",
+            "through to Supadata.",
             video_id,
         )
         return None
@@ -514,19 +503,6 @@ def _build_api(api_cls):
         return api_cls()
 
 
-def _ytdlp_options() -> dict[str, object]:
-    """Shared yt-dlp options. Cookies defeat "confirm you're not a bot"."""
-    opts: dict[str, object] = {
-        "quiet": True,
-        "no_warnings": True,
-        "noprogress": True,
-        "socket_timeout": settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
-    }
-    if settings.SCHOOL_SCRAPER_YTDLP_COOKIES_FILE:
-        opts["cookiefile"] = settings.SCHOOL_SCRAPER_YTDLP_COOKIES_FILE
-    return opts
-
-
 async def fetch_youtube_upload_year(url: str) -> int | None:
     """Video upload year from YouTube's metadata — no bytes transferred.
 
@@ -537,111 +513,14 @@ async def fetch_youtube_upload_year(url: str) -> int | None:
     date. Only worth calling once URL/filename/page-context inference has
     already failed, since it costs a metadata round-trip per video.
 
-    Returns None if the metadata cannot be read.
+    Fetched via the official YouTube Data API (see youtube_data_api.py)
+    rather than yt-dlp. Returns None if the metadata cannot be read.
     """
     if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
         return None
 
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
-    except ImportError:  # pragma: no cover
+    video_id = extract_youtube_id(url)
+    if not video_id:
         return None
 
-    def _extract() -> int | None:
-        with YoutubeDL(_ytdlp_options()) as ydl:
-            info = ydl.extract_info(url, download=False) or {}
-        upload_date = info.get("upload_date")  # "YYYYMMDD" string, or None
-        if isinstance(upload_date, str) and upload_date[:4].isdigit():
-            return int(upload_date[:4])
-        return None
-
-    try:
-        return await asyncio.wait_for(
-            asyncio.to_thread(_extract),
-            timeout=settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
-        )
-    except Exception as exc:  # noqa: BLE001 — advisory only, never fatal
-        logger.warning("Could not read YouTube upload date for %s: %s", url, exc)
-        return None
-
-
-async def probe_youtube_duration(url: str) -> int | None:
-    """Duration in seconds from YouTube's metadata — no bytes transferred.
-
-    Used to length-gate a caption-less video BEFORE downloading it. Without
-    this, an 8-hour livestream is fully downloaded into the shared
-    ``temp_uploads`` volume and only then rejected — and that volume is shared
-    with the documents worker, so filling it takes down both.
-
-    Returns None if the metadata cannot be read; the caller then falls back to
-    probing the downloaded file, which is still capped by size.
-    """
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
-    except ImportError:  # pragma: no cover
-        return None
-
-    def _extract() -> int | None:
-        with YoutubeDL(_ytdlp_options()) as ydl:
-            info = ydl.extract_info(url, download=False) or {}
-        duration = info.get("duration")
-        return int(duration) if isinstance(duration, int | float) else None
-
-    try:
-        return await asyncio.wait_for(
-            asyncio.to_thread(_extract),
-            timeout=settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
-        )
-    except Exception as exc:  # noqa: BLE001 — advisory only, never fatal
-        logger.warning("Could not read YouTube metadata for %s: %s", url, exc)
-        return None
-
-
-async def download_youtube_audio(url: str, dest_dir: Path) -> Path:
-    """Download audio for a caption-less video. Paid path only.
-
-    Returns the downloaded file. Conditioning (if enabled) is handled by
-    ``audio_preprocessor`` so there is exactly one audio code path.
-    """
-    try:
-        from yt_dlp import YoutubeDL  # type: ignore[import-untyped]
-    except ImportError as exc:  # pragma: no cover
-        raise TranscriptionProviderError(
-            "yt-dlp is not installed; cannot download YouTube audio"
-        ) from exc
-
-    video_id = extract_youtube_id(url) or "video"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    outtmpl = str(dest_dir / f"{video_id}.%(ext)s")
-
-    opts = _ytdlp_options()
-    opts.update(
-        {
-            "format": "bestaudio/best",
-            "outtmpl": outtmpl,
-            # Hard size cap so a mis-detected livestream cannot fill the
-            # shared temp_uploads volume even if the length gate was skipped.
-            "max_filesize": settings.SCHOOL_SCRAPER_MEDIA_MAX_DOWNLOAD_MB
-            * 1024
-            * 1024,
-        }
-    )
-
-    def _download() -> Path:
-        with YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            return Path(ydl.prepare_filename(info))
-
-    try:
-        return await asyncio.wait_for(
-            asyncio.to_thread(_download),
-            timeout=settings.SCHOOL_SCRAPER_YTDLP_TIMEOUT_SECONDS,
-        )
-    except asyncio.TimeoutError as exc:
-        raise TranscriptionProviderError(
-            f"yt-dlp timed out downloading {video_id}"
-        ) from exc
-    except Exception as exc:
-        raise TranscriptionProviderError(
-            f"yt-dlp failed to download {video_id}: {exc}"
-        ) from exc
+    return await fetch_video_upload_year(video_id)
