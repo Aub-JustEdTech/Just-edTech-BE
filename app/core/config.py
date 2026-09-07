@@ -3,6 +3,7 @@ Core configuration settings for Just-EdTech application.
 """
 
 import os
+from datetime import date
 from pathlib import Path
 
 from pydantic import AnyHttpUrl, validator
@@ -332,6 +333,7 @@ class Settings(BaseSettings):
     SCHOOL_SCRAPER_S3_PREFIX: str = ""
     SCHOOL_SCRAPER_ALLOWED_YEARS: list[int] = [2023, 2024, 2025, 2026]
     SCHOOL_SCRAPER_DOWNLOAD_ON_UNKNOWN_YEAR: bool = False
+    SCHOOL_SCRAPER_MEDIA_CUTOFF_DATE: date | None = date(2026, 9, 1)
     SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
     SCHOOL_SCRAPER_RANKING_MODE: str = "both"
     SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 15

@@ -13,7 +13,14 @@ Keeping the keyword sets in one place prevents the two from drifting.
 
 from __future__ import annotations
 
+import re
 from urllib.parse import urlparse
+
+# Collapses whitespace/hyphens/underscores to a single space, so a keyword
+# written with hyphens ("school-committee") matches a natural-language title
+# written with spaces ("School Committee Meeting") — titles/filenames have
+# no path structure to anchor a literal "-" or "_" the way a URL does.
+_SEPARATOR_RE = re.compile(r"[\s_-]+")
 
 # Unambiguous path segments — a single hit means "this is a meeting page".
 _STRONG_KEYWORDS: tuple[str, ...] = (
@@ -81,3 +88,52 @@ def is_meeting_related_url(url: str) -> bool:
     if any(k in path for k in _STRONG_KEYWORDS):
         return True
     return sum(1 for k in _WEAK_KEYWORDS if k in path) >= _WEAK_MIN_HITS
+
+
+def is_meeting_related_text(text: str) -> bool:
+    """True when arbitrary text (a video title or filename) looks
+    meeting-related.
+
+    Same strong/weak logic as :func:`is_meeting_related_url`, applied to
+    plain text instead of a URL path. Two adjustments account for text not
+    having URL path structure:
+
+    * Keywords that are path-only markers (a leading ``/``, e.g.
+      ``/agenda``) are matched without the slash.
+    * Both the text and the multi-word keywords are normalized so hyphens,
+      underscores, and whitespace are treated the same — a keyword written
+      ``school-committee`` still matches a natural-language title like
+      "School Committee Meeting — March 2026".
+    """
+    if not text:
+        return False
+    normalized = _SEPARATOR_RE.sub(" ", text.lower()).strip()
+    if any(
+        _SEPARATOR_RE.sub(" ", k.lstrip("/")).strip() in normalized
+        for k in _STRONG_KEYWORDS
+    ):
+        return True
+    return sum(1 for k in _WEAK_KEYWORDS if k in normalized) >= _WEAK_MIN_HITS
+
+
+def is_meeting_related_media(
+    *,
+    page_url: str | None = None,
+    media_url: str | None = None,
+    title: str | None = None,
+) -> bool:
+    """True when ANY of a media item's page URL, direct URL, or title/
+    filename looks meeting-related.
+
+    Used to gate audio/video/youtube scraping to only keyword-relevant
+    items — a single match in any one of the three fields is enough, since
+    a generic page (e.g. a district's raw media library) can still host an
+    individually well-titled meeting recording, and vice versa.
+    """
+    if page_url and is_meeting_related_url(page_url):
+        return True
+    if media_url and is_meeting_related_url(media_url):
+        return True
+    if title and is_meeting_related_text(title):
+        return True
+    return False

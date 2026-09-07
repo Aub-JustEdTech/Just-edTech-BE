@@ -48,7 +48,7 @@ from app.crud import schools as crud
 from app.db.connector import AsyncSessionLocal
 from app.models.school import School, SchoolScrapeUrl, ScrapedMedia
 from app.services.web_scraper.school_scraper_service import SchoolScraperService
-from app.services.web_scraper.year_filter import evaluate_media_year_async
+from app.services.web_scraper.year_filter import evaluate_media_processability_async
 
 DEFAULT_JSON_PATH = (
     Path(__file__).parent / "output" / "finalised_20_disticts.json"
@@ -257,7 +257,8 @@ async def _scrape_one_url(
                     continue
 
                 inferred_year, should_process, _skip_reason = (
-                    await evaluate_media_year_async(
+                    await evaluate_media_processability_async(
+                        media_type=media_type,
                         url=mf["url"],
                         filename=mf.get("name"),
                         source_page_url=mf.get("source_page_url", scrape_url.url),

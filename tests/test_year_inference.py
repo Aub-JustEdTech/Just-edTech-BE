@@ -17,8 +17,9 @@ Run:
 
 from __future__ import annotations
 
-from app.services.web_scraper._year_inference import infer_doc_year
+from datetime import date
 
+from app.services.web_scraper._year_inference import infer_doc_date, infer_doc_year
 
 # ---------------------------------------------------------------------------
 # URL path year
@@ -214,4 +215,140 @@ def test_parent_candidate_empty_list_ignored():
             parent_candidate_years=[],
         )
         is None
+    )
+
+
+# ---------------------------------------------------------------------------
+# infer_doc_date — day precision (AV cutoff filter), not just a bare year
+# ---------------------------------------------------------------------------
+
+
+def test_yyyymmdd_filename_gives_exact_date():
+    assert (
+        infer_doc_date(
+            url="https://resources.finalsite.net/videos/abc/20260714_ceremony.mp4",
+            filename=None,
+            source_page_url=None,
+        )
+        == date(2026, 7, 14)
+    )
+
+
+def test_yyyymmdd_url_path_gives_exact_date():
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/media/20260901/meeting.mp4",
+            filename=None,
+            source_page_url=None,
+        )
+        == date(2026, 9, 1)
+    )
+
+
+def test_short_date_filename_gives_exact_date():
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/files/uuid.mp4",
+            filename="03-16-2026-minutes.mp4",
+            source_page_url=None,
+        )
+        == date(2026, 3, 16)
+    )
+
+
+def test_short_date_two_digit_year_maps_to_2000s():
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/files/uuid.mp4",
+            filename="7-10-25-meeting.mp4",
+            source_page_url=None,
+        )
+        == date(2025, 7, 10)
+    )
+
+
+def test_bare_year_only_is_not_a_precise_date():
+    """A plain 4-digit year (no month/day) is exactly what infer_doc_year is
+    for — infer_doc_date must not guess a day out of it."""
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/files/2026-meeting.mp4",
+            filename=None,
+            source_page_url=None,
+        )
+        is None
+    )
+
+
+def test_invalid_calendar_date_is_skipped_not_raised():
+    # 20260230 (Feb 30) is not a real date — must not raise, just find nothing.
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/files/20260230_bad.mp4",
+            filename=None,
+            source_page_url=None,
+        )
+        is None
+    )
+
+
+# ---------------------------------------------------------------------------
+# Compact YYMMDD (no separator) — real Castus VOD filename shape
+# ---------------------------------------------------------------------------
+
+
+def test_compact_yymmdd_embedded_in_platform_filename():
+    # Real shape from a Castus VOD export: "...GMMAS171004.mpg.mp4" -> 2017-10-04.
+    url = (
+        "https://objects-us-west-1.dream.io/castus-vod-boxford/8/6/8/1/7/3/"
+        "86817385-6075-47b6-b4e9-0d5efa0585161507254299.720%2B2450617.436"
+        "%40castus4-boxford%2B15072623981507254375286677.vod.480p."
+        "GMMAS171004.mpg.mp4"
+    )
+    assert infer_doc_date(url=url, filename=None, source_page_url=None) == date(
+        2017, 10, 4
+    )
+
+
+def test_compact_yymmdd_in_filename_only():
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/files/uuid",
+            filename="GMMAS260901.mpg.mp4",
+            source_page_url=None,
+        )
+        == date(2026, 9, 1)
+    )
+
+
+def test_compact_yymmdd_invalid_calendar_date_is_skipped():
+    # "998877" -> month=88 is not a valid month; must not raise, just skip it.
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/files/998877.pdf",
+            filename=None,
+            source_page_url=None,
+        )
+        is None
+    )
+
+
+def test_compact_yymmdd_does_not_misfire_inside_a_yyyymmdd_run():
+    # The 8-digit YYYYMMDD path already handles this; the 6-digit fallback
+    # must not produce a conflicting/duplicate match from within it.
+    assert infer_doc_date(
+        url="https://www.example.com/20260901_meeting.mp4",
+        filename=None,
+        source_page_url=None,
+    ) == date(2026, 9, 1)
+
+
+def test_source_page_date_used_when_media_url_has_none():
+    assert (
+        infer_doc_date(
+            url="https://www.example.com/download/uuid-file.mp4",
+            filename=None,
+            source_page_url="https://www.example.com/meeting-archives/20261005/",
+        )
+        == date(2026, 10, 5)
     )

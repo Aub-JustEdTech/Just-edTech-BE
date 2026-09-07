@@ -29,6 +29,7 @@ existing behaviour of the yt-dlp calls this replaces.
 from __future__ import annotations
 
 import logging
+from datetime import date, datetime
 from urllib.parse import urlparse
 
 import httpx
@@ -53,12 +54,13 @@ def _api_key_or_none() -> str | None:
     return settings.YOUTUBE_DATA_API_KEY
 
 
-async def fetch_video_upload_year(video_id: str) -> int | None:
-    """Upload year for one video, via ``videos.list`` (1 quota unit).
+async def fetch_video_upload_date(video_id: str) -> date | None:
+    """Upload date (day precision) for one video, via ``videos.list`` (1 quota
+    unit).
 
-    Returns None if the key is missing, the video isn't found, or the
-    request fails for any reason — this is a best-effort lookup, never a
-    hard dependency.
+    Returns None if the key is missing, the video isn't found, the request
+    fails for any reason, or ``publishedAt`` can't be parsed — this is a
+    best-effort lookup, never a hard dependency.
     """
     api_key = _api_key_or_none()
     if not api_key:
@@ -82,13 +84,22 @@ async def fetch_video_upload_year(video_id: str) -> int | None:
         return None
 
     published_at = items[0].get("snippet", {}).get("publishedAt")
-    if (
-        isinstance(published_at, str)
-        and len(published_at) >= 4
-        and published_at[:4].isdigit()
-    ):
-        return int(published_at[:4])
-    return None
+    if not isinstance(published_at, str):
+        return None
+    try:
+        # e.g. "2026-09-15T14:03:00Z"
+        return datetime.fromisoformat(published_at.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
+async def fetch_video_upload_year(video_id: str) -> int | None:
+    """Upload year for one video. Thin wrapper over
+    :func:`fetch_video_upload_date` for callers that only need year-level
+    precision (the document year-list filter).
+    """
+    upload_date = await fetch_video_upload_date(video_id)
+    return upload_date.year if upload_date else None
 
 
 async def _list_playlist_video_ids(playlist_id: str, api_key: str) -> list[str]:

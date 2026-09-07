@@ -27,6 +27,7 @@ a 2024 page linking a 2023 doc).
 from __future__ import annotations
 
 import re
+from datetime import date
 from urllib.parse import urlparse
 
 # Matches a standalone 4-digit year in the 2000-2099 range, not
@@ -38,6 +39,27 @@ _YEAR_RE = re.compile(r"(?<!\d)(20\d{2})(?!\d)")
 _SHORT_DATE_YEAR_RE = re.compile(
     r"(?<!\d)(?:0?[1-9]|1[0-2])[-/.](?:0?[1-9]|[12]\d|3[01])[-/.](20\d{2}|\d{2})(?!\d)"
 )
+
+# Full YYYYMMDD dates embedded in filenames, e.g.
+# 20260714_PostSecondaryTransitionCenter_Opening.mp4 -> 2026-07-14.
+# Day-precision only — used by infer_doc_date, not infer_doc_year.
+_YYYYMMDD_RE = re.compile(r"(?<!\d)(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)")
+
+# Same US-style short date as _SHORT_DATE_YEAR_RE, but capturing month/day
+# too (not just the year) so a full date can be built.
+_SHORT_DATE_RE = re.compile(
+    r"(?<!\d)(0?[1-9]|1[0-2])[-/.](0?[1-9]|[12]\d|3[01])[-/.](20\d{2}|\d{2})(?!\d)"
+)
+
+# Compact YYMMDD dates with NO separator, embedded in a longer filename, e.g.
+# a Castus VOD export like "...GMMAS171004.mpg.mp4" -> 2017-10-04. Six bare
+# digits is intrinsically ambiguous (could be an ID, not a date), so this is
+# kept safe by construction: month/day are constrained to valid ranges by the
+# regex itself, and date() rejects anything that isn't a real calendar date
+# (see _dates_from_yymmdd) — a random 6-digit ID only survives both filters
+# by coincidence, same trade-off already accepted for the separator-based
+# patterns above.
+_YYMMDD_RE = re.compile(r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)")
 
 
 def _year_from_short_date(text: str) -> int | None:
@@ -65,6 +87,56 @@ def _earliest_year(text: str) -> int | None:
     if short is not None:
         years.append(short)
     return min(years)
+
+
+def _dates_from_yyyymmdd(text: str) -> list[date]:
+    """Full dates from an embedded ``YYYYMMDD`` run of digits, if any."""
+    found: list[date] = []
+    for m in _YYYYMMDD_RE.finditer(text or ""):
+        try:
+            found.append(date(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+        except ValueError:
+            continue  # e.g. a stray "20260230" — not a real date, skip it
+    return found
+
+
+def _dates_from_short_date(text: str) -> list[date]:
+    """Full dates from ``MM-DD-YY(YY)`` style fragments, if any."""
+    found: list[date] = []
+    for m in _SHORT_DATE_RE.finditer(text or ""):
+        month, day, raw_year = int(m.group(1)), int(m.group(2)), m.group(3)
+        year = int(raw_year) if len(raw_year) == 4 else 2000 + int(raw_year)
+        try:
+            found.append(date(year, month, day))
+        except ValueError:
+            continue
+    return found
+
+
+def _dates_from_yymmdd(text: str) -> list[date]:
+    """Full dates from a compact, separator-free ``YYMMDD`` run, if any.
+
+    School-scraped content is never pre-2000, so the 2-digit year maps to
+    2000-2099 — same convention as ``_year_from_short_date``.
+    """
+    found: list[date] = []
+    for m in _YYMMDD_RE.finditer(text or ""):
+        year = 2000 + int(m.group(1))
+        try:
+            found.append(date(year, int(m.group(2)), int(m.group(3))))
+        except ValueError:
+            continue  # not a real calendar date — almost certainly a plain ID
+    return found
+
+
+def _earliest_exact_date(text: str) -> date | None:
+    """Earliest fully-precise (year+month+day) date found in ``text``."""
+    dates = (
+        _dates_from_yyyymmdd(text)
+        + _dates_from_short_date(text)
+        + _dates_from_yymmdd(text)
+    )
+    return min(dates) if dates else None
 
 
 def _filename_from_url(url: str) -> str:
@@ -115,5 +187,43 @@ def infer_doc_year(
     #    (otherwise the doc could belong to any of them).
     if parent_candidate_years and len(parent_candidate_years) == 1:
         return parent_candidate_years[0]
+
+    return None
+
+
+def infer_doc_date(
+    *,
+    url: str,
+    filename: str | None,
+    source_page_url: str | None,
+) -> date | None:
+    """Infer a precise (year+month+day) date from URL/filename/page context.
+
+    Same priority order and sources as :func:`infer_doc_year`, but only
+    returns a value when a full date was found — e.g.
+    ``20260714_ceremony.mp4`` or ``03-16-2026-minutes.pdf``. A bare year
+    (``2026-meeting.mp4``) is not precise enough for a same-day cutoff
+    comparison and is left to :func:`infer_doc_year` instead. Returns None
+    if no exact date could be extracted from any source.
+    """
+    if url:
+        found = _earliest_exact_date(urlparse(url).path)
+        if found is not None:
+            return found
+
+    fname = filename or ""
+    if fname:
+        found = _earliest_exact_date(fname)
+        if found is not None:
+            return found
+    if not fname and url:
+        found = _earliest_exact_date(_filename_from_url(url))
+        if found is not None:
+            return found
+
+    if source_page_url:
+        found = _earliest_exact_date(urlparse(source_page_url).path)
+        if found is not None:
+            return found
 
     return None

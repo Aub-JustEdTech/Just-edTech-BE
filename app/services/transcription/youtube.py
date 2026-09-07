@@ -38,6 +38,7 @@ import asyncio
 import logging
 import re
 import threading
+from datetime import date
 from urllib.parse import parse_qs, urlparse
 
 from app.core.config import settings
@@ -53,6 +54,7 @@ from app.services.transcription.schemas import (
     TranscriptSegment,
 )
 from app.services.transcription.youtube_data_api import (
+    fetch_video_upload_date,
     fetch_video_upload_year,
     list_channel_or_playlist_video_ids,
 )
@@ -506,3 +508,21 @@ async def fetch_youtube_upload_year(url: str) -> int | None:
         return None
 
     return await fetch_video_upload_year(video_id)
+
+
+async def fetch_youtube_upload_date(url: str) -> date | None:
+    """Video upload date (day precision) from YouTube's metadata.
+
+    Like :func:`fetch_youtube_upload_year`, but keeps the full date instead
+    of truncating to the year — needed for the audio/video/youtube date
+    cutoff filter (:mod:`app.services.web_scraper.year_filter`), which
+    compares against a specific day, not a calendar year.
+    """
+    if not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
+        return None
+
+    video_id = extract_youtube_id(url)
+    if not video_id:
+        return None
+
+    return await fetch_video_upload_date(video_id)

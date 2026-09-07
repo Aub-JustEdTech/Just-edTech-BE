@@ -79,7 +79,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         get_scraped_media_by_content_hash,
         update_scraped_media,
     )
-    from app.services.web_scraper.year_filter import evaluate_media_year_async
+    from app.services.web_scraper.year_filter import evaluate_media_processability_async
 
     async with AsyncSessionLocal() as db:
         sm = await db.get(ScrapedMedia, scraped_media_id)
@@ -115,10 +115,13 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                 "status": "no_transcript",
             }
 
-        inferred_year, should_process, skip_reason = await evaluate_media_year_async(
-            url=sm.source_media_url,
-            filename=sm.original_name,
-            source_page_url=sm.source_page_url,
+        inferred_year, should_process, skip_reason = (
+            await evaluate_media_processability_async(
+                media_type=sm.media_type,
+                url=sm.source_media_url,
+                filename=sm.original_name,
+                source_page_url=sm.source_page_url,
+            )
         )
         if not should_process:
             await update_scraped_media(
