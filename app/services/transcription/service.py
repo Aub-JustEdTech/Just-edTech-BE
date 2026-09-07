@@ -209,6 +209,34 @@ class TranscriptionService:
         upload_url = await self._client.upload_file(to_upload)
         return await self._client.transcribe(upload_url)
 
+    async def transcribe_downloaded_file(
+        self,
+        path: Path,
+        workdir: Path,
+    ) -> TranscriptResult:
+        """Transcribe media bytes already sitting on disk. Always the paid path.
+
+        For sources that can't be handed to AssemblyAI as a URL — e.g. Zoom
+        recordings, whose signed CDN URL is bound to the browser session that
+        resolved it and 403s for any other requester (AssemblyAI's remote
+        fetcher included) — the caller downloads the bytes itself and this
+        runs the same gates + upload flow ``transcribe_media_url`` uses under
+        ``preprocess`` mode, just without the URL-fetch step.
+        """
+        if not settings.transcription_enabled:
+            raise NoTranscriptAvailableError(
+                f"Transcription is disabled; skipping {path}"
+            )
+
+        probe = await self.enforce_media_gates(str(path))
+        result = await self._transcribe_local_file(path, workdir)
+
+        if result.duration_seconds is None:
+            result.duration_seconds = probe.duration_seconds
+        if result.source_size_bytes is None:
+            result.source_size_bytes = probe.size_bytes
+        return result
+
 
 # Module singleton — matches the service-layer convention used elsewhere.
 transcription_service = TranscriptionService()

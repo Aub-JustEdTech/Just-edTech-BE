@@ -36,7 +36,7 @@ from app.tasks.loop_utils import get_event_loop
 logger = logging.getLogger(__name__)
 
 # Media types that go down the transcription path rather than text extraction.
-AV_MEDIA_TYPES = ("audio", "video", "youtube")
+AV_MEDIA_TYPES = ("audio", "video", "youtube", "zoom")
 
 
 @dataclass(slots=True)
@@ -86,22 +86,6 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         if not sm:
             logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
-
-        if sm.media_type == "zoom":
-            # Zoom's real download is a signed, sometimes passcode-gated URL
-            # on the share page, not a fetchable file — never worth an
-            # attempt. Terminal and not in _RETRYABLE_SCRAPED_MEDIA_STATUSES,
-            # so a future re-scrape won't keep re-queuing it.
-            await update_scraped_media(
-                db,
-                sm.id,
-                status="skipped_zoom",
-                error_message="Zoom recordings are not supported (signed/passcode-gated URL, not a fetchable file)",
-            )
-            return {
-                "scraped_media_id": scraped_media_id,
-                "status": "skipped_zoom",
-            }
 
         if sm.media_type == "youtube" and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
             await update_scraped_media(
@@ -339,6 +323,36 @@ async def _materialize_media(sm, workdir: Path) -> MediaPayload:
             # Read from the container header during the pre-spend probe, so
             # this is populated even under url_direct where nothing is
             # downloaded.
+            size_bytes=transcript.source_size_bytes,
+        )
+
+    # --- Zoom: download the recording through the resolving browser session ---
+    # A Zoom share link is an HTML page, not a fetchable file, and — verified
+    # against a real recording — the signed CDN URL it resolves to 403s for
+    # any requester other than the exact browser session that resolved it.
+    # So AssemblyAI can't fetch it directly (transcribe_media_url's url_direct
+    # mode is not an option here): download_zoom_recording gets the bytes
+    # itself, through that session, then they're uploaded like any other
+    # local file. ZoomPasscodeRequiredError / ZoomRecordingUnavailableError
+    # (both TerminalTranscriptionError) cover the cases that genuinely can't
+    # be recovered — currently the common case, since Zoom blocks this
+    # download for every recording tested so far — and propagate up to be
+    # recorded as a clean skip by the caller, with a status that tells the
+    # two failure modes apart.
+    if sm.media_type == "zoom":
+        from app.services.web_scraper.zoom import download_zoom_recording
+
+        raw = await download_zoom_recording(sm.source_media_url)
+        source = workdir / "zoom_recording.mp4"
+        source.write_bytes(raw)
+        transcript = await transcription_service.transcribe_downloaded_file(
+            source, workdir
+        )
+        return MediaPayload(
+            text=transcript.text,
+            transcript=transcript,
+            content_hash=hashlib.sha256(raw).hexdigest(),
+            duration_seconds=transcript.duration_seconds,
             size_bytes=transcript.source_size_bytes,
         )
 
