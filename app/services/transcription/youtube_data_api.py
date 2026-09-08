@@ -54,19 +54,41 @@ def _api_key_or_none() -> str | None:
     return settings.YOUTUBE_DATA_API_KEY
 
 
+def _parse_api_datetime(value: object) -> date | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        # e.g. "2026-09-15T14:03:00Z"
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
 async def fetch_video_upload_date(video_id: str) -> date | None:
-    """Upload date (day precision) for one video, via ``videos.list`` (1 quota
-    unit).
+    """Effective upload date (day precision) for one video, via
+    ``videos.list`` (1 quota unit).
+
+    Reads both ``snippet.publishedAt`` and, for a livestreamed meeting,
+    ``liveStreamingDetails.actualStartTime`` — the two can legitimately
+    disagree (a stream that aired late in the day often gets a
+    ``publishedAt`` timestamp the next day once YouTube finishes
+    processing it), so the later of the two is returned. That is
+    equivalent to an OR against the cutoff date: the video counts as
+    "on/after cutoff" if *either* signal is on/after it.
 
     Returns None if the key is missing, the video isn't found, the request
-    fails for any reason, or ``publishedAt`` can't be parsed — this is a
+    fails for any reason, or neither timestamp can be parsed — this is a
     best-effort lookup, never a hard dependency.
     """
     api_key = _api_key_or_none()
     if not api_key:
         return None
 
-    params = {"part": "snippet", "id": video_id, "key": api_key}
+    params = {
+        "part": "snippet,liveStreamingDetails",
+        "id": video_id,
+        "key": api_key,
+    }
     try:
         async with httpx.AsyncClient(timeout=_REQUEST_TIMEOUT_SECONDS) as client:
             response = await client.get(
@@ -83,14 +105,17 @@ async def fetch_video_upload_date(video_id: str) -> date | None:
     if not items:
         return None
 
-    published_at = items[0].get("snippet", {}).get("publishedAt")
-    if not isinstance(published_at, str):
+    published_date = _parse_api_datetime(
+        items[0].get("snippet", {}).get("publishedAt")
+    )
+    actual_start_date = _parse_api_datetime(
+        items[0].get("liveStreamingDetails", {}).get("actualStartTime")
+    )
+
+    candidates = [d for d in (published_date, actual_start_date) if d is not None]
+    if not candidates:
         return None
-    try:
-        # e.g. "2026-09-15T14:03:00Z"
-        return datetime.fromisoformat(published_at.replace("Z", "+00:00")).date()
-    except ValueError:
-        return None
+    return max(candidates)
 
 
 async def fetch_video_upload_year(video_id: str) -> int | None:
