@@ -48,6 +48,9 @@ celery_app.conf.update(
         "app.tasks.school_scraper_tasks.sweep_school_media": {
             "queue": "scraping"
         },
+        "app.tasks.school_scraper_tasks.drain_discovered_media": {
+            "queue": "scraping"
+        },
         "app.tasks.school_scraper_tasks.scrape_media_batch": {
             "queue": "scraping"
         },
@@ -74,11 +77,11 @@ celery_app.conf.update(
     #   - aggregate-daily-token-usage (aggregate_daily_token_usage)
     #   - aggregate-monthly-billing (aggregate_monthly_billing)
     #
-    # All other entries below are PAUSED (commented out) while the tenant-4
-    # heatmap backfill is under manual control -- re-enable by uncommenting
-    # the relevant block(s) once the manual backfill work is done. No task
-    # code was removed; only these beat entries are inactive, so any of them
-    # can still be triggered manually via `<task>.delay(...)`.
+    # Heatmap / stuck-document entries below are PAUSED (commented out) while
+    # the tenant-4 heatmap backfill is under manual control -- re-enable by
+    # uncommenting once that work is done. Token/billing aggregation was
+    # removed entirely (not paused). School-media fetch crons are ACTIVE.
+    # Paused tasks can still be triggered manually via `<task>.delay(...)`.
     beat_schedule={
         # "submit-pending-batch-classification": {
         #     "task": "submit_pending_batch_classification",
@@ -108,9 +111,9 @@ celery_app.conf.update(
         #     "options": {"expires": 1800},
         # },
         # # Weekly sweep of every active school source URL, tenant-agnostic
-        # # (no school_ids filter = all schools). Runs Monday 1:00 AM UTC,
-        # # ahead of the 2:00-4:00 AM jobs above so they don't compete for the DB.
-        # "sweep-school-media": {
+        # # (no school_ids filter = all schools). Superseded by the daily
+        # # bounded sweep below; kept here as the prior schedule for rollback.
+        # "sweep-school-media-weekly": {
         #     "task": "app.tasks.school_scraper_tasks.sweep_school_media",
         #     "schedule": crontab(
         #         hour=1, minute=0, day_of_week=1
@@ -126,6 +129,15 @@ celery_app.conf.update(
             "task": "app.tasks.school_scraper_tasks.sweep_school_media",
             "schedule": crontab(hour=1, minute=0),  # Daily at 1:00 AM UTC
             "options": {"expires": 3 * 3600},
+        },
+        # Drain status="discovered" rows left behind by the per-URL enqueue
+        # cap (SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL). Without this, capped
+        # historical backlog never reaches ingest. Bounded batch_size keeps
+        # the broker healthy while the backlog drains over successive hours.
+        "drain-discovered-media": {
+            "task": "app.tasks.school_scraper_tasks.drain_discovered_media",
+            "schedule": crontab(minute=30),  # Hourly at :30
+            "options": {"expires": 1800},
         },
     },
 )

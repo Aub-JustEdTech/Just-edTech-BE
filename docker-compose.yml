@@ -200,8 +200,9 @@ services:
       retries: 3
 
   # Celery Beat - Periodic Task Scheduler
-  # Runs the biweekly school scrape cycle + daily/monthly token/billing
-  # aggregation. Without this service, beat_schedule entries never fire.
+  # Fires beat_schedule: daily school-media sweep (01:00 UTC) + hourly
+  # drain of deferred discovered media (:30). Without this service those
+  # entries never fire.
   celery-beat:
     build: .
     restart: always

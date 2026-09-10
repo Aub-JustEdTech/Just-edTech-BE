@@ -626,9 +626,8 @@ def sweep_school_media(
     persist media, and enqueue new rows.
 
     Does not re-run URL discovery -- only the human-confirmed scrapable URLs
-    paired with each school are crawled. Deliberately NOT in beat_schedule:
-    run it manually and confirm the created/skipped counts look right before
-    letting it fire unattended against several hundred district sites.
+    paired with each school are crawled. Scheduled daily at 1:00 AM UTC via
+    beat_schedule (``sweep-school-media``); also invokable manually.
 
     Bounded by SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (default 50) so one run cannot
     enqueue tens of thousands of ingest + 9-stage pipeline messages and OOM
@@ -640,7 +639,7 @@ def sweep_school_media(
     (default 5): a first-time depth-2 crawl of a meeting archive can find 100+
     historical docs, and this stops all of them from being enqueued at once.
     The excess rows are persisted as status="discovered" and drained later by
-    ``drain_discovered_media``.
+    ``drain_discovered_media`` (hourly beat entry ``drain-discovered-media``).
 
     Every URL attempt -- success or failure -- is persisted via
     ``record_scrape_result`` so the FE URL manager can surface crawl failures
@@ -918,8 +917,8 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
     drains them in small bounded batches so the broker stays healthy while
     the historical backlog is gradually ingested.
 
-    Run it manually after a capped sweep, or wire it into beat_schedule at
-    a low cadence (e.g. hourly) once the sweep is proven stable.
+    Scheduled hourly at :30 via beat_schedule (``drain-discovered-media``);
+    also invokable manually after a capped sweep.
     """
     try:
         loop = get_event_loop()
@@ -934,6 +933,7 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
 async def _drain_discovered_media_async(batch_size: int) -> dict:
     from sqlalchemy import select
 
+    from app.crud.schools import update_scraped_media
     from app.models.school import ScrapedMedia
 
     async with AsyncSessionLocal() as db:
@@ -945,7 +945,10 @@ async def _drain_discovered_media_async(batch_size: int) -> dict:
         )
         rows = (await db.execute(stmt)).scalars().all()
 
+        # Flip status before enqueue so a later drain tick (or a slow ingest
+        # worker) cannot re-select the same rows and double-queue them.
         for row in rows:
+            await update_scraped_media(db, row.id, status="downloading")
             ingest_scraped_media.delay(row.id)
 
         logger.info(
