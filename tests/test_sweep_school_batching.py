@@ -585,6 +585,10 @@ async def test_sweep_self_chains_when_schools_remaining(mock_db):
         ),
         patch("app.tasks.school_scraper_tasks.ingest_scraped_media"),
         patch("app.tasks.school_scraper_tasks.sweep_school_media") as sweep_mock,
+        patch(
+            "app.tasks.batch_classification_tasks"
+            ".submit_pending_batch_classification_task"
+        ) as classify_mock,
     ):
         from app.tasks.school_scraper_tasks import _sweep_school_media_async
 
@@ -593,6 +597,8 @@ async def test_sweep_self_chains_when_schools_remaining(mock_db):
     assert totals["schools_remaining"] == 3
     # The next batch was enqueued with the same args (school_ids, max_schools).
     sweep_mock.delay.assert_called_once_with(school_ids=None, max_schools=2)
+    # Each 50-school wave kicks classification for any pending chunks.
+    classify_mock.delay.assert_called_once_with()
 
 
 @pytest.mark.asyncio
@@ -628,6 +634,10 @@ async def test_sweep_no_chain_when_all_schools_covered(mock_db):
         ),
         patch("app.tasks.school_scraper_tasks.ingest_scraped_media"),
         patch("app.tasks.school_scraper_tasks.sweep_school_media") as sweep_mock,
+        patch(
+            "app.tasks.batch_classification_tasks"
+            ".submit_pending_batch_classification_task"
+        ) as classify_mock,
     ):
         from app.tasks.school_scraper_tasks import _sweep_school_media_async
 
@@ -635,6 +645,8 @@ async def test_sweep_no_chain_when_all_schools_covered(mock_db):
 
     assert totals["schools_remaining"] == 0
     sweep_mock.delay.assert_not_called()
+    # Classification still fires after the final wave.
+    classify_mock.delay.assert_called_once_with()
 
 
 # ---------------------------------------------------------------------------

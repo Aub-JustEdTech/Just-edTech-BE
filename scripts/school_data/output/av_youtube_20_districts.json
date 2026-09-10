@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Quabbin",
+    "org_code": "07530000",
+    "website": "https://www.qrsd.org",
+    "correct_URL": "https://www.qrsd.org/cms/One.aspx?portalId=1223783&pageId=6694465&portletInstanceId=154600"
+  },
+  {
+    "name": "Wachusett",
+    "org_code": "07750000",
+    "website": "https://www.wrsd.net",
+    "correct _URL": "https://www.wrsd.net/school-committee/agendas-minutes"
+  },
+  {
+    "name": "Leicester",
+    "org_code": "01510000",
+    "website": "https://www.leicester.k12.ma.us",
+    "correct_URL": "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes"
+  },
+  {
+    "name": "Ware",
+    "org_code": "03090000",
+    "website": "https://www.wareps.org",
+    "correct_URL": "https://www.wareps.org/school_committee/ware_school_committee_agendas_minutes"
+  },
+  {
+    "name": "Wareham",
+    "org_code": "03100000",
+    "website": "https://warehamps.schoolblocks.com",
+    "correct_URL": "https://warehamps.org/en-US/archived-agendas-meeting-packets-5ca3fbb1"
+  },
+  {
+    "name": "Ashland",
+    "org_code": "00140000",
+    "website": "http://www.ashland.k12.ma.us"
+  },
+  {
+    "name": "Beverly",
+    "org_code": "00300000",
+    "website": "https://www.beverlyschools.org"
+  },
+  {
+    "name": "Boston",
+    "org_code": "00350000",
+    "website": "https://www.bostonpublicschools.org"
+  },
+  {
+    "name": "Holliston",
+    "org_code": "01360000",
+    "website": "https://www.holliston.k12.ma.us"
+  },
+  {
+    "name": "Cohasset",
+    "org_code": "00650000",
+    "website": "http://www.cohassetk12.org"
+  },
+  {
+    "name": "Concord-Carlisle",
+    "org_code": "06400000",
+    "website": "https://www.concordps.org"
+  },
+  {
+    "name": "Dartmouth",
+    "org_code": "00720000",
+    "website": "https://www.dartmouth.school"
+  },
+  {
+    "name": "Duxbury",
+    "org_code": "00820000",
+    "website": "https://www.duxbury.k12.ma.us"
+  },
+  {
+    "name": "Falmouth",
+    "org_code": "00960000",
+    "website": "https://www.falmouth.k12.ma.us"
+  },
+  {
+    "name": "Foxborough",
+    "org_code": "00990000",
+    "website": "http://www.foxborough.k12.ma.us"
+  },
+  {
+    "name": "Marlborough",
+    "org_code": "01700000",
+    "website": "https://www.mps-edu.org"
+  },
+  {
+    "name": "Masconomet",
+    "org_code": "07050000",
+    "website": "https://www.masconomet.org"
+  },
+  {
+    "name": "Norwell",
+    "org_code": "02190000",
+    "website": "https://www.norwellschools.org"
+  },
+  {
+    "name": "Somerset",
+    "org_code": "02730000",
+    "website": "https://www.somersetschools.org"
+  },
+  {
+    "name": "Walpole",
+    "org_code": "03070000",
+    "website": "http://www.walpole.k12.ma.us/"
+  }
+]

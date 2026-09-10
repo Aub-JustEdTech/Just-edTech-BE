@@ -36,7 +36,7 @@ from app.tasks.loop_utils import get_event_loop
 logger = logging.getLogger(__name__)
 
 # Media types that go down the transcription path rather than text extraction.
-AV_MEDIA_TYPES = ("audio", "video", "youtube")
+AV_MEDIA_TYPES = ("audio", "video", "youtube", "zoom")
 
 
 @dataclass(slots=True)
@@ -80,7 +80,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         get_scraped_media_by_content_hash,
         update_scraped_media,
     )
-    from app.services.web_scraper.year_filter import evaluate_media_year_async
+    from app.services.web_scraper.year_filter import evaluate_media_processability_async
 
     async with AsyncSessionLocal() as db:
         sm = await db.get(ScrapedMedia, scraped_media_id)
@@ -106,10 +106,13 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                 "status": "no_transcript",
             }
 
-        inferred_year, should_process, skip_reason = await evaluate_media_year_async(
-            url=sm.source_media_url,
-            filename=sm.original_name,
-            source_page_url=sm.source_page_url,
+        inferred_year, should_process, skip_reason = (
+            await evaluate_media_processability_async(
+                media_type=sm.media_type,
+                url=sm.source_media_url,
+                filename=sm.original_name,
+                source_page_url=sm.source_page_url,
+            )
         )
         if not should_process:
             await update_scraped_media(
@@ -242,6 +245,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                     "transcription was paid for; not retrying to avoid re-billing",
                     scraped_media_id,
                 )
+                await db.rollback()
                 await update_scraped_media(
                     db,
                     sm.id,
@@ -326,6 +330,36 @@ async def _materialize_media(sm, workdir: Path) -> MediaPayload:
             # Read from the container header during the pre-spend probe, so
             # this is populated even under url_direct where nothing is
             # downloaded.
+            size_bytes=transcript.source_size_bytes,
+        )
+
+    # --- Zoom: download the recording through the resolving browser session ---
+    # A Zoom share link is an HTML page, not a fetchable file, and — verified
+    # against a real recording — the signed CDN URL it resolves to 403s for
+    # any requester other than the exact browser session that resolved it.
+    # So AssemblyAI can't fetch it directly (transcribe_media_url's url_direct
+    # mode is not an option here): download_zoom_recording gets the bytes
+    # itself, through that session, then they're uploaded like any other
+    # local file. ZoomPasscodeRequiredError / ZoomRecordingUnavailableError
+    # (both TerminalTranscriptionError) cover the cases that genuinely can't
+    # be recovered — currently the common case, since Zoom blocks this
+    # download for every recording tested so far — and propagate up to be
+    # recorded as a clean skip by the caller, with a status that tells the
+    # two failure modes apart.
+    if sm.media_type == "zoom":
+        from app.services.web_scraper.zoom import download_zoom_recording
+
+        raw = await download_zoom_recording(sm.source_media_url)
+        source = workdir / "zoom_recording.mp4"
+        source.write_bytes(raw)
+        transcript = await transcription_service.transcribe_downloaded_file(
+            source, workdir
+        )
+        return MediaPayload(
+            text=transcript.text,
+            transcript=transcript,
+            content_hash=hashlib.sha256(raw).hexdigest(),
+            duration_seconds=transcript.duration_seconds,
             size_bytes=transcript.source_size_bytes,
         )
 
@@ -592,9 +626,8 @@ def sweep_school_media(
     persist media, and enqueue new rows.
 
     Does not re-run URL discovery -- only the human-confirmed scrapable URLs
-    paired with each school are crawled. Deliberately NOT in beat_schedule:
-    run it manually and confirm the created/skipped counts look right before
-    letting it fire unattended against several hundred district sites.
+    paired with each school are crawled. Scheduled daily at 1:00 AM UTC via
+    beat_schedule (``sweep-school-media``); also invokable manually.
 
     Bounded by SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (default 50) so one run cannot
     enqueue tens of thousands of ingest + 9-stage pipeline messages and OOM
@@ -606,7 +639,7 @@ def sweep_school_media(
     (default 5): a first-time depth-2 crawl of a meeting archive can find 100+
     historical docs, and this stops all of them from being enqueued at once.
     The excess rows are persisted as status="discovered" and drained later by
-    ``drain_discovered_media``.
+    ``drain_discovered_media`` (hourly beat entry ``drain-discovered-media``).
 
     Every URL attempt -- success or failure -- is persisted via
     ``record_scrape_result`` so the FE URL manager can surface crawl failures
@@ -762,6 +795,17 @@ async def _sweep_school_media_async(
         )
     logger.info("sweep_school_media finished: %s", totals)
 
+    # After each 50-school wave, kick batch classification for any pending
+    # chunks already sitting in pending_classifications (from this wave's
+    # earlier-finished ingest, or prior waves). No-op when nothing pending.
+    # A daily 4:00 AM UTC beat entry is the safety net for pipeline lag.
+    from app.tasks.batch_classification_tasks import (
+        submit_pending_batch_classification_task,
+    )
+
+    submit_pending_batch_classification_task.delay()
+    logger.info("sweep_school_media: queued submit_pending_batch_classification")
+
     # Self-chain: if there are more schools to cover, enqueue the next batch
     # immediately. Round-robin ordering (last_scrapped_at ASC NULLS FIRST)
     # means the just-scraped schools move to the back, so the next batch
@@ -884,8 +928,8 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
     drains them in small bounded batches so the broker stays healthy while
     the historical backlog is gradually ingested.
 
-    Run it manually after a capped sweep, or wire it into beat_schedule at
-    a low cadence (e.g. hourly) once the sweep is proven stable.
+    Scheduled hourly at :30 via beat_schedule (``drain-discovered-media``);
+    also invokable manually after a capped sweep.
     """
     try:
         loop = get_event_loop()
@@ -900,6 +944,7 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
 async def _drain_discovered_media_async(batch_size: int) -> dict:
     from sqlalchemy import select
 
+    from app.crud.schools import update_scraped_media
     from app.models.school import ScrapedMedia
 
     async with AsyncSessionLocal() as db:
@@ -911,7 +956,10 @@ async def _drain_discovered_media_async(batch_size: int) -> dict:
         )
         rows = (await db.execute(stmt)).scalars().all()
 
+        # Flip status before enqueue so a later drain tick (or a slow ingest
+        # worker) cannot re-select the same rows and double-queue them.
         for row in rows:
+            await update_scraped_media(db, row.id, status="downloading")
             ingest_scraped_media.delay(row.id)
 
         logger.info(

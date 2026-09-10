@@ -422,7 +422,7 @@ class TestDiscoverCandidateUrls:
 class TestScrapeMediaFiles:
 
     async def test_extracts_video_audio_and_documents(self):
-        fetch_map = {"https://example.com/meeting-archives/": MEETING_PAGE_HTML}
+        fetch_map = {"https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML}
 
         async def fake_fetch(url: str) -> str | None:
             return fetch_map.get(url)
@@ -430,7 +430,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=0
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=0
             )
 
         assert result["pages_crawled"] == 1
@@ -445,7 +445,7 @@ class TestScrapeMediaFiles:
         await svc.close()
 
     async def test_media_type_classification(self):
-        fetch_map = {"https://example.com/meeting-archives/": MEETING_PAGE_HTML}
+        fetch_map = {"https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML}
 
         async def fake_fetch(url: str) -> str | None:
             return fetch_map.get(url)
@@ -453,7 +453,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=0
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=0
             )
 
         for m in result["media_files"]:
@@ -467,7 +467,7 @@ class TestScrapeMediaFiles:
         await svc.close()
 
     async def test_link_text_used_as_name(self):
-        fetch_map = {"https://example.com/meeting-archives/": MEETING_PAGE_HTML}
+        fetch_map = {"https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML}
 
         async def fake_fetch(url: str) -> str | None:
             return fetch_map.get(url)
@@ -475,7 +475,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=0
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=0
             )
 
         names = {m["name"] for m in result["media_files"]}
@@ -485,8 +485,8 @@ class TestScrapeMediaFiles:
 
     async def test_crawl_depth_follows_subpages(self):
         fetch_map = {
-            "https://example.com/meeting-archives/": MEETING_PAGE_HTML,
-            "https://example.com/meeting-archives/2023/": YEAR_PAGE_HTML,
+            "https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML,
+            "https://example.com/school-committee/meeting-minutes/2023/": YEAR_PAGE_HTML,
         }
 
         async def fake_fetch(url: str) -> str | None:
@@ -495,7 +495,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=1
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=1
             )
 
         assert result["pages_crawled"] == 2
@@ -506,8 +506,8 @@ class TestScrapeMediaFiles:
 
     async def test_crawl_depth_zero_does_not_follow_subpages(self):
         fetch_map = {
-            "https://example.com/meeting-archives/": MEETING_PAGE_HTML,
-            "https://example.com/meeting-archives/2023/": YEAR_PAGE_HTML,
+            "https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML,
+            "https://example.com/school-committee/meeting-minutes/2023/": YEAR_PAGE_HTML,
         }
 
         async def fake_fetch(url: str) -> str | None:
@@ -516,7 +516,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=0
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=0
             )
 
         # Only the root page is scraped; no .mov file from YEAR_PAGE_HTML
@@ -533,7 +533,7 @@ class TestScrapeMediaFiles:
               <a href="/files/jan2024.mp4">Jan duplicate</a>
             </body></html>
         """)
-        fetch_map = {"https://example.com/meeting-archives/": duplicate_html}
+        fetch_map = {"https://example.com/school-committee/meeting-minutes/": duplicate_html}
 
         async def fake_fetch(url: str) -> str | None:
             return fetch_map.get(url)
@@ -541,7 +541,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=0
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=0
             )
 
         assert len(result["media_files"]) == 1
@@ -550,7 +550,7 @@ class TestScrapeMediaFiles:
 
     async def test_absolute_external_media_url(self):
         """Absolute URLs on a different domain (e.g. CDN) should still be collected."""
-        fetch_map = {"https://example.com/meeting-archives/": MEETING_PAGE_HTML}
+        fetch_map = {"https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML}
 
         async def fake_fetch(url: str) -> str | None:
             return fetch_map.get(url)
@@ -558,7 +558,7 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=0
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=0
             )
 
         media_urls = [m["url"] for m in result["media_files"]]
@@ -585,8 +585,8 @@ class TestScrapeMediaFiles:
 
     async def test_source_page_url_recorded(self):
         fetch_map = {
-            "https://example.com/meeting-archives/": MEETING_PAGE_HTML,
-            "https://example.com/meeting-archives/2023/": YEAR_PAGE_HTML,
+            "https://example.com/school-committee/meeting-minutes/": MEETING_PAGE_HTML,
+            "https://example.com/school-committee/meeting-minutes/2023/": YEAR_PAGE_HTML,
         }
 
         async def fake_fetch(url: str) -> str | None:
@@ -595,12 +595,12 @@ class TestScrapeMediaFiles:
         svc = SchoolScraperService()
         with patch.object(svc, "_fetch_text", side_effect=fake_fetch):
             result = await svc.scrape_media_files(
-                "https://example.com/meeting-archives/", crawl_depth=1
+                "https://example.com/school-committee/meeting-minutes/", crawl_depth=1
             )
 
         source_pages = {m["source_page_url"] for m in result["media_files"]}
-        assert "https://example.com/meeting-archives/" in source_pages
-        assert "https://example.com/meeting-archives/2023/" in source_pages
+        assert "https://example.com/school-committee/meeting-minutes/" in source_pages
+        assert "https://example.com/school-committee/meeting-minutes/2023/" in source_pages
 
         await svc.close()
 

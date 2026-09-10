@@ -84,5 +84,28 @@ class MediaUnavailableError(TerminalTranscriptionError):
     status = "media_unavailable"
 
 
+class ZoomPasscodeRequiredError(TerminalTranscriptionError):
+    """A Zoom recording's share page is passcode-gated and the passcode was
+    not embedded in the shared URL.
+
+    There is no way to learn the passcode from a public scrape — this is a
+    genuine, permanent access limitation, not a transient failure.
+    """
+
+    status = "skipped_zoom_passcode"
+
+
+class ZoomRecordingUnavailableError(TerminalTranscriptionError):
+    """A Zoom share link could not be resolved to playable media.
+
+    Covers an expired/deleted recording, a share page that never finished
+    loading, or a page whose player never produced a media response —
+    distinguished from the passcode case so the two are easy to tell apart
+    in ``ScrapedMedia.status``/``error_message``.
+    """
+
+    status = "skipped_zoom_unavailable"
+
+
 class TranscriptionProviderError(TranscriptionError):
     """Transient provider/transport failure. Propagates so Celery retries."""

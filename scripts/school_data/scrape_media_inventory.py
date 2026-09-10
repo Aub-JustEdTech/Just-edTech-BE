@@ -54,7 +54,7 @@ DEFAULT_OUTPUT = OUTPUT_DIR / "media_inventory.json"
 NO_EXTENSION = "(none)"
 
 # Media types that reach the PAID transcription path.
-AV_MEDIA_TYPES = ("audio", "video", "youtube")
+AV_MEDIA_TYPES = ("audio", "video", "youtube", "zoom")
 
 # Canonical field name -> the whitespace-stripped, lowercased spellings that
 # map onto it. Anything not listed is preserved but ignored.
