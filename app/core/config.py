@@ -392,6 +392,13 @@ class Settings(BaseSettings):
     # Round-robin ordering (last_scrapped_at ASC NULLS FIRST) means later
     # runs cover different schools instead of re-crawling the same head.
     SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS: int = 50
+    # Max newly-discovered media items to ENQUEUE per URL per sweep. The rest
+    # are still persisted as scraped_media (status="discovered") but stay
+    # unqueued -- they are picked up by the drain-discovered task on later
+    # runs. This is what stops a first-time depth-2 crawl of a meeting archive
+    # (which can find 100+ historical docs) from enqueuing all of them at once.
+    # 0 = unlimited (enqueue all newly created rows, original behavior).
+    SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL: int = 5
     # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"

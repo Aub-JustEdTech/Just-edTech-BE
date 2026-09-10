@@ -602,6 +602,12 @@ def sweep_school_media(
     ``School.last_scrapped_at ASC NULLS FIRST`` so successive runs cover
     different districts instead of re-crawling the same head.
 
+    Per-URL enqueue is also capped by SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL
+    (default 5): a first-time depth-2 crawl of a meeting archive can find 100+
+    historical docs, and this stops all of them from being enqueued at once.
+    The excess rows are persisted as status="discovered" and drained later by
+    ``drain_discovered_media``.
+
     Every URL attempt -- success or failure -- is persisted via
     ``record_scrape_result`` so the FE URL manager can surface crawl failures
     (last_http_status != 200 / null after an attempt) without a separate
@@ -649,6 +655,7 @@ async def _sweep_school_media_async(
         "created": 0,
         "skipped": 0,
         "enqueued": 0,
+        "deferred": 0,
         "av_found": 0,
         "documents_found": 0,
         # Counted separately so a run of all-zeros cannot be mistaken for
@@ -847,13 +854,75 @@ async def _sweep_one_url(
     totals["created"] += len(rows)
     totals["skipped"] += skipped
 
-    # Enqueue ONLY newly created rows. This is what stops a re-crawl from
-    # re-paying for the whole corpus, and it is safe here because
-    # bulk_create_scraped_media has committed.
-    for row in rows:
+    # Enqueue ONLY newly created rows, up to the per-URL cap. The rest stay
+    # in the DB as status="discovered" and are picked up by the drain task
+    # on the next sweep run. This stops a first-time depth-2 crawl from
+    # enqueuing 100+ historical docs at once while still discovering them.
+    enqueue_cap = settings.SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL
+    if enqueue_cap and enqueue_cap > 0:
+        to_enqueue = rows[:enqueue_cap]
+        totals["deferred"] += len(rows) - len(to_enqueue)
+    else:
+        to_enqueue = rows
+
+    for row in to_enqueue:
         ingest_scraped_media.delay(row.id)
         totals["enqueued"] += 1
 
+
+@celery_app.task(
+    name="app.tasks.school_scraper_tasks.drain_discovered_media",
+    bind=True,
+    max_retries=1,
+    ignore_result=True,
+)
+def drain_discovered_media(self, batch_size: int = 50) -> dict:
+    """Enqueue previously-discovered but unqueued scraped_media rows.
+
+    When SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL caps a sweep, the excess
+    rows are persisted as status='discovered' but not enqueued. This task
+    drains them in small bounded batches so the broker stays healthy while
+    the historical backlog is gradually ingested.
+
+    Run it manually after a capped sweep, or wire it into beat_schedule at
+    a low cadence (e.g. hourly) once the sweep is proven stable.
+    """
+    try:
+        loop = get_event_loop()
+        return loop.run_until_complete(_drain_discovered_media_async(batch_size))
+    except Exception as exc:
+        logger.error("drain_discovered_media failed: %s", str(exc))
+        raise self.retry(
+            exc=exc, countdown=60 * (2**self.request.retries)
+        ) from exc
+
+
+async def _drain_discovered_media_async(batch_size: int) -> dict:
+    from sqlalchemy import select
+
+    from app.models.school import ScrapedMedia
+
+    async with AsyncSessionLocal() as db:
+        stmt = (
+            select(ScrapedMedia)
+            .where(ScrapedMedia.status == "discovered")
+            .order_by(ScrapedMedia.scraped_at.asc())
+            .limit(batch_size)
+        )
+        rows = (await db.execute(stmt)).scalars().all()
+
+        for row in rows:
+            ingest_scraped_media.delay(row.id)
+
+        logger.info(
+            "drain_discovered_media: enqueued %s discovered items (batch_size=%s)",
+            len(rows),
+            batch_size,
+        )
+        return {
+            "enqueued": len(rows),
+            "batch_size": batch_size,
+        }
 
 
 async def _scrape_one_batch_url(url: str, crawl_depth: int) -> dict:
