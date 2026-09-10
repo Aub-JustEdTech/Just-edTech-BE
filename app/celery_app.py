@@ -77,29 +77,31 @@ celery_app.conf.update(
     #   - aggregate-daily-token-usage (aggregate_daily_token_usage)
     #   - aggregate-monthly-billing (aggregate_monthly_billing)
     #
-    # Heatmap / stuck-document entries below are PAUSED (commented out) while
-    # the tenant-4 heatmap backfill is under manual control -- re-enable by
-    # uncommenting once that work is done. Token/billing aggregation was
-    # removed entirely (not paused). School-media fetch crons are ACTIVE.
-    # Paused tasks can still be triggered manually via `<task>.delay(...)`.
+    # Active: school-media fetch, batch classification, Monday heatmap
+    # reconcile. stuck-document reconcile stays paused (commented) until
+    # needed. Paused tasks can still be triggered via `<task>.delay(...)`.
     beat_schedule={
-        # "submit-pending-batch-classification": {
-        #     "task": "submit_pending_batch_classification",
-        #     "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
-        #     "options": {"expires": 3600},
-        # },
-        # "poll-batch-classification": {
-        #     "task": "poll_batch_classification",
-        #     "schedule": crontab(minute="*/15"),  # Every 15 minutes
-        #     "options": {"expires": 900},
-        # },
-        # # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
-        # # to catch drift from failed set_payload calls or manual edits.
-        # "reconcile-heatmap-aggregate": {
-        #     "task": "reconcile_heatmap_aggregate",
-        #     "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
-        #     "options": {"expires": 2 * 3600},
-        # },
+        # Safety-net submit for pending_classifications that appear after
+        # overnight ingest/drain lag. Primary kick is chained from each
+        # 50-school sweep wave (see sweep_school_media).
+        "submit-pending-batch-classification": {
+            "task": "submit_pending_batch_classification",
+            "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
+            "options": {"expires": 3600},
+        },
+        "poll-batch-classification": {
+            "task": "poll_batch_classification",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+            "options": {"expires": 900},
+        },
+        # Weekly drift catch-up from Qdrant → heatmap_aggregate.
+        "reconcile-heatmap-aggregate": {
+            "task": "reconcile_heatmap_aggregate",
+            "schedule": crontab(
+                hour=3, minute=30, day_of_week=1
+            ),  # Monday 3:30 AM UTC
+            "options": {"expires": 2 * 3600},
+        },
         # # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
         # # PENDING past the staleness threshold. Catches the silent orphan
         # # failure mode where a Celery chain continuation was lost (broker

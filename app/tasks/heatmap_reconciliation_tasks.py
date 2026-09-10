@@ -1,12 +1,13 @@
 """
-Nightly reconciliation for heatmap_aggregate.
+Weekly reconciliation for heatmap_aggregate.
 
 Recomputes the per-(school, topic) aggregate from Qdrant (the source of
 truth for chunk-level classification) to catch drift caused by failed
 set_payload calls, manual edits, or pipeline bugs.
 
-Scheduled nightly at 3:30 AM UTC (between the daily token aggregation at
-2 AM and the batch submit at 4 AM).
+Scheduled Mondays at 3:30 AM UTC (ahead of the daily 4:00 AM batch
+submit). Batch classification apply path updates aggregates incrementally;
+this is the weekly safety net.
 
 School resolution: chunk payloads carry `document_id` in the form
 `school-{org_code}-{hash}` (set at ingest in school_scraper_tasks.py) but

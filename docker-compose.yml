@@ -200,8 +200,9 @@ services:
       retries: 3
 
   # Celery Beat - Periodic Task Scheduler
-  # Fires beat_schedule: daily school-media sweep (01:00 UTC) + hourly
-  # drain of deferred discovered media (:30). Without this service those
+  # Fires beat_schedule: daily school-media sweep (01:00 UTC), hourly
+  # drain (:30), batch classification submit (04:00) + poll (*/15),
+  # Monday heatmap reconcile (03:30). Without this service those
   # entries never fire.
   celery-beat:
     build: .

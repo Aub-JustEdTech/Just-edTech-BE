@@ -795,6 +795,17 @@ async def _sweep_school_media_async(
         )
     logger.info("sweep_school_media finished: %s", totals)
 
+    # After each 50-school wave, kick batch classification for any pending
+    # chunks already sitting in pending_classifications (from this wave's
+    # earlier-finished ingest, or prior waves). No-op when nothing pending.
+    # A daily 4:00 AM UTC beat entry is the safety net for pipeline lag.
+    from app.tasks.batch_classification_tasks import (
+        submit_pending_batch_classification_task,
+    )
+
+    submit_pending_batch_classification_task.delay()
+    logger.info("sweep_school_media: queued submit_pending_batch_classification")
+
     # Self-chain: if there are more schools to cover, enqueue the next batch
     # immediately. Round-robin ordering (last_scrapped_at ASC NULLS FIRST)
     # means the just-scraped schools move to the back, so the next batch
