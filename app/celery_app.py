@@ -89,12 +89,9 @@ celery_app.conf.update(
             "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
             "options": {"expires": 3600},
         },
-        "poll-batch-classification": {
-            "task": "poll_batch_classification",
-            "schedule": crontab(minute="*/15"),  # Every 15 minutes
-            "options": {"expires": 900},
-        },
-        # Weekly drift catch-up from Qdrant → heatmap_aggregate.
+        # poll-batch-classification is NOT on beat -- armed by submit
+        # (and self-reschedules while OpenAI batches stay in flight) so we
+        # do not hit the Batch API every 15 minutes when the queue is idle.
         "reconcile-heatmap-aggregate": {
             "task": "reconcile_heatmap_aggregate",
             "schedule": crontab(
