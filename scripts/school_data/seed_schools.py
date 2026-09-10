@@ -78,6 +78,9 @@ async def seed_schools(
                 existing.name = name
                 existing.district_type = rec.get("district_type") or existing.district_type
                 existing.website = rec.get("website") or existing.website
+                state = (rec.get("state") or "").strip().upper()
+                if state:
+                    existing.state = state
                 stats["existing"] += 1
                 continue
 
@@ -86,6 +89,7 @@ async def seed_schools(
                 org_code=org_code,
                 name=name,
                 district_type=rec.get("district_type") or "Public School District",
+                state=(rec.get("state") or "MA").strip().upper() or "MA",
                 website=rec.get("website"),
                 is_active=True,
             )

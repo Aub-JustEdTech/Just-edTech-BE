@@ -59,16 +59,38 @@ async def crawl_one(
         "data_pages": [],
         "visited_pages": [],
         "errors": [],
+        "error_details": [],
     }
 
     if not website:
+        missing = {
+            "code": "missing_website",
+            "url": "",
+            "http_status": None,
+            "exception_type": None,
+            "exception_message": None,
+            "stage": None,
+            "html_length": None,
+        }
         result["errors"] = ["missing_website"]
+        result["error_details"] = [missing]
         return result
 
     try:
         crawl = await crawler.crawl(website)
     except Exception as exc:  # noqa: BLE001
         result["errors"] = [f"{type(exc).__name__}: {exc}"]
+        result["error_details"] = [
+            {
+                "code": "crawl_exception",
+                "url": website,
+                "http_status": None,
+                "exception_type": type(exc).__name__,
+                "exception_message": str(exc),
+                "stage": None,
+                "html_length": None,
+            }
+        ]
         return result
 
     result["pages_crawled"] = crawl.pages_crawled
@@ -76,6 +98,7 @@ async def crawl_one(
     result["data_pages"] = [p.model_dump() for p in crawl.data_pages]
     result["visited_pages"] = [p.model_dump() for p in crawl.visited_pages]
     result["errors"] = crawl.errors
+    result["error_details"] = [e.to_dict() for e in crawl.error_details]
     return result
 
 

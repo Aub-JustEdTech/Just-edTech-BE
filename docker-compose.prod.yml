@@ -1,4 +1,4 @@
-# Production Docker Compose — sized for EC2 t4g.2xlarge (8 vCPU, 32 GiB RAM).
+# Production Docker Compose — sized for EC2 t4g.large (2 vCPU, 8 GiB RAM).
 #
 # Postgres is NOT managed here; it runs on AWS RDS.
 # All environment variables are injected via .env.prod (CI/CD writes from secrets).
@@ -13,26 +13,26 @@
 #                   orphaned documents at processing_status=PROCESSING
 #                   forever during the 100-school incident). An OOM here
 #                   fails loudly instead of losing data.
-#                   Sized at 4G (bumped from 2G, which itself was bumped
-#                   from 512M): the broker also holds Celery result
-#                   backend entries (task_track_started + result_expires=1h
-#                   means a 6-stage chain × N docs can accumulate tens of
-#                   thousands of result stubs before expiry reaps them).
-#                   512M was too tight for a bulk-scrape enqueue burst and
-#                   OOM-rejected process_document_pipeline.delay() /
-#                   ingest_scraped_media.delay() calls, silently orphaning
-#                   ~2500 ScrapedMedia rows and ~400 Document chains. 2G
-#                   OOM'd again during the batch-3 bulk ingest at full
-#                   3+2 worker scale — same failure mode, larger corpus.
+#                   Sized at 1G (down from 8G on t4g.2xlarge): bulk enqueue
+#                   is now bounded by SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS
+#                   (default 50 schools × ~3-4 docs = ~150-200 ingest +
+#                   9-stage pipeline messages per sweep), and pipeline
+#                   stages carry ignore_result=True with result_expires=900s.
+#                   8G alone would exceed the entire t4g.large box; 1G is the
+#                   working set for a capped, ignore-result steady state.
 #
-# RAM budget on t4g.2xlarge (~32 GiB):
-#   api 4G + qdrant 6G + redis 0.5G + redis-broker 4G + beat 0.3G = 14.8G
-#   celery-ingest  ×N @ 2G    (document pipeline)
-#   celery-scraper ×N @ 2.5G (download/transcribe/Playwright)
-#   3 scraper + 2 ingest = 11.5G  -> ~5.7G headroom
-#   2 scraper + 3 ingest = 11.0G  -> ~6.2G headroom
+# RAM budget on t4g.large (~8 GiB):
+#   api 1.5G + qdrant 1.5G + redis 0.25G + redis-broker 1G + beat 256M = 4.5G
+#   celery-ingest 1G + celery-scraper 1.75G = 2.75G
+#   -> ~7.25G container limits, ~0.75G OS/headroom.
+#   Steady state ONLY: scale=1 for both workers. Do NOT run
+#   --scale celery-ingest=3 --scale celery-scraper=2 here — that layout is
+#   sized for t4g.2xlarge and will OOM this box.
+#   t4g.large is throughput-limited, not a bulk-backfill box; a full-corpus
+#   re-scrape against hundreds of districts at once will exceed broker RAM
+#   even when capped per run.
 #
-# Bulk school ingest (recommended for this instance):
+# Bulk school ingest (NOT recommended on this box): use t4g.2xlarge for
 #   docker compose -f docker-compose.prod.yml up -d \
 #     --scale celery-ingest=3 --scale celery-scraper=2
 #
@@ -63,7 +63,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 512mb
+      --maxmemory 256mb
       --maxmemory-policy allkeys-lru
 
     volumes:
@@ -78,11 +78,13 @@ services:
   ##################################################
   # Redis Broker — Celery broker + result backend only.
   # noeviction: an in-flight task message must NEVER be evicted.
-  # Bumped 2gb -> 4gb after the batch-3 bulk ingest OOM'd this broker
-  # (task_track_started + result_expires=1h let result-backend stubs pile
-  # up across tens of thousands of documents in flight through 6-stage
-  # chains, well beyond the original "in-flight messages + result stubs
-  # only" sizing assumption below).
+  # t4g.large (8 GiB host): sized at 1gb. The bulk-enqueue OOM that motivated
+  # the earlier 2->4->8gb bumps on t4g.2xlarge is now bounded upstream by
+  # SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (capped per-run school count) plus
+  # ignore_result=True on sweep/ingest and result_expires=900s, so the broker
+  # no longer holds tens of thousands of in-flight result stubs at once.
+  # 1gb is the working set for a capped, ignore-result steady state on the
+  # smaller box; if an OOM returns here, lower the sweep cap, not this limit.
   ##################################################
   redis-broker:
     image: redis:7-alpine
@@ -95,7 +97,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 8gb
+      --maxmemory 1gb
       --maxmemory-policy noeviction
 
     volumes:
@@ -125,8 +127,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 6G
+          cpus: "1"
+          memory: 1500M
 
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/6333' || exit 1"]
@@ -203,8 +205,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 4G
+          cpus: "1"
+          memory: 1500M
 
   ##################################################
   # Celery Ingest Worker — document pipeline + billing
@@ -252,8 +254,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.5"
-          memory: 2G
+          cpus: "1"
+          memory: 1G
 
   ##################################################
   # Celery Scraper Worker — download, transcribe, enqueue pipeline
@@ -309,8 +311,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.5"
-          memory: 2560M
+          cpus: "1"
+          memory: 1750M
 
   ##################################################
   # Celery Beat - Periodic Task Scheduler
@@ -357,6 +359,12 @@ services:
       beat
       --loglevel=info
       --pidfile=/tmp/celerybeat.pid
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
 volumes:
   redis_data:

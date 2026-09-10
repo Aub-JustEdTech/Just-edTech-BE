@@ -275,6 +275,8 @@ async def crawl_one(
         "candidate_count": 0,
         "candidates": [],
         "error": None,
+        "errors": [],
+        "error_details": [],
         "elapsed_seconds": 0.0,
         "crawled_at": crawled_at,
     }
@@ -282,6 +284,18 @@ async def crawl_one(
     if not website:
         result["status"] = "missing_website"
         result["error"] = "missing website"
+        result["errors"] = ["missing_website"]
+        result["error_details"] = [
+            {
+                "code": "missing_website",
+                "url": "",
+                "http_status": None,
+                "exception_type": None,
+                "exception_message": None,
+                "stage": None,
+                "html_length": None,
+            }
+        ]
         result["elapsed_seconds"] = round(time.monotonic() - started, 1)
         return result
 
@@ -299,12 +313,26 @@ async def crawl_one(
         result["max_pages_limit_reached"] = bool(crawl_result.max_pages_limit_reached)
         result["candidates"] = candidates
         result["candidate_count"] = len(candidates)
+        result["errors"] = list(crawl_result.errors)
+        result["error_details"] = [e.to_dict() for e in crawl_result.error_details]
         result["status"] = "ok"
         if crawl_result.errors:
             result["error"] = "; ".join(crawl_result.errors)
     except Exception as exc:  # noqa: BLE001
         result["status"] = "failed"
         result["error"] = f"{type(exc).__name__}: {exc}"
+        result["errors"] = [result["error"]]
+        result["error_details"] = [
+            {
+                "code": "crawl_exception",
+                "url": website,
+                "http_status": None,
+                "exception_type": type(exc).__name__,
+                "exception_message": str(exc),
+                "stage": None,
+                "html_length": None,
+            }
+        ]
     finally:
         await crawler.close()
         result["elapsed_seconds"] = round(time.monotonic() - started, 1)

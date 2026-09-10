@@ -42,6 +42,7 @@ from app.tasks.media_transcription_tasks import (  # noqa: F401
 
 # School scraper ingest + sweep tasks (scraping queue)
 from app.tasks.school_scraper_tasks import (  # noqa: F401
+    drain_discovered_media,
     ingest_scraped_media,
     sweep_school_media,
 )
@@ -76,6 +77,7 @@ __all__ = [
     # School scraper ingest
     "ingest_scraped_media",
     "sweep_school_media",
+    "drain_discovered_media",
     # Heatmap batch classification
     "submit_pending_batch_classification_task",
     "poll_batch_classification_task",

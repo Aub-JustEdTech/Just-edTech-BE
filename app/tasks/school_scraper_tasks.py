@@ -56,6 +56,7 @@ class MediaPayload:
     name="app.tasks.school_scraper_tasks.ingest_scraped_media",
     bind=True,
     max_retries=3,
+    ignore_result=True,
 )
 def ingest_scraped_media(self, scraped_media_id: int):
     """Download/transcribe a scraped media item and ingest into the pipeline."""
@@ -86,6 +87,12 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
         if not sm:
             logger.warning("ScrapedMedia %s not found, skipping", scraped_media_id)
             return {"scraped_media_id": scraped_media_id, "error": "not found"}
+
+        if sm.status == "cancelled":
+            logger.info(
+                "ScrapedMedia %s is cancelled; skipping ingest", scraped_media_id
+            )
+            return {"scraped_media_id": scraped_media_id, "status": "cancelled"}
 
         if sm.media_type == "youtube" and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED:
             await update_scraped_media(
@@ -397,11 +404,20 @@ def _extract_text_from_document(raw: bytes, ext: str | None) -> str:
     import tempfile
 
     ext = (ext or "").lower().lstrip(".")
-    if ext == "pdf":
-        import fitz  # pymupdf
+    # PDFs go through PDFProcessor so ENABLE_OCR fallback can recover
+    # scanned/image-only board minutes (raw PyMuPDF get_text is empty).
+    if ext in ("pdf", "doc", "xlsx", "xls", "txt", "text", "md"):
+        suffix = ".txt" if ext == "text" else f".{ext}"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(raw)
+            tmp_path = tmp.name
+        try:
+            from app.services.document_processing.factory import ProcessorFactory
 
-        with fitz.open(stream=raw, filetype="pdf") as doc:
-            return "\n".join(page.get_text() for page in doc)
+            processor = ProcessorFactory.get_processor(tmp_path)
+            return processor.extract_text(tmp_path)
+        finally:
+            os.unlink(tmp_path)
     if ext == "docx":
         import docx
 
@@ -425,18 +441,6 @@ def _extract_text_from_document(raw: bytes, ext: str | None) -> str:
                             if cell.text:
                                 parts.append(cell.text)
         return "\n".join(parts)
-    if ext in ("doc", "xlsx", "xls", "txt", "text", "md"):
-        suffix = f".{ext}"
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-            tmp.write(raw)
-            tmp_path = tmp.name
-        try:
-            from app.services.document_processing.factory import ProcessorFactory
-
-            processor = ProcessorFactory.get_processor(tmp_path)
-            return processor.extract_text(tmp_path)
-        finally:
-            os.unlink(tmp_path)
     try:
         return raw.decode("utf-8", errors="ignore")
     except Exception:  # noqa: BLE001
@@ -611,18 +615,49 @@ async def _create_document_and_enqueue(
     name="app.tasks.school_scraper_tasks.sweep_school_media",
     bind=True,
     max_retries=3,
+    ignore_result=True,
 )
-def sweep_school_media(self, school_ids: list[int] | None = None) -> dict:
-    """Walk every active school_scrape_urls row, persist media, enqueue new rows.
+def sweep_school_media(
+    self,
+    school_ids: list[int] | None = None,
+    max_schools: int | None = None,
+) -> dict:
+    """Walk active school_scrape_urls rows for a bounded set of schools,
+    persist media, and enqueue new rows.
 
-    Does not re-run URL discovery — only the human-confirmed scrapable URLs
+    Does not re-run URL discovery -- only the human-confirmed scrapable URLs
     paired with each school are crawled. Deliberately NOT in beat_schedule:
     run it manually and confirm the created/skipped counts look right before
     letting it fire unattended against several hundred district sites.
+
+    Bounded by SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (default 50) so one run cannot
+    enqueue tens of thousands of ingest + 9-stage pipeline messages and OOM
+    the noeviction broker. Schools are selected round-robin via
+    ``School.last_scrapped_at ASC NULLS FIRST`` so successive runs cover
+    different districts instead of re-crawling the same head.
+
+    Per-URL enqueue is also capped by SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL
+    (default 5): a first-time depth-2 crawl of a meeting archive can find 100+
+    historical docs, and this stops all of them from being enqueued at once.
+    The excess rows are persisted as status="discovered" and drained later by
+    ``drain_discovered_media``.
+
+    Every URL attempt -- success or failure -- is persisted via
+    ``record_scrape_result`` so the FE URL manager can surface crawl failures
+    (last_http_status != 200 / null after an attempt) without a separate
+    table. One failed district does not abort the sweep.
+
+    Args:
+        school_ids: Optional allow-list of school ids. When None, every
+            school with at least one active scrape URL is a candidate.
+        max_schools: Optional override for the school cap. Falls back to
+            ``settings.SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS``. ``0`` = unlimited.
     """
     try:
         loop = get_event_loop()
-        return loop.run_until_complete(_sweep_school_media_async(school_ids))
+        return loop.run_until_complete(
+            _sweep_school_media_async(school_ids, max_schools)
+        )
     except Exception as exc:
         logger.error("sweep_school_media failed: %s", str(exc))
         raise self.retry(
@@ -630,19 +665,31 @@ def sweep_school_media(self, school_ids: list[int] | None = None) -> dict:
         ) from exc
 
 
-async def _sweep_school_media_async(school_ids: list[int] | None) -> dict:
+async def _sweep_school_media_async(
+    school_ids: list[int] | None, max_schools: int | None
+) -> dict:
     from sqlalchemy import select
 
-    from app.crud.schools import bulk_create_scraped_media
     from app.models.school import School, SchoolScrapeUrl
-    from app.services.web_scraper.school_scraper_service import SchoolScraperService
+    from app.services.web_scraper.school_scraper_service import (
+        SchoolScraperService,
+    )
+
+    cap = (
+        max_schools
+        if max_schools is not None
+        else settings.SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS
+    )
 
     totals = {
         "schools": 0,
+        "schools_capped": 0,
+        "schools_remaining": 0,
         "found": 0,
         "created": 0,
         "skipped": 0,
         "enqueued": 0,
+        "deferred": 0,
         "av_found": 0,
         "documents_found": 0,
         # Counted separately so a run of all-zeros cannot be mistaken for
@@ -652,63 +699,94 @@ async def _sweep_school_media_async(school_ids: list[int] | None) -> dict:
     failed_urls: list[str] = []
 
     async with AsyncSessionLocal() as db:
-        stmt = select(SchoolScrapeUrl).where(SchoolScrapeUrl.is_active.is_(True))
+        # Select candidate schools (not raw scrape URLs) so the cap is a
+        # school count, not a URL count -- one district with several
+        # confirmed URLs still counts as one school.
+        school_stmt = select(School.id).where(School.is_active.is_(True))
         if school_ids:
-            stmt = stmt.where(SchoolScrapeUrl.school_id.in_(school_ids))
-        scrape_urls = (await db.execute(stmt)).scalars().all()
+            school_stmt = school_stmt.where(School.id.in_(school_ids))
+        # Round-robin: never-scraped first, then oldest-scraped. NULLS FIRST
+        # is what keeps a brand-new district from waiting behind every
+        # already-crawled one.
+        school_stmt = school_stmt.order_by(
+            School.last_scrapped_at.asc().nulls_first(), School.id.asc()
+        )
+        candidate_school_ids = (await db.execute(school_stmt)).scalars().all()
+
+        # Narrow to schools that actually have >=1 active scrape URL; this
+        # avoids selecting a school then skipping it inside the crawl loop
+        # (which would waste a slot against the cap).
+        if candidate_school_ids:
+            url_stmt = (
+                select(SchoolScrapeUrl.school_id)
+                .where(SchoolScrapeUrl.is_active.is_(True))
+                .where(SchoolScrapeUrl.school_id.in_(candidate_school_ids))
+                .distinct()
+            )
+            schools_with_urls = set(
+                (await db.execute(url_stmt)).scalars().all()
+            )
+        else:
+            schools_with_urls = set()
+
+        # Preserve the round-robin ordering from school_stmt while filtering.
+        ordered_school_ids = [
+            sid for sid in candidate_school_ids if sid in schools_with_urls
+        ]
+
+        total_candidates = len(ordered_school_ids)
+        if cap and cap > 0:
+            capped = ordered_school_ids[:cap]
+            totals["schools_capped"] = len(capped)
+            totals["schools_remaining"] = max(0, total_candidates - len(capped))
+        else:
+            capped = ordered_school_ids
+            totals["schools_capped"] = total_candidates
+            totals["schools_remaining"] = 0
+
+        if not capped:
+            logger.info("sweep_school_media: no schools to crawl")
+            return totals
+
+        # Fetch all active scrape URLs for the selected schools, preserving
+        # the round-robin school order.
+        scrape_url_stmt = (
+            select(SchoolScrapeUrl)
+            .where(SchoolScrapeUrl.is_active.is_(True))
+            .where(SchoolScrapeUrl.school_id.in_(capped))
+            .order_by(SchoolScrapeUrl.id.asc())
+        )
+        scrape_urls = (await db.execute(scrape_url_stmt)).scalars().all()
+
+        # Bucket by school so we can advance round-robin correctly and count
+        # schools (not URLs) toward the cap.
+        urls_by_school: dict[int, list[SchoolScrapeUrl]] = {}
+        for scu in scrape_urls:
+            urls_by_school.setdefault(scu.school_id, []).append(scu)
+        ordered_school_ids_in_capped = [
+            sid for sid in capped if sid in urls_by_school
+        ]
 
         # `async with` matters twice: it closes the httpx client and any
         # auto-launched Chromium (otherwise leaked per sweep), and its
         # __aenter__ pre-launches the browser so it is reused across all
         # districts instead of relaunched per site.
         async with SchoolScraperService() as service:
-            for scrape_url in scrape_urls:
-                school = await db.get(School, scrape_url.school_id)
+            for school_id in ordered_school_ids_in_capped:
+                school = await db.get(School, school_id)
                 if not school:
                     continue
                 totals["schools"] += 1
 
-                try:
-                    result = await service.scrape_media_files(
-                        page_url=scrape_url.url,
-                        crawl_depth=scrape_url.crawl_depth,
+                for scrape_url in urls_by_school[school_id]:
+                    await _sweep_one_url(
+                        db,
+                        service=service,
+                        school=school,
+                        scrape_url=scrape_url,
+                        totals=totals,
+                        failed_urls=failed_urls,
                     )
-                except Exception:
-                    # One unreachable district must not abort the sweep, but it
-                    # must be visible: a silent skip looks identical to a site
-                    # with no new meetings.
-                    logger.exception("Sweep scrape failed for %s", scrape_url.url)
-                    totals["scrape_failures"] += 1
-                    failed_urls.append(scrape_url.url)
-                    continue
-
-                media_files = result.get("media_files", [])
-                totals["found"] += len(media_files)
-                for media in media_files:
-                    media_type = media.get("media_type")
-                    if media_type in AV_MEDIA_TYPES:
-                        totals["av_found"] += 1
-                    elif media_type == "document":
-                        totals["documents_found"] += 1
-
-                if not media_files:
-                    continue
-
-                rows, skipped = await bulk_create_scraped_media(
-                    db,
-                    school=school,
-                    source_page_url=scrape_url.url,
-                    media_files=media_files,
-                )
-                totals["created"] += len(rows)
-                totals["skipped"] += skipped
-
-                # Enqueue ONLY newly created rows. This is what stops a
-                # re-crawl from re-paying for the whole corpus, and it is safe
-                # here because bulk_create_scraped_media has committed.
-                for row in rows:
-                    ingest_scraped_media.delay(row.id)
-                    totals["enqueued"] += 1
 
     if failed_urls:
         logger.warning(
@@ -717,7 +795,168 @@ async def _sweep_school_media_async(school_ids: list[int] | None) -> dict:
             failed_urls,
         )
     logger.info("sweep_school_media finished: %s", totals)
+
+    # Self-chain: if there are more schools to cover, enqueue the next batch
+    # immediately. Round-robin ordering (last_scrapped_at ASC NULLS FIRST)
+    # means the just-scraped schools move to the back, so the next batch
+    # picks different ones. This lets one trigger (cron or manual) walk the
+    # full corpus in bounded 50-school waves without flooding the broker.
+    # If a wave fails (worker crash), the chain breaks -- but the next cron
+    # tick restarts it from wherever round-robin left off (safety net).
+    if totals["schools_remaining"] > 0:
+        logger.info(
+            "sweep_school_media: chaining next batch (%s schools remaining)",
+            totals["schools_remaining"],
+        )
+        sweep_school_media.delay(
+            school_ids=school_ids,
+            max_schools=max_schools,
+        )
+
     return totals
+
+
+async def _sweep_one_url(
+    db,
+    *,
+    service,
+    school,
+    scrape_url,
+    totals: dict,
+    failed_urls: list[str],
+) -> None:
+    """Scrape one URL, persist outcome + media, enqueue new rows.
+
+    Every outcome (success, HTTP error, timeout/network, unexpected) is
+    written via record_scrape_result so the FE URL manager can show
+    crawl-failed status for cron runs -- not just interactive ones.
+    """
+    import httpx
+
+    from app.crud.schools import bulk_create_scraped_media, record_scrape_result
+
+    try:
+        result = await service.scrape_media_files(
+            page_url=scrape_url.url,
+            crawl_depth=scrape_url.crawl_depth,
+        )
+    except httpx.HTTPStatusError as exc:
+        # Mirror the interactive mapping: persist the real status so the
+        # FE can show 403/404/5xx specifically, not just "failed".
+        http_status = exc.response.status_code if exc.response else None
+        await record_scrape_result(
+            db, scrape_url, http_status=http_status, page_count=None
+        )
+        logger.exception("Sweep scrape failed for %s", scrape_url.url)
+        totals["scrape_failures"] += 1
+        failed_urls.append(scrape_url.url)
+        return
+    except Exception:
+        # Timeout / network / unexpected: no HTTP response to record. Still
+        # stamp last_scraped_at (via record_scrape_result) so the FE can tell
+        # "failed" from "never crawled", and so round-robin advances.
+        await record_scrape_result(
+            db, scrape_url, http_status=None, page_count=None
+        )
+        logger.exception("Sweep scrape failed for %s", scrape_url.url)
+        totals["scrape_failures"] += 1
+        failed_urls.append(scrape_url.url)
+        return
+
+    await record_scrape_result(
+        db, scrape_url, http_status=200, page_count=result.get("pages_crawled")
+    )
+
+    media_files = result.get("media_files", [])
+    totals["found"] += len(media_files)
+    for media in media_files:
+        media_type = media.get("media_type")
+        if media_type in AV_MEDIA_TYPES:
+            totals["av_found"] += 1
+        elif media_type == "document":
+            totals["documents_found"] += 1
+
+    if not media_files:
+        return
+
+    rows, skipped = await bulk_create_scraped_media(
+        db,
+        school=school,
+        source_page_url=scrape_url.url,
+        media_files=media_files,
+    )
+    totals["created"] += len(rows)
+    totals["skipped"] += skipped
+
+    # Enqueue ONLY newly created rows, up to the per-URL cap. The rest stay
+    # in the DB as status="discovered" and are picked up by the drain task
+    # on the next sweep run. This stops a first-time depth-2 crawl from
+    # enqueuing 100+ historical docs at once while still discovering them.
+    enqueue_cap = settings.SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL
+    if enqueue_cap and enqueue_cap > 0:
+        to_enqueue = rows[:enqueue_cap]
+        totals["deferred"] += len(rows) - len(to_enqueue)
+    else:
+        to_enqueue = rows
+
+    for row in to_enqueue:
+        ingest_scraped_media.delay(row.id)
+        totals["enqueued"] += 1
+
+
+@celery_app.task(
+    name="app.tasks.school_scraper_tasks.drain_discovered_media",
+    bind=True,
+    max_retries=1,
+    ignore_result=True,
+)
+def drain_discovered_media(self, batch_size: int = 50) -> dict:
+    """Enqueue previously-discovered but unqueued scraped_media rows.
+
+    When SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL caps a sweep, the excess
+    rows are persisted as status='discovered' but not enqueued. This task
+    drains them in small bounded batches so the broker stays healthy while
+    the historical backlog is gradually ingested.
+
+    Run it manually after a capped sweep, or wire it into beat_schedule at
+    a low cadence (e.g. hourly) once the sweep is proven stable.
+    """
+    try:
+        loop = get_event_loop()
+        return loop.run_until_complete(_drain_discovered_media_async(batch_size))
+    except Exception as exc:
+        logger.error("drain_discovered_media failed: %s", str(exc))
+        raise self.retry(
+            exc=exc, countdown=60 * (2**self.request.retries)
+        ) from exc
+
+
+async def _drain_discovered_media_async(batch_size: int) -> dict:
+    from sqlalchemy import select
+
+    from app.models.school import ScrapedMedia
+
+    async with AsyncSessionLocal() as db:
+        stmt = (
+            select(ScrapedMedia)
+            .where(ScrapedMedia.status == "discovered")
+            .order_by(ScrapedMedia.scraped_at.asc())
+            .limit(batch_size)
+        )
+        rows = (await db.execute(stmt)).scalars().all()
+
+        for row in rows:
+            ingest_scraped_media.delay(row.id)
+
+        logger.info(
+            "drain_discovered_media: enqueued %s discovered items (batch_size=%s)",
+            len(rows),
+            batch_size,
+        )
+        return {
+            "enqueued": len(rows),
+            "batch_size": batch_size,
+        }
 
 
 async def _scrape_one_batch_url(url: str, crawl_depth: int) -> dict:

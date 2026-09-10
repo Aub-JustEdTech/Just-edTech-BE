@@ -174,6 +174,14 @@ async def list_schools(
     search: str | None = Query(None, description="name or org_code substring"),
     district_type: str | None = Query(None),
     is_active: bool | None = Query(None),
+    crawl_failed: bool | None = Query(
+        None,
+        description=(
+            "Narrow to schools whose last scrape attempt failed (true) or "
+            "succeeded (false). Surfaces cron/sweep failures for the FE "
+            "URL manager without a separate table."
+        ),
+    ),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolListOut:
@@ -185,6 +193,7 @@ async def list_schools(
         search=search,
         district_type=district_type,
         is_active=is_active,
+        crawl_failed=crawl_failed,
     )
     items = [await _enrich_school(db, school) for school in schools]
     return SchoolListOut(items=items, total=total, skip=skip, limit=limit)

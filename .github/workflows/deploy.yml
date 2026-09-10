@@ -248,6 +248,14 @@ jobs:
 
             git checkout $REF
 
+            # Discard any local modifications/staged changes and remove
+            # untracked files left over from manual edits or earlier deploys.
+            # The EC2 repo must be a clean mirror of the branch, otherwise
+            # `git pull` aborts when an untracked file would be overwritten
+            # (e.g. a script that was later committed upstream).
+            git reset --hard HEAD
+            git clean -fd
+
             git pull origin $REF
 
             echo

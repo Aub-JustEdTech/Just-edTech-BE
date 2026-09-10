@@ -585,8 +585,14 @@ async def scrape_all_sources(
     every school in this tenant. Only one sweep may run per tenant at a
     time, so the common button and every per-school scrape button in the
     UI can share one disabled state.
+
+    Honors SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS so the UI button cannot re-flood
+    the broker the way an unbounded sweep can. The sweep task itself applies
+    the round-robin cap when ``max_schools`` is None; passing it explicitly
+    here keeps the response message accurate when the cap trims the list.
     """
     from app.celery_app import celery_app
+    from app.core.config import settings
     from app.db.redis_connector import redis_manager
 
     key = _scrape_running_key(tenant_id)
@@ -610,16 +616,29 @@ async def scrape_all_sources(
         .scalars()
         .all()
     )
-    task = sweep_school_media.delay(school_ids=list(school_ids))
+    cap = settings.SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS
+    capped_school_ids = (
+        school_ids if not cap or cap <= 0 else school_ids[:cap]
+    )
+    task = sweep_school_media.delay(school_ids=list(capped_school_ids))
     await redis_manager.set(key, task.id, expire=_SCRAPE_RUNNING_TTL)
+
+    capped_count = len(capped_school_ids)
+    remaining = len(school_ids) - capped_count
+    message = (
+        f"Scraping {capped_count} district source(s). "
+        "Check progress via /school-scraper/scrape-all/status."
+    )
+    if remaining > 0:
+        message += (
+            f" ({remaining} more will be picked up by the next run -- "
+            "sweep is capped to keep the broker bounded.)"
+        )
 
     return ScrapeAllResponse(
         task_id=task.id,
         status="queued",
-        message=(
-            f"Scraping {len(school_ids)} district source(s). "
-            "Check progress via /school-scraper/scrape-all/status."
-        ),
+        message=message,
     )
 
 

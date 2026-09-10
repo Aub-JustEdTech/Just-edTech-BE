@@ -11,6 +11,7 @@ from app.services.web_scraper.page_schemas import (
     RelevantPage,
 )
 from app.services.web_scraper.schema_driven_crawler import (
+    CrawlError,
     CrawlResult,
     SchemaDrivenCrawler,
 )
@@ -18,6 +19,7 @@ from app.services.web_scraper.school_scraper_service import SchoolScraperService
 from app.services.web_scraper.web_scraper_service import WebScraperService
 
 __all__ = [
+    "CrawlError",
     "CrawlResult",
     "DATA_TYPES",
     "DataPageInfo",

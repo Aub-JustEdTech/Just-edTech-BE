@@ -7,6 +7,7 @@ without drift.
 """
 
 from app.services.web_scraper.schema_driven_crawler import (  # noqa: F401
+    CrawlError,
     CrawlResult,
     SchemaDrivenCrawler,
 )
