@@ -5,9 +5,16 @@ Covers: schools CRUD, scrape URL configuration, and scraped media records.
 """
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+
+def _get_attr(data: Any, name: str) -> Any:
+    """Read an attribute from a dict or ORM instance for model_validator(before)."""
+    if isinstance(data, dict):
+        return data.get(name)
+    return getattr(data, name, None)
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +65,47 @@ class SchoolScrapeUrlOut(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    # True when the last attempt failed. None until an attempt exists, False
+    # after a successful attempt (200), True after a non-200 or a
+    # timeout/network error (last_http_status is None but last_scraped_at is
+    # set). Surfaces cron/sweep failures to the FE URL manager without a
+    # separate table -- the sweep writes last_http_status/last_scraped_at
+    # the same way interactive scrape does.
+    crawl_failed: bool | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _compute_crawl_failed(cls, data: Any) -> Any:
+        # Works for both ORM instances and dict-like data.
+        last_scraped_at = _get_attr(data, "last_scraped_at")
+        last_http_status = _get_attr(data, "last_http_status")
+        if last_scraped_at is None:
+            # Never attempted yet -- unknown, not failed.
+            crawl_failed = None
+        else:
+            crawl_failed = last_http_status != 200
+        if isinstance(data, dict):
+            data["crawl_failed"] = crawl_failed
+            return data
+        # ORM instance: convert to a dict so the computed field is visible to
+        # from_attributes without mutating the ORM object (which has no
+        # `crawl_failed` column).
+        return {
+            "id": _get_attr(data, "id"),
+            "school_id": _get_attr(data, "school_id"),
+            "url": _get_attr(data, "url"),
+            "crawl_depth": _get_attr(data, "crawl_depth"),
+            "use_playwright": _get_attr(data, "use_playwright"),
+            "confirmed_by_user_id": _get_attr(data, "confirmed_by_user_id"),
+            "confirmed_at": _get_attr(data, "confirmed_at"),
+            "last_http_status": last_http_status,
+            "last_crawl_page_count": _get_attr(data, "last_crawl_page_count"),
+            "last_scraped_at": last_scraped_at,
+            "is_active": _get_attr(data, "is_active"),
+            "created_at": _get_attr(data, "created_at"),
+            "updated_at": _get_attr(data, "updated_at"),
+            "crawl_failed": crawl_failed,
+        }
 
 
 class SchoolOut(BaseModel):

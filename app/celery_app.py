@@ -28,7 +28,7 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,  # Prefetch 1 task per worker to minimize memory usage
     # For high-memory instances, increase to 4 for better throughput
     # Task result settings
-    result_expires=3600,  # Results expire after 1 hour
+    result_expires=900,  # Results expire after 15 min
     # Task routing
     task_routes={
         "app.tasks.document_tasks.process_document_task": {"queue": "documents"},
@@ -117,6 +117,16 @@ celery_app.conf.update(
         #     ),  # Weekly, Monday 1:00 AM UTC
         #     "options": {"expires": 3 * 3600},
         # },
+        # Bounded school-media sweep. SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (default
+        # 50) caps each run; the task self-chains to cover the rest, and this
+        # cron tick is the safety net that restarts the chain if a wave
+        # crashed. Daily at 1:00 AM UTC so the full corpus is re-covered every
+        # ~5 days at 50/run (faster than weekly, bounded vs unbounded).
+        "sweep-school-media": {
+            "task": "app.tasks.school_scraper_tasks.sweep_school_media",
+            "schedule": crontab(hour=1, minute=0),  # Daily at 1:00 AM UTC
+            "options": {"expires": 3 * 3600},
+        },
     },
 )
 

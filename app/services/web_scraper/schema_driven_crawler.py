@@ -112,6 +112,84 @@ def _should_retry(status: int | None) -> bool:
     return status is None or status in _BLOCKED_STATUS_CODES
 
 
+@dataclass
+class FetchAttempt:
+    """Outcome of a single HTTP/browser fetch attempt."""
+
+    html: str | None = None
+    http_status: int | None = None
+    exception_type: str | None = None
+    exception_message: str | None = None
+
+
+@dataclass
+class FetchMeta:
+    """Aggregated diagnostics from the fetch escalation ladder."""
+
+    stage: str = "httpx"
+    http_status: int | None = None
+    exception_type: str | None = None
+    exception_message: str | None = None
+    stages_tried: list[str] = field(default_factory=list)
+
+    def record_attempt(self, stage: str, attempt: FetchAttempt) -> None:
+        """Update meta from the latest attempt (keeps last failure details)."""
+        if stage not in self.stages_tried:
+            self.stages_tried.append(stage)
+        self.stage = stage
+        self.http_status = attempt.http_status
+        if attempt.exception_type:
+            self.exception_type = attempt.exception_type
+            self.exception_message = attempt.exception_message
+        elif attempt.html is not None:
+            # Successful body clears prior exception noise from earlier stages.
+            self.exception_type = None
+            self.exception_message = None
+
+
+@dataclass
+class CrawlError:
+    """Structured per-URL crawl failure for offline failure analysis."""
+
+    code: str
+    url: str
+    http_status: int | None = None
+    exception_type: str | None = None
+    exception_message: str | None = None
+    stage: str | None = None
+    html_length: int | None = None
+
+    def summary(self) -> str:
+        """Compact backward-compatible string (kept on CrawlResult.errors)."""
+        parts = [f"{self.code}: {self.url}"]
+        extras: list[str] = []
+        if self.http_status is not None:
+            extras.append(f"status={self.http_status}")
+        if self.exception_type:
+            if self.exception_message:
+                extras.append(f"{self.exception_type}: {self.exception_message}")
+            else:
+                extras.append(self.exception_type)
+        if self.stage:
+            extras.append(f"stage={self.stage}")
+        if self.html_length is not None:
+            extras.append(f"html_len={self.html_length}")
+        if extras:
+            return f"{parts[0]} ({', '.join(extras)})"
+        return parts[0]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "code": self.code,
+            "url": self.url,
+            "http_status": self.http_status,
+            "exception_type": self.exception_type,
+            "exception_message": self.exception_message,
+            "stage": self.stage,
+            "html_length": self.html_length,
+        }
+
+
 def _keyword_boost(url: str) -> float:
     """Deterministic confidence bump based on meeting-minutes keywords in the URL path.
 
@@ -137,13 +215,20 @@ class CrawlResult:
     data_pages: list[RelevantPage] = field(default_factory=list)
     visited_pages: list[RelevantPage] = field(default_factory=list)
     llm_calls: int = 0
+    # Compact strings for logs / legacy consumers. Prefer error_details for analysis.
     errors: list[str] = field(default_factory=list)
+    error_details: list[CrawlError] = field(default_factory=list)
     # True when the crawl stopped only because max_pages was hit while the
     # frontier still had unvisited candidates — i.e. the page budget cut
     # exploration short. Surfaced on DiscoverResponse so operators can tell
     # "nothing more to find" from "we ran out of budget". False when the
     # frontier emptied naturally (or only failed-fetches remained).
     max_pages_limit_reached: bool = False
+
+    def record_error(self, error: CrawlError) -> None:
+        """Append both structured and compact representations of a failure."""
+        self.error_details.append(error)
+        self.errors.append(error.summary())
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -153,6 +238,7 @@ class CrawlResult:
             "data_pages": [p.model_dump() for p in self.data_pages],
             "visited_pages": [p.model_dump() for p in self.visited_pages],
             "errors": self.errors,
+            "error_details": [e.to_dict() for e in self.error_details],
             "max_pages_limit_reached": self.max_pages_limit_reached,
         }
 
@@ -211,8 +297,8 @@ class SchemaDrivenCrawler:
             "SchemaDrivenCrawler: Playwright Chromium auto-launched — JS-rendered page detected"
         )
 
-    async def _fetch_text_rendered(self, url: str) -> str | None:
-        """Fetch a page with Playwright (full JS execution); fall back to httpx on failure.
+    async def _fetch_text_rendered(self, url: str) -> FetchAttempt:
+        """Fetch a page with Playwright (full JS execution).
 
         For board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack) the
         page content is typically injected into nested ``<iframe>``s rather
@@ -220,7 +306,10 @@ class SchemaDrivenCrawler:
         every accessible frame into the parent HTML before returning.
         """
         if not self._browser:
-            return None
+            return FetchAttempt(
+                exception_type="PlaywrightUnavailable",
+                exception_message="browser not launched",
+            )
         try:
             page = await self._browser.new_page()
             try:
@@ -238,18 +327,23 @@ class SchemaDrivenCrawler:
                     # Merge iframe content (the real meeting/agenda HTML lives
                     # inside nested frames on these platforms). Falls back to
                     # parent-only HTML if every frame.content() raises.
-                    return await merge_iframe_content(page, top_url=url)
-                return await page.content()
+                    html = await merge_iframe_content(page, top_url=url)
+                else:
+                    html = await page.content()
+                return FetchAttempt(html=html, http_status=200)
             finally:
                 await page.close()
         except Exception as exc:  # noqa: BLE001
-            logger.debug(
-                "SchemaDrivenCrawler: Playwright render failed for %s (%s): %s — using httpx",
+            logger.warning(
+                "SchemaDrivenCrawler: Playwright render failed for %s (%s): %s",
                 url,
                 type(exc).__name__,
                 exc,
             )
-            return None
+            return FetchAttempt(
+                exception_type=type(exc).__name__,
+                exception_message=str(exc),
+            )
 
     async def close(self) -> None:
         """Close the Playwright browser if it was launched."""
@@ -330,21 +424,44 @@ class SchemaDrivenCrawler:
                 visited.add(current_url)
                 result.pages_crawled += 1
 
-                html = await self._fetch(client, current_url)
+                html, fetch_meta = await self._fetch(client, current_url)
                 if not html:
-                    result.errors.append(f"fetch_failed: {current_url}")
+                    result.record_error(
+                        CrawlError(
+                            code="fetch_failed",
+                            url=current_url,
+                            http_status=fetch_meta.http_status,
+                            exception_type=fetch_meta.exception_type,
+                            exception_message=fetch_meta.exception_message,
+                            stage=fetch_meta.stage,
+                        )
+                    )
                     continue
 
                 markdown = self._render_markdown(html, current_url)
                 if not markdown.strip():
-                    result.errors.append(f"empty_markdown: {current_url}")
+                    result.record_error(
+                        CrawlError(
+                            code="empty_markdown",
+                            url=current_url,
+                            html_length=len(html),
+                            stage=fetch_meta.stage,
+                        )
+                    )
                     continue
 
                 try:
                     page = await self.classifier.classify(current_url, markdown, today)
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("Classify failed for %s: %s", current_url, exc)
-                    result.errors.append(f"classify_failed: {current_url}: {exc}")
+                    result.record_error(
+                        CrawlError(
+                            code="classify_failed",
+                            url=current_url,
+                            exception_type=type(exc).__name__,
+                            exception_message=str(exc),
+                        )
+                    )
                     continue
                 result.llm_calls += 1
                 result.visited_pages.append(page)
@@ -429,7 +546,7 @@ class SchemaDrivenCrawler:
             follow_redirects=True,
             headers={"User-Agent": self.user_agent},
         ) as client:
-            html = await self._fetch(client, url)
+            html, _meta = await self._fetch(client, url)
         if not html:
             return None
         return self._render_markdown(html, url)
@@ -450,8 +567,8 @@ class SchemaDrivenCrawler:
         """
 
         async def _fetch_text(url: str) -> str | None:
-            html, _status = await self._fetch_httpx(client, url)
-            return html
+            attempt = await self._fetch_httpx(client, url)
+            return attempt.html
 
         urls: list[str] = []
         # 1. WordPress sitemap
@@ -506,7 +623,9 @@ class SchemaDrivenCrawler:
             nav_urls = []
         return nav_urls
 
-    async def _fetch(self, client: httpx.AsyncClient, url: str) -> str | None:
+    async def _fetch(
+        self, client: httpx.AsyncClient, url: str
+    ) -> tuple[str | None, FetchMeta]:
         """Fetch HTML for a URL, escalating through UA rotation and Playwright as needed.
 
         Escalation ladder (each step only runs if the previous one failed):
@@ -538,42 +657,66 @@ class SchemaDrivenCrawler:
         fix. A Playwright failure (or no browser available) silently degrades
         back to the last httpx result, so the crawler never hard-fails
         outright.
+
+        Returns (html_or_None, FetchMeta) so callers can record why a fetch
+        failed (status / exception / stage) instead of a bare fetch_failed.
         """
+        meta = FetchMeta()
+
         # Board platforms: skip the httpx-fingerprint gate and go straight to
         # a real browser. Their content is JS-rendered into iframes, so httpx
         # would only return the SPA shell with no useful text/links.
         if is_board_platform_url(url):
             await self._ensure_playwright()
             rendered = await self._fetch_text_rendered(url)
-            if rendered:
-                return rendered
+            meta.record_attempt("playwright", rendered)
+            if rendered.html:
+                return rendered.html, meta
             # Fall through to httpx as a last resort if Playwright is
             # unavailable or failed — better a shell than nothing.
-            html, status = await self._fetch_httpx(client, url)
-            return html
+            attempt = await self._fetch_httpx(client, url)
+            meta.record_attempt("httpx", attempt)
+            if attempt.html is None:
+                logger.warning(
+                    "SchemaDrivenCrawler: fetch_failed for %s "
+                    "(status=%s, stage=%s, exc=%s)",
+                    url,
+                    meta.http_status,
+                    meta.stage,
+                    meta.exception_type,
+                )
+            return attempt.html, meta
 
-        html, status = await self._fetch_httpx(client, url)
+        attempt = await self._fetch_httpx(client, url)
+        meta.record_attempt("httpx", attempt)
+        html = attempt.html
+        status = attempt.http_status
 
         if html is None and _should_retry(status):
             for alt_ua in _ALT_USER_AGENTS:
-                html, status = await self._fetch_httpx(
+                attempt = await self._fetch_httpx(
                     client, url, headers={"User-Agent": alt_ua}
                 )
-                if html is not None:
+                meta.record_attempt("ua_alt", attempt)
+                if attempt.html is not None:
                     logger.info(
                         "SchemaDrivenCrawler: default fetch failed (status=%s), "
                         "alt UA succeeded for %s",
                         status,
                         url,
                     )
+                    html = attempt.html
+                    status = attempt.http_status
                     break
+                status = attempt.http_status
 
         if html and html_needs_playwright(html):
             await self._ensure_playwright()
             rendered = await self._fetch_text_rendered(url)
-            if rendered:
-                return rendered
-            return html
+            meta.record_attempt("playwright", rendered)
+            if rendered.html:
+                return rendered.html, meta
+            return html, meta
 
         if html is None and _should_retry(status):
             logger.info(
@@ -584,10 +727,21 @@ class SchemaDrivenCrawler:
             )
             await self._ensure_playwright()
             rendered = await self._fetch_text_rendered(url)
-            if rendered:
-                return rendered
+            meta.record_attempt("playwright", rendered)
+            if rendered.html:
+                return rendered.html, meta
 
-        return html
+        if html is None:
+            logger.warning(
+                "SchemaDrivenCrawler: fetch_failed for %s "
+                "(status=%s, stage=%s, exc=%s: %s)",
+                url,
+                meta.http_status,
+                meta.stage,
+                meta.exception_type,
+                meta.exception_message,
+            )
+        return html, meta
 
     async def _fetch_httpx(
         self,
@@ -595,22 +749,27 @@ class SchemaDrivenCrawler:
         url: str,
         *,
         headers: dict[str, str] | None = None,
-    ) -> tuple[str | None, int | None]:
-        """Fetch a URL via httpx. Returns (body_text_or_None, status_code_or_None).
+    ) -> FetchAttempt:
+        """Fetch a URL via httpx.
 
-        status is None when the request never got an HTTP response at all
+        http_status is None when the request never got an HTTP response at all
         (connection refused, DNS failure, TLS/SSL trust error, timeout) —
         distinct from a real HTTP error status like 404 or 403.
         """
         try:
             resp = await client.get(url, headers=headers)
             if resp.status_code == 200:
-                return resp.text, resp.status_code
-            logger.debug("Non-200 (%s) for %s", resp.status_code, url)
-            return None, resp.status_code
+                return FetchAttempt(html=resp.text, http_status=resp.status_code)
+            logger.warning("Non-200 (%s) for %s", resp.status_code, url)
+            return FetchAttempt(http_status=resp.status_code)
         except Exception as exc:  # noqa: BLE001
-            logger.debug("Fetch failed for %s: %s: %s", url, type(exc).__name__, exc)
-            return None, None
+            logger.warning(
+                "Fetch failed for %s: %s: %s", url, type(exc).__name__, exc
+            )
+            return FetchAttempt(
+                exception_type=type(exc).__name__,
+                exception_message=str(exc),
+            )
 
     def _render_markdown(self, html: str, url: str) -> str:
         """Render page HTML as markdown-with-links, preserving link text + href.

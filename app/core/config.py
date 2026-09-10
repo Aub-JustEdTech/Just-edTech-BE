@@ -384,6 +384,14 @@ class Settings(BaseSettings):
     # Hard cap on meetings visited per board-platform portal per scrape
     # (Diligent/BoardOnTrack calendars can span 10+ years of history).
     SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS: int = 24
+    # Max schools crawled per sweep_school_media run. A sweep enqueues one
+    # ingest task per newly discovered media item, and each ingest spawns a
+    # 9-stage document pipeline chain in Redis (noeviction broker). At 3-4
+    # docs/district, 50 schools => ~150-200 ingest tasks/run, which keeps the
+    # broker bounded while workers drain it. 0 = unlimited (full corpus).
+    # Round-robin ordering (last_scrapped_at ASC NULLS FIRST) means later
+    # runs cover different schools instead of re-crawling the same head.
+    SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS: int = 50
     # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"

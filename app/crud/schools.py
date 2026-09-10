@@ -72,8 +72,18 @@ async def list_schools(
     search: str | None = None,
     district_type: str | None = None,
     is_active: bool | None = None,
+    crawl_failed: bool | None = None,
 ) -> tuple[list[School], int]:
-    """Return (schools, total_count) for a tenant with optional filters."""
+    """Return (schools, total_count) for a tenant with optional filters.
+
+    ``crawl_failed`` narrows to schools whose last scrape attempt failed:
+    - True  -> has >=1 active scrape URL with last_scraped_at set AND
+               (last_http_status is None OR != 200) -- cron-failed rows for
+               the FE URL manager to triage.
+    - False -> only schools whose active scrape URLs all succeeded on the
+               last attempt (last_http_status == 200). Schools with no
+               attempted URLs are excluded from both True and False.
+    """
     stmt = select(School).where(School.tenant_id == tenant_id)
     count_stmt = select(func.count(School.id)).where(School.tenant_id == tenant_id)
 
@@ -91,6 +101,39 @@ async def list_schools(
     if is_active is not None:
         stmt = stmt.where(School.is_active == is_active)
         count_stmt = count_stmt.where(School.is_active == is_active)
+
+    if crawl_failed is not None:
+        # A school is "failed" if any active URL was attempted and did not
+        # return 200. "Not failed" means every attempted active URL returned
+        # 200. Never-attempted URLs (last_scraped_at IS NULL) count as
+        # neither, so they are excluded from both filters.
+        failed_url_exists = (
+            select(SchoolScrapeUrl.id)
+            .where(SchoolScrapeUrl.school_id == School.id)
+            .where(SchoolScrapeUrl.is_active.is_(True))
+            .where(SchoolScrapeUrl.last_scraped_at.is_not(None))
+            .where(
+                (SchoolScrapeUrl.last_http_status.is_(None))
+                | (SchoolScrapeUrl.last_http_status != 200)
+            )
+            .exists()
+        )
+        ok_url_exists = (
+            select(SchoolScrapeUrl.id)
+            .where(SchoolScrapeUrl.school_id == School.id)
+            .where(SchoolScrapeUrl.is_active.is_(True))
+            .where(SchoolScrapeUrl.last_scraped_at.is_not(None))
+            .where(SchoolScrapeUrl.last_http_status == 200)
+            .exists()
+        )
+        no_failed_url = ~failed_url_exists
+        if crawl_failed:
+            stmt = stmt.where(failed_url_exists)
+            count_stmt = count_stmt.where(failed_url_exists)
+        else:
+            # Schools with at least one successful attempt AND no failures.
+            stmt = stmt.where(ok_url_exists).where(no_failed_url)
+            count_stmt = count_stmt.where(ok_url_exists).where(no_failed_url)
 
     total = (await db.execute(count_stmt)).scalar_one()
     stmt = (

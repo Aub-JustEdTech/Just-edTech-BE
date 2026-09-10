@@ -171,6 +171,9 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - VECTOR_STORE_TYPE=qdrant
       - SCHOOL_SCRAPER_ALLOWED_YEARS=[2023,2024,2025,2026]
+      # Scanned board PDFs extract via ingest_scraped_media on this worker;
+      # OCR must be on here (not only on celery-ingest).
+      - ENABLE_OCR=true
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

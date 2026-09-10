@@ -167,6 +167,7 @@ async def _scrape_one_url(
     use_playwright: bool | None,
     dry_run: bool,
     enqueue: bool,
+    documents_only: bool = False,
 ) -> dict:
     """Scrape a single URL and persist/enqueue its media files.
 
@@ -229,6 +230,9 @@ async def _scrape_one_url(
                 media_type = _classify_media_type(
                     mf.get("media_type"), mf.get("file_extension")
                 )
+                if documents_only and media_type != "document":
+                    result["media_skipped"] += 1
+                    continue
                 if (
                     media_type == "youtube"
                     and not settings.SCHOOL_SCRAPER_YOUTUBE_TRANSCRIPT_ENABLED
@@ -315,6 +319,7 @@ async def _scrape_one_school(
     use_playwright: bool | None,
     dry_run: bool,
     enqueue: bool,
+    documents_only: bool = False,
 ) -> dict:
     """Scrape every active URL for one school, sequentially.
 
@@ -333,6 +338,7 @@ async def _scrape_one_school(
                 use_playwright=use_playwright,
                 dry_run=dry_run,
                 enqueue=enqueue,
+                documents_only=documents_only,
             )
         )
 
@@ -367,6 +373,7 @@ async def run_scrape_districts(
     enqueue: bool,
     skip_scraped: bool = False,
     revisit_max_docs: int | None = None,
+    documents_only: bool = False,
 ) -> dict:
     org_codes = await _load_target_org_codes(json_path, org_codes_arg)
     pairs = await _load_schools(tenant_id, org_codes)
@@ -392,6 +399,7 @@ async def run_scrape_districts(
     print(f"  concurrency : {concurrency}")
     print(f"  dry_run     : {dry_run}")
     print(f"  enqueue     : {enqueue and not dry_run}")
+    print(f"  docs_only   : {documents_only}")
     print(f"  skip_scraped: {skip_scraped}")
     print(f"  revisit_max : {revisit_max_docs}")
     print("=" * 60)
@@ -413,6 +421,7 @@ async def run_scrape_districts(
                 use_playwright=use_playwright,
                 dry_run=dry_run,
                 enqueue=enqueue,
+                documents_only=documents_only,
             )
 
     tasks = [_run(pair) for pair in pairs]
@@ -521,6 +530,11 @@ def main() -> None:
         help="Persist ScrapedMedia rows but do not enqueue ingest tasks.",
     )
     parser.add_argument(
+        "--documents-only",
+        action="store_true",
+        help="Persist/enqueue only media_type=document (skip audio/video/youtube).",
+    )
+    parser.add_argument(
         "--skip-scraped",
         action="store_true",
         help="Skip URLs that already have last_scraped_at set.",
@@ -553,6 +567,7 @@ def main() -> None:
                 enqueue=not args.no_enqueue,
                 skip_scraped=args.skip_scraped,
                 revisit_max_docs=args.revisit_max_docs,
+                documents_only=args.documents_only,
             )
         )
     except Exception as exc:

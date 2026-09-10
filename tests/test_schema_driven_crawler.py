@@ -9,6 +9,7 @@ All HTTP and LLM calls are mocked. These tests cover:
   - off-domain link rejection
   - sitemap-seeded frontier (the seed URLs enter the frontier before the LLM loop)
   - one end-to-end crawl with a canned RelevantPage from a mocked classifier
+  - structured error_details for fetch / empty-markdown failures
 
 Run:
     poetry run pytest tests/test_schema_driven_crawler.py -v
@@ -17,7 +18,6 @@ Run:
 from __future__ import annotations
 
 import textwrap
-from datetime import date
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,7 +28,10 @@ from app.services.web_scraper.page_schemas import (
     PossibleRelevantPage,
     RelevantPage,
 )
-from app.services.web_scraper.schema_driven_crawler import SchemaDrivenCrawler
+from app.services.web_scraper.schema_driven_crawler import (
+    FetchMeta,
+    SchemaDrivenCrawler,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -51,6 +54,17 @@ MEETING_PAGE_HTML = textwrap.dedent("""\
       <a href="/minutes/2025.pdf">2025 Minutes PDF</a>
     </body></html>
 """)
+
+_OK_META = FetchMeta(stage="httpx", http_status=200)
+
+
+def _ok_fetch(html: str = HOMEPAGE_HTML):
+    """Return a `_fetch` result shaped like the real (html, FetchMeta) tuple."""
+
+    async def _inner(client, url):
+        return html, _OK_META
+
+    return _inner
 
 
 def _page(
@@ -101,7 +115,7 @@ async def test_visited_set_dedups_repeated_urls():
 
     async def fake_fetch(client, url):
         fetched.append(url)
-        return HOMEPAGE_HTML
+        return HOMEPAGE_HTML, _OK_META
 
     with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
@@ -132,7 +146,7 @@ async def test_confidence_threshold_prunes_low_confidence_links():
 
     async def fake_fetch(client, url):
         fetched.append(url)
-        return HOMEPAGE_HTML
+        return HOMEPAGE_HTML, _OK_META
 
     with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
@@ -153,7 +167,7 @@ async def test_archival_skip_drops_archive_from_data_pages():
     mock_classifier.classify = AsyncMock(return_value=archive_page)
     crawler.classifier = mock_classifier
 
-    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+    with patch.object(crawler, "_fetch", side_effect=_ok_fetch()), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
         result = await crawler.crawl("https://example.com/archive")
 
@@ -171,7 +185,7 @@ async def test_archival_kept_when_skip_disabled():
     mock_classifier.classify = AsyncMock(return_value=archive_page)
     crawler.classifier = mock_classifier
 
-    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+    with patch.object(crawler, "_fetch", side_effect=_ok_fetch()), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
         result = await crawler.crawl("https://example.com/archive")
 
@@ -193,7 +207,7 @@ async def test_max_pages_budget_enforced():
     mock_classifier.classify = AsyncMock(side_effect=pages)
     crawler.classifier = mock_classifier
 
-    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+    with patch.object(crawler, "_fetch", side_effect=_ok_fetch()), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
         result = await crawler.crawl("https://example.com/p0")
 
@@ -221,7 +235,7 @@ async def test_off_domain_links_rejected():
 
     async def fake_fetch(client, url):
         fetched.append(url)
-        return HOMEPAGE_HTML
+        return HOMEPAGE_HTML, _OK_META
 
     with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
@@ -250,7 +264,7 @@ async def test_sitemap_seeds_frontier_before_llm_loop():
 
     async def fake_fetch(client, url):
         fetched.append(url)
-        return HOMEPAGE_HTML
+        return HOMEPAGE_HTML, _OK_META
 
     # Seed frontier returns /minutes — it should be fetched even though the
     # homepage (mocked) suggests no candidate links.
@@ -302,7 +316,7 @@ async def test_e2e_crawl_with_canned_relevant_pages():
     }
 
     async def fake_fetch(client, url):
-        return fetch_map.get(url.rstrip("/"))
+        return fetch_map.get(url.rstrip("/")), _OK_META
 
     with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
@@ -338,7 +352,7 @@ async def test_max_pages_limit_reached_true_when_budget_cuts_exploration():
     mock_classifier.classify = AsyncMock(side_effect=pages)
     crawler.classifier = mock_classifier
 
-    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+    with patch.object(crawler, "_fetch", side_effect=_ok_fetch()), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
         result = await crawler.crawl("https://example.com/p0")
 
@@ -362,9 +376,74 @@ async def test_max_pages_limit_reached_false_when_frontier_empties():
     mock_classifier.classify = AsyncMock(side_effect=[home, minutes])
     crawler.classifier = mock_classifier
 
-    with patch.object(crawler, "_fetch", return_value=HOMEPAGE_HTML), \
+    with patch.object(crawler, "_fetch", side_effect=_ok_fetch()), \
          patch.object(crawler, "_collect_seed_frontier", return_value=[]):
         result = await crawler.crawl("https://example.com")
 
     assert result.pages_crawled == 2
     assert result.max_pages_limit_reached is False
+
+
+# ---------------------------------------------------------------------------
+# Structured error_details
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_fetch_failed_records_structured_error_details():
+    """fetch_failed captures http_status / exception / stage, not just the URL."""
+    crawler = SchemaDrivenCrawler(max_pages=3, confidence_threshold=0.4)
+    crawler.classifier = MagicMock()
+    crawler.classifier.classify = AsyncMock()
+
+    fail_meta = FetchMeta(
+        stage="playwright",
+        http_status=403,
+        exception_type=None,
+        exception_message=None,
+        stages_tried=["httpx", "ua_alt", "playwright"],
+    )
+
+    async def fake_fetch(client, url):
+        return None, fail_meta
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://example.com")
+
+    assert result.pages_crawled == 1
+    assert result.visited_pages == []
+    assert result.llm_calls == 0
+    assert len(result.error_details) == 1
+    detail = result.error_details[0]
+    assert detail.code == "fetch_failed"
+    assert detail.url == "https://example.com"
+    assert detail.http_status == 403
+    assert detail.stage == "playwright"
+    assert "status=403" in result.errors[0]
+    assert "stage=playwright" in result.errors[0]
+
+
+@pytest.mark.asyncio
+async def test_empty_markdown_records_html_length():
+    """empty_markdown includes html_length so operators can spot shell/login pages."""
+    crawler = SchemaDrivenCrawler(max_pages=3, confidence_threshold=0.4)
+    crawler.classifier = MagicMock()
+    crawler.classifier.classify = AsyncMock()
+
+    emptyish = "   \n\t  "
+
+    async def fake_fetch(client, url):
+        return emptyish, _OK_META
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]), \
+         patch.object(crawler, "_render_markdown", return_value=""):
+        result = await crawler.crawl("https://example.com/login")
+
+    assert len(result.error_details) == 1
+    detail = result.error_details[0]
+    assert detail.code == "empty_markdown"
+    assert detail.url == "https://example.com/login"
+    assert detail.html_length == len(emptyish)
+    assert "html_len=" in result.errors[0]
