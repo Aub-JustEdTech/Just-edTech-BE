@@ -49,7 +49,7 @@ class LLMService:
         """
         try:
             # Use defaults if not provided
-            model = model or "gpt-4o-mini"
+            model = model or "openai/gpt-4o-mini"
             temperature = temperature if temperature is not None else 0.7
             max_tokens = max_tokens or 4096
 

@@ -2,20 +2,51 @@
 
 import logging
 
-from openai import AsyncOpenAI
-
 from app.core.config import settings
+from app.services.llm.client import get_cached_async_openai_client, normalize_model_name
 
 logger = logging.getLogger(__name__)
 
-_async_client: AsyncOpenAI | None = None
+_VALID_EMBEDDING_MODELS = {
+    "text-embedding-3-small",
+    "text-embedding-3-large",
+    "text-embedding-ada-002",
+    "openai/text-embedding-3-small",
+    "openai/text-embedding-3-large",
+    "openai/text-embedding-ada-002",
+}
+
+# OpenRouter caps embedding requests at 300k tokens; stay under with headroom.
+_EMBEDDING_MAX_TOKENS_PER_REQUEST = 250_000
+_EMBEDDING_MAX_TEXTS_PER_REQUEST = 128
 
 
-def _get_client() -> AsyncOpenAI:
-    global _async_client
-    if _async_client is None:
-        _async_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-    return _async_client
+def _estimate_tokens(text: str) -> int:
+    return max(1, len(text) // 4)
+
+
+def _batch_texts_for_embedding(texts: list[str]) -> list[list[str]]:
+    """Split texts so each embedding API call stays within provider token limits."""
+    batches: list[list[str]] = []
+    current: list[str] = []
+    current_tokens = 0
+
+    for text in texts:
+        text_tokens = _estimate_tokens(text)
+        would_exceed_tokens = (
+            current_tokens + text_tokens > _EMBEDDING_MAX_TOKENS_PER_REQUEST
+        )
+        would_exceed_count = len(current) >= _EMBEDDING_MAX_TEXTS_PER_REQUEST
+        if current and (would_exceed_tokens or would_exceed_count):
+            batches.append(current)
+            current = []
+            current_tokens = 0
+        current.append(text)
+        current_tokens += text_tokens
+
+    if current:
+        batches.append(current)
+    return batches
 
 
 class EmbeddingService:
@@ -40,26 +71,32 @@ class EmbeddingService:
         if not texts:
             return []
 
-        model = model or settings.OPENAI_EMBEDDING_MODEL
+        model = normalize_model_name(model or settings.OPENAI_EMBEDDING_MODEL)
 
-        valid_models = [
-            "text-embedding-3-small",
-            "text-embedding-3-large",
-            "text-embedding-ada-002",
-        ]
-        
-        if model not in valid_models:
+        if model not in _VALID_EMBEDDING_MODELS:
             logger.warning(
                 f"Model '{model}' is not in the list of known valid models. "
-                f"Valid models: {', '.join(valid_models)}. "
+                f"Valid models: {', '.join(sorted(_VALID_EMBEDDING_MODELS))}. "
                 f"Attempting to use anyway..."
             )
 
         try:
-            logger.info(f"Generating embeddings for {len(texts)} texts using model: {model}")
-            client = _get_client()
-            response = await client.embeddings.create(input=texts, model=model)
-            embeddings = [item.embedding for item in response.data]
+            batches = _batch_texts_for_embedding(texts)
+            logger.info(
+                f"Generating embeddings for {len(texts)} texts "
+                f"in {len(batches)} batch(es) using model: {model}"
+            )
+            client = get_cached_async_openai_client()
+            embeddings: list[list[float]] = []
+            for batch_idx, batch in enumerate(batches, start=1):
+                logger.debug(
+                    "Embedding batch %s/%s (%s texts)",
+                    batch_idx,
+                    len(batches),
+                    len(batch),
+                )
+                response = await client.embeddings.create(input=batch, model=model)
+                embeddings.extend(item.embedding for item in response.data)
 
             logger.info(f"Generated {len(embeddings)} embeddings using {model}")
             return embeddings
@@ -68,10 +105,10 @@ class EmbeddingService:
             error_msg = (
                 f"Error generating embeddings with model '{model}': {e}. "
                 f"Please verify that: "
-                f"1) The model name '{model}' is correct and available for your OpenAI API key, "
+                f"1) The model name '{model}' is correct and available for your API key, "
                 f"2) Your API key has access to this model, "
                 f"3) The model is not deprecated. "
-                f"Valid OpenAI embedding models: {', '.join(valid_models)}"
+                f"Known embedding models: {', '.join(sorted(_VALID_EMBEDDING_MODELS))}"
             )
             logger.error(error_msg, exc_info=True)
             raise ValueError(error_msg) from e

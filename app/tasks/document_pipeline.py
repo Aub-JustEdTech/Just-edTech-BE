@@ -134,6 +134,13 @@ async def _update_job_status(db: AsyncSession, job_id: int, status: JobStatus) -
 # ==================== Pipeline Context ====================
 
 
+def _normalize_document_extension(ext: str | None) -> str:
+    """Ensure document_type includes a leading dot (e.g. 'txt' -> '.txt')."""
+    if not ext:
+        return ""
+    return ext if ext.startswith(".") else f".{ext}"
+
+
 class PipelineContext:
     """
     Context object passed between pipeline stages.
@@ -155,6 +162,29 @@ class PipelineContext:
         self.embeddings: list[list[float]] = []
         self.chunk_metadatas: list[dict[str, Any]] = []
         self.stage_ids: dict[str, int] = {}  # Map stage name to stage_id
+        # Source provenance (e.g. 'school_scraper' for heatmap ingest docs).
+        # Used to gate heatmap-specific behavior: doc-level classification,
+        # token-mode chunking, and the 3-small embedding override.
+        self.source_type: str | None = None
+        # Heatmap-ingest doc-level classification output (entity_type,
+        # doc_kind, meeting_date). Populated by step2_6_classify_document
+        # for school_scraper docs only.
+        self.entity_type: str | None = None
+        self.doc_kind: str | None = None
+        self.doc_meeting_date: str | None = None
+        # Heatmap V1 doc-level metadata (spec: meeting_doc_type / meeting_body).
+        # Populated by step2_6_classify_document for school_scraper docs only.
+        # Used by step5_store_vectors to denormalize onto the Qdrant payload.
+        self.meeting_doc_type: str | None = None
+        self.meeting_body: str | None = None
+        # Qdrant point IDs returned by step5_store_vectors (one per chunk).
+        # Used by step6_accumulate_batch to populate pending_classifications
+        # so the batch classifier can later set_payload on the right points.
+        self.qdrant_point_ids: list[str] = []
+        # When True, remaining pipeline stages short-circuit (e.g. out-of-range
+        # meeting_date after heatmap doc classification).
+        self.skip_remaining: bool = False
+        self.skip_reason: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for passing between tasks."""
@@ -173,6 +203,15 @@ class PipelineContext:
             "embeddings": self.embeddings,
             "chunk_metadatas": self.chunk_metadatas,
             "stage_ids": self.stage_ids,
+            "source_type": self.source_type,
+            "entity_type": self.entity_type,
+            "doc_kind": self.doc_kind,
+            "doc_meeting_date": self.doc_meeting_date,
+            "meeting_doc_type": self.meeting_doc_type,
+            "meeting_body": self.meeting_body,
+            "qdrant_point_ids": self.qdrant_point_ids,
+            "skip_remaining": self.skip_remaining,
+            "skip_reason": self.skip_reason,
         }
 
     @classmethod
@@ -194,13 +233,24 @@ class PipelineContext:
         ctx.embeddings = data.get("embeddings", [])
         ctx.chunk_metadatas = data.get("chunk_metadatas", [])
         ctx.stage_ids = data.get("stage_ids", {})
+        ctx.source_type = data.get("source_type")
+        ctx.entity_type = data.get("entity_type")
+        ctx.doc_kind = data.get("doc_kind")
+        ctx.doc_meeting_date = data.get("doc_meeting_date")
+        ctx.meeting_doc_type = data.get("meeting_doc_type")
+        ctx.meeting_body = data.get("meeting_body")
+        ctx.qdrant_point_ids = data.get("qdrant_point_ids", [])
+        ctx.skip_remaining = bool(data.get("skip_remaining", False))
+        ctx.skip_reason = data.get("skip_reason")
         return ctx
 
 
 # ==================== Stage 1: Download from S3 ====================
 
 
-@celery_app.task(name="pipeline.download_from_s3", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.download_from_s3", bind=True, max_retries=3, ignore_result=True
+)
 def step1_download_from_s3(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 1: Download document from S3 to temporary file.
@@ -290,8 +340,17 @@ async def _step1_download_async(ctx: PipelineContext, redis_tracker):
 
         ctx.tenant_id = document.tenant_id
         ctx.doc_uuid = document.doc_id
-        ctx.document_type = document.document_type
+        ctx.document_type = _normalize_document_extension(document.document_type)
         ctx.s3_url = document.s3_url
+        ctx.source_type = document.source_type
+
+        # Propagate source_metadata (e.g. school-scraper origin info) onto
+        # the pipeline context so it flows through to the Qdrant payload.
+        # Keys prefixed with "_" are reserved for pipeline-internal use.
+        if document.source_metadata:
+            for k, v in document.source_metadata.items():
+                if not k.startswith("_") and k not in ctx.doc_metadata:
+                    ctx.doc_metadata[k] = v
 
         # Download from S3
         s3_manager = S3Manager(
@@ -324,7 +383,9 @@ async def _step1_download_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 2: Extract Text ====================
 
 
-@celery_app.task(name="pipeline.extract_text", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.extract_text", bind=True, max_retries=3, ignore_result=True
+)
 def step2_extract_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 2: Extract text and metadata from document.
@@ -423,21 +484,46 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
         # Update stage to in_progress
         await _update_stage_status(db, stage_record.id, StageStatus.IN_PROGRESS)
 
-        # Extract text using appropriate processor
+        # Extract text using appropriate processor.
+        # Merge file metadata into existing doc_metadata — do NOT replace.
+        # Step 1 may already have copied Document.source_metadata
+        # (school_id, school_org_code, …); assigning over it used to wipe
+        # those ingest keys and leave Qdrant chunks without school_id
+        # (see Aub-JustEdTech/Just-edTech-BE#29).
         processor = ProcessorFactory.get_processor(ctx.temp_file_path)
-        ctx.doc_metadata = processor.extract_metadata(ctx.temp_file_path)
+        extracted = processor.extract_metadata(ctx.temp_file_path) or {}
+        for k, v in extracted.items():
+            if k not in ctx.doc_metadata:
+                ctx.doc_metadata[k] = v
 
         # For PDFs, preserve per-page text so chunking can attach page_number metadata.
+        # PDFProcessor may run OCR fallback when digital text is empty/sparse.
         if ctx.document_type == ".pdf" and hasattr(processor, "extract_text_by_page"):
             pages_text = processor.extract_text_by_page(ctx.temp_file_path)
             ctx.doc_metadata["_pdf_pages_text"] = pages_text
             # Keep extracted_text as a full string for summarization / logging.
             ctx.extracted_text = "\n\n".join([p for p in pages_text if p])
+            if getattr(processor, "ocr_used", False):
+                ctx.doc_metadata["_ocr_used"] = True
+                ctx.doc_metadata["_ocr_pages_count"] = getattr(
+                    processor, "ocr_pages_count", 0
+                )
         else:
             ctx.extracted_text = processor.extract_text(ctx.temp_file_path)
 
         if not ctx.extracted_text or len(ctx.extracted_text.strip()) == 0:
             raise ValueError("No text extracted from document")
+
+        # Persist document_quality when OCR recovered the body text.
+        if ctx.doc_metadata.get("_ocr_used"):
+            document = await db.get(Document, ctx.document_id)
+            if document is not None:
+                document.document_quality = "ocr"
+                await db.commit()
+                logger.info(
+                    f"[Doc {ctx.document_id}] document_quality=ocr "
+                    f"(pages={ctx.doc_metadata.get('_ocr_pages_count', 0)})"
+                )
 
         # For spreadsheets, pre-compute table-aware chunks (headers repeated per chunk).
         # Stored in doc_metadata so step3 can use them without re-opening the file.
@@ -457,6 +543,27 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
             logger.info(
                 f"[Doc {ctx.document_id}] Pre-computed {len(spreadsheet_chunks)} "
                 "spreadsheet chunks"
+            )
+
+        # For transcripts, pre-chunk on utterance boundaries so each chunk keeps
+        # exact start_ms/end_ms/speaker. Stored in doc_metadata so step3 can use
+        # them without re-reading the envelope.
+        if ctx.document_type == ".transcript" and hasattr(processor, "chunk_transcript"):
+            transcript_chunks = processor.chunk_transcript(ctx.temp_file_path)
+            ctx.doc_metadata["_transcript_pre_chunks"] = [
+                c["text"] for c in transcript_chunks
+            ]
+            ctx.doc_metadata["_transcript_chunk_meta"] = [
+                {
+                    "start_ms": c["start_ms"],
+                    "end_ms": c["end_ms"],
+                    "speaker": c["speaker"],
+                }
+                for c in transcript_chunks
+            ]
+            logger.info(
+                f"[Doc {ctx.document_id}] Pre-computed {len(transcript_chunks)} "
+                "transcript chunks"
             )
 
         # Extract images if enabled and PDF processor supports it
@@ -512,7 +619,9 @@ async def _step2_extract_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 2.5: Summarise Document ====================
 
 
-@celery_app.task(name="pipeline.summarize_document", bind=True, max_retries=1)
+@celery_app.task(
+    name="pipeline.summarize_document", bind=True, max_retries=1, ignore_result=True
+)
 def step2_5_summarize_document(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 2.5: Generate an LLM summary and index it in the summaries collection.
@@ -547,15 +656,32 @@ def step2_5_summarize_document(self, context_dict: dict[str, Any]) -> dict[str, 
 
         loop.run_until_complete(_step2_5_summarize_async(ctx, redis_tracker))
 
-        redis_tracker.update_stage(ctx.document_id, "summarizing", "completed")
-        redis_tracker.set_document_status(
-            ctx.document_id,
-            stage="summarizing",
-            status="completed",
-            progress=40.0,
-        )
-
-        logger.info(f"[Doc {ctx.document_id}] Stage 2.5 completed")
+        # If the pre-LLM year gate set skip_remaining, report the stage as
+        # skipped (not "completed") so the pipeline status reflects the early
+        # exit. The downstream stages all check ctx.skip_remaining and noop.
+        if ctx.skip_remaining:
+            redis_tracker.update_stage(
+                ctx.document_id, "summarizing", "skipped"
+            )
+            redis_tracker.set_document_status(
+                ctx.document_id,
+                stage="summarizing",
+                status="skipped",
+                progress=40.0,
+            )
+            logger.info(
+                f"[Doc {ctx.document_id}] Stage 2.5 skipped "
+                f"({ctx.skip_reason})"
+            )
+        else:
+            redis_tracker.update_stage(ctx.document_id, "summarizing", "completed")
+            redis_tracker.set_document_status(
+                ctx.document_id,
+                stage="summarizing",
+                status="completed",
+                progress=40.0,
+            )
+            logger.info(f"[Doc {ctx.document_id}] Stage 2.5 completed")
 
     except Exception as exc:
         # Non-fatal: log and continue the pipeline.
@@ -584,6 +710,51 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
         document = await db.get(Document, ctx.document_id)
         doc_name = document.name if document else ""
 
+        # Pre-LLM year gate (school_scraper docs only). If the document already
+        # has a meeting_date from the scraper and it falls outside
+        # SCHOOL_SCRAPER_ALLOWED_YEARS, skip summarization entirely — avoids
+        # the wasted LLM call + Qdrant summary write for documents that
+        # step2_6_classify_document would mark FAILED moments later anyway.
+        # This is the dominant cause of the "summaries without chunks" pattern
+        # originally reported (out-of-year docs paying for a summary before
+        # being discarded).
+        #
+        # Docs with meeting_date=None here still need the post-LLM gate in
+        # step2_6_classify_document, because their meeting_date is only known
+        # after classification — that gate stays in place as the authoritative
+        # fallback for the unknown-year case.
+        if (
+            ctx.source_type == "school_scraper"
+            and document is not None
+            and document.meeting_date is not None
+        ):
+            from app.services.web_scraper.year_filter import (
+                is_meeting_date_in_range,
+            )
+
+            if not is_meeting_date_in_range(document.meeting_date):
+                allowed = sorted(settings.SCHOOL_SCRAPER_ALLOWED_YEARS)
+                skip_reason = (
+                    f"meeting_date year={document.meeting_date.year} "
+                    f"not in {allowed} (pre-summarization gate)"
+                )
+                document.processing_status = ProcessingStatus.SKIPPED
+                document.error_message = f"skipped_year: {skip_reason}"
+                await _update_job_status(db, ctx.job_id, JobStatus.SKIPPED)
+                ctx.skip_remaining = True
+                ctx.skip_reason = skip_reason
+                logger.info(
+                    f"[Doc {ctx.document_id}] Skipping remaining pipeline stages "
+                    f"({skip_reason})"
+                )
+                await _update_stage_status(
+                    db,
+                    stage_record.id,
+                    StageStatus.COMPLETED,
+                    output_size=0,
+                )
+                return
+
         summarizer = DocumentSummarizer()
         await summarizer.summarize(
             text=ctx.extracted_text,
@@ -602,10 +773,173 @@ async def _step2_5_summarize_async(ctx: PipelineContext, redis_tracker) -> None:
         )
 
 
+# ==================== Stage 2.6: Doc-level classification (heatmap) ===========
+
+
+@celery_app.task(
+    name="pipeline.classify_document", bind=True, max_retries=2, ignore_result=True
+)
+def step2_6_classify_document(self, context_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Stage 2.6: Doc-level classification for heatmap-ingest documents.
+
+    Runs only when ctx.source_type == 'school_scraper'. Non-heatmap docs
+    skip this stage entirely (no LLM call, no DB writes).
+
+    Calls DocClassifier (one sync gpt-4o-mini call per doc) and writes the
+    resulting entity_type / doc_kind / meeting_date to the documents table
+    (the new columns added in the Phase 2 migration).
+
+    This stage is lenient: a failure logs a warning and lets the pipeline
+    continue — the doc just won't have doc-level labels, which only affects
+    the heatmap (not the RAG path).
+    """
+    ctx = PipelineContext.from_dict(context_dict)
+    redis_tracker = get_redis_tracker()
+    loop = get_event_loop()
+
+    # Feature gate: only school_scraper docs get classified.
+    if ctx.source_type != "school_scraper":
+        logger.debug(
+            f"[Doc {ctx.document_id}] Stage 2.6 skipped (source_type={ctx.source_type!r})"
+        )
+        return ctx.to_dict()
+
+    try:
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.6: Classifying document")
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="doc_classifying",
+            status="in_progress",
+            progress=42.0,
+        )
+        redis_tracker.update_stage(ctx.document_id, "doc_classifying", "in_progress")
+
+        loop.run_until_complete(_step2_6_classify_async(ctx, redis_tracker))
+
+        redis_tracker.update_stage(ctx.document_id, "doc_classifying", "completed")
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="doc_classifying",
+            status="completed",
+            progress=44.0,
+        )
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.6 completed")
+    except Exception as exc:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 2.6 (doc classify) failed – "
+            f"pipeline continues: {exc}",
+            exc_info=True,
+        )
+        redis_tracker.update_stage(ctx.document_id, "doc_classifying", "failed")
+        loop.run_until_complete(_mark_stage_failed(ctx, "doc_classifying", str(exc)))
+
+    return ctx.to_dict()
+
+
+async def _step2_6_classify_async(ctx: PipelineContext, redis_tracker) -> None:
+    """Async implementation of doc-level classification."""
+    from app.services.heatmap_ingest.doc_classifier import DocClassifier
+
+    async with AsyncSessionLocal() as db:
+        document = await db.get(Document, ctx.document_id)
+        if not document:
+            logger.warning(f"[Doc {ctx.document_id}] not found; skipping classification")
+            return
+
+        # Use the first ~6000 chars of extracted text for the LLM call.
+        first_page_text = (ctx.extracted_text or "")[:6000]
+        filename = document.name or ""
+
+        classifier = DocClassifier()
+        result = await classifier.classify(
+            filename=filename,
+            first_page_text=first_page_text,
+            source_metadata=document.source_metadata,
+        )
+
+        # Persist the new columns onto the documents row.
+        document.entity_type = result.entity_type
+        document.doc_kind = result.doc_kind
+        if result.meeting_date:
+            from datetime import date as _date
+
+            try:
+                document.meeting_date = _date.fromisoformat(result.meeting_date)
+            except ValueError:
+                logger.warning(
+                    f"[Doc {ctx.document_id}] LLM returned unparseable meeting_date "
+                    f"{result.meeting_date!r}; leaving null"
+                )
+
+        # V1 doc-level heatmap metadata (spec: meeting_doc_type / meeting_body).
+        document.meeting_doc_type = result.meeting_doc_type
+        document.meeting_body = result.meeting_body
+
+        # Derive school_year + quarter_month from the resolved meeting_date.
+        # If the LLM overrode meeting_date above, re-derive; otherwise the
+        # scraper-time values (set in school_scraper_tasks) are preserved.
+        if document.meeting_date:
+            from app.utils.school_calendar import (
+                derive_quarter_month,
+                derive_school_year,
+            )
+
+            document.school_year = derive_school_year(document.meeting_date)
+            document.quarter_month = derive_quarter_month(document.meeting_date)
+
+        # Post-classification year gate: unknown-URL docs can slip past the
+        # download-time filter. If meeting_date is missing or its calendar
+        # year is outside SCHOOL_SCRAPER_ALLOWED_YEARS, stop before chunking
+        # / embedding so out-of-range content never reaches the vector store.
+        from app.services.web_scraper.year_filter import is_meeting_date_in_range
+
+        if not is_meeting_date_in_range(document.meeting_date):
+            allowed = sorted(settings.SCHOOL_SCRAPER_ALLOWED_YEARS)
+            if document.meeting_date is None:
+                skip_reason = (
+                    "meeting_date missing after classification; "
+                    f"required year in {allowed}"
+                )
+            else:
+                skip_reason = (
+                    f"meeting_date year={document.meeting_date.year} "
+                    f"not in {allowed}"
+                )
+            document.processing_status = ProcessingStatus.SKIPPED
+            document.error_message = f"skipped_year: {skip_reason}"
+            await _update_job_status(db, ctx.job_id, JobStatus.SKIPPED)
+            ctx.skip_remaining = True
+            ctx.skip_reason = skip_reason
+            logger.info(
+                f"[Doc {ctx.document_id}] Skipping remaining pipeline stages "
+                f"({skip_reason})"
+            )
+
+        # Also stash on the context so step6_accumulate_batch can pass
+        # entity_type + meeting_date into the pending_classifications rows
+        # without re-querying the DB.
+        ctx.entity_type = result.entity_type
+        ctx.doc_kind = result.doc_kind
+        ctx.doc_meeting_date = result.meeting_date
+        ctx.meeting_doc_type = result.meeting_doc_type
+        ctx.meeting_body = result.meeting_body
+
+        await db.commit()
+        logger.info(
+            f"[Doc {ctx.document_id}] Classified as entity_type={result.entity_type}, "
+            f"doc_kind={result.doc_kind}, meeting_date={result.meeting_date}, "
+            f"meeting_doc_type={result.meeting_doc_type}, "
+            f"meeting_body={result.meeting_body}"
+        )
+
+
 # ==================== Stage 3: Chunk Text ====================
 
 
-@celery_app.task(name="pipeline.chunk_text", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.chunk_text", bind=True, max_retries=3, ignore_result=True
+)
 def step3_chunk_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 3: Chunk text into smaller pieces.
@@ -618,6 +952,15 @@ def step3_chunk_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
         Updated context dictionary with chunks
     """
     ctx = PipelineContext.from_dict(context_dict)
+    if ctx.skip_remaining:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 3 skipped ({ctx.skip_reason})"
+        )
+        if ctx.temp_file_path and os.path.exists(ctx.temp_file_path):
+            os.remove(ctx.temp_file_path)
+            ctx.temp_file_path = None
+        return ctx.to_dict()
+
     redis_tracker = get_redis_tracker()
     loop = get_event_loop()
 
@@ -649,6 +992,18 @@ def step3_chunk_text(self, context_dict: dict[str, Any]) -> dict[str, Any]:
             progress=60.0,
             metadata={"chunks_created": len(ctx.chunks)},
         )
+
+        # Drop extracted_text from the chain payload. Stage 3 is the last
+        # consumer: stage 4 (embed) reads ctx.chunks + ctx.chunk_metadatas,
+        # not extracted_text; stages 5 and 6 likewise. Carrying the full
+        # document text through Redis between every subsequent stage was a
+        # primary driver of the broker OOM incidents (a 100-school batch
+        # serializes ~hundreds of MB of text per chain hop). Set to empty
+        # string (not None) so to_dict()/from_dict() stay type-stable.
+        # On a stage-3 retry, Celery re-invokes this task with the
+        # previous stage's output (which still has extracted_text), so
+        # dropping here only affects the success path's downstream payload.
+        ctx.extracted_text = ""
 
         return ctx.to_dict()
 
@@ -704,8 +1059,38 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
             db, chatbot_config_obj.id
         )
 
-        # For PDFs, chunk per page to preserve page_number metadata.
-        if ctx.document_type == ".pdf" and "_pdf_pages_text" in ctx.doc_metadata:
+        # Chunking strategy, one branch per document class. Pre-computed
+        # chunks (transcript, spreadsheet) win over the generic text chunker
+        # because they carry per-chunk metadata the chunker cannot recover.
+        #
+        # Popped unconditionally and branched on TRUTHINESS, not key presence:
+        # an empty pre-chunk list means the specialised chunker produced
+        # nothing, and must fall through to the generic chunker rather than
+        # hard-failing the document at "No chunks generated".
+        transcript_chunks = ctx.doc_metadata.pop("_transcript_pre_chunks", None)
+        transcript_chunk_meta = ctx.doc_metadata.pop("_transcript_chunk_meta", None)
+        xlsx_chunks = ctx.doc_metadata.pop("_xlsx_pre_chunks", None)
+        xlsx_chunk_meta = ctx.doc_metadata.pop("_xlsx_chunk_meta", None)
+
+        if transcript_chunks:
+            # Transcripts are pre-chunked on utterance boundaries so each
+            # chunk keeps exact start_ms/end_ms/speaker for click-to-jump.
+            ctx.chunks = transcript_chunks
+            ctx.chunk_metadatas = transcript_chunk_meta or []
+            logger.info(
+                f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
+                "transcript chunks"
+            )
+        elif xlsx_chunks:
+            # Spreadsheets use table-aware chunks (headers repeated per chunk).
+            ctx.chunks = xlsx_chunks
+            ctx.chunk_metadatas = xlsx_chunk_meta or []
+            logger.info(
+                f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
+                "spreadsheet chunks"
+            )
+        elif ctx.document_type == ".pdf" and ctx.doc_metadata.get("_pdf_pages_text"):
+            # PDFs chunk per page to preserve page_number metadata.
             chunker = Chunker(
                 chunk_size=chunking_config["chunk_size"],
                 chunk_overlap=chunking_config["chunk_overlap"],
@@ -726,26 +1111,39 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
                 f"[Doc {ctx.document_id}] Chunked PDF into {len(ctx.chunks)} chunks "
                 f"across {len(pages_text)} pages"
             )
-        # For spreadsheets use pre-computed table-aware chunks (headers repeated).
-        # For all other document types use the standard text chunker.
-        if "_xlsx_pre_chunks" in ctx.doc_metadata:
-            ctx.chunks = ctx.doc_metadata.pop("_xlsx_pre_chunks")
-            ctx.chunk_metadatas = ctx.doc_metadata.pop("_xlsx_chunk_meta", [])
-            logger.info(
-                f"[Doc {ctx.document_id}] Using {len(ctx.chunks)} pre-computed "
-                "spreadsheet chunks"
-            )
         else:
-            # If we already chunked a PDF above, don't overwrite.
-            if not ctx.chunks:
-                chunker = Chunker(
-                    chunk_size=chunking_config["chunk_size"],
-                    chunk_overlap=chunking_config["chunk_overlap"],
-                )
-                ctx.chunks = chunker.chunk_text(ctx.extracted_text)
+            ctx.chunks = Chunker(
+                chunk_size=chunking_config["chunk_size"],
+                chunk_overlap=chunking_config["chunk_overlap"],
+            ).chunk_text(ctx.extracted_text)
+
+        if not ctx.chunks:
+            # A specialised chunker produced nothing (e.g. a PDF whose pages
+            # are all whitespace). Fall back to the generic chunker on the
+            # extracted text rather than failing a document we DO have text
+            # for. Per-chunk metadata is dropped, which is the correct
+            # trade-off: losing page numbers beats losing the document.
+            logger.warning(
+                f"[Doc {ctx.document_id}] Specialised chunker produced no chunks; "
+                "falling back to the generic text chunker"
+            )
+            ctx.chunks = Chunker(
+                chunk_size=chunking_config["chunk_size"],
+                chunk_overlap=chunking_config["chunk_overlap"],
+            ).chunk_text(ctx.extracted_text)
+            ctx.chunk_metadatas = []
 
         if not ctx.chunks:
             raise ValueError("No chunks generated from document")
+
+        # Drop large pre-chunk payloads from doc_metadata now that chunking
+        # is done. _pdf_pages_text (a list of full per-page text) is no
+        # longer needed by any downstream stage — chunks + chunk_metadatas
+        # carry everything step 4/5/6 need. Without this pop, the full
+        # document text is duplicated in the chain payload (once as chunks,
+        # once as _pdf_pages_text), roughly doubling Redis memory per PDF.
+        # (Transcript/xlsx pre-chunks were already popped above.)
+        ctx.doc_metadata.pop("_pdf_pages_text", None)
 
         # Update stage to completed
         await _update_stage_status(
@@ -757,10 +1155,136 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
         )
 
 
+# ==================== Stage 2.7: Contextual augmentation (heatmap) ===========
+
+
+@celery_app.task(
+    name="pipeline.contextualize_chunks", bind=True, max_retries=1, ignore_result=True
+)
+def step2_7_contextualize_chunks(self, context_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Stage 2.7: Per-chunk contextual augmentation for heatmap-ingest docs.
+
+    Runs only when ctx.source_type == 'school_scraper' AND the
+    HEATMAP_CONTEXT_ENABLED flag is set. Non-heatmap docs skip this stage
+    entirely (no LLM calls).
+
+    For each chunk, one LLM call produces a short situating context (per
+    Anthropic's "contextual retrieval" pattern) that is prepended to the
+    chunk text before embedding in step 4. Failures degrade gracefully:
+    a failed call leaves `situating_context` unset on that chunk and the
+    embedder falls back to raw chunk text.
+
+    The output is written onto `ctx.chunk_metadatas[i]["situating_context"]`.
+    """
+    ctx = PipelineContext.from_dict(context_dict)
+    if ctx.skip_remaining:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 2.7 skipped ({ctx.skip_reason})"
+        )
+        return ctx.to_dict()
+
+    redis_tracker = get_redis_tracker()
+    loop = get_event_loop()
+
+    # Feature gate: only school_scraper docs, only when enabled.
+    if ctx.source_type != "school_scraper":
+        logger.debug(
+            f"[Doc {ctx.document_id}] Stage 2.7 skipped (source_type={ctx.source_type!r})"
+        )
+        return ctx.to_dict()
+
+    if not getattr(settings, "HEATMAP_CONTEXT_ENABLED", True):
+        logger.debug(
+            f"[Doc {ctx.document_id}] Stage 2.7 skipped (HEATMAP_CONTEXT_ENABLED=False)"
+        )
+        return ctx.to_dict()
+
+    if not ctx.chunks:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 2.7 skipped (no chunks)"
+        )
+        return ctx.to_dict()
+
+    try:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 2.7: Contextualizing "
+            f"{len(ctx.chunks)} chunks"
+        )
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="contextualizing",
+            status="in_progress",
+            progress=46.0,
+        )
+        redis_tracker.update_stage(
+            ctx.document_id, "contextualizing", "in_progress"
+        )
+
+        loop.run_until_complete(_step2_7_contextualize_async(ctx, redis_tracker))
+
+        redis_tracker.update_stage(
+            ctx.document_id, "contextualizing", "completed"
+        )
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="contextualizing",
+            status="completed",
+            progress=48.0,
+        )
+        logger.info(f"[Doc {ctx.document_id}] Stage 2.7 completed")
+    except Exception as exc:
+        # Non-fatal: log and continue. Embedding falls back to raw chunk text.
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 2.7 (contextualize) failed – "
+            f"pipeline continues, chunks embed raw: {exc}",
+            exc_info=True,
+        )
+        redis_tracker.update_stage(
+            ctx.document_id, "contextualizing", "failed"
+        )
+        loop.run_until_complete(
+            _mark_stage_failed(ctx, "contextualizing", str(exc))
+        )
+
+    return ctx.to_dict()
+
+
+async def _step2_7_contextualize_async(
+    ctx: PipelineContext, redis_tracker
+) -> None:
+    """Async implementation: call Contextualizer and stash per-chunk contexts.
+
+    Like step 2.6 and step 6, this stage does not create a
+    DocumentProcessingStage DB row (those stages are heatmap-only and
+    tracked via Redis only). Adding a new ProcessingStage enum value would
+    require a PG enum migration; we defer that and stay consistent with
+    the existing heatmap stages.
+    """
+    from app.services.heatmap_ingest.contextualizer import Contextualizer
+
+    contextualizer = Contextualizer()
+    contexts = await contextualizer.augment_chunks(
+        full_doc_text=ctx.extracted_text or "",
+        chunks=ctx.chunks,
+    )
+
+    # Stash onto per-chunk metadata. If chunk_metadatas is shorter than
+    # chunks (shouldn't happen, but defensive), pad with empty dicts.
+    if len(ctx.chunk_metadatas) < len(ctx.chunks):
+        ctx.chunk_metadatas.extend(
+            [{} for _ in range(len(ctx.chunks) - len(ctx.chunk_metadatas))]
+        )
+    for i, context in enumerate(contexts):
+        ctx.chunk_metadatas[i]["situating_context"] = context
+
+
 # ==================== Stage 4: Generate Embeddings ====================
 
 
-@celery_app.task(name="pipeline.generate_embeddings", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.generate_embeddings", bind=True, max_retries=3, ignore_result=True
+)
 def step4_generate_embeddings(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 4: Generate embeddings for chunks.
@@ -773,6 +1297,12 @@ def step4_generate_embeddings(self, context_dict: dict[str, Any]) -> dict[str, A
         Updated context dictionary with embeddings
     """
     ctx = PipelineContext.from_dict(context_dict)
+    if ctx.skip_remaining:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 4 skipped ({ctx.skip_reason})"
+        )
+        return ctx.to_dict()
+
     redis_tracker = get_redis_tracker()
     loop = get_event_loop()
 
@@ -866,15 +1396,56 @@ async def _step4_embed_async(ctx: PipelineContext, redis_tracker):
                 f"Embedding model not configured for chatbot {chatbot_config_obj.id}"
             )
 
+        # Heatmap-ingest override: school_scraper docs use the configured
+        # heatmap embedding model (text-embedding-3-small by default)
+        # instead of the per-tenant chatbot config, so the heatmap vector
+        # space is uniform across tenants.
+        heatmap_model = getattr(settings, "HEATMAP_INGEST_EMBEDDING_MODEL", "")
+        if heatmap_model and ctx.source_type == "school_scraper":
+            embedding_model_name = heatmap_model
+            logger.info(
+                f"[Doc {ctx.document_id}] Heatmap override: using embedding "
+                f"model {embedding_model_name} for school_scraper doc"
+            )
+
         logger.info(
             f"[Doc {ctx.document_id}] Using embedding model: {embedding_model_name} "
             f"(provider: {embedding_config.get('provider', 'unknown')})"
         )
 
-        # Generate embeddings
+        # Generate embeddings. For school_scraper docs with contextual
+        # augmentation (step 2.7), embed the augmented text
+        # (`situating_context\n\n{chunk_text}`) so retrieval benefits from
+        # the situating context. The Qdrant payload `text` field (written
+        # in step 5) stays the raw chunk text — only the embedded vector
+        # uses the augmented text. Non-scraper paths and docs without a
+        # situating context embed raw chunk text unchanged.
         embedding_service = EmbeddingService()
+        texts_to_embed: list[str] = ctx.chunks
+        if ctx.source_type == "school_scraper" and ctx.chunk_metadatas:
+            augmented: list[str] = []
+            augmented_count = 0
+            for i, chunk_text in enumerate(ctx.chunks):
+                meta = (
+                    ctx.chunk_metadatas[i]
+                    if i < len(ctx.chunk_metadatas)
+                    else {}
+                )
+                context = (meta.get("situating_context") or "").strip()
+                if context:
+                    augmented.append(f"{context}\n\n{chunk_text}")
+                    augmented_count += 1
+                else:
+                    augmented.append(chunk_text)
+            if augmented_count:
+                logger.info(
+                    f"[Doc {ctx.document_id}] Embedding {augmented_count}/"
+                    f"{len(ctx.chunks)} chunks with situating context"
+                )
+            texts_to_embed = augmented
+
         ctx.embeddings = await embedding_service.generate_embeddings(
-            ctx.chunks,
+            texts_to_embed,
             model=embedding_model_name,
         )
 
@@ -896,7 +1467,9 @@ async def _step4_embed_async(ctx: PipelineContext, redis_tracker):
 # ==================== Stage 5: Store in Vector DB ====================
 
 
-@celery_app.task(name="pipeline.store_vectors", bind=True, max_retries=3)
+@celery_app.task(
+    name="pipeline.store_vectors", bind=True, max_retries=3, ignore_result=True
+)
 def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Stage 5: Store chunks and embeddings in vector database.
@@ -910,6 +1483,12 @@ def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
         Updated context dictionary (final)
     """
     ctx = PipelineContext.from_dict(context_dict)
+    if ctx.skip_remaining:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 5 skipped ({ctx.skip_reason})"
+        )
+        return ctx.to_dict()
+
     redis_tracker = get_redis_tracker()
     loop = get_event_loop()
 
@@ -944,6 +1523,18 @@ def step5_store_vectors(self, context_dict: dict[str, Any]) -> dict[str, Any]:
 
         # Remove from active jobs
         redis_tracker.remove_active_job(ctx.document_id)
+
+        # Drop embeddings + chunks from the chain payload. Stage 5 was the
+        # last consumer of ctx.embeddings (stage 6 reads qdrant_point_ids,
+        # chunk_metadatas, and chunks — chunks are still needed by stage 6
+        # for pending_classifications.chunk_text, so keep those). Embeddings
+        # are the single largest field per-document (1536-3072 floats × N
+        # chunks, JSON-serialized) and were driving broker OOM on the
+        # 100-school batch. Also drop chunk_metadatas now that stage 5 has
+        # already merged them into the Qdrant payload — stage 6 only reads
+        # page_number from them, which it can re-derive if needed; but to
+        # avoid breaking stage 6's page_number lookup, we keep chunk_metadatas.
+        ctx.embeddings = []
 
         # Cleanup temp file
         if ctx.temp_file_path and os.path.exists(ctx.temp_file_path):
@@ -992,16 +1583,113 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
         # Update stage to in_progress
         await _update_stage_status(db, stage_record.id, StageStatus.IN_PROGRESS)
 
+        # Delete-before-recreate: any prior Qdrant chunks and summary for
+        # this document are removed before writing new ones. This is the
+        # single point of truth — every reprocess path (manual retry
+        # endpoint, reprocess_failed_documents.py, the new stuck-document
+        # reconciliation beat task) funnels through here, so callers no
+        # longer need to remember to delete. Without this, reprocessing a
+        # document accumulates duplicate chunks/summaries (Qdrant upserts
+        # by fresh random point-id; add_* never dedupes), which is what
+        # produced tenant 2's inflated summary count.
+        vector_store = VectorStoreFactory.create(
+            VectorStoreType(settings.VECTOR_STORE_TYPE)
+        )
+        try:
+            await vector_store.delete_document(
+                document_id=ctx.doc_uuid, tenant_id=ctx.tenant_id
+            )
+        except Exception as exc:
+            # Delete failures are not fatal for a fresh document (no prior
+            # points to delete); log and continue. The subsequent upsert
+            # will surface real Qdrant connectivity issues.
+            logger.warning(
+                f"[Doc {ctx.document_id}] Pre-store chunk delete failed "
+                f"(continuing anyway): {exc}"
+            )
+        if hasattr(vector_store, "delete_document_summary"):
+            try:
+                await vector_store.delete_document_summary(
+                    ctx.document_id, ctx.tenant_id
+                )
+            except Exception as exc:
+                logger.warning(
+                    f"[Doc {ctx.document_id}] Pre-store summary delete failed "
+                    f"(continuing anyway): {exc}"
+                )
+
         # Prepare metadata for vector store.
         # Strip internal pipeline keys before spreading onto every chunk.
+        # Any key prefixed with "_" is internal (e.g. _pdf_pages_text,
+        # _xlsx_pre_chunks, _transcript_pre_chunks) and must never be copied
+        # onto every chunk payload.
         doc_meta_clean = {
             k: v
             for k, v in ctx.doc_metadata.items()
-            if not k.startswith("_xlsx_")
+            if not k.startswith("_")
         }
         document = await db.get(Document, ctx.document_id)
+
+        # Heatmap V1 doc-level denorm (spec: Heatmap Ingest Metadata v1).
+        # Pulled from the Document row (set in step 2.6 / by the scraper) and
+        # mirrored onto every chunk's Qdrant payload for payload pre-filtering
+        # and facet exploration. Empty/None for non-scraper docs.
+        heatmap_doc_meta: dict[str, Any] = {}
+        if ctx.source_type == "school_scraper":
+            source_meta = document.source_metadata or {}
+            # school_id must be an int so must_match={"school_id": school.id}
+            # filters (heatmap citations, reconcile) hit the KEYWORD index.
+            raw_school_id = source_meta.get("school_id")
+            school_id: int | None = None
+            if raw_school_id is not None:
+                try:
+                    school_id = int(raw_school_id)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        f"[Doc {ctx.document_id}] source_metadata.school_id="
+                        f"{raw_school_id!r} is not int-coercible; omitting "
+                        f"from Qdrant payload"
+                    )
+            heatmap_doc_meta = {
+                "state": document.state,
+                "district_name": document.district_name,
+                "school_year": document.school_year,
+                "quarter_month": document.quarter_month,
+                "meeting_doc_type": ctx.meeting_doc_type or document.meeting_doc_type,
+                "meeting_body": ctx.meeting_body or document.meeting_body,
+                "document_quality": document.document_quality or "clean_digital",
+                "meeting_date": (
+                    document.meeting_date.isoformat()
+                    if document.meeting_date
+                    else None
+                ),
+                # District identity for payload pre-filters (issue #29).
+                # source_metadata is the source of truth — documents has no
+                # school_id column.
+                "school_id": school_id,
+                "school_org_code": source_meta.get("school_org_code"),
+                "school_name": source_meta.get("school_name"),
+                # Original scraped media + discovery page (denormalized for
+                # citation hydrate without a DB round-trip).
+                "source_media_url": source_meta.get("source_media_url"),
+                "source_page_url": source_meta.get("source_page_url"),
+            }
+
+        # Keyword recall flags (spec A4). Deterministic lexical match
+        # against the per-state keyword list, independent of the LLM
+        # classifier. Computed here so they land in the payload at ingest.
+        keyword_flags_for_state: tuple[str, ...] = ()
+        if ctx.source_type == "school_scraper":
+            from app.services.heatmap_ingest.vocabulary_packs import (
+                get_keyword_flags_for_state,
+            )
+
+            keyword_flags_for_state = get_keyword_flags_for_state(
+                heatmap_doc_meta.get("state")
+            )
+
         metadatas = []
-        for i, _chunk_text in enumerate(ctx.chunks):
+        for i, chunk_text in enumerate(ctx.chunks):
             # Per-chunk metadata (e.g. sheet_name for spreadsheets) takes precedence.
             per_chunk = (
                 ctx.chunk_metadatas[i]
@@ -1018,18 +1706,50 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
                 **doc_meta_clean,
                 **per_chunk,
             }
+            # Heatmap V1: merge doc-level denorm + per-chunk keyword flags
+            # + placeholders for fields the batch classifier fills later.
+            # Placeholders ensure the payload shape is consistent so
+            # payload pre-filter queries don't have to handle missing keys.
+            if ctx.source_type == "school_scraper":
+                # Keyword flags for this chunk (deterministic, A4).
+                chunk_kw_flags: list[str] = []
+                if keyword_flags_for_state:
+                    from app.services.heatmap_ingest.vocabulary_packs import (
+                        match_keyword_flags,
+                    )
+
+                    chunk_kw_flags = match_keyword_flags(
+                        chunk_text, keyword_flags_for_state
+                    )
+                chunk_metadata.update(heatmap_doc_meta)
+                chunk_metadata["keyword_flags"] = chunk_kw_flags
+                # Placeholders for batch-classifier output (filled in step 6
+                # via set_payload). Pre-set so the payload shape is stable.
+                chunk_metadata.setdefault("topic_tags", [])
+                chunk_metadata.setdefault("action_stage", None)
+                chunk_metadata.setdefault("speakers", [])
+                chunk_metadata.setdefault("classified", False)
             metadatas.append(chunk_metadata)
 
-        # Store in vector database
-        vector_store = VectorStoreFactory.create(
-            VectorStoreType(settings.VECTOR_STORE_TYPE)
-        )
-        await vector_store.add_chunks(
-            document_id=ctx.doc_uuid,
-            chunks=ctx.chunks,
-            embeddings=ctx.embeddings,
-            metadatas=metadatas,
-        )
+        # Store in vector database. `vector_store` was created above for
+        # the delete-before-recreate step.
+        # Use add_chunks_returning_ids so we can capture the per-chunk
+        # Qdrant point IDs for the heatmap batch classifier (step6).
+        if hasattr(vector_store, "add_chunks_returning_ids"):
+            point_ids = await vector_store.add_chunks_returning_ids(
+                document_id=ctx.doc_uuid,
+                chunks=ctx.chunks,
+                embeddings=ctx.embeddings,
+                metadatas=metadatas,
+            )
+            ctx.qdrant_point_ids = point_ids
+        else:
+            await vector_store.add_chunks(
+                document_id=ctx.doc_uuid,
+                chunks=ctx.chunks,
+                embeddings=ctx.embeddings,
+                metadatas=metadatas,
+            )
 
         # Process images if available and if using Qdrant (for multimodal RAG)
         extracted_images = ctx.doc_metadata.get("extracted_images", [])
@@ -1070,6 +1790,130 @@ async def _step5_store_async(ctx: PipelineContext, redis_tracker):
             input_size=len(ctx.embeddings),
             output_size=len(ctx.chunks),
         )
+
+
+# ==================== Stage 6: Accumulate batch classification (heatmap) =====
+
+
+@celery_app.task(
+    name="pipeline.accumulate_batch", bind=True, max_retries=2, ignore_result=True
+)
+def step6_accumulate_batch(self, context_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Stage 6: Append this document's chunks to pending_classifications.
+
+    Runs only when ctx.source_type == 'school_scraper'. Non-heatmap docs
+    skip this stage entirely.
+
+    After step5_store_vectors stored chunks in Qdrant and captured the
+    per-chunk point IDs, this stage writes one row per chunk to
+    pending_classifications. The daily submit task pulls rows with
+    status='pending' and builds a Batch API JSONL for classification.
+    """
+    ctx = PipelineContext.from_dict(context_dict)
+    if ctx.skip_remaining:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 6 skipped ({ctx.skip_reason})"
+        )
+        return ctx.to_dict()
+
+    redis_tracker = get_redis_tracker()
+    loop = get_event_loop()
+
+    if ctx.source_type != "school_scraper":
+        logger.debug(
+            f"[Doc {ctx.document_id}] Stage 6 skipped (source_type={ctx.source_type!r})"
+        )
+        return ctx.to_dict()
+
+    if not ctx.qdrant_point_ids:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 6 skipped (no qdrant_point_ids "
+            f"captured in step5)"
+        )
+        return ctx.to_dict()
+
+    try:
+        logger.info(
+            f"[Doc {ctx.document_id}] Stage 6: Accumulating "
+            f"{len(ctx.qdrant_point_ids)} chunks for batch classification"
+        )
+        redis_tracker.set_document_status(
+            ctx.document_id,
+            stage="batch_accumulating",
+            status="in_progress",
+            progress=100.0,
+        )
+        redis_tracker.update_stage(
+            ctx.document_id, "batch_accumulating", "in_progress"
+        )
+
+        loop.run_until_complete(_step6_accumulate_async(ctx, redis_tracker))
+
+        redis_tracker.update_stage(
+            ctx.document_id, "batch_accumulating", "completed"
+        )
+        logger.info(f"[Doc {ctx.document_id}] Stage 6 completed")
+    except Exception as exc:
+        logger.warning(
+            f"[Doc {ctx.document_id}] Stage 6 (accumulate batch) failed – "
+            f"pipeline continues: {exc}",
+            exc_info=True,
+        )
+        redis_tracker.update_stage(
+            ctx.document_id, "batch_accumulating", "failed"
+        )
+        loop.run_until_complete(
+            _mark_stage_failed(ctx, "batch_accumulating", str(exc))
+        )
+
+    return ctx.to_dict()
+
+
+async def _step6_accumulate_async(ctx: PipelineContext, redis_tracker) -> None:
+    """Async implementation: insert pending_classifications rows."""
+    from app.models.pending_classification import PendingClassification
+
+    async with AsyncSessionLocal() as db:
+        # Parse the doc-level meeting_date (if any) into a date object.
+        meeting_date = None
+        if ctx.doc_meeting_date:
+            from datetime import date as _date
+
+            try:
+                meeting_date = _date.fromisoformat(ctx.doc_meeting_date)
+            except ValueError:
+                pass
+
+        rows: list[PendingClassification] = []
+        for i, (chunk_text, point_id) in enumerate(
+            zip(ctx.chunks, ctx.qdrant_point_ids)
+        ):
+            # Per-chunk page_number (if captured during chunking).
+            page_number = None
+            if ctx.chunk_metadatas and i < len(ctx.chunk_metadatas):
+                page_number = ctx.chunk_metadatas[i].get("page_number")
+
+            rows.append(
+                PendingClassification(
+                    document_id=ctx.document_id,
+                    qdrant_point_id=point_id,
+                    chunk_index=i,
+                    chunk_text=chunk_text,
+                    page_number=page_number,
+                    entity_type=ctx.entity_type,
+                    meeting_date=meeting_date,
+                    status="pending",
+                )
+            )
+
+        if rows:
+            db.add_all(rows)
+            await db.commit()
+            logger.info(
+                f"[Doc {ctx.document_id}] Inserted {len(rows)} "
+                "pending_classifications rows"
+            )
 
 
 # ==================== Image Processing ====================
@@ -1277,7 +2121,7 @@ async def _mark_stage_failed(
 # ==================== Pipeline Orchestrator ====================
 
 
-@celery_app.task(name="pipeline.process_document")
+@celery_app.task(name="pipeline.process_document", ignore_result=True)
 def process_document_pipeline(
     document_id: int, job_id: int, batch_id: int | None = None
 ) -> None:
@@ -1305,14 +2149,20 @@ def process_document_pipeline(
     # Create initial context
     ctx = PipelineContext(document_id, job_id, batch_id)
 
-    # Build the pipeline chain
+    # Build the pipeline chain.
+    # Step 2.7 (contextual augmentation) runs after chunking and before
+    # embedding so the embedder sees the augmented chunk text. It no-ops
+    # for non-school_scraper docs and when HEATMAP_CONTEXT_ENABLED=False.
     pipeline = chain(
         step1_download_from_s3.s(ctx.to_dict()),
         step2_extract_text.s(),
         step2_5_summarize_document.s(),
+        step2_6_classify_document.s(),
         step3_chunk_text.s(),
+        step2_7_contextualize_chunks.s(),
         step4_generate_embeddings.s(),
         step5_store_vectors.s(),
+        step6_accumulate_batch.s(),
     )
 
     # Execute the pipeline asynchronously

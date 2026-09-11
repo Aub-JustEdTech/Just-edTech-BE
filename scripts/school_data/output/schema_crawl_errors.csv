@@ -1,0 +1,30 @@
+org_code,name,website,reason,status_code,final_url
+35090000,Argosy Collegiate Charter School (District),https://www.argosycollegiate.org,HTTP 403 Forbidden,403,https://www.argosycollegiate.org
+00170000,Auburn,https://www.auburn.k12.ma.us,"TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.auburn.k12.ma.us'. (_ssl.c:1000)",,
+00230000,Bedford,https://bedfordps.org,TLS/SSL connection failed: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1000),,
+00500000,Canton,https://www.cantonma.org/,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+00710000,Danvers,https://danverspublicschools.org,HTTP 403 Forbidden,403,https://danverspublicschools.org
+01100000,Grafton,http://graftonps.org/Domain/11,HTTP 403 Forbidden,403,https://www.graftonps.org/domain/11/?dst=static
+01180000,Halifax,https://hes.slrsd.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+01210000,Hancock,https://www.hancockschool.org,"TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.hancockschool.org'. (_ssl.c:1000)",,
+01220000,Hanover,http://hanoverschools.org,HTTP 403 Forbidden,403,https://www.hanoverschools.org
+04530000,Holyoke Community Charter (District),https://www.hccs-sabis.net,"TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.hccs-sabis.net'. (_ssl.c:1000)",,
+01450000,Kingston,https://slrsd.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+01530000,Leominster,https://www.leominsterps.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+01580000,Littleton,https://www.littletonps.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+02170000,North Reading,http://www.north-reading.k12.ma.us/Pages/index,HTTP 404 Not Found,404,https://www.north-reading.k12.ma.us/Pages/index
+02200000,Norwood,https://www.norwood.k12.ma.us,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+02400000,Plympton,https://des.slrsd.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+02440000,Randolph,https://www.randolph.k12.ma.us,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+02530000,Rowe,https://Roweschool.com,DNS resolution failed,,
+02710000,Shrewsbury,https://schools.shrewsburyma.gov/,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+07600000,Silver Lake,https://slrsd.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+07630000,Somerset Berkley Regional School District,https://somersetschools.org,"TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'somersetschools.org'. (_ssl.c:1000)",,
+02740000,Somerville,https://www.somerville.k12.ma.us,"TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.somerville.k12.ma.us'. (_ssl.c:1000)",,
+02840000,Stoneham,https://www.stonehamschools.org,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,
+07730000,Triton,http://www.tritonschools.org,HTTP 403 Forbidden,403,http://www.tritonschools.org
+35050000,UP Academy Charter School of Dorchester (District),https://www.upacademydorchester.org,connection timeout,,
+03220000,West Boylston,https://www.wbschools.com/,HTTP 403 Forbidden,403,https://www.wbschools.com/
+03260000,Westford,http://westfordk12.us/Pages/index,HTTP 404 Not Found,404,https://www.westfordk12.us/Pages/index
+03300000,Weston,https://www.westonschools.org,HTTP 403 Forbidden,403,https://www.westonschools.org
+03470000,Woburn,https://www.woburnpublicschools.com,TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000),,

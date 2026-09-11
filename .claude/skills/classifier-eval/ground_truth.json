@@ -1,0 +1,1150 @@
+[
+  {
+    "custom_id": "126",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Rainbow Alliance is named only in a short bullet with no elaboration on LGBTQ rights/inclusion, so the substantiveness rule blocks a label."
+  },
+  {
+    "custom_id": "161",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "167",
+    "off_topic": false,
+    "topics": [
+      "sex_education"
+    ],
+    "topic_tags": [
+      {
+        "category": "sexed",
+        "subtopic": "comprehensive"
+      },
+      {
+        "category": "sexed",
+        "subtopic": "change.expansion"
+      }
+    ],
+    "confidence": "low",
+    "note": "Chunk clearly discusses Human Growth and Development/sexuality curriculum approval and implementation, but mapping the generic phrasing to specific closed-vocabulary subtopics required judgment."
+  },
+  {
+    "custom_id": "208",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "351",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "433",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Just a list of agenda/topic headings with no substantive discussion, similar to a repeated-header fragment."
+  },
+  {
+    "custom_id": "451",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "475",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "488",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Garbled OCR text resembling a signature/approval form with no discernible substantive content."
+  },
+  {
+    "custom_id": "509",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Citizen comments and a program presentation are routine committee business, not clearly organized advocacy directed at policy, so no advocacy tag applied."
+  },
+  {
+    "custom_id": "611",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "648",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "659",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "809",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1034",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1082",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Near-empty chunk containing only a document title with no substantive content."
+  },
+  {
+    "custom_id": "1188",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1281",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Chunk is meeting-open mechanics (roll call, pledge, request for floor) and cuts off before revealing any substantive content."
+  },
+  {
+    "custom_id": "1308",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1334",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Brief mention of a GSA club meeting is event-reporting rather than substantive discussion of LGBTQ student rights/inclusion."
+  },
+  {
+    "custom_id": "1349",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1422",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Text is heavily OCR-garbled but concerns special-education cost/placement data unrelated to any taxonomy topic."
+  },
+  {
+    "custom_id": "1424",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1547",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Content is meeting-flow procedure (moment of silence, motion to extend public comment time, roll-call vote tally) with no substantive topical discussion."
+  },
+  {
+    "custom_id": "1639",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1643",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1726",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1750",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "1886",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2043",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Mostly roster/call-to-order boilerplate but ends mid-sentence introducing a substantive statement about the superintendent search process."
+  },
+  {
+    "custom_id": "2080",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2329",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2434",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Proposed agenda lists named business items (e.g., Service Animals Policy vote) without elaboration; borderline between procedural agenda and substantive content."
+  },
+  {
+    "custom_id": "2531",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Standard nondiscrimination legal boilerplate mentioning sexual orientation/gender identity as one item in a list, plus meeting logistics; no substantive elaboration."
+  },
+  {
+    "custom_id": "2533",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2536",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2541",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2597",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2600",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2605",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2607",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Agenda listing of specific business items (a vote, executive session negotiation topics) is substantive but does not clearly match any off-topic boilerplate category or enum topic."
+  },
+  {
+    "custom_id": "2615",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2618",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2621",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2624",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2627",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2650",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Brief administrative language about translating and posting a policy; minimally substantive and not a clean match to any listed off-topic boilerplate category."
+  },
+  {
+    "custom_id": "2671",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2701",
+    "off_topic": false,
+    "topics": [
+      "parental_rights"
+    ],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Describes notifying parents about the district's anti-bullying curriculum, which fits the parental_rights definition, but the closed tag vocabulary ties parental-rights tags only to sexed/censorship subject matter, so no tag applies."
+  },
+  {
+    "custom_id": "2703",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2715",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "A blank investigation form containing only field labels/prompts with no filled-in substantive content, akin to a near-empty procedural chunk."
+  },
+  {
+    "custom_id": "2737",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2741",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [
+      {
+        "category": "governance",
+        "subtopic": "vote_recorded"
+      }
+    ],
+    "confidence": "low",
+    "note": "Chunk records a formal committee vote (interim superintendent hire), but the subject matter is unrelated to any enumerated substantive topic, so it is unclear whether the generic governance tag is meant to apply outside that context."
+  },
+  {
+    "custom_id": "2757",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2803",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2843",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2845",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Very sparse payroll/warrant-number listing borders on near-empty procedural content, though it does contain concrete business data."
+  },
+  {
+    "custom_id": "2906",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2912",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2983",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "2992",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3108",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3247",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Gender identity and sexual orientation appear only as items in a long list of protected classes within a civil-rights clause, with no elaboration."
+  },
+  {
+    "custom_id": "3267",
+    "off_topic": false,
+    "topics": [
+      "parental_rights"
+    ],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Fragment covers parent notification for emergency removal/due process, which fits the literal parental-rights definition but is generic discipline procedure rather than a curriculum-related rights issue."
+  },
+  {
+    "custom_id": "3295",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "FERPA records-access rights are parent/student rights but concern record inspection rather than notification or involvement in a student-related decision, so the fit to parental_rights is uncertain."
+  },
+  {
+    "custom_id": "3303",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Gender identity and sexual orientation appear only as items in a long list of protected classes within a harassment policy, with no elaboration."
+  },
+  {
+    "custom_id": "3314",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3352",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Describes sexual harassment/abuse conduct and reporting requirements rather than sex-education curriculum content, so it does not clearly meet the sex_education definition despite sexual subject matter."
+  },
+  {
+    "custom_id": "3359",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Describes discrimination-complaint filing procedure and agency contacts; substantive but doesn't match a specific TOPICS/TOPIC_TAGS entry, and borders on generic contact-info boilerplate."
+  },
+  {
+    "custom_id": "3365",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Non-discrimination notice lists gender identity and sexual orientation among many protected classes with no elaboration, so it reads as incidental rather than substantive discussion."
+  },
+  {
+    "custom_id": "3366",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Continuation of generic non-discrimination complaint procedure; gender identity/sexual orientation mentioned only incidentally within a protected-class list."
+  },
+  {
+    "custom_id": "3463",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3484",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3502",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3504",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3720",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3730",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "3828",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4121",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4223",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Just a section title/header with no substantive content, resembling a repeated-header type chunk."
+  },
+  {
+    "custom_id": "4249",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4328",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4332",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4353",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4399",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4447",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4525",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4717",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4750",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Mostly numeric financial-statement fragment with a section title and page label, borderline against the page-number/repeated-header off_topic category."
+  },
+  {
+    "custom_id": "4964",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "4984",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [
+      {
+        "category": "governance",
+        "subtopic": "vote_recorded"
+      }
+    ],
+    "confidence": "low",
+    "note": "A roll-call vote is clearly recorded, but the subject matter of the policies being removed from the handbook is not stated in the chunk."
+  },
+  {
+    "custom_id": "4996",
+    "off_topic": false,
+    "topics": [
+      "gender_identity",
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [
+      {
+        "category": "lgbtq",
+        "subtopic": "protections_adopted"
+      },
+      {
+        "category": "lgbtq",
+        "subtopic": "gender_identity_discussion"
+      }
+    ],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5000",
+    "off_topic": false,
+    "topics": [
+      "gender_identity",
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [
+      {
+        "category": "lgbtq",
+        "subtopic": "protections_adopted"
+      },
+      {
+        "category": "lgbtq",
+        "subtopic": "gender_identity_discussion"
+      }
+    ],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5001",
+    "off_topic": false,
+    "topics": [
+      "gender_identity",
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [
+      {
+        "category": "lgbtq",
+        "subtopic": "protections_adopted"
+      }
+    ],
+    "confidence": "low",
+    "note": "Chunk mostly covers compliance-officer designation and statute citations; the sexual orientation/gender identity mention is a carried-over list rather than fresh elaboration."
+  },
+  {
+    "custom_id": "5027",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5081",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5512",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5537",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5543",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5874",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "5918",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6054",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6113",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6293",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Raw financial/budget figures table with no narrative discussion; not in the explicit off_topic list but arguably borderline as 'substantive' content."
+  },
+  {
+    "custom_id": "6554",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6727",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6898",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6901",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6927",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "6999",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Describes parent/community listening sessions on grade realignment; could arguably touch parental_rights' 'involvement in student-related decisions' but reads as general community engagement rather than a rights-based policy matter."
+  },
+  {
+    "custom_id": "7080",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7147",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7224",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7229",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7236",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Chunk is largely routine vote records, minutes approval, and adjournment; borderline between substantive record and pure procedural boilerplate."
+  },
+  {
+    "custom_id": "7254",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7367",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7377",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7383",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "DEIB committee report mentions an inclusion-themed event and book study but doesn't substantively address LGBTQ-specific rights/topics required for lgbtq_student_rights."
+  },
+  {
+    "custom_id": "7394",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7483",
+    "off_topic": true,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7602",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [
+      {
+        "category": "governance",
+        "subtopic": "vote_recorded"
+      }
+    ],
+    "confidence": "low",
+    "note": "Contains a recorded roll-call vote (to suspend the meeting for a budget hearing), but it is a routine procedural motion with no substantive TOPICS match, so it's unclear if vote_recorded is meant to apply this broadly."
+  },
+  {
+    "custom_id": "7643",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "7831",
+    "off_topic": false,
+    "topics": [
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Substantive discussion of alleged mistreatment/transphobia toward trans and queer students fits lgbtq_student_rights, but no closed-vocabulary subtopic precisely captures general mistreatment rather than a specific policy area."
+  },
+  {
+    "custom_id": "7861",
+    "off_topic": false,
+    "topics": [
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Substantive discussion of alleged mistreatment/transphobia toward trans and queer students fits lgbtq_student_rights, but no closed-vocabulary subtopic precisely captures general mistreatment rather than a specific policy area."
+  },
+  {
+    "custom_id": "7978",
+    "off_topic": false,
+    "topics": [
+      "gender_identity",
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [
+      {
+        "category": "lgbtq",
+        "subtopic": "gender_identity_discussion"
+      }
+    ],
+    "confidence": "low",
+    "note": "Chunk blends a vague reference to policies on how students identify, DEI/inclusion commentary, and LGBTQ+ student PD training; unclear if both topics and the tag are all warranted from this truncated excerpt."
+  },
+  {
+    "custom_id": "7993",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "low",
+    "note": "Very short, purely procedural description of a hiring-process next step; borderline whether it counts as substantive content or falls closer to off_topic boilerplate."
+  },
+  {
+    "custom_id": "8017",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [
+      {
+        "category": "governance",
+        "subtopic": "member_position_stated"
+      }
+    ],
+    "confidence": "low",
+    "note": "Committee members state individual leanings on hiring candidates; ambiguous whether this counts as governance/member_position_stated given it concerns a personnel decision rather than a substantive policy topic."
+  },
+  {
+    "custom_id": "8031",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "8056",
+    "off_topic": false,
+    "topics": [
+      "gender_identity",
+      "lgbtq_student_rights"
+    ],
+    "topic_tags": [
+      {
+        "category": "lgbtq",
+        "subtopic": "gender_identity_discussion"
+      }
+    ],
+    "confidence": "low",
+    "note": "Chunk blends a vague reference to policies on how students identify, DEI/inclusion commentary, and LGBTQ+ student PD training; unclear if both topics and the tag are all warranted from this truncated excerpt."
+  },
+  {
+    "custom_id": "8069",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [],
+    "confidence": "high",
+    "note": ""
+  },
+  {
+    "custom_id": "8094",
+    "off_topic": false,
+    "topics": [],
+    "topic_tags": [
+      {
+        "category": "governance",
+        "subtopic": "member_position_stated"
+      }
+    ],
+    "confidence": "low",
+    "note": "Committee members state individual impressions/leanings on hiring candidates; ambiguous whether this counts as governance/member_position_stated given it concerns a personnel decision rather than a substantive policy topic."
+  }
+]

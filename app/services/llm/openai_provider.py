@@ -10,16 +10,22 @@ from typing import Any
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-from openai import AsyncOpenAI
 
 from app.core.config import settings
 from app.services.llm.base import BaseLLMProvider
+from app.services.llm.client import (
+    get_async_openai_client,
+    get_chat_openai_kwargs,
+    get_llm_api_key,
+    normalize_model_name,
+    strip_model_provider_prefix,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class OpenAIProvider(BaseLLMProvider):
-    """OpenAI LLM provider with model-specific parameter handling"""
+    """OpenAI-compatible LLM provider (OpenAI or OpenRouter)."""
 
     # Model families and their parameter mappings
     MODEL_CONFIGS = {
@@ -107,12 +113,9 @@ class OpenAIProvider(BaseLLMProvider):
     }
 
     def __init__(self):
-        if not settings.OPENAI_API_KEY:
-            raise ValueError(
-                "OPENAI_API_KEY is required but not provided. "
-                "Please set it in your environment variables or .env file."
-            )
-        logger.info("OpenAI provider initialized (LangChain ChatOpenAI)")
+        get_llm_api_key()
+        provider = settings.LLM_API_PROVIDER
+        logger.info("LLM provider initialized (%s via LangChain ChatOpenAI)", provider)
 
     def _to_langchain_messages(self, messages: list[dict[str, str]]) -> list[BaseMessage]:
         lc_messages: list[BaseMessage] = []
@@ -124,7 +127,7 @@ class OpenAIProvider(BaseLLMProvider):
             elif role == "assistant":
                 lc_messages.append(AIMessage(content=content))
             else:
-        # Treat unknown roles as user/human
+                # Treat unknown roles as user/human
                 lc_messages.append(HumanMessage(content=content))
         return lc_messages
 
@@ -137,7 +140,10 @@ class OpenAIProvider(BaseLLMProvider):
         model_config: dict[str, Any],
     ) -> ChatOpenAI:
         # Only pass parameters the model family supports, to avoid API errors.
-        kwargs: dict[str, Any] = {"model": model, "api_key": settings.OPENAI_API_KEY}
+        kwargs: dict[str, Any] = {
+            "model": normalize_model_name(model),
+            **get_chat_openai_kwargs(),
+        }
 
         if model_config.get("supports_temperature", True) and temperature is not None:
             kwargs["temperature"] = temperature
@@ -164,6 +170,7 @@ class OpenAIProvider(BaseLLMProvider):
         Returns:
             Model configuration dictionary
         """
+        model_name = strip_model_provider_prefix(model_name)
         # Check for exact match first
         if model_name in self.MODEL_CONFIGS:
             return self.MODEL_CONFIGS[model_name]
@@ -202,11 +209,12 @@ class OpenAIProvider(BaseLLMProvider):
             Standardized response dictionary
         """
         try:
+            api_model = normalize_model_name(model)
             # Get model-specific configuration
             model_config = self._get_model_config(model)
 
             logger.info(
-                f"Calling OpenAI with model={model}, max_tokens={max_tokens}"
+                f"Calling LLM API with model={api_model}, max_tokens={max_tokens}"
                 + (f", temperature={temperature}" if model_config["supports_temperature"] else "")
             )
 
@@ -224,7 +232,7 @@ class OpenAIProvider(BaseLLMProvider):
             # we bypass ChatOpenAI and call the OpenAI client directly
             # so we can control the payload and use max_completion_tokens.
             if model_config.get("max_tokens_param") is None:
-                client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+                client = get_async_openai_client()
                 openai_messages: list[dict[str, str]] = []
                 for msg in effective_messages:
                     role = (msg.get("role") or "user").lower()
@@ -236,17 +244,17 @@ class OpenAIProvider(BaseLLMProvider):
 
                 # Build request parameters, only including supported ones
                 request_params: dict[str, Any] = {
-                    "model": model,
+                    "model": api_model,
                     "messages": openai_messages,
                     "max_completion_tokens": max_tokens,
                 }
-                
+
                 if model_config["supports_temperature"]:
                     request_params["temperature"] = temperature
-                
+
                 if timeout_s is not None:
                     request_params["timeout"] = timeout_s
-                
+
                 response = await client.chat.completions.create(**request_params)
 
                 choice = response.choices[0]
@@ -265,7 +273,7 @@ class OpenAIProvider(BaseLLMProvider):
 
                 result = {
                     "content": content,
-                    "model": model,
+                    "model": api_model,
                     "usage": {
                         "prompt_tokens": prompt_tokens or 0,
                         "completion_tokens": completion_tokens or 0,
@@ -281,7 +289,7 @@ class OpenAIProvider(BaseLLMProvider):
 
             # Default path: use LangChain's ChatOpenAI wrapper.
             chat = self._build_chat_model(
-                model=model,
+                model=api_model,
                 temperature=temperature if model_config["supports_temperature"] else None,
                 max_tokens=max_tokens,
                 timeout_s=timeout_s,
@@ -305,7 +313,7 @@ class OpenAIProvider(BaseLLMProvider):
 
             result = {
                 "content": ai_msg.content,
-                "model": model,
+                "model": api_model,
                 "usage": {
                     "prompt_tokens": prompt_tokens or 0,
                     "completion_tokens": completion_tokens or 0,
@@ -333,7 +341,8 @@ class OpenAIProvider(BaseLLMProvider):
         }
 
     def validate_model(self, model_name: str) -> bool:
-        """Validate if model is supported by OpenAI"""
+        """Validate if model is supported."""
+        model_name = strip_model_provider_prefix(model_name)
         # Check if it's a known model or starts with a known prefix
         for model_prefix in self.MODEL_CONFIGS.keys():
             if model_name.startswith(model_prefix):

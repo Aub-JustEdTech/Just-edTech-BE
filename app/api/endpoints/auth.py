@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.crud.api_keys import api_keys
 from app.crud.signups import signup
+from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.db.redis_connector import redis_manager
 from app.models.tenants import Tenant
@@ -34,6 +35,7 @@ from app.schemas.users import (
     VerifyResetTokenRequest,
 )
 from app.services.auth_status_service import auth_status_service
+from app.services.chatbot_config_service import chatbot_config_service
 from app.services.email_verification_service import email_verification_service
 from app.services.invitation_service import invitation_service
 from app.services.password_reset_service import password_reset_service
@@ -79,26 +81,38 @@ async def register(signup_req: SignupRequest, db: AsyncSession = Depends(get_db)
             )
 
         pwd_hash = get_password_hash(signup_req.password)
-        # Enforce tenant_user role
         role_id_to_use = data["role_id"]
         if not role_id_to_use:
-            await db.execute(select(Tenant).where(Tenant.id == data["tenant_id"]))
-            # Although tenant fetch isn't strictly needed, keep select imported context consistent
             from app.models.roles import Role
 
             res = await db.execute(select(Role.id).where(Role.name == "tenant_user"))
             role_id_to_use = res.scalar_one_or_none() or settings.DEFAULT_TENANT_USER_ID
+
+        invite_tenant_id = data["tenant_id"]  # None for tenant_admin invites
+
         new_user = UserModel(
             email=normalized_email,
             name=signup_req.name,
             password_hash=pwd_hash,
-            tenant_id=data["tenant_id"],
+            tenant_id=invite_tenant_id,
             role_id=role_id_to_use,
             email_verified=True,
         )
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
+
+        # Grant tenant access for the invite flow
+        if role_id_to_use == settings.DEFAULT_ROLE_ID:
+            # tenant_admin: access to all existing tenants
+            await user_tenant_access.grant_all_existing_tenants_to_user(
+                db, user_id=new_user.id
+            )
+        elif invite_tenant_id is not None:
+            # tenant_user: explicit access to the assigned tenant
+            await user_tenant_access.add_access(
+                db, user_id=new_user.id, tenant_id=invite_tenant_id
+            )
 
         # Clean up any existing signup record and related Redis verification data
         await signup.delete_by_email(db, normalized_email)
@@ -235,6 +249,10 @@ async def setup_tenant(payload: SetupTenantRequest, db: AsyncSession = Depends(g
     tenant = Tenant(name=payload.tenant_name, domain=domain)
     db.add(tenant)
     await db.flush()
+
+    await chatbot_config_service.provision_default_chatbot(
+        db, tenant_id=tenant.id, tenant_name=payload.tenant_name
+    )
 
     # If logo provided, upload to S3 and store URL
     if payload.logo_b64:

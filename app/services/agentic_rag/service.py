@@ -100,7 +100,7 @@ class AgenticRAGService:
                 "tenant_id": tenant_id,
                 "chatbot_config_id": chatbot_config_id,
             },
-            "recursion_limit": settings.AGENT_MAX_ITERATIONS * 3,
+            "recursion_limit": settings.AGENT_MAX_ITERATIONS * 4,
         }
 
         try:
