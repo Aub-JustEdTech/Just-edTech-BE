@@ -549,6 +549,38 @@ async def _create_document_and_enqueue(
             "s3_key_raw": s3_key_raw,
         },
     )
+    # Check if a Document with this doc_id already exists (from a previous
+    # ingest run). The scraped_media dedup catches new rows, but a Document
+    # from a prior run may still exist. Without this check, db.flush() raises
+    # IntegrityError on the duplicate, leaving the session in a broken
+    # PendingRollbackError state that crashes every subsequent DB op in the
+    # same session -- including the sweep's record_scrape_result calls.
+    from sqlalchemy import select as _select
+
+    existing_doc = (
+        await db.execute(
+            _select(Document).where(Document.doc_id == doc.doc_id)
+        )
+    ).scalar_one_or_none()
+    if existing_doc is not None:
+        logger.info(
+            "Document with doc_id=%s already exists (doc=%s); "
+            "marking scraped_media %s as skipped_duplicate",
+            doc.doc_id,
+            existing_doc.id,
+            sm.id,
+        )
+        await db.rollback()
+        from app.crud.schools import update_scraped_media as _update_sm
+
+        await _update_sm(
+            db,
+            sm.id,
+            status="skipped_duplicate",
+            document_id=existing_doc.id,
+        )
+        return existing_doc.id
+
     db.add(doc)
     await db.flush()
 
