@@ -23,12 +23,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio  # noqa: F401 — ensures plugin is loaded
 
+from app.services.web_scraper.domain_utils import (
+    host_allowed,
+    is_same_organization,
+    registrable_domain,
+)
 from app.services.web_scraper.page_schemas import (
     DataPageInfo,
     PossibleRelevantPage,
     RelevantPage,
 )
 from app.services.web_scraper.schema_driven_crawler import (
+    FetchAttempt,
     FetchMeta,
     SchemaDrivenCrawler,
 )
@@ -38,13 +44,13 @@ from app.services.web_scraper.schema_driven_crawler import (
 # ---------------------------------------------------------------------------
 
 HOMEPAGE_HTML = textwrap.dedent("""\
-    <html><head><title>District Home</title></head>
-    <body>
-      <nav>
-        <a href="/school-committee">School Committee</a>
-        <a href="/staff">Staff Directory</a>
-      </nav>
-    </body></html>
+<html><head><title>District Home</title></head>
+<body>
+  <nav>
+    <a href="/about">About Us</a>
+    <a href="/staff">Staff Directory</a>
+  </nav>
+</body></html>
 """)
 
 MEETING_PAGE_HTML = textwrap.dedent("""\
@@ -447,3 +453,326 @@ async def test_empty_markdown_records_html_length():
     assert detail.url == "https://example.com/login"
     assert detail.html_length == len(emptyish)
     assert "html_len=" in result.errors[0]
+
+
+# ---------------------------------------------------------------------------
+# Domain helpers (registrable_domain / is_same_organization / host_allowed)
+# ---------------------------------------------------------------------------
+
+
+def test_registrable_domain_naive_etld_plus_one():
+    assert registrable_domain("go.svusd.org") == "svusd.org"
+    assert registrable_domain("www.district.org") == "district.org"
+    assert registrable_domain("district.org") == "district.org"
+    assert registrable_domain("example.com") == "example.com"
+    assert registrable_domain("") == ""
+
+
+def test_is_same_organization_subdomain_match():
+    # Subdomain vanity vs apex: same organization.
+    assert is_same_organization("go.district.org", "www.district.org") is True
+    # Different registrable domains: not same organization.
+    assert is_same_organization("district.org", "facebook.com") is False
+    # Equal hosts: same.
+    assert is_same_organization("district.org", "district.org") is True
+    # Empty: not same.
+    assert is_same_organization("", "district.org") is False
+
+
+def test_host_allowed_seed_subdomain_and_allowlist():
+    seed = "www.district.org"
+    assert host_allowed("www.district.org", seed_host=seed) is True
+    # Same registrable domain, different subdomain.
+    assert host_allowed("go.district.org", seed_host=seed) is True
+    # Foreign domain.
+    assert host_allowed("facebook.com", seed_host=seed) is False
+    # Redirect-discovered host added to the allowlist.
+    allowed = {"www.district.org", "realdistrict.com"}
+    assert host_allowed("realdistrict.com", seed_host=seed, allowed_hosts=allowed) is True
+    assert host_allowed("other.com", seed_host=seed, allowed_hosts=allowed) is False
+
+
+# ---------------------------------------------------------------------------
+# Same-organization subdomain hops
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_same_org_subdomain_link_is_followed():
+    """A candidate link to a different subdomain of the same org is visited."""
+    crawler = SchemaDrivenCrawler(max_pages=5, confidence_threshold=0.4)
+    page1 = _page(
+        "https://www.district.org/",
+        has_data=False,
+        candidates=[
+            ("https://go.district.org/minutes", 0.9),  # same org, different subdomain
+        ],
+    )
+    page2 = _page("https://go.district.org/minutes")
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=[page1, page2])
+    crawler.classifier = mock_classifier
+
+    fetched: list[str] = []
+
+    async def fake_fetch(client, url):
+        fetched.append(url)
+        return HOMEPAGE_HTML, _OK_META
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        await crawler.crawl("https://www.district.org")
+
+    assert "https://go.district.org/minutes" in fetched
+
+
+@pytest.mark.asyncio
+async def test_foreign_domain_still_rejected():
+    """A candidate link to an unrelated foreign domain is NOT visited."""
+    crawler = SchemaDrivenCrawler(max_pages=5, confidence_threshold=0.4)
+    page1 = _page(
+        "https://www.district.org/",
+        has_data=False,
+        candidates=[
+            ("https://facebook.com/minutes", 0.9),  # foreign domain
+            ("https://www.district.org/ok", 0.9),
+        ],
+    )
+    page2 = _page("https://www.district.org/ok")
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=[page1, page2])
+    crawler.classifier = mock_classifier
+
+    fetched: list[str] = []
+
+    async def fake_fetch(client, url):
+        fetched.append(url)
+        return HOMEPAGE_HTML, _OK_META
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        await crawler.crawl("https://www.district.org")
+
+    assert "https://facebook.com/minutes" not in fetched
+    assert "https://www.district.org/ok" in fetched
+
+
+# ---------------------------------------------------------------------------
+# Redirect final host allowlisting
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_redirect_final_host_added_to_allowed_hosts():
+    """A seed that 301-redirects to a new host allows that host for the crawl."""
+    crawler = SchemaDrivenCrawler(max_pages=5, confidence_threshold=0.4)
+    # Homepage on the redirect-target host suggests a meeting page on the
+    # same (redirect-target) host — both should be fetched even though the
+    # seed host differs.
+    page_home = _page(
+        "https://realdistrict.com/",
+        has_data=False,
+        candidates=[("https://realdistrict.com/minutes", 0.9)],
+    )
+    page_minutes = _page("https://realdistrict.com/minutes")
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=[page_home, page_minutes])
+    crawler.classifier = mock_classifier
+
+    fetched: list[str] = []
+
+    async def fake_fetch(client, url):
+        fetched.append(url)
+        # First fetch (the seed) reports a final_url on a different host.
+        if url == "https://schoolblocks.com" or url == "https://schoolblocks.com/":
+            meta = FetchMeta(stage="httpx", http_status=200, final_url="https://realdistrict.com")
+        else:
+            meta = _OK_META
+        return HOMEPAGE_HTML, meta
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://schoolblocks.com")
+
+    assert "https://realdistrict.com/minutes" in fetched
+    assert result.pages_crawled >= 2
+
+
+# ---------------------------------------------------------------------------
+# Hub-page HTML link harvest
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_hub_harvest_enqueues_meeting_related_links_when_llm_gave_none():
+    """A has_data_links hub with no LLM candidates triggers HTML link harvest."""
+    crawler = SchemaDrivenCrawler(max_pages=5, confidence_threshold=0.4)
+    # Hub page: has_data_links=True, no candidates from the LLM.
+    hub = _page(
+        "https://example.com/school-committee",
+        has_data=False,
+        has_data_links=True,
+        candidates=[],  # LLM gave nothing
+    )
+    minutes = _page("https://example.com/agendas/2025")
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=[hub, minutes])
+    crawler.classifier = mock_classifier
+
+    hub_html = textwrap.dedent("""\
+        <html><body>
+          <a href="/agendas/2025">2025 Agendas</a>
+          <a href="/staff">Staff Directory</a>
+          <a href="/news">News</a>
+        </body></html>
+    """)
+
+    fetch_map = {
+        "https://example.com/school-committee": hub_html,
+        "https://example.com/agendas/2025": MEETING_PAGE_HTML,
+    }
+
+    async def fake_fetch(client, url):
+        return fetch_map.get(url.rstrip("/")), _OK_META
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://example.com/school-committee")
+
+    # /agendas/2025 (strong keyword match) must be harvested + fetched.
+    assert "https://example.com/agendas/2025" in list(fetch_map)
+    assert any(
+        p.url == "https://example.com/agendas/2025" for p in result.visited_pages
+    )
+    # Non-meeting links must not be harvested.
+    assert all(
+        "https://example.com/staff" not in (p.url or "") and
+        "https://example.com/news" not in (p.url or "")
+        for p in result.visited_pages
+    )
+
+
+@pytest.mark.asyncio
+async def test_hub_harvest_dedupes_against_llm_candidates():
+    """When the LLM returns enqueueable candidates, the harvest still fires
+    but dedupes against URLs already in the frontier — no double-enqueue.
+    """
+    crawler = SchemaDrivenCrawler(max_pages=5, confidence_threshold=0.4)
+    hub = _page(
+        "https://example.com/school-committee",
+        has_data=False,
+        has_data_links=True,
+        candidates=[("https://example.com/minutes", 0.9)],  # LLM gave one
+    )
+    minutes = _page("https://example.com/minutes")
+    mock_classifier = MagicMock()
+    mock_classifier.classify = AsyncMock(side_effect=[hub, minutes])
+    crawler.classifier = mock_classifier
+
+    hub_html = textwrap.dedent("""\
+        <html><body>
+          <a href="/agendas/2025">2025 Agendas</a>
+          <a href="/minutes">Minutes</a>
+        </body></html>
+    """)
+
+    fetched: list[str] = []
+
+    async def fake_fetch(client, url):
+        fetched.append(url)
+        if "school-committee" in url:
+            return hub_html, _OK_META
+        return MEETING_PAGE_HTML, _OK_META
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://example.com/school-committee")
+
+    # LLM's /minutes candidate is fetched; harvested /agendas/2025 (strong
+    # keyword, not in LLM candidates) is ALSO fetched — the harvest adds
+    # complementary links, deduped against the LLM candidate (/minutes is
+    # already in the frontier, so it's not double-enqueued).
+    assert "https://example.com/minutes" in fetched
+    assert "https://example.com/agendas/2025" in fetched
+    # /minutes must appear only once in visited (not double-fetched).
+    assert sum(1 for p in result.visited_pages if p.url == "https://example.com/minutes") == 1
+
+
+# ---------------------------------------------------------------------------
+# HTTP/1.1 fallback on protocol errors
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_http1_fallback_fires_on_http2_protocol_error():
+    """When a Playwright fetch fails with ERR_HTTP2_PROTOCOL_ERROR, the HTTP/1.1
+    Chromium fallback is tried and its result is returned.
+    """
+    crawler = SchemaDrivenCrawler(max_pages=3, confidence_threshold=0.4)
+    crawler.classifier = MagicMock()
+    crawler.classifier.classify = AsyncMock(return_value=_page("https://example.com"))
+
+    call_log: list[str] = []
+
+    http2_attempt = FetchAttempt(
+        exception_type="NetError",
+        exception_message="net::ERR_HTTP2_PROTOCOL_ERROR",
+    )
+    http1_attempt = FetchAttempt(html=HOMEPAGE_HTML, http_status=200, final_url="https://example.com")
+
+    async def fake_fetch(client, url):
+        return HOMEPAGE_HTML, _OK_META
+
+    async def fake_ensure_playwright():
+        crawler._browser = object()  # mark as launched so _fetch_text_rendered is callable
+
+    async def fake_ensure_http1_playwright():
+        crawler._http1_browser = object()
+        return crawler._http1_browser
+
+    async def fake_rendered(url, *, browser=None):
+        call_log.append("http1" if browser is crawler._http1_browser else "default")
+        if browser is crawler._http1_browser:
+            return http1_attempt
+        return http2_attempt
+
+    with patch.object(crawler, "_fetch_httpx", return_value=FetchAttempt(
+        exception_type="RemoteProtocolError", exception_message="http2 protocol error"
+    )), \
+         patch.object(crawler, "_ensure_playwright", side_effect=fake_ensure_playwright), \
+         patch.object(crawler, "_ensure_http1_playwright", side_effect=fake_ensure_http1_playwright), \
+         patch.object(crawler, "_fetch_text_rendered", side_effect=fake_rendered):
+        result = await crawler.crawl("https://example.com")
+
+    assert "http1" in call_log
+    assert result.pages_crawled == 1
+    assert len(result.data_pages) == 1
+
+
+@pytest.mark.asyncio
+async def test_http1_fallback_not_fired_on_generic_404():
+    """A genuine HTTP 404 does NOT trigger the HTTP/1.1 fallback."""
+    crawler = SchemaDrivenCrawler(max_pages=3, confidence_threshold=0.4)
+    crawler.classifier = MagicMock()
+    crawler.classifier.classify = AsyncMock()
+
+    http1_called = False
+
+    async def fake_fetch(client, url):
+        return None, FetchMeta(stage="httpx", http_status=404)
+
+    async def fake_ensure_http1_playwright():
+        nonlocal http1_called
+        http1_called = True
+        return object()
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_ensure_http1_playwright", side_effect=fake_ensure_http1_playwright), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]):
+        result = await crawler.crawl("https://example.com")
+
+    assert http1_called is False
+    assert result.pages_crawled == 1
+    assert len(result.error_details) == 1
+    assert result.error_details[0].http_status == 404
+
