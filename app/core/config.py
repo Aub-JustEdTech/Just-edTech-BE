@@ -356,7 +356,7 @@ class Settings(BaseSettings):
     # results. Switching back to "keyword" is a zero-code rollback.
     SCHOOL_SCRAPER_RANKING_MODE: str = "both"  # keyword | llm | both
     # Schema-driven crawler budgets (only consulted when RANKING_MODE in {llm, both}).
-    SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 15
+    SCHOOL_SCRAPER_LLM_MAX_PAGES: int = 20
     # Maximum hop depth the schema-driven crawler will descend from the seed
     # before depth_penalty makes further links unattractive. Matches the
     # Layer-2 crawl_depth ceiling so discovery and media scrape reach the same

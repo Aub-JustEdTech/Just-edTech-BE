@@ -34,6 +34,7 @@ from app.services.web_scraper._discovery_helpers import (
     html_needs_playwright,
 )
 from app.services.web_scraper.board_platforms import is_board_platform_url
+from app.services.web_scraper.domain_utils import host_allowed, url_host
 from app.services.web_scraper.markdown_converter import MarkdownConverter
 from app.services.web_scraper.page_classifier import PageClassifier
 from app.services.web_scraper.page_schemas import RelevantPage
@@ -42,6 +43,7 @@ from app.services.web_scraper.url_keywords import (
     _STRONG_KEYWORDS as _MOM_KEYWORDS_STRONG,
     _WEAK_KEYWORDS as _MOM_KEYWORDS_WEAK,
     _WEAK_MIN_HITS,
+    is_meeting_related_url,
 )
 
 if TYPE_CHECKING:
@@ -120,6 +122,11 @@ class FetchAttempt:
     http_status: int | None = None
     exception_type: str | None = None
     exception_message: str | None = None
+    # Final URL after following redirects (httpx ``resp.url`` / Playwright
+    # ``page.url``). ``None`` when no response was received. Used by the
+    # crawl loop to discover that a SchoolBlocks vanity seed redirected to a
+    # different host, so that host can be added to the per-crawl allowlist.
+    final_url: str | None = None
 
 
 @dataclass
@@ -131,6 +138,11 @@ class FetchMeta:
     exception_type: str | None = None
     exception_message: str | None = None
     stages_tried: list[str] = field(default_factory=list)
+    # Final URL after redirects of the *successful* attempt in the ladder.
+    # Used by the crawl loop to discover that a seed redirected to a new host
+    # (e.g. SchoolBlocks vanity -> real district domain) and allowlist that
+    # host for the rest of the crawl.
+    final_url: str | None = None
 
     def record_attempt(self, stage: str, attempt: FetchAttempt) -> None:
         """Update meta from the latest attempt (keeps last failure details)."""
@@ -145,6 +157,17 @@ class FetchMeta:
             # Successful body clears prior exception noise from earlier stages.
             self.exception_type = None
             self.exception_message = None
+            # Capture the successful attempt's final URL (may differ from the
+            # requested URL after redirects). Cleared on a later failed
+            # attempt below.
+            if attempt.final_url:
+                self.final_url = attempt.final_url
+        # Don't let a later failed attempt overwrite a previously captured
+        # successful final_url — but if this attempt ALSO has a final_url
+        # (e.g. httpx returned a non-200 with a redirect chain), prefer it
+        # over the prior value so operators see the most recent redirect.
+        if attempt.final_url and attempt.html is None:
+            self.final_url = attempt.final_url
 
 
 @dataclass
@@ -274,15 +297,36 @@ class SchemaDrivenCrawler:
         # launch Chromium and re-fetch with full JS execution.
         self._pw: "Playwright | None" = None
         self._browser: "Browser | None" = None
+        # Separate Chromium instance launched with --disable-http2 for the
+        # HTTP/1.1 fallback path. Some school servers misconfigure HTTP/2 and
+        # fail every HTTP/2 request with ERR_HTTP2_PROTOCOL_ERROR; the default
+        # Chromium speaks HTTP/2 by default, so a second browser with HTTP/2
+        # disabled is the only way Playwright can reach them. Lazily launched
+        # so the common case (no protocol errors) pays no extra browser cost.
+        self._http1_browser: "Browser | None" = None
 
     @staticmethod
-    def _chromium_launch_kwargs() -> dict:
-        """Build kwargs for chromium.launch() (system Chromium in Docker)."""
+    def _chromium_launch_kwargs(*, disable_http2: bool = False) -> dict:
+        """Build kwargs for chromium.launch() (system Chromium in Docker).
+
+        ``disable_http2=True`` adds the ``--disable-http2`` Chromium arg used
+        by the HTTP/1.1 fallback browser — needed for servers that mis-Negotiate
+        HTTP/2 and reject every HTTP/2 request with ERR_HTTP2_PROTOCOL_ERROR.
+        """
         kwargs: dict = {"headless": True}
         executable_path = getattr(settings, "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH", None)
+        args: list[str] = []
         if executable_path:
             kwargs["executable_path"] = executable_path
-            kwargs["args"] = ["--no-sandbox"]
+        if executable_path or disable_http2:
+            # --no-sandbox is required when running the system Chromium binary
+            # installed via apt in the Docker image (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH).
+            # Also keep it on the http1 fallback browser for consistency.
+            args.append("--no-sandbox")
+        if disable_http2:
+            args.append("--disable-http2")
+        if args:
+            kwargs["args"] = args
         return kwargs
 
     async def _ensure_playwright(self) -> None:
@@ -297,15 +341,82 @@ class SchemaDrivenCrawler:
             "SchemaDrivenCrawler: Playwright Chromium auto-launched — JS-rendered page detected"
         )
 
-    async def _fetch_text_rendered(self, url: str) -> FetchAttempt:
+    async def _ensure_http1_playwright(self) -> "Browser | None":
+        """Lazily launch a Chromium instance with HTTP/2 disabled.
+
+        Returns the browser instance, or None if Playwright failed to launch.
+        A separate browser (rather than re-launching the default with a flag)
+        keeps the common path on the default HTTP/2-capable Chromium and only
+        spins up the HTTP/1.1 instance when a protocol error demands it.
+        """
+        if self._http1_browser:
+            return self._http1_browser
+        if self._pw is None:
+            from playwright.async_api import async_playwright
+
+            self._pw = await async_playwright().start()
+        try:
+            self._http1_browser = await self._pw.chromium.launch(
+                **self._chromium_launch_kwargs(disable_http2=True)
+            )
+            logger.info(
+                "SchemaDrivenCrawler: HTTP/1.1-only Chromium launched for "
+                "protocol-error fallback"
+            )
+            return self._http1_browser
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "SchemaDrivenCrawler: could not launch HTTP/1.1 Chromium: %s", exc
+            )
+            return None
+
+    # Substrings (case-insensitive) that mark a fetch failure as an HTTP/2
+    # protocol incompatibility rather than a generic connection error. The
+    # report's dominant homepage hard-fail was ERR_HTTP2_PROTOCOL_ERROR; both
+    # httpx and Playwright can surface it (httpx via RemoteProtocolError /
+    # httpcore's h2 layer, Playwright via net::ERR_HTTP2_PROTOCOL_ERROR).
+    _HTTP2_ERROR_MARKERS: tuple[str, ...] = (
+        "err_http2",
+        "http2",
+        "h2 protocol",
+        "remoteprotocolerror",
+        "protocol error",
+    )
+
+    @classmethod
+    def _is_http2_protocol_error(cls, attempt: FetchAttempt) -> bool:
+        """True when an attempt's exception looks like an HTTP/2 protocol failure.
+
+        Only connection/protocol failures (``http_status is None``) qualify —
+        a real 404/500 is never a protocol error. Detects both httpx's
+        ``RemoteProtocolError`` and Playwright's ``net::ERR_HTTP2_PROTOCOL_ERROR``
+        strings.
+        """
+        if attempt.http_status is not None:
+            return False
+        haystack = " ".join(
+            s for s in (attempt.exception_type, attempt.exception_message) if s
+        ).lower()
+        if not haystack:
+            return False
+        return any(m in haystack for m in cls._HTTP2_ERROR_MARKERS)
+
+    async def _fetch_text_rendered(
+        self, url: str, *, browser: "Browser | None" = None
+    ) -> FetchAttempt:
         """Fetch a page with Playwright (full JS execution).
+
+        ``browser`` defaults to the standard lazily-launched Chromium; pass the
+        HTTP/1.1-only instance (:meth:`_ensure_http1_playwright`) to retry a
+        URL whose default-browser fetch failed with an HTTP/2 protocol error.
 
         For board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack) the
         page content is typically injected into nested ``<iframe>``s rather
         than the parent document, so after the page loads we merge the HTML of
         every accessible frame into the parent HTML before returning.
         """
-        if not self._browser:
+        target = browser if browser is not None else self._browser
+        if not target:
             return FetchAttempt(
                 exception_type="PlaywrightUnavailable",
                 exception_message="browser not launched",
@@ -330,7 +441,9 @@ class SchemaDrivenCrawler:
                     html = await merge_iframe_content(page, top_url=url)
                 else:
                     html = await page.content()
-                return FetchAttempt(html=html, http_status=200)
+                return FetchAttempt(
+                    html=html, http_status=200, final_url=page.url
+                )
             finally:
                 await page.close()
         except Exception as exc:  # noqa: BLE001
@@ -346,13 +459,15 @@ class SchemaDrivenCrawler:
             )
 
     async def close(self) -> None:
-        """Close the Playwright browser if it was launched."""
-        if self._browser:
-            try:
-                await self._browser.close()
-            except Exception:  # noqa: BLE001
-                pass
-            self._browser = None
+        """Close the Playwright browser(s) if launched."""
+        for browser_attr in ("_browser", "_http1_browser"):
+            browser = getattr(self, browser_attr, None)
+            if browser:
+                try:
+                    await browser.close()
+                except Exception:  # noqa: BLE001
+                    pass
+                setattr(self, browser_attr, None)
         if self._pw:
             try:
                 await self._pw.stop()
@@ -369,6 +484,14 @@ class SchemaDrivenCrawler:
         base_url = f"{parsed_seed.scheme}://{parsed_seed.netloc}"
 
         result = CrawlResult(seed_url=seed_url, pages_crawled=0)
+
+        # Per-crawl allowlist of hosts the crawler may visit. Starts as just
+        # the seed's own host; grows when a fetch follows redirects to a new
+        # host (e.g. a SchoolBlocks vanity seed that 301-redirects to the real
+        # district domain). A candidate is visitable when its host is in this
+        # set, shares the seed's naive registrable domain, or is a board
+        # platform (handled separately by is_board_platform_url).
+        allowed_hosts: set[str] = {base_domain}
 
         # Ranked frontier: list of (url, confidence). We pop the highest
         # confidence first by sorting on each iteration — the frontier is
@@ -398,7 +521,8 @@ class SchemaDrivenCrawler:
             for url in seed_urls:
                 norm = _percent_encode_url(self._normalize_url(url).split("#", 1)[0])
                 if (
-                    urlparse(norm).netloc == base_domain or is_board_platform_url(norm)
+                    host_allowed(url_host(norm), seed_host=base_domain, allowed_hosts=allowed_hosts)
+                    or is_board_platform_url(norm)
                 ) and norm not in visited:
                     # Sitemap/nav URLs get a base confidence of 0.5, boosted
                     # deterministically if the path itself already looks like
@@ -413,18 +537,38 @@ class SchemaDrivenCrawler:
                 if current_url in visited:
                     continue
                 current_netloc = urlparse(current_url).netloc
-                # Same-domain OR an allowlisted off-domain board-meeting
+                # Same-organization OR an allowlisted off-domain board-meeting
                 # platform (single-hop follow — these platforms host meeting
                 # minutes/agendas on a different domain than the school site).
-                if current_netloc != base_domain and not is_board_platform_url(
-                    current_url
-                ):
+                if not host_allowed(
+                    current_netloc, seed_host=base_domain, allowed_hosts=allowed_hosts
+                ) and not is_board_platform_url(current_url):
                     continue
 
                 visited.add(current_url)
                 result.pages_crawled += 1
 
                 html, fetch_meta = await self._fetch(client, current_url)
+                # If the fetch followed redirects to a different host (e.g. a
+                # SchoolBlocks vanity seed that 301-redirects to the real
+                # district domain), allowlist that host for the rest of the
+                # crawl so its meeting pages can be visited/enqueued.
+                if fetch_meta.final_url:
+                    final_host = url_host(fetch_meta.final_url)
+                    if final_host and final_host not in allowed_hosts:
+                        # Only allowlist hosts that look like the same
+                        # organization OR were reached by a redirect from a
+                        # page we already chose to visit (the fetch itself
+                        # followed the redirect chain with our UA/cookies).
+                        # This keeps the open web out while letting CMS
+                        # redirect-to-canonical cases through.
+                        allowed_hosts.add(final_host)
+                        logger.info(
+                            "SchemaDrivenCrawler: allowlisting redirect "
+                            "target host %s (reached from %s)",
+                            final_host,
+                            current_url,
+                        )
                 if not html:
                     result.record_error(
                         CrawlError(
@@ -500,10 +644,11 @@ class SchemaDrivenCrawler:
                     if abs_url in visited:
                         continue
                     current_candidate_netloc = urlparse(abs_url).netloc
-                    if (
-                        current_candidate_netloc != base_domain
-                        and not is_board_platform_url(abs_url)
-                    ):
+                    if not host_allowed(
+                        current_candidate_netloc,
+                        seed_host=base_domain,
+                        allowed_hosts=allowed_hosts,
+                    ) and not is_board_platform_url(abs_url):
                         continue
                     effective_confidence = boosted_confidence
                     if child_depth > self.max_depth:
@@ -512,6 +657,35 @@ class SchemaDrivenCrawler:
                             0.0, boosted_confidence - self.depth_penalty * overshoot
                         )
                     frontier.append((abs_url, effective_confidence, child_depth))
+
+                # Hub-page link harvest: when the LLM marked this page as a
+                # navigation hub to meeting pages (has_data_links=True),
+                # deterministically extract meeting-related <a href> links
+                # from the raw HTML. This is the fix for the report's
+                # "same-domain hub — crawl stopped at 1 page" failure mode:
+                # the LLM sometimes under-suggests children on a sparse hub
+                # (or suggests candidates that later 404), and without a
+                # harvest the frontier can die after the hub. Harvested links
+                # are deduped against existing frontier URLs (no exact
+                # duplication) and enter at confidence 0.55 (+ keyword boost)
+                # — below strong LLM hits, so the LLM still drives ordering
+                # when it returns good candidates. Skipped for board platforms
+                # (their children are session-bound SPA routes, not
+                # crawlable <a href> links).
+                if page.has_data_links and not skip_child_enqueue:
+                    frontier_urls = {u for u, _, _ in frontier}
+                    harvested = self._harvest_hub_links(
+                        html=html,
+                        page_url=current_url,
+                        base_domain=base_domain,
+                        allowed_hosts=allowed_hosts,
+                        visited=visited,
+                        existing_frontier_urls=frontier_urls,
+                        child_depth=child_depth,
+                        max_per_page=10,
+                    )
+                    for abs_url, eff_conf in harvested:
+                        frontier.append((abs_url, eff_conf, child_depth))
 
         # Did the page budget — not the frontier — stop us? True only when we
         # hit max_pages AND there were still URLs we never got to classify.
@@ -672,6 +846,18 @@ class SchemaDrivenCrawler:
             meta.record_attempt("playwright", rendered)
             if rendered.html:
                 return rendered.html, meta
+            # Board platforms are JS-rendered SPAs; if Playwright failed with an
+            # HTTP/2 protocol error, try the HTTP/1.1-only Chromium before
+            # falling through to httpx.
+            if self._is_http2_protocol_error(rendered):
+                http1_browser = await self._ensure_http1_playwright()
+                if http1_browser is not None:
+                    rendered = await self._fetch_text_rendered(
+                        url, browser=http1_browser
+                    )
+                    meta.record_attempt("playwright_http1", rendered)
+                    if rendered.html:
+                        return rendered.html, meta
             # Fall through to httpx as a last resort if Playwright is
             # unavailable or failed — better a shell than nothing.
             attempt = await self._fetch_httpx(client, url)
@@ -716,6 +902,18 @@ class SchemaDrivenCrawler:
             meta.record_attempt("playwright", rendered)
             if rendered.html:
                 return rendered.html, meta
+            # If the default browser failed with an HTTP/2 protocol error on a
+            # JS-CMS page, retry once with HTTP/1.1 Chromium before returning
+            # the httpx shell HTML.
+            if self._is_http2_protocol_error(rendered):
+                http1_browser = await self._ensure_http1_playwright()
+                if http1_browser is not None:
+                    rendered = await self._fetch_text_rendered(
+                        url, browser=http1_browser
+                    )
+                    meta.record_attempt("playwright_http1", rendered)
+                    if rendered.html:
+                        return rendered.html, meta
             return html, meta
 
         if html is None and _should_retry(status):
@@ -730,6 +928,31 @@ class SchemaDrivenCrawler:
             meta.record_attempt("playwright", rendered)
             if rendered.html:
                 return rendered.html, meta
+
+        # HTTP/2 protocol fallback: some school servers misconfigure HTTP/2 and
+        # reject every HTTP/2 request with ERR_HTTP2_PROTOCOL_ERROR. httpx
+        # (HTTP/1.1 by default) typically already succeeded above in that case,
+        # but when the failure came from a JS-CMS page that needed Playwright
+        # (which speaks HTTP/2 by default), retry once with a Chromium
+        # instance launched with --disable-http2. This is the dominant
+        # homepage hard-fail cause in the failure report (~50 schools).
+        if html is None and self._is_http2_protocol_error(
+            FetchAttempt(
+                exception_type=meta.exception_type,
+                exception_message=meta.exception_message,
+            )
+        ):
+            logger.info(
+                "SchemaDrivenCrawler: HTTP/2 protocol error for %s — "
+                "retrying with HTTP/1.1-only Chromium",
+                url,
+            )
+            http1_browser = await self._ensure_http1_playwright()
+            if http1_browser is not None:
+                rendered = await self._fetch_text_rendered(url, browser=http1_browser)
+                meta.record_attempt("playwright_http1", rendered)
+                if rendered.html:
+                    return rendered.html, meta
 
         if html is None:
             logger.warning(
@@ -759,9 +982,13 @@ class SchemaDrivenCrawler:
         try:
             resp = await client.get(url, headers=headers)
             if resp.status_code == 200:
-                return FetchAttempt(html=resp.text, http_status=resp.status_code)
+                return FetchAttempt(
+                    html=resp.text,
+                    http_status=resp.status_code,
+                    final_url=str(resp.url),
+                )
             logger.warning("Non-200 (%s) for %s", resp.status_code, url)
-            return FetchAttempt(http_status=resp.status_code)
+            return FetchAttempt(http_status=resp.status_code, final_url=str(resp.url))
         except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Fetch failed for %s: %s: %s", url, type(exc).__name__, exc
@@ -770,6 +997,77 @@ class SchemaDrivenCrawler:
                 exception_type=type(exc).__name__,
                 exception_message=str(exc),
             )
+
+    def _harvest_hub_links(
+        self,
+        *,
+        html: str,
+        page_url: str,
+        base_domain: str,
+        allowed_hosts: set[str],
+        visited: set[str],
+        existing_frontier_urls: set[str],
+        child_depth: int,
+        max_per_page: int,
+    ) -> list[tuple[str, float]]:
+        """Deterministically extract meeting-related <a href> links from a hub page.
+
+        Used after the LLM candidate loop when the page was classified as a
+        navigation hub (``has_data_links=True``). The LLM sometimes under-
+        suggests children on a sparse hub, leaving the frontier empty and the
+        crawl stuck at one page. This harvest parses the raw HTML directly and
+        enqueues any link whose path looks meeting-related
+        (:func:`app.services.web_scraper.url_keywords.is_meeting_related_url`),
+        gated by the same host policy as LLM candidates.
+
+        Returns ``[(absolute_url, effective_confidence)]`` already filtered
+        and deduplicated, sorted by keyword boost (strongest first) and
+        capped at ``max_per_page`` so a link-farm hub can't blow the frontier.
+        """
+        if not html:
+            return []
+        try:
+            soup = BeautifulSoup(html, "html.parser")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("hub-harvest parse failed for %s: %s", page_url, exc)
+            return []
+
+        # Confidence assigned to harvested links: above the default
+        # confidence_threshold (0.5) so they survive the frontier prune, but
+        # below strong LLM hits so the LLM still drives ordering when it
+        # returns candidates. Keyword boost is added on top so an obviously-
+        # relevant path (e.g. /agendas/2025) outranks a generic /minutes one.
+        base_harvest_confidence = 0.55
+        found: list[tuple[str, float, float]] = []  # (url, eff_conf, boost)
+        seen: set[str] = set()
+        for a in soup.find_all("a", href=True):
+            href = a["href"].strip()
+            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+                continue
+            abs_url = self._normalize_url(urljoin(page_url, href))
+            abs_url = _percent_encode_url(abs_url.split("#", 1)[0])
+            if abs_url in seen or abs_url in visited or abs_url in existing_frontier_urls:
+                continue
+            seen.add(abs_url)
+            if not is_meeting_related_url(abs_url):
+                continue
+            host = urlparse(abs_url).netloc
+            if not host_allowed(
+                host, seed_host=base_domain, allowed_hosts=allowed_hosts
+            ) and not is_board_platform_url(abs_url):
+                continue
+            boost = _keyword_boost(abs_url)
+            eff_conf = min(1.0, base_harvest_confidence + boost)
+            if child_depth > self.max_depth:
+                overshoot = child_depth - self.max_depth
+                eff_conf = max(0.0, eff_conf - self.depth_penalty * overshoot)
+            if eff_conf < self.confidence_threshold:
+                continue
+            found.append((abs_url, eff_conf, boost))
+
+        # Strongest keyword boost first, then by confidence desc.
+        found.sort(key=lambda x: (x[2], x[1]), reverse=True)
+        return [(u, c) for u, c, _ in found[:max_per_page]]
 
     def _render_markdown(self, html: str, url: str) -> str:
         """Render page HTML as markdown-with-links, preserving link text + href.

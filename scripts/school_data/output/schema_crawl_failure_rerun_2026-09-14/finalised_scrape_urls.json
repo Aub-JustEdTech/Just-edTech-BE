@@ -1,0 +1,600 @@
+[
+  {
+    "org_code": "00180000",
+    "name": "Avon",
+    "website": "https://avon.k12.ma.us",
+    "urls": [
+      {
+        "url": "https://avon.k12.ma.us/452/School-Committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/1142/School-Committee-Meeting-Agenda--August-26-2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/1143/School-Committee-Meeting-Minutes--May-26-2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/961/2026-School-Committee-Meeting-Agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/962/2026-School-Committee-Meeting-Minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/947/School-Committee-Agenda-Archives",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/963/School-Committee-Agenda-January-14-2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/1053/School-Committee-Agenda-February-11-2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/1081/School-Committee-Meeting-Minutes-February-11-2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/1062/School-Committee--January-14-2026-Minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/916/School-Committee-Agenda-December-17-2025-Autosaved",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/914/School-Committee-Agenda-Oct152025",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/913/School-Committee-Agenda-Sept172025",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/911/SC-Meeting-Agenda-June-11-2025-Agenda",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/909/SC-Meeting-Agenda-April-16-2025-Agenda-New",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/907/SC-Meeting-Agenda-February-12-2025-Agenda-New",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://avon.k12.ma.us/DocumentCenter/View/906/SC-Meeting-Agenda-January-15-2025",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "04140000",
+    "name": "Berkshire Arts and Technology Charter Public (District)",
+    "website": "https://www.bartcharter.org",
+    "urls": [
+      {
+        "url": "https://www.bartcharter.org/apps/pages/index.jsp?uREC_ID=1573219&type=d&pREC_ID=2751269",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "06200000",
+    "name": "Berlin-Boylston",
+    "website": "https://www.bbrsd.org",
+    "urls": [
+      {
+        "url": "https://www.bbrsd.org",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-agendas/archived-agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "09100000",
+    "name": "Bristol County Agricultural",
+    "website": "https://www.bristolaggie.org",
+    "urls": [
+      {
+        "url": "https://www.bristolaggie.org/documents/board-of-trustees/606496",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "08100000",
+    "name": "Bristol-Plymouth Regional Vocational Technical",
+    "website": "https://www.bptech.org",
+    "urls": [
+      {
+        "url": "https://www.bptech.org/about/school-committee/meeting-minutes-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.bptech.org/about/school-council/meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00450000",
+    "name": "Brookfield",
+    "website": "https://www.tantasqua.org",
+    "urls": [
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409457",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2754983",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2699058",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2594396",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2499140",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409521",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409532",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409578",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409588",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409599",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409604",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00480000",
+    "name": "Burlington",
+    "website": "https://www.burlingtonpublicschools.org",
+    "urls": [
+      {
+        "url": "https://www.burlingtonpublicschools.org/district/school_committee/meeting_minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00490000",
+    "name": "Cambridge",
+    "website": "https://www.cpsd.us",
+    "urls": [
+      {
+        "url": "https://portal.cpsd.us/school_committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.cpsd.us/school-committee/school-committee-meetings-2014-2018",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.cpsd.us/school-committee/school-committee-meetings-2014-2018/school-committee-meeting-agenda-december-18-2018",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00830000",
+    "name": "East Bridgewater",
+    "website": "https://www.ebps.net",
+    "urls": [
+      {
+        "url": "https://www.ebps.net/apps/pages/index.jsp?uREC_ID=1441384&type=d&pREC_ID=2618533",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ebps.net/apps/pages/index.jsp?uREC_ID=1441384&type=d&pREC_ID=2618530",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ebps.net/apps/pages/index.jsp?uREC_ID=1441384&type=d&pREC_ID=1748526",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ebps.net/apps/pages/index.jsp?uREC_ID=1441384&type=d&pREC_ID=2340296",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "http://www.ebps.net/apps/pages/index.jsp?uREC_ID=1441384&type=d&pREC_ID=2618533",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ebps.net/apps/pages/index.jsp?uREC_ID=4455214&type=d&pREC_ID=2740164",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00960000",
+    "name": "Falmouth",
+    "website": "https://www.falmouth.k12.ma.us",
+    "urls": [
+      {
+        "url": "https://www.falmouth.k12.ma.us/school_committee/agendas_and_minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.falmouth.k12.ma.us/school_committee/meeting_packets",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "01090000",
+    "name": "Gosnold",
+    "website": "https://www.gosnold-ma.gov",
+    "urls": [
+      {
+        "url": "https://www.gosnold-ma.gov",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "04990000",
+    "name": "Hampden Charter School of Science (District)",
+    "website": "http://www.hampdencharter.org",
+    "urls": [
+      {
+        "url": "https://www.hampdencharter.org/welcome",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "01820000",
+    "name": "Middleborough",
+    "website": "https://www.middleboro.k12.ma.us",
+    "urls": [
+      {
+        "url": "https://www.middleboro.k12.ma.us",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "07120000",
+    "name": "Monomoy Regional School District",
+    "website": "https://www.monomoy.edu",
+    "urls": [
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/2025-2026-school-committee-meetings-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/2024-2025-school-committee-meetings-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/2023-2024-school-committee-meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/2022-2023-school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/2021-2022-school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/archive-school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/archive-school-committee-meeting-agendas-and-minutes/2020-2021-school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/archive-school-committee-meeting-agendas-and-minutes/2019-2020-school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-meeting-agendas-and-minutes/archive-school-committee-meeting-agendas-and-minutes/2018-2019-school-committee-meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.monomoy.edu/school-committee/school-committee-subcommittee-meetings/archive-school-committee-subcommittee-meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "07200000",
+    "name": "Narragansett",
+    "website": "https://www.nrsd.org",
+    "urls": [
+      {
+        "url": "https://www.nrsd.org/documents/school-committee/411311",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.nrsd.org/documents/departments/special-education/sepac/agendas/411371",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02040000",
+    "name": "Newburyport",
+    "website": "https://www.newburyport.k12.ma.us",
+    "urls": [
+      {
+        "url": "https://www.newburyport.k12.ma.us",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes/2025-2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes/2023-2024",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes/2022-2023",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes/2021-2022",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes/2019-2020",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.newburyport.k12.ma.us/district/school-committee/meeting-agendas-and-minutes/2022-present",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02170000",
+    "name": "North Reading",
+    "website": "http://www.north-reading.k12.ma.us/Pages/index",
+    "urls": [
+      {
+        "url": "http://www.north-reading.k12.ma.us/school-committee/school-committee-meeting-minutes-agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.north-reading.k12.ma.us/school-committee/school-committee-meeting-minutes-agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "35060000",
+    "name": "Pioneer Charter School of Science II (District)",
+    "website": "https://saugus.pioneercss.org",
+    "urls": [
+      {
+        "url": "https://saugus.pioneercss.org/ourpages/auto/2014/1/29/69698644/PCSS%20II%20PTO%20-09.24.25-%20Zoom%20Meeting%20Summary.pdf?rnd=1758903825291",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://saugus.pioneercss.org/ourpages/auto/2014/1/29/69698644/PTO%20Meeting%20Summary%20Oct%202025.pdf?rnd=1761931965348",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02660000",
+    "name": "Sharon",
+    "website": "https://www.sharonschools.net",
+    "urls": [
+      {
+        "url": "https://www.sharonschools.net/school-committee-3119a552/agendas-minutes-ca64fccb",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "03230000",
+    "name": "West Bridgewater",
+    "website": "https://www.wbridgewaterschools.org",
+    "urls": [
+      {
+        "url": "https://www.wbridgewaterschools.org/page/school-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "03210000",
+    "name": "Westborough",
+    "website": "https://www.westboroughk12.org",
+    "urls": [
+      {
+        "url": "https://www.westboroughk12.org/school-committee/meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "03260000",
+    "name": "Westford",
+    "website": "http://westfordk12.us/Pages/index",
+    "urls": [
+      {
+        "url": "http://westfordk12.us/about/school-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "http://westfordk12.us/district-departments/superintendent-of-schools/school-improvement-plans",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "03460000",
+    "name": "Winthrop",
+    "website": "https://www.winthrop.k12.ma.us",
+    "urls": [
+      {
+        "url": "https://www.winthrop.k12.ma.us",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.winthrop.k12.ma.us/about/school-committee/meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "03500000",
+    "name": "Wrentham",
+    "website": "https://wrentham.k12.ma.us",
+    "urls": [
+      {
+        "url": "https://www.wrentham.k12.ma.us/Our-District/School-Committee/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.wrentham.k12.ma.us/Our-District/School-Committee/__catapult_pages/49d31b5d-e0c5-4466-8e80-29fcf19cd524/School-Committee-Archive.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://wrentham.k12.ma.us/Our-District/School-Committee/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://wrentham.k12.ma.us/Our-District/School-Committee/__catapult_pages/49d31b5d-e0c5-4466-8e80-29fcf19cd524/School-Committee-Archive.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  }
+]
