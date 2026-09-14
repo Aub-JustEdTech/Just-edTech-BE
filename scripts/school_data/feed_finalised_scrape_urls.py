@@ -134,13 +134,14 @@ def _extract_urls(rec: dict) -> list[dict]:
 
 
 async def feed_finalised_scrape_urls(
-    json_path: Path, dry_run: bool, prune: bool
+    json_path: Path, dry_run: bool, prune: bool, tenant_id: int = 1
 ) -> dict:
     print("=" * 60)
     print("Just-EdTech Finalised Scrape-URL Feeder (multi-URL)")
     print(f"  source   : {json_path}")
     print(f"  dry_run  : {dry_run}")
     print(f"  prune    : {prune}")
+    print(f"  tenant_id: {tenant_id}")
     print("=" * 60)
 
     if not json_path.exists():
@@ -177,7 +178,10 @@ async def feed_finalised_scrape_urls(
             school = (
                 await db.execute(
                     select(School)
-                    .where(School.org_code == org_code)
+                    .where(
+                        School.org_code == org_code,
+                        School.tenant_id == tenant_id,
+                    )
                     .options(selectinload(School.scrape_urls))
                 )
             ).scalar_one_or_none()
