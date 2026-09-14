@@ -80,7 +80,7 @@ async def _load_org_codes(json_path: Path) -> list[str]:
     return [c for c in codes if c]
 
 
-async def _seed_scrape_urls(json_path: Path, dry_run: bool) -> None:
+async def _seed_scrape_urls(json_path: Path, dry_run: bool, tenant_id: int) -> None:
     """Feed finalised scrape URLs into school_scrape_urls.
 
     Delegates to the existing feed_finalised_scrape_urls.async function so
@@ -93,7 +93,9 @@ async def _seed_scrape_urls(json_path: Path, dry_run: bool) -> None:
     print("\n" + "=" * 70)
     print("[1/2] Seeding scrape URLs")
     print("=" * 70)
-    await feed_finalised_scrape_urls(json_path, dry_run=dry_run, prune=False)
+    await feed_finalised_scrape_urls(
+        json_path, dry_run=dry_run, prune=False, tenant_id=tenant_id
+    )
 
 
 async def _trigger_scrape(
@@ -177,7 +179,7 @@ async def main() -> int:
     print("=" * 70)
 
     if not args.scrape_only:
-        await _seed_scrape_urls(args.json, dry_run=args.dry_run)
+        await _seed_scrape_urls(args.json, dry_run=args.dry_run, tenant_id=args.tenant_id)
         if args.seed_only:
             print("\n--seed-only: URLs fed into DB.")
             print("Re-run without --seed-only to trigger the scrape.")
