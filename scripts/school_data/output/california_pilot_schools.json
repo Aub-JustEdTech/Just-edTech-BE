@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Chino Valley Unified School District",
+    "org_code": "36-67678",
+    "district_type": "Public School District",
+    "state": "CA",
+    "website": "https://www.chino.k12.ca.us"
+  },
+  {
+    "name": "Saddleback Valley Unified School District",
+    "org_code": "30-73635",
+    "district_type": "Public School District",
+    "state": "CA",
+    "website": "https://www.svusd.org"
+  },
+  {
+    "name": "Murrieta Valley Unified School District",
+    "org_code": "33-75200",
+    "district_type": "Public School District",
+    "state": "CA",
+    "website": "https://www.murrieta.k12.ca.us"
+  },
+  {
+    "name": "San Francisco Unified School District",
+    "org_code": "38-68478",
+    "district_type": "Public School District",
+    "state": "CA",
+    "website": "https://www.sfusd.edu"
+  },
+  {
+    "name": "East Side Union High School District",
+    "org_code": "43-69427",
+    "district_type": "Public School District",
+    "state": "CA",
+    "website": "https://www.esuhsd.org"
+  }
+]

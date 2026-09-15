@@ -8,24 +8,67 @@ import re
 logger = logging.getLogger(__name__)
 
 
+# Lazily-loaded tiktoken encoder (BPE encoding used by OpenAI models).
+# Cached at module level so repeated chunker instantiations don't pay the
+# encoding-load cost each time.
+_TOKEN_ENCODER = None
+
+
+def _get_token_encoder():
+    """Return a cached tiktoken encoder for the cl100k_base BPE."""
+    global _TOKEN_ENCODER
+    if _TOKEN_ENCODER is None:
+        try:
+            import tiktoken
+
+            _TOKEN_ENCODER = tiktoken.get_encoding("cl100k_base")
+        except Exception as exc:  # pragma: no cover - depends on optional dep
+            raise RuntimeError(
+                "tiktoken is required for token-mode chunking. "
+                "Install with `poetry add tiktoken`."
+            ) from exc
+    return _TOKEN_ENCODER
+
+
 class Chunker:
     """
     Splits text into chunks with configurable size and overlap.
-    Supports multiple chunking strategies.
+
+    Two size modes:
+      - mode='char' (default): chunk_size/overlap measured in characters.
+        Backward compatible with existing callers.
+      - mode='token': chunk_size/overlap measured in BPE tokens via tiktoken
+        (cl100k_base). Used by the heatmap ingest pipeline because the
+        downstream classifier and embedding model both bill by token.
+
+    Strategies (orthogonal to mode):
+      - 'fixed':     sliding window with word-boundary breaks
+      - 'sentence':  sentence-aware aggregation
+      - 'paragraph': paragraph-aware aggregation
     """
 
-    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
+    def __init__(
+        self,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 200,
+        mode: str = "char",
+    ):
         """
         Initialize chunker.
 
         Args:
-            chunk_size: Target size of each chunk in characters
-            chunk_overlap: Number of characters to overlap between chunks
+            chunk_size: Target size of each chunk (chars when mode='char',
+                tokens when mode='token').
+            chunk_overlap: Overlap between chunks (same unit as chunk_size).
+            mode: 'char' (default) or 'token'.
         """
+        if mode not in ("char", "token"):
+            raise ValueError(f"Unknown chunk mode {mode!r}; use 'char' or 'token'")
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.mode = mode
         logger.debug(
-            f"Chunker initialized with size={chunk_size}, overlap={chunk_overlap}"
+            f"Chunker initialized with mode={mode}, size={chunk_size}, overlap={chunk_overlap}"
         )
 
     def chunk_text(self, text: str, strategy: str = "fixed") -> list[str]:
@@ -44,6 +87,8 @@ class Chunker:
             return []
 
         if strategy == "fixed":
+            if self.mode == "token":
+                return self._chunk_fixed_tokens(text)
             return self._chunk_fixed(text)
         elif strategy == "sentence":
             return self._chunk_by_sentence(text)
@@ -51,6 +96,8 @@ class Chunker:
             return self._chunk_by_paragraph(text)
         else:
             logger.warning(f"Unknown strategy '{strategy}', using 'fixed'")
+            if self.mode == "token":
+                return self._chunk_fixed_tokens(text)
             return self._chunk_fixed(text)
 
     def _chunk_fixed(self, text: str) -> list[str]:
@@ -87,6 +134,37 @@ class Chunker:
                 start = end
 
         logger.info(f"Created {len(chunks)} chunks using fixed strategy")
+        return chunks
+
+    def _chunk_fixed_tokens(self, text: str) -> list[str]:
+        """
+        Fixed-size token chunking with overlap using tiktoken BPE.
+
+        Splits the text at token boundaries, then maps each chunk's token
+        slice back to the original substring. Word-boundary snapping is
+        not needed because BPE tokens already end at natural text
+        boundaries (a single English word is typically 1-2 BPE tokens).
+        """
+        enc = _get_token_encoder()
+        tokens = enc.encode(text)
+        total = len(tokens)
+        chunks: list[str] = []
+        start = 0
+
+        while start < total:
+            end = min(start + self.chunk_size, total)
+            token_slice = tokens[start:end]
+            chunk_text = enc.decode(token_slice).strip()
+            if chunk_text:
+                chunks.append(chunk_text)
+
+            prev_start = start
+            start = end - self.chunk_overlap
+            # Guard against overlap >= chunk_size causing an infinite loop.
+            if start <= prev_start:
+                start = end
+
+        logger.info(f"Created {len(chunks)} chunks using token-fixed strategy")
         return chunks
 
     def _chunk_by_sentence(self, text: str) -> list[str]:

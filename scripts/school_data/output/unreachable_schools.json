@@ -1,0 +1,700 @@
+{
+  "input": "/home/aubergine/Desktop/Just-EdTech-BE/scripts/school_data/output/school_names.json",
+  "total": 396,
+  "reachable": 326,
+  "unreachable_count": 70,
+  "by_reason": {
+    "connection_error": 40,
+    "http_403": 13,
+    "ssl_error": 13,
+    "http_404": 2,
+    "http_520": 1,
+    "timeout": 1
+  },
+  "unreachable": [
+    {
+      "number": 4,
+      "name": "Acton-Boxborough",
+      "org_code": "06000000",
+      "district_type": "Public School District",
+      "website": "http://www.abschools.org/",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 13,
+      "name": "Argosy Collegiate Charter School (District)",
+      "org_code": "35090000",
+      "district_type": "Charter District",
+      "website": "https://www.argosycollegiate.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 15,
+      "name": "Ashburnham-Westminster",
+      "org_code": "06100000",
+      "district_type": "Public School District",
+      "website": "https://www.awrsd.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 19,
+      "name": "Atlantis Charter (District)",
+      "org_code": "04910000",
+      "district_type": "Charter District",
+      "website": "https://www.atlantiscs.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 26,
+      "name": "Bedford",
+      "org_code": "00230000",
+      "district_type": "Public School District",
+      "website": "https://bedfordps.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='bedfordps.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1000)')))"
+    },
+    {
+      "number": 28,
+      "name": "Bellingham",
+      "org_code": "00250000",
+      "district_type": "Public School District",
+      "website": "https://www.bellinghamk12.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 34,
+      "name": "Berkshire Hills",
+      "org_code": "06180000",
+      "district_type": "Public School District",
+      "website": "https://www.bhrsd.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 46,
+      "name": "Boston Renaissance Charter Public (District)",
+      "org_code": "04810000",
+      "district_type": "Charter District",
+      "website": "https://www.bostonrenaissance.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 48,
+      "name": "Boxford",
+      "org_code": "00380000",
+      "district_type": "Public School District",
+      "website": "https://www.tritownschoolunion.com",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 74,
+      "name": "Clinton",
+      "org_code": "00640000",
+      "district_type": "Public School District",
+      "website": "https://www.clinton.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 77,
+      "name": "Collegiate Charter School of Lowell (District)",
+      "org_code": "35030000",
+      "district_type": "Charter District",
+      "website": "https://collegiatelowell.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 79,
+      "name": "Community Day Charter Public School (District)",
+      "org_code": "04400000",
+      "district_type": "Charter District",
+      "website": "https://www.cdcps.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 86,
+      "name": "Dedham",
+      "org_code": "00730000",
+      "district_type": "Public School District",
+      "website": "http://www.dedham.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 88,
+      "name": "Dennis-Yarmouth",
+      "org_code": "06450000",
+      "district_type": "Public School District",
+      "website": "https://www.dy-regional.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 107,
+      "name": "Excel Academy Charter (District)",
+      "org_code": "04100000",
+      "district_type": "Charter District",
+      "website": "https://www.excelacademy.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 121,
+      "name": "Freetown-Lakeville",
+      "org_code": "06650000",
+      "district_type": "Public School District",
+      "website": "https://www.freelake.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 130,
+      "name": "Grafton",
+      "org_code": "01100000",
+      "district_type": "Public School District",
+      "website": "http://graftonps.org/Domain/11",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 140,
+      "name": "Halifax",
+      "org_code": "01180000",
+      "district_type": "Public School District",
+      "website": "https://hes.slrsd.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='hes.slrsd.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 145,
+      "name": "Hancock",
+      "org_code": "01210000",
+      "district_type": "Public School District",
+      "website": "https://www.hancockschool.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.hancockschool.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.hancockschool.org'. (_ssl.c:1000)\")))"
+    },
+    {
+      "number": 146,
+      "name": "Hanover",
+      "org_code": "01220000",
+      "district_type": "Public School District",
+      "website": "http://hanoverschools.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 147,
+      "name": "Harvard",
+      "org_code": "01250000",
+      "district_type": "Public School District",
+      "website": "https://www.psharvard.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 149,
+      "name": "Haverhill",
+      "org_code": "01280000",
+      "district_type": "Public School District",
+      "website": "http://www.haverhill-ps.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 158,
+      "name": "Holyoke Community Charter (District)",
+      "org_code": "04530000",
+      "district_type": "Charter District",
+      "website": "https://www.hccs-sabis.net",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.hccs-sabis.net', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.hccs-sabis.net'. (_ssl.c:1000)\")))"
+    },
+    {
+      "number": 170,
+      "name": "Kingston",
+      "org_code": "01450000",
+      "district_type": "Public School District",
+      "website": "https://slrsd.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='slrsd.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 171,
+      "name": "Lawrence",
+      "org_code": "01490000",
+      "district_type": "Public School District",
+      "website": "https://www.lawrence.k12.ma.us",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 177,
+      "name": "Leominster",
+      "org_code": "01530000",
+      "district_type": "Public School District",
+      "website": "https://www.leominsterps.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.leominsterps.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 181,
+      "name": "Lincoln",
+      "org_code": "01570000",
+      "district_type": "Public School District",
+      "website": "https://www.lincnet.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 182,
+      "name": "Lincoln-Sudbury",
+      "org_code": "06950000",
+      "district_type": "Public School District",
+      "website": "https://www.lsrhs.net",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 188,
+      "name": "Ludlow",
+      "org_code": "01610000",
+      "district_type": "Public School District",
+      "website": "https://ludlowps.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 190,
+      "name": "Lynn",
+      "org_code": "01630000",
+      "district_type": "Public School District",
+      "website": "https://www.lynnschools.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 198,
+      "name": "Marblehead Community Charter Public (District)",
+      "org_code": "04640000",
+      "district_type": "Charter District",
+      "website": "https://marbleheadcharter.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 217,
+      "name": "Middleton",
+      "org_code": "01840000",
+      "district_type": "Public School District",
+      "website": "https://www.tritownschoolunion.com",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 219,
+      "name": "Millbury",
+      "org_code": "01860000",
+      "district_type": "Public School District",
+      "website": "http://www.millburyschools.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 222,
+      "name": "Minuteman Regional Vocational Technical",
+      "org_code": "08300000",
+      "district_type": "Public School District",
+      "website": "https://www.minuteman.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 237,
+      "name": "Neighborhood House Charter (District)",
+      "org_code": "04440000",
+      "district_type": "Charter District",
+      "website": "https://www.thenhcs.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 238,
+      "name": "New Bedford",
+      "org_code": "02010000",
+      "district_type": "Public School District",
+      "website": "http://www.newbedfordschools.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 239,
+      "name": "New Heights Charter School of Brockton (District)",
+      "org_code": "35130000",
+      "district_type": "Charter District",
+      "website": "https://www.newheightscharterschool.com",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 250,
+      "name": "North Reading",
+      "org_code": "02170000",
+      "district_type": "Public School District",
+      "website": "http://www.north-reading.k12.ma.us/Pages/index",
+      "status": 404,
+      "reason": "http_404"
+    },
+    {
+      "number": 251,
+      "name": "Northampton",
+      "org_code": "02100000",
+      "district_type": "Public School District",
+      "website": "https://northamptonschools.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 253,
+      "name": "Northboro-Southboro",
+      "org_code": "07300000",
+      "district_type": "Public School District",
+      "website": "http://www.nsboro.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 254,
+      "name": "Northborough",
+      "org_code": "02130000",
+      "district_type": "Public School District",
+      "website": "http://www.nsboro.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 256,
+      "name": "Northeast Metropolitan Regional Vocational Technical",
+      "org_code": "08530000",
+      "district_type": "Public School District",
+      "website": "https://northeastmetrotech.com",
+      "status": 520,
+      "reason": "http_520"
+    },
+    {
+      "number": 258,
+      "name": "Norton",
+      "org_code": "02180000",
+      "district_type": "Public School District",
+      "website": "https://www.norton.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 260,
+      "name": "Norwood",
+      "org_code": "02200000",
+      "district_type": "Public School District",
+      "website": "https://www.norwood.k12.ma.us",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.norwood.k12.ma.us', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 267,
+      "name": "Oxford",
+      "org_code": "02260000",
+      "district_type": "Public School District",
+      "website": "https://www.oxps.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 286,
+      "name": "Plympton",
+      "org_code": "02400000",
+      "district_type": "Public School District",
+      "website": "https://des.slrsd.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='des.slrsd.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 293,
+      "name": "Randolph",
+      "org_code": "02440000",
+      "district_type": "Public School District",
+      "website": "https://www.randolph.k12.ma.us",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.randolph.k12.ma.us', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 301,
+      "name": "Rockport",
+      "org_code": "02520000",
+      "district_type": "Public School District",
+      "website": "https://www.rpk12.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 302,
+      "name": "Rowe",
+      "org_code": "02530000",
+      "district_type": "Public School District",
+      "website": "https://Roweschool.com",
+      "status": null,
+      "reason": "connection_error",
+      "error": "HTTPSConnectionPool(host='roweschool.com', port=443): Max retries exceeded with url: / (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x7f37705cb920>: Failed to resolve 'roweschool.com' ([Errno -2] Name or service not known)\"))"
+    },
+    {
+      "number": 303,
+      "name": "Roxbury Preparatory Charter (District)",
+      "org_code": "04840000",
+      "district_type": "Charter District",
+      "website": "https://roxburyprep.uncommonschools.org/",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 306,
+      "name": "Sandwich",
+      "org_code": "02610000",
+      "district_type": "Public School District",
+      "website": "http://www.sandwichk12.org/",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 309,
+      "name": "Scituate",
+      "org_code": "02640000",
+      "district_type": "Public School District",
+      "website": "https://scit.org/",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 316,
+      "name": "Silver Lake",
+      "org_code": "07600000",
+      "district_type": "Public School District",
+      "website": "https://slrsd.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='slrsd.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    },
+    {
+      "number": 319,
+      "name": "Somerset Berkley Regional School District",
+      "org_code": "07630000",
+      "district_type": "Public School District",
+      "website": "https://somersetschools.org",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='somersetschools.org', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'somersetschools.org'. (_ssl.c:1000)\")))"
+    },
+    {
+      "number": 320,
+      "name": "Somerville",
+      "org_code": "02740000",
+      "district_type": "Public School District",
+      "website": "https://www.somerville.k12.ma.us",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.somerville.k12.ma.us', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, \"[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.somerville.k12.ma.us'. (_ssl.c:1000)\")))"
+    },
+    {
+      "number": 326,
+      "name": "Southborough",
+      "org_code": "02760000",
+      "district_type": "Public School District",
+      "website": "http://www.nsboro.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 329,
+      "name": "Southern Berkshire",
+      "org_code": "07650000",
+      "district_type": "Public School District",
+      "website": "https://www.sbrsd.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 347,
+      "name": "Taunton",
+      "org_code": "02930000",
+      "district_type": "Public School District",
+      "website": "http://www.tauntonschools.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 350,
+      "name": "Topsfield",
+      "org_code": "02980000",
+      "district_type": "Public School District",
+      "website": "https://www.tritownschoolunion.com",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 352,
+      "name": "Triton",
+      "org_code": "07730000",
+      "district_type": "Public School District",
+      "website": "http://www.tritonschools.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 355,
+      "name": "UP Academy Charter School of Dorchester (District)",
+      "org_code": "35050000",
+      "district_type": "Charter District",
+      "website": "https://www.upacademydorchester.org",
+      "status": null,
+      "reason": "timeout",
+      "error": "HTTPSConnectionPool(host='www.upacademydorchester.org', port=443): Read timed out. (read timeout=10.0)"
+    },
+    {
+      "number": 358,
+      "name": "Uxbridge",
+      "org_code": "03040000",
+      "district_type": "Public School District",
+      "website": "https://www.uxbridgeschools.com",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 364,
+      "name": "Waltham",
+      "org_code": "03080000",
+      "district_type": "Public School District",
+      "website": "https://www.walthampublicschools.org/",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 368,
+      "name": "Watertown",
+      "org_code": "03140000",
+      "district_type": "Public School District",
+      "website": "http://www.watertown.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 369,
+      "name": "Wayland",
+      "org_code": "03150000",
+      "district_type": "Public School District",
+      "website": "http://www.wayland.k12.ma.us",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 373,
+      "name": "West Boylston",
+      "org_code": "03220000",
+      "district_type": "Public School District",
+      "website": "https://www.wbschools.com/",
+      "status": null,
+      "reason": "connection_error",
+      "error": "HTTPSConnectionPool(host='www.wbschools.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x7f37704e0560>, 'Connection to www.wbschools.com timed out. (connect timeout=10.0)'))"
+    },
+    {
+      "number": 375,
+      "name": "West Springfield",
+      "org_code": "03320000",
+      "district_type": "Public School District",
+      "website": "https://www.wsps.org",
+      "status": 403,
+      "reason": "http_403"
+    },
+    {
+      "number": 378,
+      "name": "Westford",
+      "org_code": "03260000",
+      "district_type": "Public School District",
+      "website": "http://westfordk12.us/Pages/index",
+      "status": 404,
+      "reason": "http_404"
+    },
+    {
+      "number": 390,
+      "name": "Winchester",
+      "org_code": "03440000",
+      "district_type": "Public School District",
+      "website": "https://www.winchesterps.org",
+      "status": null,
+      "reason": "connection_error",
+      "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+    },
+    {
+      "number": 392,
+      "name": "Woburn",
+      "org_code": "03470000",
+      "district_type": "Public School District",
+      "website": "https://www.woburnpublicschools.com",
+      "status": null,
+      "reason": "ssl_error",
+      "error": "HTTPSConnectionPool(host='www.creocoding.com', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))"
+    }
+  ]
+}

@@ -32,6 +32,8 @@ qdrant-client = "^1.7.0"
 pypdf2 = "^3.0.0"
 pymupdf = "^1.23.0"
 python-docx = "^1.1.0"
+python-pptx = "^0.6.23"
+tiktoken = "^0.7.0"
 pillow = "^10.0.0"
 opencv-python-headless = "^4.8.0"
 aioboto3 = "^15.2.0"
@@ -43,6 +45,15 @@ html2text = "^2024.2.26"
 openpyxl = "*"
 weasyprint = "^63.0"
 gunicorn = "^21.2.0"
+playwright = "^1.61.0"
+reportlab = "^5.0.0"
+pytesseract = "^0.3.10"
+# Primary YouTube path: video ID -> timestamped caption segments (always free).
+# Marker is required: the package declares python <3.15 while this project's
+# range is <4.0, so Poetry cannot resolve it without an explicit bound.
+youtube-transcript-api = { version = "^1.2.4", python = ">=3.12,<3.15" }
+# Audio download, used ONLY when a YouTube video has no captions at all.
+yt-dlp = "^2025.1.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

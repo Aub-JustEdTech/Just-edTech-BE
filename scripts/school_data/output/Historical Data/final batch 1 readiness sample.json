@@ -1,0 +1,30 @@
+[
+  {
+    "School name": "READINESS PROBE (composite)",
+    "School website": "https://example.com",
+    "note": "One synthetic entry pulling representative URLs from batch 1 to exercise each scrape path.",
+    "finalised urls": [
+      "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies",
+      "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public",
+      "https://app2.boardontrack.com/public/AZLeOG/meetingsList",
+      "https://drive.google.com/drive/folders/16PXPWD4sB8uYu8cAsqbvpfnN7krigoHB?usp=sharing",
+      "https://www.medfield.net/documents/school-committee/agendas/67053",
+      "https://www.youtube.com/playlist?list=PLypOllJHc4M2EgOMD_XarFqL3EXJi8KCv",
+      "https://www.youtube.com/watch?v=kmwe7eAPYyM&list=PLvzaeZrgURbrvZGl-YsfCgDjSNOuKwYTC",
+      "https://www.worcesterschools.org/page/live-and-archived-videos",
+      "https://wrenthamcable8.com/wrentham-school-committee-meetings"
+    ],
+    "clicks needed": 2,
+    "url_types": {
+      "generic_cms": "Abington archive page",
+      "boarddocs": "Narragansett BoardDocs portal",
+      "boardontrack": "Francis Parker BoardOnTrack meetings list",
+      "google_drive": "Somerset Berkeley Drive folder",
+      "apptegy_docs": "Medfield Apptegy document listing",
+      "youtube_playlist": "Medfield YouTube playlist",
+      "youtube_video": "Somerset Berkeley YouTube watch URL",
+      "video_page": "Worcester live/archived videos page",
+      "external_video_host": "Wrentham cable community video page"
+    }
+  }
+]

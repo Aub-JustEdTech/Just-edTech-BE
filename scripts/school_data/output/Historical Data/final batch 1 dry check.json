@@ -1,0 +1,5658 @@
+[
+  {
+    "School name": "Abington",
+    "School website": "https://www.abingtonps.org",
+    "finalised urls": [
+      "https://www.abingtonps.org",
+      "https://www.abingtonps.org/page/2026-2027-school-committee-agendas",
+      "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 31,
+    "url probes": [
+      {
+        "url": "https://www.abingtonps.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.abingtonps.org/page/2026-2027-school-committee-agendas",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 31,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Belchertown",
+    "School website": "https://www.belchertownps.org",
+    "finalised urls": [
+      "https://www.belchertownps.org/school-committee-document-archives",
+      "https://www.belchertownps.org/school-committee",
+      "https://www.belchertownps.org/agenda-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.belchertownps.org/school-committee-document-archives",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belchertownps.org/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belchertownps.org/agenda-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Belmont",
+    "School website": "https://www.belmont.k12.ma.us",
+    "finalised urls": [
+      "https://www.belmont.k12.ma.us",
+      "https://www.belmont.k12.ma.us/page/school-committee",
+      "https://www.belmont.k12.ma.us/page/notices-agendas",
+      "https://www.belmont.k12.ma.us/page/minutes-archive",
+      "https://www.belmont.k12.ma.us/page/sc-public-documents",
+      "https://www.belmont.k12.ma.us/page/sc-archive-public-documents",
+      "https://www.belmont.k12.ma.us/page/policies"
+    ],
+    "clicks needed": 1,
+    "detected platform": "apptegy",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.belmont.k12.ma.us",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/school-committee",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/notices-agendas",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/minutes-archive",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/sc-public-documents",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/sc-archive-public-documents",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.belmont.k12.ma.us/page/policies",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Berlin-Boylston",
+    "School website": "https://www.bbrsd.org",
+    "finalised urls": [
+      "https://www.bbrsd.org",
+      "https://www.bbrsd.org/school-committee/all-agendas",
+      "https://www.bbrsd.org/school-committee/all-minutes",
+      "https://www.bbrsd.org/school-committee/archived-agendas"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 235,
+    "url probes": [
+      {
+        "url": "https://www.bbrsd.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 5,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-agendas",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 118,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/all-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 112,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bbrsd.org/school-committee/archived-agendas",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Boston",
+    "School website": "https://www.bostonpublicschools.org",
+    "finalised urls": [
+      "https://www.bostonpublicschools.org/school-committee/meeting-archives"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 3,
+    "url probes": [
+      {
+        "url": "https://www.bostonpublicschools.org/school-committee/meeting-archives",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Boston Preparatory Charter Public (District)",
+    "School website": "https://www.bostonprep.org",
+    "finalised urls": [
+      "https://www.bostonprep.org",
+      "https://www.bostonprep.org/about/board-of-trustees/meeting-minutes",
+      "https://www.bostonprep.org/about/board-of-trustees/committee-minutes-archive"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 68,
+    "url probes": [
+      {
+        "url": "https://www.bostonprep.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bostonprep.org/about/board-of-trustees/meeting-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 21,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bostonprep.org/about/board-of-trustees/committee-minutes-archive",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 46,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Bourne",
+    "School website": "https://www.bourneps.org/",
+    "finalised urls": [
+      "https://www.bourneps.org",
+      "https://www.bourneps.org/our-school-committee/school-committee-meetings-agendas-and-documents",
+      "https://www.bourneps.org/our-school-committee/school-committee-minutes",
+      "https://www.bourneps.org/our-school-committee/sub-committee-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 230,
+    "url probes": [
+      {
+        "url": "https://www.bourneps.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-meetings-agendas-and-documents",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 51,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/school-committee-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 40,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bourneps.org/our-school-committee/sub-committee-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 138,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Brimfield",
+    "School website": "https://www.tantasqua.org",
+    "finalised urls": [
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2754983",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2699058",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2594396",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2499140",
+      "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409521"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 59,
+    "url probes": [
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 33,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2754983",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2699058",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2594396",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2499140",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tantasqua.org/apps/pages/index.jsp?uREC_ID=3617321&type=d&pREC_ID=2409521",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 26,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Brockton",
+    "School website": "https://www.bpsma.org",
+    "finalised urls": [
+      "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4408287&type=d",
+      "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2645118",
+      "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2753897"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 13,
+    "url probes": [
+      {
+        "url": "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4408287&type=d",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2645118",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.bpsma.org/apps/pages/index.jsp?uREC_ID=4410775&type=d&pREC_ID=2753897",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 11,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Chicopee",
+    "School website": "https://www.chicopeeps.org",
+    "finalised urls": [
+      "https://www.chicopeeps.org/en-US/school-committee-9aceadb1",
+      "https://drive.google.com/drive/folders/1AeT6RcMoS4UFuA33TZNieFgM1BxbRnob"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "google-drive",
+      "js_cms"
+    ],
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.chicopeeps.org/en-US/school-committee-9aceadb1",
+        "detected platform": "js_cms",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1AeT6RcMoS4UFuA33TZNieFgM1BxbRnob",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Cohasset",
+    "School website": "http://www.cohassetk12.org",
+    "finalised urls": [
+      "http://www.cohassetk12.org",
+      "http://www.cohassetk12.org/school-committee/minutes-and-agendas"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 225,
+    "url probes": [
+      {
+        "url": "http://www.cohassetk12.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.cohassetk12.org/school-committee/minutes-and-agendas",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 225,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Concord-Carlisle",
+    "School website": "https://www.concordps.org",
+    "finalised urls": [
+      "https://www.concordps.org/school-committee/meetings-and-minutes",
+      "https://www.concordps.org/school-committee/meeting-archives"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 761,
+    "url probes": [
+      {
+        "url": "https://www.concordps.org/school-committee/meetings-and-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 4,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.concordps.org/school-committee/meeting-archives",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 757,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Dartmouth",
+    "School website": "https://www.dartmouth.school",
+    "finalised urls": [
+      "https://www.dartmouth.school/our-district/school-committee/minutes",
+      "https://www.dartmouth.school/our-district/school-committee/meeting-dates-and-agenda"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 143,
+    "url probes": [
+      {
+        "url": "https://www.dartmouth.school/our-district/school-committee/minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 67,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.dartmouth.school/our-district/school-committee/meeting-dates-and-agenda",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 76,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Duxbury",
+    "School website": "https://www.duxbury.k12.ma.us",
+    "finalised urls": [
+      "https://www.duxbury.k12.ma.us/documents/school-committee/21074242",
+      "https://www.duxbury.k12.ma.us/documents/school-committee/minutes/21074276",
+      "https://www.duxbury.k12.ma.us/documents/school-committee/agendas/21074277",
+      "https://www.duxbury.k12.ma.us/documents/school-committee/packet/21074278"
+    ],
+    "clicks needed": 1,
+    "detected platform": "apptegy",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 170,
+    "url probes": [
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/21074242",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/minutes/21074276",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 93,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/agendas/21074277",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 4,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.duxbury.k12.ma.us/documents/school-committee/packet/21074278",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 73,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Everett",
+    "School website": "https://www.everettpublicschools.org/",
+    "finalised urls": [
+      "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2306489",
+      "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2696829",
+      "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2699654"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 92,
+    "url probes": [
+      {
+        "url": "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2306489",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2696829",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 56,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.everettpublicschools.org/apps/pages/index.jsp?uREC_ID=1618426&type=d&pREC_ID=2699654",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 33,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Falmouth",
+    "School website": "https://www.falmouth.k12.ma.us",
+    "finalised urls": [
+      "https://www.falmouth.k12.ma.us/school_committee/meeting_packets"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.falmouth.k12.ma.us/school_committee/meeting_packets",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Farmington River Reg",
+    "School website": "https://www.frrsd.org",
+    "finalised urls": [
+      "https://www.frrsd.org",
+      "https://frrsd.org/district-information/school-committee-members/agenda",
+      "https://frrsd.org/district-information/school-committee-members/approved-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 230,
+    "url probes": [
+      {
+        "url": "https://www.frrsd.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 7,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://frrsd.org/district-information/school-committee-members/agenda",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 211,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://frrsd.org/district-information/school-committee-members/approved-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 12,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Francis W. Parker Charter Essential (District)",
+    "School website": "https://www.theparkerschool.org",
+    "finalised urls": [
+      "https://www.theparkerschool.org/about/documents-and-records",
+      "https://app2.boardontrack.com/public/AZLeOG/home",
+      "https://app2.boardontrack.com/public/AZLeOG/year?syid=2025-07&et=b",
+      "https://app2.boardontrack.com/public/AZLeOG/year?syid=2025-07&et=c",
+      "https://www.theparkerschool.org/about/board-trustees",
+      "https://app2.boardontrack.com/public/AZLeOG/meetingsList"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "boardontrack",
+      "generic"
+    ],
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.theparkerschool.org/about/documents-and-records",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://app2.boardontrack.com/public/AZLeOG/home",
+        "detected platform": "boardontrack",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://app2.boardontrack.com/public/AZLeOG/year?syid=2025-07&et=b",
+        "detected platform": "boardontrack",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://app2.boardontrack.com/public/AZLeOG/year?syid=2025-07&et=c",
+        "detected platform": "boardontrack",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.theparkerschool.org/about/board-trustees",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://app2.boardontrack.com/public/AZLeOG/meetingsList",
+        "detected platform": "boardontrack",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Gardner",
+    "School website": "https://www.gardnerk12.org",
+    "finalised urls": [
+      "https://www.gardnerk12.org/AgendaCenter/School-Committee-30"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.gardnerk12.org/AgendaCenter/School-Committee-30",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Gateway",
+    "School website": "https://www.grsd.org",
+    "finalised urls": [
+      "https://www.grsd.org/school-committee"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 92,
+    "url probes": [
+      {
+        "url": "https://www.grsd.org/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 92,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Georgetown",
+    "School website": "https://georgetown.k12.ma.us",
+    "finalised urls": [
+      "https://georgetown.k12.ma.us/school-committee",
+      "https://www.georgetownma.gov/government/boards___commissions/school_committee/agendas___minutes.php"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 3,
+    "url probes": [
+      {
+        "url": "https://georgetown.k12.ma.us/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.georgetownma.gov/government/boards___commissions/school_committee/agendas___minutes.php",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Greater Fall River Regional Vocational Technical",
+    "School website": "https://www.dimanregional.org",
+    "finalised urls": [
+      "https://www.dimanregional.org/about/school-committee"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 163,
+    "url probes": [
+      {
+        "url": "https://www.dimanregional.org/about/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 163,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hill View Montessori Charter Public (District)",
+    "School website": "https://www.hillviewmontessori.org",
+    "finalised urls": [
+      "https://www.hillviewmontessori.org/boardoftrustees",
+      "https://app2.boardontrack.com/public/GqCfpR/home",
+      "https://drive.google.com/drive/folders/1m-SP64oklrMaZ3-Dau2dnr9KoSRIn57x"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "boardontrack",
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.hillviewmontessori.org/boardoftrustees",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://app2.boardontrack.com/public/GqCfpR/home",
+        "detected platform": "boardontrack",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1m-SP64oklrMaZ3-Dau2dnr9KoSRIn57x",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Holliston",
+    "School website": "https://www.holliston.k12.ma.us",
+    "finalised urls": [
+      "https://www.holliston.k12.ma.us/about/school-committee/20242025-archived-newsletters",
+      "https://www.holliston.k12.ma.us/about/school-committee",
+      "https://www.holliston.k12.ma.us/about/newsletters"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 11,
+    "url probes": [
+      {
+        "url": "https://www.holliston.k12.ma.us/about/school-committee/20242025-archived-newsletters",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 8,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.holliston.k12.ma.us/about/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.holliston.k12.ma.us/about/newsletters",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hull",
+    "School website": "https://www.hullpublicschools.org/",
+    "finalised urls": [
+      "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682727",
+      "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682913",
+      "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682929"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 290,
+    "url probes": [
+      {
+        "url": "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682727",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682913",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 151,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.hullpublicschools.org/apps/pages/index.jsp?uREC_ID=4444280&type=d&pREC_ID=2682929",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 139,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Ipswich",
+    "School website": "http://www.ipsk12.net",
+    "finalised urls": [
+      "http://www.ipsk12.net/school-committee/agendas-minutes-and-folders",
+      "http://www.ipsk12.net/school-committee/ipswich-school-committee/meeting-schedule",
+      "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/agendas",
+      "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 145,
+    "url probes": [
+      {
+        "url": "http://www.ipsk12.net/school-committee/agendas-minutes-and-folders",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.ipsk12.net/school-committee/ipswich-school-committee/meeting-schedule",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/agendas",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 71,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.ipsk12.net/school-committee/agendas-minutes-and-folders/minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 74,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Lee",
+    "School website": "https://www.leepublicschools.net",
+    "finalised urls": [
+      "https://www.leepublicschools.net/pages/f029fb77-db7e-4cd9-973b-c8dacbb8cb51",
+      "https://drive.google.com/drive/folders/0B0LYbpc8AC8ESjl0T3YtajlaYWs?resourcekey=0-x7HudL_YPk4v1qJAqQejMQ",
+      "https://drive.google.com/drive/folders/0B0LYbpc8AC8ESDlYZEdzeG1YeGM?resourcekey=0-lCeXL6kTfFw04TPyx9DQXA",
+      "https://drive.google.com/drive/folders/1qK1rOLQIZAkjqkUZbUJOp5UN9lle7YMX?usp=drive_link",
+      "https://drive.google.com/drive/folders/1zrh72SLcI9cfNjkhXnvQwsxFgtRAPz8e?usp=drive_link",
+      "https://drive.google.com/drive/folders/1NSqm3QYNayjgJ5BbWaVXNNIdqFh-RnoR?usp=drive_link",
+      "https://drive.google.com/drive/folders/17RRDw7ems6j_D5Kz3ZRQDO2Teedpr93y?usp=drive_link",
+      "https://drive.google.com/drive/folders/18slIBIs2mYC4sX1WR3-78L53t4Tj6Mwg?usp=drive_link",
+      "https://drive.google.com/drive/folders/1UccxQKtmD6h3T1jPd6PRC8ZBhmGpKTnP?usp=drive_link",
+      "https://drive.google.com/drive/folders/1e4wssgIZ0TEuVe8DWQLx8wLnhvVDms1g?usp=drive_link",
+      "https://drive.google.com/drive/folders/1ABfCx7E3gy8L2j-3x8DEEHFCoCsX9-xD?usp=drive_link",
+      "https://drive.google.com/drive/folders/1bvR1WPtTaQJQv83xtSzyRi6uFL__s9f-?usp=drive_link",
+      "https://drive.google.com/drive/folders/1pag8etCyZXK2WpS4thIzAJgcjcNTZWBT?usp=drive_link"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "google-drive",
+      "js_cms"
+    ],
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 11,
+    "url probes": [
+      {
+        "url": "https://www.leepublicschools.net/pages/f029fb77-db7e-4cd9-973b-c8dacbb8cb51",
+        "detected platform": "js_cms",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 11,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/0B0LYbpc8AC8ESjl0T3YtajlaYWs?resourcekey=0-x7HudL_YPk4v1qJAqQejMQ",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/0B0LYbpc8AC8ESDlYZEdzeG1YeGM?resourcekey=0-lCeXL6kTfFw04TPyx9DQXA",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1qK1rOLQIZAkjqkUZbUJOp5UN9lle7YMX?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1zrh72SLcI9cfNjkhXnvQwsxFgtRAPz8e?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1NSqm3QYNayjgJ5BbWaVXNNIdqFh-RnoR?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/17RRDw7ems6j_D5Kz3ZRQDO2Teedpr93y?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/18slIBIs2mYC4sX1WR3-78L53t4Tj6Mwg?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1UccxQKtmD6h3T1jPd6PRC8ZBhmGpKTnP?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1e4wssgIZ0TEuVe8DWQLx8wLnhvVDms1g?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1ABfCx7E3gy8L2j-3x8DEEHFCoCsX9-xD?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1bvR1WPtTaQJQv83xtSzyRi6uFL__s9f-?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1pag8etCyZXK2WpS4thIzAJgcjcNTZWBT?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Leicester",
+    "School website": "https://www.leicester.k12.ma.us",
+    "finalised urls": [
+      "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "sharpschool",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 83,
+    "url probes": [
+      {
+        "url": "https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes",
+        "detected platform": "sharpschool",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 83,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Lexington",
+    "School website": "https://www.lexingtonma.org/",
+    "finalised urls": [
+      "https://www.lexingtonma.org/lps-school-committee",
+      "https://docs.google.com/document/d/1KVckXF3aGTFF5xEZ3gJHUS10gaK96vXR2G89dRK4ZYo/edit?usp=sharing",
+      "https://docs.google.com/document/d/1YTafAln0LxK0UekseK1jCn0HDg0-EsooAXMKwU_ypag/edit?usp=sharing",
+      "https://docs.google.com/document/d/1Z98-kUifLD7RDvyTmN9bjRcNEoL_GQ2ikdQZGBLpZrA/edit?usp=sharing",
+      "https://docs.google.com/document/d/1wngAO9WwwrtffXxnnJBDtTbObIcMUVp8jbXHE3TZKTI/edit?usp=sharing",
+      "https://docs.google.com/document/d/1aOXgdGLHRPyj5PP-IqBAaJ22WMieSSxxie2lCfCDHnw/edit?usp=sharing"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "generic",
+      "google-docs"
+    ],
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.lexingtonma.org/lps-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1KVckXF3aGTFF5xEZ3gJHUS10gaK96vXR2G89dRK4ZYo/edit?usp=sharing",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1YTafAln0LxK0UekseK1jCn0HDg0-EsooAXMKwU_ypag/edit?usp=sharing",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1Z98-kUifLD7RDvyTmN9bjRcNEoL_GQ2ikdQZGBLpZrA/edit?usp=sharing",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1wngAO9WwwrtffXxnnJBDtTbObIcMUVp8jbXHE3TZKTI/edit?usp=sharing",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1aOXgdGLHRPyj5PP-IqBAaJ22WMieSSxxie2lCfCDHnw/edit?usp=sharing",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Lynnfield",
+    "School website": "http://www.lynnfield.k12.ma.us",
+    "finalised urls": [
+      "http://www.lynnfield.k12.ma.us/school-committee-a905c1e5",
+      "http://www.lynnfield.k12.ma.us/pages/9be46b89-ebe5-4169-a910-d2c36fe039d0",
+      "https://docs.google.com/document/d/1GBFUYDF03aaP-3bqcnPdHtlibi6ry42qUzKqvb6rSVQ/edit?tab=t.0",
+      "https://docs.google.com/document/d/1DqKiMzvGyl0JJkbQxidJ_utk9zImF1QPlsV--S-rddE/edit?tab=t.0",
+      "https://docs.google.com/document/d/1lFdVSGubVReXKqk6suUwHB2WmcHasb7ZGdmh92Y8qn8/edit?usp=sharing"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "google-docs",
+      "js_cms"
+    ],
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "http://www.lynnfield.k12.ma.us/school-committee-a905c1e5",
+        "detected platform": "js_cms",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.lynnfield.k12.ma.us/pages/9be46b89-ebe5-4169-a910-d2c36fe039d0",
+        "detected platform": "js_cms",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1GBFUYDF03aaP-3bqcnPdHtlibi6ry42qUzKqvb6rSVQ/edit?tab=t.0",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1DqKiMzvGyl0JJkbQxidJ_utk9zImF1QPlsV--S-rddE/edit?tab=t.0",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1lFdVSGubVReXKqk6suUwHB2WmcHasb7ZGdmh92Y8qn8/edit?usp=sharing",
+        "detected platform": "google-docs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Marlborough",
+    "School website": "https://www.mps-edu.org",
+    "finalised urls": [
+      "https://www.mps-edu.org/page/school-committee",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2025-2026",
+      "https://www.mps-edu.org/page/school-committee-meeting-agendasminutesvideos-2026-2027",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendas-minutesvideos",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2024-2025",
+      "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2023-2024"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 40,
+    "url probes": [
+      {
+        "url": "https://www.mps-edu.org/page/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2025-2026",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 23,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mps-edu.org/page/school-committee-meeting-agendasminutesvideos-2026-2027",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendas-minutesvideos",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2024-2025",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 17,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mps-edu.org/o/mps/page/school-committee-meeting-agendasminutesvideos-2023-2024",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Marshfield",
+    "School website": "http://www.mpsd.org",
+    "finalised urls": [
+      "https://www.mpsd.org/documents/school-committee/important-information/334634",
+      "https://www.mpsd.org/documents/school-committee/22678613",
+      "https://www.mpsd.org/documents/school-committee/2025-2026-agendas/22678700",
+      "https://www.mpsd.org/documents/school-committee/2025-2026-minutes/22678702",
+      "https://www.mpsd.org/documents/school-committee/2024-2025-minutes/22678697",
+      "https://www.mpsd.org/documents/school-committee/2024-2025-agendas/22678694",
+      "https://www.mpsd.org/documents/school-committee/2023-2024-minutes/22678686",
+      "https://www.mpsd.org/documents/school-committee/2023-2024-agendas/22678683",
+      "https://www.mpsd.org/documents/school-committee/2026-2027-agendas/28339525"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 159,
+    "url probes": [
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/important-information/334634",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 19,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/22678613",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2025-2026-agendas/22678700",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 27,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2025-2026-minutes/22678702",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 17,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2024-2025-minutes/22678697",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 20,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2024-2025-agendas/22678694",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 26,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2023-2024-minutes/22678686",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 22,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2023-2024-agendas/22678683",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 25,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mpsd.org/documents/school-committee/2026-2027-agendas/28339525",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Maynard",
+    "School website": "https://www.maynard.k12.ma.us",
+    "finalised urls": [
+      "https://www.maynard.k12.ma.us/documents/school-committee/25070188",
+      "https://www.maynard.k12.ma.us/o/maynard-public-schools/browse/24431",
+      "https://www.maynard.k12.ma.us/o/maynard-public-schools/browse/24423",
+      "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2025-2026-sc-minutes/25070260",
+      "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2024-2025-sc-minutes/25070257",
+      "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2023-2024-sc-minutes/25070256",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2026-2027-sc-agendas/28328224",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2025-2026-sc-agendas/25070306",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas(1)/25070301",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas/25070298",
+      "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2023-2024-sc-agendas/25070297"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 227,
+    "url probes": [
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/25070188",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/o/maynard-public-schools/browse/24431",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/o/maynard-public-schools/browse/24423",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2025-2026-sc-minutes/25070260",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 11,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2024-2025-sc-minutes/25070257",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 19,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/minutes/2023-2024-sc-minutes/25070256",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 22,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2026-2027-sc-agendas/28328224",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2025-2026-sc-agendas/25070306",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 41,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas(1)/25070301",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 63,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2024-2025-sc-agendas/25070298",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.maynard.k12.ma.us/documents/school-committee/agenda/2023-2024-sc-agendas/25070297",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 69,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Medfield",
+    "School website": "https://www.medfield.net",
+    "finalised urls": [
+      "https://www.medfield.net/documents/school-committee/school-committee-meeting-dates/25596155",
+      "https://www.medfield.net/documents/school-committee/agendas/67053",
+      "https://www.medfield.net/documents/school-committee/minutes/25595312",
+      "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/775/Medfield_Public_Schools/63bd39d0-abc7-4f8f-9455-dafb74473e5b/Approved-2026-2027-School-Committee-Meeting.pdf?disposition=inline",
+      "https://www.medfield.net/documents/school-committee/agendas/2025---2026/25595306",
+      "https://www.medfield.net/documents/school-committee/agendas/2024---2025/25595301",
+      "https://www.medfield.net/documents/school-committee/agendas/2023---2024/25595296",
+      "https://www.medfield.net/documents/school-committee/minutes/2025-2026/25595375",
+      "https://www.medfield.net/documents/school-committee/minutes/2024-2025/25595368",
+      "https://www.medfield.net/documents/school-committee/minutes/2023-2024/25595360",
+      "https://www.medfield.net/documents/school-committee/school-committee-meeting-documents/25595394",
+      "https://www.youtube.com/playlist?list=PLypOllJHc4M2EgOMD_XarFqL3EXJi8KCv"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 145,
+    "url probes": [
+      {
+        "url": "https://www.medfield.net/documents/school-committee/school-committee-meeting-dates/25596155",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/67053",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/25595312",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/775/Medfield_Public_Schools/63bd39d0-abc7-4f8f-9455-dafb74473e5b/Approved-2026-2027-School-Committee-Meeting.pdf?disposition=inline",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/2025---2026/25595306",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 26,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/2024---2025/25595301",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 18,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/2023---2024/25595296",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 33,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/2025-2026/25595375",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 19,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/2024-2025/25595368",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 18,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/minutes/2023-2024/25595360",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 26,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/school-committee-meeting-documents/25595394",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PLypOllJHc4M2EgOMD_XarFqL3EXJi8KCv",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Mendon-Upton",
+    "School website": "https://www.mursd.org",
+    "finalised urls": [
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/840247",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/school-committee--meetings-2025-2026/22509555",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/building-committee-meetings-2025-2026/22509558",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/policy-subcommittee-meetings-2025-2026/22509564",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/budget-subcommittee-meetings--2025-2026/22509573",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/superintendent-evaluation-meetings-2025-2026/22509574",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-meetings-2024-2025/22509517",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/policy-subcommittee-2024-2025/22509518",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/capital-planning-subcommittee-2024-2025/22509519",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/budget-subcommittee-2024-2025/22509522",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/superintendent-evaluation-subcommittee-2024-2025/22509523",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/golden-apple-subcommittee-2024-2025/22509531",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/building-committee-2024-2025/22509537",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-workshop-2024-2025/22509545",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/multi-board-subcommittee-2024-2025/22509549",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/budget-subcommittee-2023-2024/22509498",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/policy-subcommittee-2023-2024/22509500",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/capital-planning-subcommittee-2023-2024/22509501",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/negotiations-subcommittee--2023-2024/22509504",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/superintendent-evaluation-subcommittee-2023-2024/22509506",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/school-committee-meetings-2023-2024/22509508",
+      "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/golden-apple-subcommittee-2023-2024/22509511"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/840247",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/school-committee--meetings-2025-2026/22509555",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/building-committee-meetings-2025-2026/22509558",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/policy-subcommittee-meetings-2025-2026/22509564",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/budget-subcommittee-meetings--2025-2026/22509573",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2025-2026/superintendent-evaluation-meetings-2025-2026/22509574",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-meetings-2024-2025/22509517",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/policy-subcommittee-2024-2025/22509518",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/capital-planning-subcommittee-2024-2025/22509519",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/budget-subcommittee-2024-2025/22509522",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/superintendent-evaluation-subcommittee-2024-2025/22509523",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/golden-apple-subcommittee-2024-2025/22509531",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/building-committee-2024-2025/22509537",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/school-committee-workshop-2024-2025/22509545",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2024-2025/multi-board-subcommittee-2024-2025/22509549",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/budget-subcommittee-2023-2024/22509498",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/policy-subcommittee-2023-2024/22509500",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/capital-planning-subcommittee-2023-2024/22509501",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/negotiations-subcommittee--2023-2024/22509504",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/superintendent-evaluation-subcommittee-2023-2024/22509506",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/school-committee-meetings-2023-2024/22509508",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.mursd.org/documents/school-committee/agendas-and-minutes/school-year-2023-2024/golden-apple-subcommittee-2023-2024/22509511",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Milton",
+    "School website": "https://www.miltonps.org",
+    "finalised urls": [
+      "https://www.miltonps.org",
+      "https://www.miltonps.org/o/mps/page/school-committee-meetings",
+      "https://www.miltonps.org/o/mps/page/school-committee-meetings-copy",
+      "https://www.miltonps.org/page/sc-agenda",
+      "https://www.miltonps.org/documents/school-committee/school-committee-minutes/647544"
+    ],
+    "clicks needed": 1,
+    "detected platform": "apptegy",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 92,
+    "url probes": [
+      {
+        "url": "https://www.miltonps.org",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.miltonps.org/o/mps/page/school-committee-meetings",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 46,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.miltonps.org/o/mps/page/school-committee-meetings-copy",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 46,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.miltonps.org/page/sc-agenda",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.miltonps.org/documents/school-committee/school-committee-minutes/647544",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Nantucket",
+    "School website": "https://www.npsk.org",
+    "finalised urls": [
+      "https://www.npsk.org/school-committee/agendas-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.npsk.org/school-committee/agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Narragansett",
+    "School website": "https://www.nrsd.org",
+    "finalised urls": [
+      "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public"
+    ],
+    "clicks needed": 1,
+    "detected platform": "boarddocs",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public",
+        "detected platform": "boarddocs",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Natick",
+    "School website": "https://www.natickps.org",
+    "finalised urls": [
+      "https://www.natickps.org/documents/school-committee/24282560",
+      "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/4910/Nps/9d43ac24-72db-4d5a-a5fe-9f635ac25091/2025-2026_SCHOOL_COMMITTEE_MEETINGS_.docx__2__.pdf?disposition=inline",
+      "https://www.natickps.org/documents/school-committee/school-committee-policy-manual/24282533",
+      "https://www.natickps.org/documents/school-committee/memorial-school-building-committee-(msbc)-documents/24282720"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "apptegy",
+      "generic"
+    ],
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 35,
+    "url probes": [
+      {
+        "url": "https://www.natickps.org/documents/school-committee/24282560",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/4910/Nps/9d43ac24-72db-4d5a-a5fe-9f635ac25091/2025-2026_SCHOOL_COMMITTEE_MEETINGS_.docx__2__.pdf?disposition=inline",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.natickps.org/documents/school-committee/school-committee-policy-manual/24282533",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 13,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.natickps.org/documents/school-committee/memorial-school-building-committee-(msbc)-documents/24282720",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 19,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "North Brookfield",
+    "School website": "https://www.nbschools.org",
+    "finalised urls": [
+      "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255603&type=d&pREC_ID=2518107",
+      "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255615&type=d&pREC_ID=2518116"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 100,
+    "url probes": [
+      {
+        "url": "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255603&type=d&pREC_ID=2518107",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.nbschools.org/apps/pages/index.jsp?uREC_ID=4255615&type=d&pREC_ID=2518116",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 98,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "North Middlesex",
+    "School website": "http://www.nmrsd.org",
+    "finalised urls": [
+      "http://www.nmrsd.org/school-committee/meetings/meeting-recordings",
+      "https://www.youtube.com/playlist?list=PL9d0lQubEUXmSwx0JhU7-V1Xwqe0XuU8s"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "http://www.nmrsd.org/school-committee/meetings/meeting-recordings",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PL9d0lQubEUXmSwx0JhU7-V1Xwqe0XuU8s",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Northbridge",
+    "School website": "https://www.nps.org",
+    "finalised urls": [
+      "https://www.nps.org",
+      "https://www.nps.org/page/sc-agendas",
+      "https://www.nps.org/page/meeting-minutes",
+      "https://northbridgetv.org/CablecastPublicSite/?channel=10"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "apptegy",
+      "generic"
+    ],
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.nps.org",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.nps.org/page/sc-agendas",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.nps.org/page/meeting-minutes",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://northbridgetv.org/CablecastPublicSite/?channel=10",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Norwell",
+    "School website": "https://www.norwellschools.org",
+    "finalised urls": [
+      "https://www.norwellschools.org/school-committee/members-meeting-information",
+      "https://www.norwellschools.org/school-committee/schedule",
+      "https://www.norwellschools.org/school-committee/prior-year-school-committee-meeting-videos"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 34,
+    "url probes": [
+      {
+        "url": "https://www.norwellschools.org/school-committee/members-meeting-information",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 34,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.norwellschools.org/school-committee/schedule",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.norwellschools.org/school-committee/prior-year-school-committee-meeting-videos",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Norwood",
+    "School website": "https://www.norwood.k12.ma.us",
+    "finalised urls": [
+      "https://www.norwood.k12.ma.us/sc",
+      "https://www.norwood.k12.ma.us/sc/schedules-minutes",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2026-2027",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2025-2026",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2024-2025",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2023-2024",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2022-2023",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2021-2022",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2020-2021",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2019-2020",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2018-2019",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2017-2018",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2016-2017",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2015-2016",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2014-2015",
+      "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2013-2014"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.norwood.k12.ma.us/sc",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedules-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2026-2027",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2025-2026",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2024-2025",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2023-2024",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2022-2023",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2021-2022",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2020-2021",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2019-2020",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2018-2019",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2017-2018",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2016-2017",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2015-2016",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2014-2015",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://www.norwood.k12.ma.us/sc/schedule-and-minutes-2013-2014",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Pembroke",
+    "School website": "https://www.pembrokek12.org",
+    "finalised urls": [
+      "https://www.pembrokek12.org",
+      "https://www.pembrokek12.org/district/school-committee/school-committee-meeting-agendas",
+      "https://www.pembrokek12.org/district/school-committee/minutes-of-the-psc",
+      "https://www.pembrokek12.org/district/school-committee/policy-sub-committee-meeting-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 149,
+    "url probes": [
+      {
+        "url": "https://www.pembrokek12.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/school-committee/school-committee-meeting-agendas",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 74,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/school-committee/minutes-of-the-psc",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 71,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.pembrokek12.org/district/school-committee/policy-sub-committee-meeting-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Pioneer Charter School of Science (District)",
+    "School website": "https://www.pioneercss.org",
+    "finalised urls": [
+      "https://www.pioneercss.org/apps/pages/index.jsp?uREC_ID=281022&type=d",
+      "https://www.pioneercss.org/apps/pages/index.jsp?uREC_ID=515234&type=d"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.pioneercss.org/apps/pages/index.jsp?uREC_ID=281022&type=d",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.pioneercss.org/apps/pages/index.jsp?uREC_ID=515234&type=d",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Plainville",
+    "School website": "http://www.plainville.k12.ma.us",
+    "finalised urls": [
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2022-2023-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2026-2027-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2025-2026-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2024-2025-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2023-2024-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2021-2022-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2020-2021-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2019-2020-meetings-agendas-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2017-2018-meetings-agendas-and-minutes",
+      "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2016-2017-meetings-agendas-and-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2022-2023-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2026-2027-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2025-2026-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2024-2025-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2023-2024-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2021-2022-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2020-2021-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2019-2020-meetings-agendas-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2017-2018-meetings-agendas-and-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.plainville.k12.ma.us/school-committee/school-committee-meeting-dates-agenda/2016-2017-meetings-agendas-and-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Plymouth",
+    "School website": "https://www.plymouth.k12.ma.us",
+    "finalised urls": [
+      "https://www.plymouth.k12.ma.us/documents/district/school-committee/480241",
+      "https://www.plymouth.k12.ma.us/page/school-committee"
+    ],
+    "clicks needed": 1,
+    "detected platform": "apptegy",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 19,
+    "url probes": [
+      {
+        "url": "https://www.plymouth.k12.ma.us/documents/district/school-committee/480241",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 9,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.plymouth.k12.ma.us/page/school-committee",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 10,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Revere",
+    "School website": "https://www.reverek12.org",
+    "finalised urls": [
+      "https://www.reverek12.org",
+      "http://reverema.iqm2.com/Citizens/Board/1048-Revere-School-Committee",
+      "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191795&type=d&pREC_ID=2755634",
+      "https://www.reverek12.org/apps/events/2026/8/18/47747614/?REC_ID=47747614&id=0"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "generic",
+      "granicus_embed"
+    ],
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 12,
+    "url probes": [
+      {
+        "url": "https://www.reverek12.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 6,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://reverema.iqm2.com/Citizens/Board/1048-Revere-School-Committee",
+        "detected platform": "granicus_embed",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.reverek12.org/apps/pages/index.jsp?uREC_ID=2191795&type=d&pREC_ID=2755634",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 6,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.reverek12.org/apps/events/2026/8/18/47747614/?REC_ID=47747614&id=0",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Shrewsbury",
+    "School website": "https://schools.shrewsburyma.gov/",
+    "finalised urls": [
+      "https://schools.shrewsburyma.gov/sc/2024-2025-school-committee-meeting-documents",
+      "https://schools.shrewsburyma.gov/sc/2026-2027-school-committee-meeting-documents",
+      "https://schools.shrewsburyma.gov/sc/2025-2026-school-committee-meeting-documents",
+      "https://schools.shrewsburyma.gov/sc/past-meeting-minutes"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://schools.shrewsburyma.gov/sc/2024-2025-school-committee-meeting-documents",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://schools.shrewsburyma.gov/sc/2026-2027-school-committee-meeting-documents",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://schools.shrewsburyma.gov/sc/2025-2026-school-committee-meeting-documents",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://schools.shrewsburyma.gov/sc/past-meeting-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "South Shore Regional Vocational Technical",
+    "School website": "https://southshore.tech",
+    "finalised urls": [
+      "https://southshore.tech/school-committee"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://southshore.tech/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Tri-County Regional Vocational Technical",
+    "School website": "https://www.tri-county.us",
+    "finalised urls": [
+      "https://www.tri-county.us/documents/about-us/school-committee/documents/514662",
+      "https://www.tri-county.us/documents/about-us/school-committee/documents/meeting-minutes/16502091",
+      "https://www.tri-county.us/documents/about-us/school-committee/documents/agendas/16502095"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 60,
+    "url probes": [
+      {
+        "url": "https://www.tri-county.us/documents/about-us/school-committee/documents/514662",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tri-county.us/documents/about-us/school-committee/documents/meeting-minutes/16502091",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 13,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.tri-county.us/documents/about-us/school-committee/documents/agendas/16502095",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 44,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Westford",
+    "School website": "http://westfordk12.us/Pages/index",
+    "finalised urls": [
+      "http://westfordk12.us/about/school-committee",
+      "https://westfordma.gov/767/Document-Management-System",
+      "https://westfordma.gov/AgendaCenter/School-Committee-39",
+      "https://dms.westfordma.gov/myapi_nohead.php",
+      "https://cloud.castus.tv/vod/westfordcat/playlist/School%20Committee?page=PLAYLIST"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 3,
+    "url probes": [
+      {
+        "url": "http://westfordk12.us/about/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://westfordma.gov/767/Document-Management-System",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://westfordma.gov/AgendaCenter/School-Committee-39",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://dms.westfordma.gov/myapi_nohead.php",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://cloud.castus.tv/vod/westfordcat/playlist/School%20Committee?page=PLAYLIST",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Weymouth",
+    "School website": "http://www.weymouthschools.org/",
+    "finalised urls": [
+      "http://www.weymouthschools.org/school-committee",
+      "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents",
+      "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026",
+      "https://www.weymouth.tv/school-committee"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 177,
+    "url probes": [
+      {
+        "url": "http://www.weymouthschools.org/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 177,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.weymouthschools.org/school-committee/agendas-minutes-related-documents/2025-2026",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.weymouth.tv/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Worcester",
+    "School website": "https://www.worcesterschools.org",
+    "finalised urls": [
+      "https://www.worcesterschools.org",
+      "https://www.worcesterschools.org/page/agenda-and-minutes",
+      "https://www.worcesterschools.org/page/meeting-dates",
+      "https://www.worcesterschools.org/page/live-and-archived-videos",
+      "https://www.youtube.com/playlist?list=PLZqyT6uNMVa9VWqRvrOSa9LZehdTuo0pA"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "apptegy",
+      "generic"
+    ],
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 25,
+    "url probes": [
+      {
+        "url": "https://www.worcesterschools.org",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/agenda-and-minutes",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 19,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/meeting-dates",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/live-and-archived-videos",
+        "detected platform": "apptegy",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PLZqyT6uNMVa9VWqRvrOSa9LZehdTuo0pA",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Wrentham",
+    "School website": "https://wrentham.k12.ma.us",
+    "finalised urls": [
+      "https://wrentham.k12.ma.us/Our-District/School-Committee/index.html",
+      "https://drive.google.com/drive/folders/1hx2dp7IGQARBG7X74iqJfWJJdYCQrpHR?usp=drive_link",
+      "https://drive.google.com/drive/folders/1fHzmRYh3GNdShXucwm2pvb7uucMzHyCa",
+      "https://drive.google.com/drive/folders/1BvdFMw0dKqjXFGt1vG4YvUcn0TT7qnCO",
+      "https://drive.google.com/drive/folders/1kk0gTKlb_amc3QNittVIUCJYELBEpef_?usp=drive_link",
+      "https://drive.google.com/drive/folders/1Ao6uvpt7JfsyEn58mekKMB1jlh3FjlX9",
+      "https://drive.google.com/drive/folders/1gwIlccCovHZFD2hJ2NEb1zdXQku2pWsX",
+      "https://wrenthamcable8.com/wrentham-school-committee-meetings",
+      "https://drive.google.com/drive/folders/1iV1CNKj6Nug2vw-J2BiDqCsuis7xadcn"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "catapult",
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 93,
+    "url probes": [
+      {
+        "url": "https://wrentham.k12.ma.us/Our-District/School-Committee/index.html",
+        "detected platform": "catapult",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 93,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1hx2dp7IGQARBG7X74iqJfWJJdYCQrpHR?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1fHzmRYh3GNdShXucwm2pvb7uucMzHyCa",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1BvdFMw0dKqjXFGt1vG4YvUcn0TT7qnCO",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1kk0gTKlb_amc3QNittVIUCJYELBEpef_?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1Ao6uvpt7JfsyEn58mekKMB1jlh3FjlX9",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1gwIlccCovHZFD2hJ2NEb1zdXQku2pWsX",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://wrenthamcable8.com/wrentham-school-committee-meetings",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1iV1CNKj6Nug2vw-J2BiDqCsuis7xadcn",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Dighton-Rehoboth",
+    "School website": "https://www.drregional.org",
+    "finalised urls": [
+      "https://www.drregional.org/page/agenda-and-minutes",
+      "https://www.drregional.org/page/yearly-budget-information",
+      "https://drive.google.com/drive/folders/1Tuhn9zGtN6b_1KzSRk7f2_crHtp0pgMu"
+    ],
+    "clicks needed": 1,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 6,
+    "url probes": [
+      {
+        "url": "https://www.drregional.org/page/agenda-and-minutes",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.drregional.org/page/yearly-budget-information",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 5,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1Tuhn9zGtN6b_1KzSRk7f2_crHtp0pgMu",
+        "detected platform": "google-drive",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Learning First Charter Public School (District)",
+    "School website": "https://learningfirstcharter.org",
+    "finalised urls": [
+      "https://learningfirstcharter.org/apps/pages/index.jsp?uREC_ID=4376421&type=d&pREC_ID=2579523",
+      "https://4.files.edl.io/6274/04/27/26/170715-d9ba0212-91bb-4c32-b7c2-5e14cf2ce33f.pdf"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 1,
+    "url probes": [
+      {
+        "url": "https://learningfirstcharter.org/apps/pages/index.jsp?uREC_ID=4376421&type=d&pREC_ID=2579523",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://4.files.edl.io/6274/04/27/26/170715-d9ba0212-91bb-4c32-b7c2-5e14cf2ce33f.pdf",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Masconomet",
+    "School website": "https://www.masconomet.org",
+    "finalised urls": [
+      "https://www.masconomet.org",
+      "https://www.masconomet.org/school-committee/meeting-agenda-minutes-documents/minutes-agendas-and-documents",
+      "https://www.masconomet.org/school-committee/subcommittees/views-on-climate-and-learning-vocal",
+      "https://www.masconomet.org/school-committee/subcommittees/district-capital-improvementbudget",
+      "https://www.masconomet.org/school-committee/subcommittees/community-relations",
+      "https://www.masconomet.org/school-committee/subcommittees/policy",
+      "https://www.masconomet.org/school-committee/subcommittees/negotiations",
+      "https://www.masconomet.org/school-committee/subcommittees/town-liaisons",
+      "https://www.masconomet.org/school-committee/subcommittees/superintendent-search"
+    ],
+    "clicks needed": 1,
+    "detected platform": "generic",
+    "probe_depth": 0,
+    "probe media found": true,
+    "probe media count": 99,
+    "url probes": [
+      {
+        "url": "https://www.masconomet.org",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/meeting-agenda-minutes-documents/minutes-agendas-and-documents",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 86,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/views-on-climate-and-learning-vocal",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/district-capital-improvementbudget",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/community-relations",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/policy",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/negotiations",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 9,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/town-liaisons",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.masconomet.org/school-committee/subcommittees/superintendent-search",
+        "detected platform": "generic",
+        "probe_depth": 0,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Agawam",
+    "School website": "https://www.agawamed.org/",
+    "finalised urls": [
+      "https://www.agawamed.org/page/school-committee",
+      "https://www.agawamed.org/browse/145146",
+      "https://www.agawamed.org/browse/145147",
+      "https://us-east-2.protection.sophos.com/?d=cablecast.tv&u=aHR0cDovL2FnYXdhbXZvZC5jYWJsZWNhc3QudHYvaW50ZXJuZXRjaGFubmVsL3NlYXJjaD9zaXRlPTEmcXVlcnk9U2Nob29sK0NvbW1pdHRlZSZmdWxsVGV4dD1mYWxzZQ==&i=NWViYzJmYzZkZDY5M2YxNzYxOTE0MjJm&t=YVd3dFhEZzYvdlRFd012N2dyYnFwOUFuRFFTc2JwVWtTcm53Q3N4cVZrRT0=&h=920d1e9b9d7f49469b38c33d60f94246&s=AVNPUEhUT0NFTkNSWVBUSVZsNSX5DmkmLtVZk6T_g_T-QRE8lB3ZyVFxSYsrE34cVQ"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 3,
+    "url probes": [
+      {
+        "url": "https://www.agawamed.org/page/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.agawamed.org/browse/145146",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.agawamed.org/browse/145147",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://us-east-2.protection.sophos.com/?d=cablecast.tv&u=aHR0cDovL2FnYXdhbXZvZC5jYWJsZWNhc3QudHYvaW50ZXJuZXRjaGFubmVsL3NlYXJjaD9zaXRlPTEmcXVlcnk9U2Nob29sK0NvbW1pdHRlZSZmdWxsVGV4dD1mYWxzZQ==&i=NWViYzJmYzZkZDY5M2YxNzYxOTE0MjJm&t=YVd3dFhEZzYvdlRFd012N2dyYnFwOUFuRFFTc2JwVWtTcm53Q3N4cVZrRT0=&h=920d1e9b9d7f49469b38c33d60f94246&s=AVNPUEhUT0NFTkNSWVBUSVZsNSX5DmkmLtVZk6T_g_T-QRE8lB3ZyVFxSYsrE34cVQ",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Ashland",
+    "School website": "http://www.ashland.k12.ma.us",
+    "finalised urls": [
+      "http://www.ashland.k12.ma.us/school-committee",
+      "https://drive.google.com/drive/folders/0B0n1npGCorhBfmhtQWxrdmZnOTNJN29vUFVFVENGWGp2aENNeWpvbTNWVkwtOE9ob3EzRTQ?resourcekey=0-GYd5V1ZeMsg1sodIhkeJIg&usp=sharing",
+      "http://www.ashland.k12.ma.us/school-committee/meeting-agendas-minutes-meeting-video-links/meeting-agendas-minutes-video-links"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 108,
+    "url probes": [
+      {
+        "url": "http://www.ashland.k12.ma.us/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 67,
+        "pages_crawled": 6,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/0B0n1npGCorhBfmhtQWxrdmZnOTNJN29vUFVFVENGWGp2aENNeWpvbTNWVkwtOE9ob3EzRTQ?resourcekey=0-GYd5V1ZeMsg1sodIhkeJIg&usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.ashland.k12.ma.us/school-committee/meeting-agendas-minutes-meeting-video-links/meeting-agendas-minutes-video-links",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 41,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Beverly",
+    "School website": "https://www.beverlyschools.org",
+    "finalised urls": [
+      "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d",
+      "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083160&type=d&pREC_ID=2133568",
+      "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d&pREC_ID=2285699"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 138,
+    "url probes": [
+      {
+        "url": "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 69,
+        "pages_crawled": 5,
+        "error": null
+      },
+      {
+        "url": "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083160&type=d&pREC_ID=2133568",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.beverlyschools.org/apps/pages/index.jsp?uREC_ID=2083091&type=d&pREC_ID=2285699",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 69,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Bridge Boston Charter School (District)",
+    "School website": "https://www.bridgebostoncs.org",
+    "finalised urls": [
+      "https://www.bridgebostoncs.org/public-meeting-materials"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 1,
+    "url probes": [
+      {
+        "url": "https://www.bridgebostoncs.org/public-meeting-materials",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Brookline",
+    "School website": "http://www.brookline.k12.ma.us/",
+    "finalised urls": [
+      "http://www.brookline.k12.ma.us/district/school-committee/meeting-materials",
+      "http://www.brookline.k12.ma.us/district/school-committee/archived-meeting-materials",
+      "http://www.brookline.k12.ma.us/district/school-committee/meetings-and-public-comment"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 5,
+    "url probes": [
+      {
+        "url": "http://www.brookline.k12.ma.us/district/school-committee/meeting-materials",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 5,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.brookline.k12.ma.us/district/school-committee/archived-meeting-materials",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.brookline.k12.ma.us/district/school-committee/meetings-and-public-comment",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Chesterfield-Goshen",
+    "School website": "https://www.hr-k12.org",
+    "finalised urls": [
+      "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+      "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+      "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+      "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "google-drive",
+      "js_cms"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 34,
+    "url probes": [
+      {
+        "url": "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+        "detected platform": "js_cms",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 34,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Dighton-Rehoboth",
+    "School website": "https://www.drregional.org",
+    "finalised urls": [
+      "https://www.drregional.org/documents/school-committee/18838602",
+      "https://www.drregional.org/documents/school-committee/agenda-minutes/18838607"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.drregional.org/documents/school-committee/18838602",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.drregional.org/documents/school-committee/agenda-minutes/18838607",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Douglas",
+    "School website": "https://www.douglasps.net",
+    "finalised urls": [
+      "https://www.douglasps.net/documents/school-committee/school-committee-minutes/22224956",
+      "https://www.douglasps.net/documents/school-committee/school-committee-agendas/795568"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.douglasps.net/documents/school-committee/school-committee-minutes/22224956",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.douglasps.net/documents/school-committee/school-committee-agendas/795568",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Dover",
+    "School website": "http://www.doversherborn.org",
+    "finalised urls": [
+      "https://www.doversherborn.org/school-committee",
+      "http://www.doversherborn.org/school-committee/dover-school-committee",
+      "http://www.doversherborn.org/school-committee/sherborn-school-committee",
+      "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 564,
+    "url probes": [
+      {
+        "url": "https://www.doversherborn.org/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 335,
+        "pages_crawled": 146,
+        "error": null
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 71,
+        "pages_crawled": 36,
+        "error": null
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 71,
+        "pages_crawled": 34,
+        "error": null
+      },
+      {
+        "url": "https://www.doversherborn.org/school-committee/dover-sherborn-regional-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 87,
+        "pages_crawled": 44,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Easthampton",
+    "School website": "https://www.epsd.us",
+    "finalised urls": [
+      "https://www.epsd.us/about/school-committee",
+      "https://www.easthamptonma.gov/AgendaCenter",
+      "https://www.youtube.com/channel/UCqgiWk-zGkX97R48xsqeKSA"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 204,
+    "url probes": [
+      {
+        "url": "https://www.epsd.us/about/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 8,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.easthamptonma.gov/AgendaCenter",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 196,
+        "pages_crawled": 872,
+        "error": null
+      },
+      {
+        "url": "https://www.youtube.com/channel/UCqgiWk-zGkX97R48xsqeKSA",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Edgartown",
+    "School website": "https://mvyps.org",
+    "finalised urls": [
+      "https://mvyps.org",
+      "https://mvyps.org/school-committee/agendas",
+      "https://mvyps.org/school-committee/meetings",
+      "https://mvyps.org/school-committee/minutes"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 268,
+    "url probes": [
+      {
+        "url": "https://mvyps.org",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 33,
+        "pages_crawled": 42,
+        "error": null
+      },
+      {
+        "url": "https://mvyps.org/school-committee/agendas",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://mvyps.org/school-committee/meetings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 3,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://mvyps.org/school-committee/minutes",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 229,
+        "pages_crawled": 8,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Essex North Shore Agricultural and Technical School District",
+    "School website": "https://essexnorthshore.org",
+    "finalised urls": [
+      "https://essexnorthshore.org/about/school-committee",
+      "https://go.boarddocs.com/ma/ens/Board.nsf/Public#tab-meetings",
+      "https://go.boarddocs.com/ma/ens/Board.nsf/Public",
+      "https://go.boarddocs.com/ma/ens/Board.nsf/Private"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "boarddocs",
+      "generic"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://essexnorthshore.org/about/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://go.boarddocs.com/ma/ens/Board.nsf/Public#tab-meetings",
+        "detected platform": "boarddocs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://go.boarddocs.com/ma/ens/Board.nsf/Public",
+        "detected platform": "boarddocs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://go.boarddocs.com/ma/ens/Board.nsf/Private",
+        "detected platform": "boarddocs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Fall River",
+    "School website": "https://www.fallriverschools.org",
+    "finalised urls": [
+      "https://www.fallriverschools.org",
+      "https://www.fallriverschools.org/school-committee/locations-and-agendas",
+      "https://www.fallriverschools.org/school-committee/sc-minutes",
+      "https://www.fallriverschools.org/school-committee"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 296,
+    "url probes": [
+      {
+        "url": "https://www.fallriverschools.org",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 261,
+        "pages_crawled": 138,
+        "error": null
+      },
+      {
+        "url": "https://www.fallriverschools.org/school-committee/locations-and-agendas",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 35,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.fallriverschools.org/school-committee/sc-minutes",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.fallriverschools.org/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Foxborough",
+    "School website": "http://www.foxborough.k12.ma.us",
+    "finalised urls": [
+      "https://www.foxborough.k12.ma.us/school_committee/StreamingVideoLibrary",
+      "https://video.fcatv.org/videoscategory/school-committee",
+      "https://www.foxborough.k12.ma.us/school_committee/2025-2026_operating_protocols",
+      "https://www.foxborough.k12.ma.us/cms/One.aspx?portalId=1548092&pageId=6857723#"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "sharpschool"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 73,
+    "url probes": [
+      {
+        "url": "https://www.foxborough.k12.ma.us/school_committee/StreamingVideoLibrary",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://video.fcatv.org/videoscategory/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 11,
+        "error": null
+      },
+      {
+        "url": "https://www.foxborough.k12.ma.us/school_committee/2025-2026_operating_protocols",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.foxborough.k12.ma.us/cms/One.aspx?portalId=1548092&pageId=6857723#",
+        "detected platform": "sharpschool",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 73,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Greater Commonwealth Virtual District",
+    "School website": "https://www.gcvs.org",
+    "finalised urls": [
+      "https://www.gcvs.org/board-of-trustees",
+      "https://drive.google.com/drive/folders/1WyDJ63QIpYGbH3HLvuUM_6iso3X0jIst?usp=sharing",
+      "https://drive.google.com/drive/folders/1qmCtK6rz4evPvzz0rx7B48nzvSehWb5F?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 10,
+    "url probes": [
+      {
+        "url": "https://www.gcvs.org/board-of-trustees",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 10,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1WyDJ63QIpYGbH3HLvuUM_6iso3X0jIst?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1qmCtK6rz4evPvzz0rx7B48nzvSehWb5F?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hatfield",
+    "School website": "http://www.hatfieldps.net",
+    "finalised urls": [
+      "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d",
+      "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d&termREC_ID=&pREC_ID=1195505",
+      "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d&termREC_ID=&pREC_ID=1195506"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 6,
+    "url probes": [
+      {
+        "url": "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 3,
+        "error": null
+      },
+      {
+        "url": "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d&termREC_ID=&pREC_ID=1195505",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "http://www.hatfieldps.net/apps/pages/index.jsp?uREC_ID=559475&type=d&termREC_ID=&pREC_ID=1195506",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hawlemont",
+    "School website": "https://www.mtrsd.org/",
+    "finalised urls": [
+      "https://www.mtrsd.org/school-committees",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/agendas",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/minutes",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+      "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+      "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.mtrsd.org/school-committees",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/agendas",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/minutes",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hopedale",
+    "School website": "https://www.hopedaleschools.org",
+    "finalised urls": [
+      "https://www.hopedaleschools.org/page/school-committee",
+      "https://www.hopedaleschools.org/documents/school-committee/minutes/326469",
+      "https://www.hopedaleschools.org/documents/school-committee/agendas/326492"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.hopedaleschools.org/page/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.hopedaleschools.org/documents/school-committee/minutes/326469",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.hopedaleschools.org/documents/school-committee/agendas/326492",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Innovation Academy Charter (District)",
+    "School website": "https://www.innovationcharter.org",
+    "finalised urls": [
+      "https://www.innovationcharter.org/about-iacs/board-committees/meetings",
+      "https://drive.google.com/drive/folders/0B3DdUkk4N5Mxb2l4Wk9fUDJmVTQ?resourcekey=0-0njVB9dyvn9xOY0k1cOFsg"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.innovationcharter.org/about-iacs/board-committees/meetings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/0B3DdUkk4N5Mxb2l4Wk9fUDJmVTQ?resourcekey=0-0njVB9dyvn9xOY0k1cOFsg",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Mohawk Trail",
+    "School website": "https://www.mtrsd.org/",
+    "finalised urls": [
+      "https://www.mtrsd.org/school-committees",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/agendas",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/minutes",
+      "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+      "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+      "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.mtrsd.org/school-committees",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/agendas",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/minutes",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/mohawk-school-committee/meeting-recordings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1wVDjey1bs74EQH87mmFcpMG33QmEch4N",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://sites.google.com/a/mohawkschools.org/hawlemont-school-committee/meeting-recordings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Nashoba",
+    "School website": "https://www.nrsd.net",
+    "finalised urls": [
+      "https://www.nrsd.net/documents/school-committee/23858960"
+    ],
+    "clicks needed": 2,
+    "detected platform": "apptegy",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.nrsd.net/documents/school-committee/23858960",
+        "detected platform": "apptegy",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Norfolk County Agricultural",
+    "School website": "https://www.norfolkaggie.org",
+    "finalised urls": [
+      "https://www.norfolkaggie.org/about-us/calendars",
+      "https://www.norfolkaggie.org/about-us/board-of-trustees",
+      "https://www.norfolkaggie.org/about-us"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.norfolkaggie.org/about-us/calendars",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.norfolkaggie.org/about-us/board-of-trustees",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.norfolkaggie.org/about-us",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 16,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "North Attleborough",
+    "School website": "https://www.naschools.net",
+    "finalised urls": [
+      "https://www.naschools.net/documents/our-district/school-committee/370187",
+      "https://www.naschools.net/documents/school-committee/minutes/22676255"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.naschools.net/documents/our-district/school-committee/370187",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.naschools.net/documents/school-committee/minutes/22676255",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Pioneer Valley",
+    "School website": "https://www.pvrsdk12.org",
+    "finalised urls": [
+      "https://www.pvrsdk12.org/school-committee/meetings-materials",
+      "https://drive.google.com/open?id=1Y2NDEmfCpy7s5Bw2ax76aQYRmBaiz5BRxZxyCPEhTkw",
+      "https://drive.google.com/open?id=1BVHUNfBqTgjGNale0iW4kp1Dk3Uin8vnx2mhSTsUCU8"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.pvrsdk12.org/school-committee/meetings-materials",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/open?id=1Y2NDEmfCpy7s5Bw2ax76aQYRmBaiz5BRxZxyCPEhTkw",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/open?id=1BVHUNfBqTgjGNale0iW4kp1Dk3Uin8vnx2mhSTsUCU8",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Quaboag Regional",
+    "School website": "https://www.quaboagrsd.org",
+    "finalised urls": [
+      "https://www.quaboagrsd.org/district-depts/school-committee",
+      "https://docs.google.com/document/d/136ey3U5mVDOo_K2Tbi86X18725pyRZIy/edit?usp=sharing&ouid=115358915884607093623&rtpof=true&sd=true",
+      "https://docs.google.com/document/d/1I852-11q0e1YUu_Xq6q2zUrReI64NWj1/edit?usp=sharing&ouid=114799213029061791404&rtpof=true&sd=true",
+      "https://docs.google.com/document/d/1R_ETv-MzJsiB_PGzmQT4j5bhlUc0LApS/edit?usp=sharing&ouid=114799213029061791404&rtpof=true&sd=true"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-docs"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.quaboagrsd.org/district-depts/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/136ey3U5mVDOo_K2Tbi86X18725pyRZIy/edit?usp=sharing&ouid=115358915884607093623&rtpof=true&sd=true",
+        "detected platform": "google-docs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1I852-11q0e1YUu_Xq6q2zUrReI64NWj1/edit?usp=sharing&ouid=114799213029061791404&rtpof=true&sd=true",
+        "detected platform": "google-docs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://docs.google.com/document/d/1R_ETv-MzJsiB_PGzmQT4j5bhlUc0LApS/edit?usp=sharing&ouid=114799213029061791404&rtpof=true&sd=true",
+        "detected platform": "google-docs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Sherborn",
+    "School website": "http://www.doversherborn.org",
+    "finalised urls": [
+      "http://www.doversherborn.org",
+      "http://www.doversherborn.org/school-committee/dover-school-committee",
+      "http://www.doversherborn.org/school-committee/sherborn-school-committee"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 590,
+    "url probes": [
+      {
+        "url": "http://www.doversherborn.org",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 448,
+        "pages_crawled": 215,
+        "error": null
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/dover-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 71,
+        "pages_crawled": 36,
+        "error": null
+      },
+      {
+        "url": "http://www.doversherborn.org/school-committee/sherborn-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 71,
+        "pages_crawled": 34,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Sizer School: A North Central Charter Essential (District)",
+    "School website": "http://www.sizerschool.org",
+    "finalised urls": [
+      "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d",
+      "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d&termREC_ID=&pREC_ID=1168972",
+      "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d&termREC_ID=&pREC_ID=1016992"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 5,
+        "error": null
+      },
+      {
+        "url": "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d&termREC_ID=&pREC_ID=1168972",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.sizerschool.org/apps/pages/index.jsp?uREC_ID=464867&type=d&termREC_ID=&pREC_ID=1016992",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Somerset Berkeley",
+    "School website": "https://www.somersetschools.org",
+    "finalised urls": [
+      "https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/index.html",
+      "https://drive.google.com/drive/folders/16PXPWD4sB8uYu8cAsqbvpfnN7krigoHB?usp=sharing",
+      "https://www.youtube.com/watch?v=kmwe7eAPYyM&list=PLvzaeZrgURbrvZGl-YsfCgDjSNOuKwYTC"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "catapult",
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 8,
+    "url probes": [
+      {
+        "url": "https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/index.html",
+        "detected platform": "catapult",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 8,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/16PXPWD4sB8uYu8cAsqbvpfnN7krigoHB?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=kmwe7eAPYyM&list=PLvzaeZrgURbrvZGl-YsfCgDjSNOuKwYTC",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Somerset",
+    "School website": "https://www.somersetschools.org",
+    "finalised urls": [
+      "https://www.somersetschools.org/School-Committee/Somerset-Public-Schools/index.html",
+      "https://drive.google.com/drive/folders/1tHp1Fl_XYHKgz5CY45VVsTVJUtieLBVe?usp=sharing"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "catapult",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 8,
+    "url probes": [
+      {
+        "url": "https://www.somersetschools.org/School-Committee/Somerset-Public-Schools/index.html",
+        "detected platform": "catapult",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 8,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1tHp1Fl_XYHKgz5CY45VVsTVJUtieLBVe?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Southampton",
+    "School website": "http://www.hr-k12.org",
+    "finalised urls": [
+      "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+      "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0?usp=sharing",
+      "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+      "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+      "https://drive.google.com/drive/folders/11SaydKzrG5NxtCiZGQZ9uFP1gXjvOnx4"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "google-drive",
+      "js_cms"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 34,
+    "url probes": [
+      {
+        "url": "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+        "detected platform": "js_cms",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 34,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/11SaydKzrG5NxtCiZGQZ9uFP1gXjvOnx4",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Spencer-E Brookfield",
+    "School website": "https://www.sebrsd.org",
+    "finalised urls": [
+      "https://www.sebrsd.org/documents/3.-school-committee/145329",
+      "https://www.sebrsd.org/documents/3.-school-committee/school-committee-minutes/20657762"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 4,
+    "url probes": [
+      {
+        "url": "https://www.sebrsd.org/documents/3.-school-committee/145329",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 4,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.sebrsd.org/documents/3.-school-committee/school-committee-minutes/20657762",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Truro",
+    "School website": "https://www.truromass.org",
+    "finalised urls": [
+      "https://www.truromass.org/apps/pages/index.jsp?uREC_ID=521706&type=d",
+      "https://drive.google.com/drive/folders/1xE3yzlB_FvRB_8474nMRioRSX5uSrZKX?usp=sharing",
+      "https://drive.google.com/drive/folders/1Rgp4_41GLWd63uZrNB7UvqXaaVXgJio2?usp=sharing",
+      "https://drive.google.com/drive/folders/1f0sMIFYux1ctJUegkWzYIGAXY1fzHw_m?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 13,
+    "url probes": [
+      {
+        "url": "https://www.truromass.org/apps/pages/index.jsp?uREC_ID=521706&type=d",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 13,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1xE3yzlB_FvRB_8474nMRioRSX5uSrZKX?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1Rgp4_41GLWd63uZrNB7UvqXaaVXgJio2?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1f0sMIFYux1ctJUegkWzYIGAXY1fzHw_m?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Walpole",
+    "School website": "http://www.walpole.k12.ma.us/",
+    "finalised urls": [
+      "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887490",
+      "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887482",
+      "https://www.walpole.k12.ma.us/documents/other-documents/school-committee",
+      "https://www.walpole.k12.ma.us/documents/other-documents"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 84,
+    "url probes": [
+      {
+        "url": "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887490",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 84,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.walpole.k12.ma.us/documents/other-documents/school-committee/sc-2024-2025/22887482",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.walpole.k12.ma.us/documents/other-documents/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.walpole.k12.ma.us/documents/other-documents",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "West Springfield",
+    "School website": "https://www.wsps.org",
+    "finalised urls": [
+      "https://www.wsps.org/District/School-Commitee",
+      "https://drive.google.com/drive/folders/1eePK9KRf2XhCn5wMjdw26zHEX_47nTQI?usp=drive_link",
+      "https://drive.google.com/drive/folders/1RpjU2AKqNCr_xgCuJ-NpVrlnK1eh_X2i?usp=drive_link",
+      "https://cloud.castus.tv/vod/wsaccess/playlist/School%20Committee?page=PLAYLIST"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.wsps.org/District/School-Commitee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1eePK9KRf2XhCn5wMjdw26zHEX_47nTQI?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1RpjU2AKqNCr_xgCuJ-NpVrlnK1eh_X2i?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://cloud.castus.tv/vod/wsaccess/playlist/School%20Committee?page=PLAYLIST",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Westfield",
+    "School website": "https://www.schoolsofwestfield.org",
+    "finalised urls": [
+      "https://www.schoolsofwestfield.org/o/wps/page/school-committee-2023",
+      "https://www.schoolsofwestfield.org/browse/201110"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 1,
+    "url probes": [
+      {
+        "url": "https://www.schoolsofwestfield.org/o/wps/page/school-committee-2023",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.schoolsofwestfield.org/browse/201110",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "FRSU38",
+    "School website": "",
+    "finalised urls": [
+      "https://drive.google.com/drive/folders/1pfmXFA3N_uhITGLnBB59RKSjKeiL5nqo"
+    ],
+    "clicks needed": 2,
+    "detected platform": "google-drive",
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://drive.google.com/drive/folders/1pfmXFA3N_uhITGLnBB59RKSjKeiL5nqo",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Frontier Regional",
+    "School website": "https://www.frsu38.org",
+    "finalised urls": [
+      "https://www.frsu38.org/frontier-regional-school-committee",
+      "https://drive.google.com/drive/folders/1Zd6FkLSGmMFlM4DbOZe1qZHeFmxKo0_g?usp=sharing",
+      "https://drive.google.com/drive/folders/18yB5Fx-j5Vr4d-tyxoV1wu-ChVuubtxe?usp=drive_link",
+      "https://drive.google.com/drive/folders/1tPUDrqzrRu1u2MGfAe73AO2hw38DLnEt?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.frsu38.org/frontier-regional-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1Zd6FkLSGmMFlM4DbOZe1qZHeFmxKo0_g?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/18yB5Fx-j5Vr4d-tyxoV1wu-ChVuubtxe?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1tPUDrqzrRu1u2MGfAe73AO2hw38DLnEt?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Deerfield",
+    "School website": "https://www.frsu38.org",
+    "finalised urls": [
+      "https://www.frsu38.org/deerfield-school-committee-2",
+      "https://drive.google.com/drive/folders/1pzFGOF_mSY6QwLJaRmqeqw3x-SI8JRb7?usp=sharing",
+      "https://drive.google.com/drive/folders/1R_Qfowi1HVs1kkQJ8hUIbtGWb7GSCRyg?usp=drive_link",
+      "https://drive.google.com/drive/folders/1fvrrl8mRRZvcQPdP6eRmH-OCOuVLHPy6?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.frsu38.org/deerfield-school-committee-2",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1pzFGOF_mSY6QwLJaRmqeqw3x-SI8JRb7?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1R_Qfowi1HVs1kkQJ8hUIbtGWb7GSCRyg?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1fvrrl8mRRZvcQPdP6eRmH-OCOuVLHPy6?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Sunderland",
+    "School website": "https://www.frsu38.org",
+    "finalised urls": [
+      "https://www.frsu38.org/sunderland-school-committee",
+      "https://drive.google.com/drive/folders/1TEB78_rriYHSWna2iyBQ6J_jWbIlKr3I?usp=sharing",
+      "https://drive.google.com/drive/folders/123XakUfSpQOw3JMS5P-yn595lyw5Lanx?usp=drive_link",
+      "https://drive.google.com/drive/folders/1JMygSWzsRisb2KSn19zlOjz7wRq0oClc?usp=drive_link",
+      "https://drive.google.com/drive/folders/1r8squknmgV9LZilAQC8cou4PbcAQ_VKw?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.frsu38.org/sunderland-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1TEB78_rriYHSWna2iyBQ6J_jWbIlKr3I?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/123XakUfSpQOw3JMS5P-yn595lyw5Lanx?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1JMygSWzsRisb2KSn19zlOjz7wRq0oClc?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1r8squknmgV9LZilAQC8cou4PbcAQ_VKw?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Whately",
+    "School website": "https://www.frsu38.org",
+    "finalised urls": [
+      "https://www.frsu38.org/whately-school-committee",
+      "https://drive.google.com/drive/folders/1iCzL1ELawsE8Xw4bFHFumqnpYoqiCzDl?usp=sharing",
+      "https://drive.google.com/drive/folders/1KBhzBUbtZ3YVmguUMhcr5w-CGf-MEddM?usp=drive_link",
+      "https://drive.google.com/drive/folders/1nq5jiiqV-tlJBvXY8HjoDKsmjfuC-9Zh?usp=drive_link",
+      "https://drive.google.com/drive/folders/14GuWGjL3m1uo1u57tomhJTeZBkriG6QR?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.frsu38.org/whately-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 2,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1iCzL1ELawsE8Xw4bFHFumqnpYoqiCzDl?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1KBhzBUbtZ3YVmguUMhcr5w-CGf-MEddM?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1nq5jiiqV-tlJBvXY8HjoDKsmjfuC-9Zh?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/14GuWGjL3m1uo1u57tomhJTeZBkriG6QR?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Conway",
+    "School website": "https://www.frsu38.org",
+    "finalised urls": [
+      "https://www.frsu38.org/conway-school-committee",
+      "https://drive.google.com/drive/folders/1n7OBrRgUEHgCiAw-urPOYgBQbuWPw96I?usp=sharing",
+      "https://drive.google.com/drive/folders/1CHuSV4K84FkQjlHJU0gUhG-aOomSMIlc?usp=drive_link",
+      "https://drive.google.com/drive/folders/12Bzh4Kvnmu_1EmnxxvP5_ynDmp-GWFzG?usp=drive_link",
+      "https://drive.google.com/drive/folders/116XYaRY0O7yLVIEHkeE2K1iqTBZrtPi8?usp=drive_link"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://www.frsu38.org/conway-school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1n7OBrRgUEHgCiAw-urPOYgBQbuWPw96I?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1CHuSV4K84FkQjlHJU0gUhG-aOomSMIlc?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/12Bzh4Kvnmu_1EmnxxvP5_ynDmp-GWFzG?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/116XYaRY0O7yLVIEHkeE2K1iqTBZrtPi8?usp=drive_link",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Blackstone-Millville",
+    "School website": "https://www.bmrsd.net",
+    "finalised urls": [
+      "https://www.bmrsd.net/o/bmrsd/page/school-committee-agendas-and-minutes",
+      "https://www.youtube.com/playlist?list=PLZFzagk00pfdRNZSJzQQwo3MlBZHfCxHP"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "apptegy",
+      "generic"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.bmrsd.net/o/bmrsd/page/school-committee-agendas-and-minutes",
+        "detected platform": "apptegy",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PLZFzagk00pfdRNZSJzQQwo3MlBZHfCxHP",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hampden-Wilbraham",
+    "School website": "https://www.hwrsd.org",
+    "finalised urls": [
+      "https://www.hwrsd.org/departments/school-committee",
+      "https://drive.google.com/drive/folders/14zsSm1joa7Xb9S39SUChHQHq3aLgQ4_a",
+      "https://drive.google.com/drive/folders/1g2bEBKJPT2eXO9qGBhZqDlLHXBajR8Xh",
+      "https://drive.google.com/file/d/1DfPpcr1FjTIDaBFJzCJj1aCWMBhoZvrF/view"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.hwrsd.org/departments/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/14zsSm1joa7Xb9S39SUChHQHq3aLgQ4_a",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1g2bEBKJPT2eXO9qGBhZqDlLHXBajR8Xh",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/file/d/1DfPpcr1FjTIDaBFJzCJj1aCWMBhoZvrF/view",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hampshire",
+    "School website": "https://www.hr-k12.org",
+    "finalised urls": [
+      "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+      "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0?usp=sharing",
+      "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+      "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+      "https://drive.google.com/drive/folders/11SaydKzrG5NxtCiZGQZ9uFP1gXjvOnx4"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "google-drive",
+      "js_cms"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 34,
+    "url probes": [
+      {
+        "url": "https://www.hr-k12.org/en-US/pages/b42d6ee5-8b59-4139-b5f0-474db071bcc6",
+        "detected platform": "js_cms",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 34,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/1eHJy-swbS-jXhw_njjWVuzAebcmAFCu0?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/13svmNcTthBVZ4EzABV9ySe0Flz1VN8fM",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/15tDEMfyZIGayycWBPljcP_pX-ZIPjk9K",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/11SaydKzrG5NxtCiZGQZ9uFP1gXjvOnx4",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Easton",
+    "School website": "https://eastonmaschools.org",
+    "finalised urls": [
+      "https://eastonmaschools.org/school-committee",
+      "https://eastontownma.documents-on-demand.com/?l=b8615993b73a47f9926aaa2924852ac3"
+    ],
+    "clicks needed": 2,
+    "detected platform": [
+      "documents-on-demand",
+      "generic"
+    ],
+    "probe_depth": 1,
+    "probe media found": false,
+    "probe media count": 0,
+    "url probes": [
+      {
+        "url": "https://eastonmaschools.org/school-committee",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      },
+      {
+        "url": "https://eastontownma.documents-on-demand.com/?l=b8615993b73a47f9926aaa2924852ac3",
+        "detected platform": "documents-on-demand",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 0,
+        "error": null
+      }
+    ]
+  },
+  {
+    "School name": "Hampden Charter School of Science (District)",
+    "School website": "http://www.hampdencharter.org",
+    "finalised urls": [
+      "https://www.hampdencharter.org/welcome"
+    ],
+    "clicks needed": 2,
+    "detected platform": "generic",
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 2,
+    "url probes": [
+      {
+        "url": "https://www.hampdencharter.org/welcome",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 7,
+        "error": null
+      }
+    ]
+  }
+]

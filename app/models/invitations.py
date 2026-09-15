@@ -13,7 +13,7 @@ class Invitation(BaseModel):
 
     id = Column(BigInteger, primary_key=True, index=True)
     tenant_id = Column(
-        BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+        BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
     )
     email = Column(String, nullable=False, index=True)
     role_id = Column(

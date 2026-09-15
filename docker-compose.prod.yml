@@ -1,20 +1,60 @@
-# Production Docker Compose - Optimized for High-Performance Bulk Uploads
+# Production Docker Compose — sized for EC2 t4g.2xlarge (8 vCPU, 32 GiB RAM).
+#
+# This compose file targets t4g.2xlarge so it can run the failure-batch
+# re-scrape (84 districts) in parallel without starving the steady-state
+# workers. The t4g.large variant (2 vCPU, 8 GiB) cannot run the bulk layout
+# — see the RAM budget comment below and the separate `--scale` recipe.
 #
 # Postgres is NOT managed here; it runs on AWS RDS.
-# All environment variables (including POSTGRES_SERVER, credentials, secrets)
-# are injected via .env.prod which the CI/CD deploy step writes from GitHub
-# Actions secrets before running this file.
+# All environment variables are injected via .env.prod (CI/CD writes from secrets).
 #
-# Usage:
-#   docker compose -f docker-compose.prod.yml up -d
-#   docker compose -f docker-compose.prod.yml up -d --scale celery-worker=8  # 8 workers
+# Redis is split into two containers:
+#   redis         — app cache (tokens/OTP/invites on db 0, pipeline status
+#                   on db 3). allkeys-lru: cache is disposable, evicting a
+#                   refresh-token key just forces a re-login.
+#   redis-broker  — Celery broker + result backend (db 2). noeviction: an
+#                   in-flight task message must NEVER be silently evicted
+#                   (that broke document_pipeline chains mid-stage and
+#                   orphaned documents at processing_status=PROCESSING
+#                   forever during the 100-school incident). An OOM here
+#                   fails loudly instead of losing data.
+#                   Sized at 4G on t4g.2xlarge: the failure-batch re-scrape
+#                   enqueues ~84 schools × ~3-4 docs = ~250-340 ingest +
+#                   9-stage pipeline messages. ignore_result=True with
+#                   result_expires=900s keeps the working set bounded; 4G
+#                   is headroom for a capped bulk run, not the full corpus.
+#
+# RAM budget on t4g.2xlarge (~32 GiB):
+#   api 2G + qdrant 4G + redis 0.5G + redis-broker 4G + beat 384M = 10.9G
+#   celery-ingest 2G (×1 steady) + celery-scraper 4G (×1 steady) = 6G
+#   -> ~16.9G steady, leaving ~15G for the batch-scaled replicas below.
+#
+# Bulk failure-batch re-scrape (this file's target workload):
+#   docker compose -f docker-compose.prod.yml up -d \
+#     --scale celery-ingest=3 --scale celery-scraper=2 \
+#     --scale celery-scraper-batch=2 --scale celery-ingest-batch=2
+#   The `-batch` services consume the same `scraping` / `documents` queues
+#   but are dedicated replicas for the failure-batch run — they add lanes
+#   without colliding with the steady-state workers. See the per-service
+#   comment blocks for the exact queue + concurrency layout.
+#
+# Steady state after batch completes (scale back to save cost):
+#   docker compose -f docker-compose.prod.yml up -d \
+#     --scale celery-ingest=1 --scale celery-scraper=1 \
+#     --scale celery-scraper-batch=0 --scale celery-ingest-batch=0
+#
+# Admin scripts (seed / scrape districts) run via docker exec on the api
+# container. Mount ./scripts from the EC2 checkout (git pull before ingest):
+#   docker exec just-edtech-api python scripts/school_data/seed_tenant_batch.py ...
+
+version: "3.9"
 
 services:
 
   ##################################################
-  # Redis
+  # Redis — app cache (tokens, OTP, invites, pipeline status)
+  # allkeys-lru is safe here: cache keys are disposable.
   ##################################################
-
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -26,7 +66,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 256mb
+      --maxmemory 512mb
       --maxmemory-policy allkeys-lru
 
     volumes:
@@ -34,14 +74,46 @@ services:
 
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 60s
+      timeout: 5s
+      retries: 5
+
+  ##################################################
+  # Redis Broker — Celery broker + result backend only.
+  # noeviction: an in-flight task message must NEVER be evicted.
+  # t4g.2xlarge (32 GiB host): sized at 4gb to absorb the failure-batch
+  # re-scrape enqueue burst (~250-340 ingest + 9-stage pipeline messages
+  # for 84 schools). ignore_result=True on sweep/ingest plus
+  # result_expires=900s keeps the steady-state working set far below this;
+  # 4gb is headroom for a capped bulk run. If an OOM returns here, lower
+  # SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS, not this limit.
+  ##################################################
+  redis-broker:
+    image: redis:7-alpine
+    container_name: redis-broker
+    restart: unless-stopped
+
+    ports:
+      - "6387:6379"
+
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 4gb
+      --maxmemory-policy noeviction
+
+    volumes:
+      - redis_broker_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 60s
       timeout: 5s
       retries: 5
 
   ##################################################
   # Qdrant
   ##################################################
-
   qdrant:
     image: qdrant/qdrant:v1.13.2
     container_name: qdrant
@@ -54,15 +126,26 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/6333' || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   ##################################################
   # FastAPI
   ##################################################
-
   api:
     # image: 940031346406.dkr.ecr.us-west-1.amazonaws.com/justedtech-prod-be
     image: ${ECR_IMAGE}
     pull_policy: always
-
     container_name: just-edtech-api
     restart: unless-stopped
 
@@ -72,6 +155,10 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # Celery broker/backend -> dedicated redis-broker container. App
+      # cache (REDIS_HOST above) stays on `redis`.
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
     ports:
@@ -80,11 +167,21 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+
       qdrant:
-        condition: service_started
+        condition: service_healthy
 
     volumes:
       - temp_uploads:/app/temp_uploads
+      # Batch hotfix path: git pull updates Python without waiting for ECR rebuild.
+      # Same pattern as ./scripts for seed/scrape admin commands.
+      - ./app:/app/app
+      # Batch ingest admin scripts + JSON live on the host checkout (not in the
+      # ECR image). git pull on EC2 before seed/scrape; rw so --output JSON
+      # can be written under scripts/school_data/output/.
+      - ./scripts:/app/scripts
 
     command: >
       sh -c "
@@ -93,7 +190,121 @@ services:
       "
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8000/health"
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      # alembic upgrade runs in the same process before gunicorn; allow time
+      # for migrations + worker lifespan before counting failures.
+      start_period: 120s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+
+  ##################################################
+  # Celery Ingest Worker — document pipeline + billing
+  # Queues: celery (billing/batch poll), documents (chunk/embed/Qdrant)
+  ##################################################
+  celery-ingest:
+    image: ${ECR_IMAGE}
+    pull_policy: always
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
+      QDRANT_URL: http://qdrant:6333
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+
+      qdrant:
+        condition: service_healthy
+
+    volumes:
+      - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
+
+    command: >
+      celery
+      -A app.celery_app
+      worker
+      --loglevel=info
+      --concurrency=1
+      --max-tasks-per-child=500
+      --time-limit=3600
+      --soft-time-limit=3000
+      -Q celery,documents
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+
+  ##################################################
+  # Celery Scraper Worker — download, transcribe, enqueue pipeline
+  # Queue: scraping. Scale replicas (--scale celery-scraper=N), not concurrency.
+  ##################################################
+
+  celery-scraper:
+    image: ${ECR_IMAGE}
+    pull_policy: always
+
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
+      QDRANT_URL: http://qdrant:6333
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+    volumes:
+      - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
+
+    command: >
+      celery
+      -A app.celery_app
+      worker
+      --loglevel=info
+      --concurrency=1
+      --max-tasks-per-child=100
+      --time-limit=7200
+      --soft-time-limit=6000
+      -Q scraping
+
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -106,14 +317,15 @@ services:
           memory: 4G
 
   ##################################################
-  # Celery Worker
+  # Celery Scraper Batch Worker — extra download/transcribe lane for the
+  # failure-batch re-scrape. Same `scraping` queue as celery-scraper, so
+  # scaling this replica adds a parallel scrape lane without colliding
+  # with the steady-state worker. Scale to 0 in steady state to save cost.
+  # See the header comment for the --scale recipe.
   ##################################################
-
-  celery-worker:
+  celery-scraper-batch:
     image: ${ECR_IMAGE}
     pull_policy: always
-
-    container_name: celery-worker
     restart: unless-stopped
 
     env_file:
@@ -122,26 +334,34 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
       QDRANT_URL: http://qdrant:6333
 
     depends_on:
       redis:
+        condition: service_healthy
+      redis-broker:
         condition: service_healthy
       qdrant:
         condition: service_started
 
     volumes:
       - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
+      - ./scripts:/app/scripts
 
     command: >
       celery
       -A app.celery_app
       worker
       --loglevel=info
-      --concurrency=2
-      --max-tasks-per-child=1000
-      --time-limit=3600
-      --soft-time-limit=3000
+      --concurrency=1
+      --max-tasks-per-child=100
+      --time-limit=7200
+      --soft-time-limit=6000
+      -Q scraping
+      -n scraper-batch@%h
 
     healthcheck:
       test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping"]
@@ -153,10 +373,115 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 1G
+          cpus: "2"
+          memory: 4G
+
+  ##################################################
+  # Celery Ingest Batch Worker — extra document-pipeline lane for the
+  # failure-batch re-scrape. Same `documents` + `celery` queues as
+  # celery-ingest, so scaling this replica adds a parallel ingest lane.
+  # Scale to 0 in steady state to save cost. See the header comment for
+  # the --scale recipe.
+  ##################################################
+  celery-ingest-batch:
+    image: ${ECR_IMAGE}
+    pull_policy: always
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
+      QDRANT_URL: http://qdrant:6333
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+
+    volumes:
+      - temp_uploads:/app/temp_uploads
+      - ./app:/app/app
+
+    command: >
+      celery
+      -A app.celery_app
+      worker
+      --loglevel=info
+      --concurrency=1
+      --max-tasks-per-child=500
+      --time-limit=3600
+      --soft-time-limit=3000
+      -Q celery,documents
+      -n ingest-batch@%h
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+
+  ##################################################
+  # Celery Beat - Periodic Task Scheduler
+  # Fires the biweekly school scrape cycle + daily/monthly aggregations.
+  # Scale horizontally only with a distributed beat scheduler (e.g. redbeat);
+  # keep replicas=1 to avoid duplicate periodic task firing.
+  ##################################################
+
+  celery-beat:
+    image: ${ECR_IMAGE}
+    pull_policy: always
+
+    container_name: celery-beat
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CELERY_BROKER_REDIS_HOST: redis-broker
+      CELERY_BROKER_REDIS_PORT: 6379
+      QDRANT_URL: http://qdrant:6333
+
+    volumes:
+      # Batch hotfix path: git pull updates the beat_schedule without
+      # waiting for an ECR rebuild -- same pattern as celery-ingest/
+      # celery-scraper/api. Before this, changing app/celery_app.py needed
+      # a full image rebuild+redeploy since beat had no live-code mount.
+      - ./app:/app/app
+
+    depends_on:
+      redis:
+        condition: service_healthy
+      redis-broker:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+    command: >
+      celery
+      -A app.celery_app
+      beat
+      --loglevel=info
+      --pidfile=/tmp/celerybeat.pid
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
 
 volumes:
   redis_data:
+  redis_broker_data:
   qdrant_data:
   temp_uploads:

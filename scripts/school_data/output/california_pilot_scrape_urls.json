@@ -1,0 +1,51 @@
+[
+  {
+    "name": "Chino Valley Unified School District",
+    "org_code": "36-67678",
+    "website": "https://www.chino.k12.ca.us",
+    "urls": [
+      "https://www.chino.k12.ca.us/253390_3",
+      "https://www.chino.k12.ca.us/136690_3",
+      "https://www.chino.k12.ca.us/136686_3",
+      "https://www.chino.k12.ca.us/136687_3"
+    ]
+  },
+  {
+    "name": "Saddleback Valley Unified School District",
+    "org_code": "30-73635",
+    "website": "https://www.svusd.org",
+    "urls": [
+      "https://www.svusd.org/board/board-meeting-minutes",
+      "https://www.svusd.org/board/agendas"
+    ]
+  },
+  {
+    "name": "Murrieta Valley Unified School District",
+    "org_code": "33-75200",
+    "website": "https://www.murrieta.k12.ca.us",
+    "urls": [
+      "https://www.murrieta.k12.ca.us/about-us/board-of-education/meeting-minutes/meeting-minutes-2024",
+      "https://www.murrieta.k12.ca.us/about-us/board-of-education/meeting-minutes/meeting-minutes-2023",
+      "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=36030338"
+    ]
+  },
+  {
+    "name": "San Francisco Unified School District",
+    "org_code": "38-68478",
+    "website": "https://www.sfusd.edu",
+    "urls": [
+      "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2023-board-education-meeting-documents-archive",
+      "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2024-meeting-documents",
+      "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2025-meeting-documents"
+    ]
+  },
+  {
+    "name": "East Side Union High School District",
+    "org_code": "43-69427",
+    "website": "https://www.esuhsd.org",
+    "urls": [
+      "https://esuhsd.community.highbond.com/Portal/Default.aspx",
+      "https://www.youtube.com/@ESUHSDBoardMeetings/videos"
+    ]
+  }
+]

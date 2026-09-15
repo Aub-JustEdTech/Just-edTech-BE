@@ -38,7 +38,6 @@ import logging
 from typing import Any
 
 from langchain_core.messages import AIMessage
-from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 
@@ -52,6 +51,7 @@ from app.services.agentic_rag.nodes import (
 )
 from app.services.agentic_rag.state import AgentState
 from app.services.agentic_rag.tools import AGENT_TOOLS
+from app.services.llm.client import get_chat_openai_kwargs, normalize_model_name
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ def route_after_reasoning(state: AgentState) -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_agent_graph(model: str = "gpt-4o") -> StateGraph:
+def build_agent_graph(model: str = "openai/gpt-4o") -> StateGraph:
     """
     Build the uncompiled StateGraph.
 
@@ -92,16 +92,16 @@ def build_agent_graph(model: str = "gpt-4o") -> StateGraph:
         compiled = build_agent_graph().compile(checkpointer=my_checkpointer)
 
     Args:
-        model: OpenAI model name to use for agent reasoning.
-               Defaults to 'gpt-4o' for strong tool-use performance.
+        model: LLM model name to use for agent reasoning.
+               Defaults to 'openai/gpt-4o' for strong tool-use performance.
 
     Returns:
         An uncompiled `StateGraph[AgentState]`.
     """
     llm = ChatOpenAI(
-        model=model,
+        model=normalize_model_name(model),
         temperature=0,
-        api_key=settings.OPENAI_API_KEY,
+        **get_chat_openai_kwargs(),
     ).bind_tools(AGENT_TOOLS)
 
     agent_reasoning_node = make_agent_reasoning_node(llm)

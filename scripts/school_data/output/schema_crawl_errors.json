@@ -1,0 +1,240 @@
+{
+  "checked_at": "2026-07-21T11:07:18.117123+00:00",
+  "source": "scripts/school_data/output/schema_crawl_errors.csv",
+  "schools_checked": 146,
+  "non_reachable_count": 29,
+  "non_reachable_schools": [
+    {
+      "name": "Argosy Collegiate Charter School (District)",
+      "org_code": "35090000",
+      "website": "https://www.argosycollegiate.org",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "https://www.argosycollegiate.org"
+    },
+    {
+      "name": "Auburn",
+      "org_code": "00170000",
+      "website": "https://www.auburn.k12.ma.us",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.auburn.k12.ma.us'. (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Bedford",
+      "org_code": "00230000",
+      "website": "https://bedfordps.org",
+      "reason": "TLS/SSL connection failed: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Canton",
+      "org_code": "00500000",
+      "website": "https://www.cantonma.org/",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Danvers",
+      "org_code": "00710000",
+      "website": "https://danverspublicschools.org",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "https://danverspublicschools.org"
+    },
+    {
+      "name": "Grafton",
+      "org_code": "01100000",
+      "website": "http://graftonps.org/Domain/11",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "https://www.graftonps.org/domain/11/?dst=static"
+    },
+    {
+      "name": "Halifax",
+      "org_code": "01180000",
+      "website": "https://hes.slrsd.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Hancock",
+      "org_code": "01210000",
+      "website": "https://www.hancockschool.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.hancockschool.org'. (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Hanover",
+      "org_code": "01220000",
+      "website": "http://hanoverschools.org",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "https://www.hanoverschools.org"
+    },
+    {
+      "name": "Holyoke Community Charter (District)",
+      "org_code": "04530000",
+      "website": "https://www.hccs-sabis.net",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.hccs-sabis.net'. (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Kingston",
+      "org_code": "01450000",
+      "website": "https://slrsd.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Leominster",
+      "org_code": "01530000",
+      "website": "https://www.leominsterps.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Littleton",
+      "org_code": "01580000",
+      "website": "https://www.littletonps.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "North Reading",
+      "org_code": "02170000",
+      "website": "http://www.north-reading.k12.ma.us/Pages/index",
+      "reason": "HTTP 404 Not Found",
+      "status_code": 404,
+      "final_url": "https://www.north-reading.k12.ma.us/Pages/index"
+    },
+    {
+      "name": "Norwood",
+      "org_code": "02200000",
+      "website": "https://www.norwood.k12.ma.us",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Plympton",
+      "org_code": "02400000",
+      "website": "https://des.slrsd.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Randolph",
+      "org_code": "02440000",
+      "website": "https://www.randolph.k12.ma.us",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Rowe",
+      "org_code": "02530000",
+      "website": "https://Roweschool.com",
+      "reason": "DNS resolution failed",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Shrewsbury",
+      "org_code": "02710000",
+      "website": "https://schools.shrewsburyma.gov/",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Silver Lake",
+      "org_code": "07600000",
+      "website": "https://slrsd.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Somerset Berkley Regional School District",
+      "org_code": "07630000",
+      "website": "https://somersetschools.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'somersetschools.org'. (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Somerville",
+      "org_code": "02740000",
+      "website": "https://www.somerville.k12.ma.us",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.somerville.k12.ma.us'. (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Stoneham",
+      "org_code": "02840000",
+      "website": "https://www.stonehamschools.org",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "Triton",
+      "org_code": "07730000",
+      "website": "http://www.tritonschools.org",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "http://www.tritonschools.org"
+    },
+    {
+      "name": "UP Academy Charter School of Dorchester (District)",
+      "org_code": "35050000",
+      "website": "https://www.upacademydorchester.org",
+      "reason": "connection timeout",
+      "status_code": null,
+      "final_url": null
+    },
+    {
+      "name": "West Boylston",
+      "org_code": "03220000",
+      "website": "https://www.wbschools.com/",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "https://www.wbschools.com/"
+    },
+    {
+      "name": "Westford",
+      "org_code": "03260000",
+      "website": "http://westfordk12.us/Pages/index",
+      "reason": "HTTP 404 Not Found",
+      "status_code": 404,
+      "final_url": "https://www.westfordk12.us/Pages/index"
+    },
+    {
+      "name": "Weston",
+      "org_code": "03300000",
+      "website": "https://www.westonschools.org",
+      "reason": "HTTP 403 Forbidden",
+      "status_code": 403,
+      "final_url": "https://www.westonschools.org"
+    },
+    {
+      "name": "Woburn",
+      "org_code": "03470000",
+      "website": "https://www.woburnpublicschools.com",
+      "reason": "TLS/SSL connection failed: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)",
+      "status_code": null,
+      "final_url": null
+    }
+  ]
+}
