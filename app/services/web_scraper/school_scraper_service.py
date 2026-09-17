@@ -108,9 +108,10 @@ class SchoolScraperService:
         )
         self._pw: "Playwright | None" = None
         self._browser: "Browser | None" = None
+        self._http1_browser: "Browser | None" = None
 
     @staticmethod
-    def _chromium_launch_kwargs() -> dict:
+    def _chromium_launch_kwargs(*, disable_http2: bool = False) -> dict:
         """
         Build kwargs for `chromium.launch()`.
 
@@ -118,12 +119,22 @@ class SchoolScraperService:
         apt-install a system Chromium instead of Playwright's own downloaded
         browser), point Playwright at that binary and disable the setuid
         sandbox, which isn't usable for a non-root container user.
+
+        ``disable_http2=True`` launches Chromium with ``--disable-http2`` for
+        hosts that fail with ERR_HTTP2_PROTOCOL_ERROR (Layer-1 parity).
         """
         kwargs: dict = {"headless": True}
         executable_path = settings.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+        args: list[str] = []
         if executable_path:
             kwargs["executable_path"] = executable_path
-            kwargs["args"] = ["--no-sandbox"]
+            args.append("--no-sandbox")
+        if disable_http2:
+            if "--no-sandbox" not in args:
+                args.append("--no-sandbox")
+            args.append("--disable-http2")
+        if args:
+            kwargs["args"] = args
         return kwargs
 
     async def __aenter__(self) -> "SchoolScraperService":
@@ -141,9 +152,14 @@ class SchoolScraperService:
         await self.close()
 
     async def close(self) -> None:
-        if self._browser:
-            await self._browser.close()
-            self._browser = None
+        for browser_attr in ("_browser", "_http1_browser"):
+            browser = getattr(self, browser_attr, None)
+            if browser:
+                try:
+                    await browser.close()
+                except Exception:  # noqa: BLE001
+                    pass
+                setattr(self, browser_attr, None)
         if self._pw:
             await self._pw.stop()
             self._pw = None
@@ -160,10 +176,47 @@ class SchoolScraperService:
             url = f"https://{url}"
         return url
 
+    _ALT_USER_AGENTS: tuple[str, ...] = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+        "(KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+    )
+
     async def _fetch_text(self, url: str) -> str | None:
-        """Fetch text content from a URL; returns None on any failure."""
+        """Fetch text with Layer-1-parity ladder: httpx → UA alt → Playwright → HTTP/1.
+
+        Confirmed scrape URLs often live on the same fragile hosts that Layer 1
+        discovery unlocked; without this ladder Layer 2 re-fails at media scrape.
+        """
+        html = await self._fetch_text_httpx(url)
+        if html is not None:
+            return html
+
+        for alt_ua in self._ALT_USER_AGENTS:
+            html = await self._fetch_text_httpx(url, headers={"User-Agent": alt_ua})
+            if html is not None:
+                return html
+
+        await self._ensure_playwright()
+        html = await self._fetch_text_rendered(url)
+        if html is not None:
+            return html
+
+        # HTTP/2 protocol fallback
+        http1 = await self._ensure_http1_playwright()
+        if http1 is not None:
+            html = await self._fetch_text_rendered(url, browser=http1)
+            if html is not None:
+                return html
+        return None
+
+    async def _fetch_text_httpx(
+        self, url: str, *, headers: dict[str, str] | None = None
+    ) -> str | None:
+        """Plain httpx GET; returns None on any non-200 / connection failure."""
         try:
-            response = await self.client.get(url)
+            response = await self.client.get(url, headers=headers)
             if response.status_code == 200:
                 return response.text
             logger.debug("Non-200 status %s for %s", response.status_code, url)
@@ -172,10 +225,35 @@ class SchoolScraperService:
             logger.debug("Failed to fetch %s (%s): %s", url, type(exc).__name__, exc)
             return None
 
+    async def _ensure_http1_playwright(self) -> "Browser | None":
+        """Lazily launch Chromium with HTTP/2 disabled (Layer-1 parity)."""
+        if self._http1_browser:
+            return self._http1_browser
+        if self._pw is None:
+            from playwright.async_api import async_playwright
+
+            self._pw = await async_playwright().start()
+        try:
+            self._http1_browser = await self._pw.chromium.launch(
+                **self._chromium_launch_kwargs(disable_http2=True)
+            )
+            logger.info(
+                "SchoolScraperService: HTTP/1.1-only Chromium launched for "
+                "protocol-error fallback"
+            )
+            return self._http1_browser
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "SchoolScraperService: could not launch HTTP/1.1 Chromium: %s", exc
+            )
+            return None
+
     async def _fetch_text_rendered(
         self,
         url: str,
         wait_until: str = "load",
+        *,
+        browser: "Browser | None" = None,
     ) -> str | None:
         """
         Fetch a page's fully JS-rendered HTML using a Playwright browser page.
@@ -188,9 +266,15 @@ class SchoolScraperService:
         'networkidle' is avoided by default because many school district sites
         fire continuous background pings that prevent networkidle from being
         reached within the configured timeout.
+
+        ``browser`` defaults to the standard Chromium; pass the HTTP/1.1-only
+        instance for protocol-error retries.
         """
         html, _media = await self._fetch_rendered_with_interactions(
-            url, wait_until=wait_until, expand_document_folders=False
+            url,
+            wait_until=wait_until,
+            expand_document_folders=False,
+            browser=browser,
         )
         return html
 
@@ -200,6 +284,7 @@ class SchoolScraperService:
         *,
         wait_until: str = "load",
         expand_document_folders: bool = True,
+        browser: "Browser | None" = None,
     ) -> tuple[str | None, list[dict]]:
         """
         Render ``url`` in Playwright and optionally expand CMS folder widgets.
@@ -214,17 +299,19 @@ class SchoolScraperService:
         nested iframe is merged into the returned HTML, since these platforms
         render the real meeting/agenda content inside iframes rather than the
         parent document.
+
+        ``browser`` defaults to ``self._browser``; pass the HTTP/1.1 instance
+        for protocol-error retries. Pages are opened with
+        ``ignore_https_errors=True`` so CN-mismatch school certs still load.
         """
-        if not self._browser:
-            return await self._fetch_text(url), []
+        target = browser if browser is not None else self._browser
+        if not target:
+            return await self._fetch_text_httpx(url), []
 
         from app.services.web_scraper.board_platforms import (
-            board_platform_kind,
             is_board_platform_url,
         )
         from app.services.web_scraper.playwright_interactions import (
-            expand_boardontrack_meetings,
-            expand_diligent_meetings,
             expand_sharpschool_document_list,
             extract_google_drive_folder_media,
             extract_google_sheets_embed_media,
@@ -235,10 +322,13 @@ class SchoolScraperService:
         is_board = is_board_platform_url(url)
         effective_wait_until = "networkidle" if is_board else wait_until
 
+        context = None
         try:
-            page = await self._browser.new_page(
-                user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+            context = await target.new_context(
+                ignore_https_errors=True,
+                user_agent=settings.SCHOOL_SCRAPER_USER_AGENT,
             )
+            page = await context.new_page()
             try:
                 await page.goto(
                     url,
@@ -311,7 +401,15 @@ class SchoolScraperService:
                 type(exc).__name__,
                 exc,
             )
-            return await self._fetch_text(url), []
+            # Use plain httpx only — do not call _fetch_text (would re-enter
+            # the Playwright ladder and recurse on the same failure).
+            return await self._fetch_text_httpx(url), []
+        finally:
+            if context is not None:
+                try:
+                    await context.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
     @staticmethod
     def _html_needs_playwright(html: str) -> bool:

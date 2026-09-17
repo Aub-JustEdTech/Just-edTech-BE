@@ -36,6 +36,7 @@ def generate_district_report_task(
     tenant_id: int,
     query_id: str,
     chatbot_config_id: int | None = None,
+    district_org_code: str | None = None,
 ) -> dict:
     """Generate a district analytics report PDF and upload it to S3.
 
@@ -45,7 +46,9 @@ def generate_district_report_task(
     try:
         loop = get_event_loop()
         return loop.run_until_complete(
-            _generate_report_async(tenant_id, query_id, chatbot_config_id)
+            _generate_report_async(
+                tenant_id, query_id, chatbot_config_id, district_org_code
+            )
         )
     except Exception as exc:  # noqa: BLE001
         logger.error(
@@ -62,6 +65,7 @@ async def _generate_report_async(
     tenant_id: int,
     query_id: str,
     chatbot_config_id: int | None,
+    district_org_code: str | None = None,
 ) -> dict:
     # Import inside the async impl to avoid the tasks -> services import cycle.
     from app.services.district_report import district_report_service
@@ -70,6 +74,7 @@ async def _generate_report_async(
         tenant_id=tenant_id,
         query_id=query_id,
         chatbot_config_id=chatbot_config_id,
+        district_org_code=district_org_code,
     )
 
     pdf_bytes: bytes = result["pdf_bytes"]
@@ -95,4 +100,5 @@ async def _generate_report_async(
         "compiled_at": result["compiled_at"],
         "filename": result["filename"],
         "s3_key": s3_key,
+        "focus_district": result.get("focus_district"),
     }

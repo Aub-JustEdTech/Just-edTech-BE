@@ -80,6 +80,51 @@ _ALT_USER_AGENTS: tuple[str, ...] = (
     "(KHTML, like Gecko) Version/17.4 Safari/605.1.15",
 )
 
+# Chromium / urllib3 markers that often mean the seed hostname's cert is for
+# the apex (or vice versa). Trying the www↔apex rewrite is cheaper than giving
+# up, and unlocks Hancock-class CN-mismatch hosts without insecure mode alone.
+_SSL_CERT_HOST_MARKERS: tuple[str, ...] = (
+    "err_cert_common_name_invalid",
+    "certificate_verify_failed",
+    "sslcertverificationerror",
+    "hostname mismatch",
+    "certificate does not match",
+)
+
+# JS shells sometimes return large HTML with no extractable markdown via httpx.
+# Re-render with Playwright when html is this large (or larger) but markdown
+# is empty — Warwick / Old Sturbridge class failures.
+_EMPTY_MARKDOWN_PLAYWRIGHT_MIN_HTML = 5_000
+
+
+def _ssl_cert_host_error(attempt: "FetchAttempt") -> bool:
+    """True when a fetch failure looks like a hostname/cert CN mismatch."""
+    if attempt.http_status is not None:
+        return False
+    haystack = " ".join(
+        s for s in (attempt.exception_type, attempt.exception_message) if s
+    ).lower()
+    return any(m in haystack for m in _SSL_CERT_HOST_MARKERS)
+
+
+def _www_apex_alternates(url: str) -> list[str]:
+    """Return the www↔apex hostname rewrite of ``url`` (0 or 1 alternate)."""
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    if not host:
+        return []
+    if host.startswith("www."):
+        alt_host = host[4:]
+    else:
+        alt_host = f"www.{host}"
+    if alt_host == host:
+        return []
+    # Preserve port if present (rare for school sites).
+    netloc = alt_host
+    if parsed.port:
+        netloc = f"{alt_host}:{parsed.port}"
+    return [urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))]
+
 
 def _percent_encode_url(url: str) -> str:
     """Percent-encode an absolute URL's path/query so it's safe to open directly.
@@ -421,8 +466,13 @@ class SchemaDrivenCrawler:
                 exception_type="PlaywrightUnavailable",
                 exception_message="browser not launched",
             )
+        context = None
         try:
-            page = await self._browser.new_page()
+            # Always open the page on ``target`` (HTTP/1.1 browser when passed).
+            # ignore_https_errors unlocks CN-mismatch / incomplete-chain hosts
+            # that Chromium would otherwise refuse (Hancock-class SSL).
+            context = await target.new_context(ignore_https_errors=True)
+            page = await context.new_page()
             try:
                 # Board platforms are SPAs that set session cookies + render
                 # content via XHR after the initial HTML loads; networkidle
@@ -457,6 +507,12 @@ class SchemaDrivenCrawler:
                 exception_type=type(exc).__name__,
                 exception_message=str(exc),
             )
+        finally:
+            if context is not None:
+                try:
+                    await context.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
     async def close(self) -> None:
         """Close the Playwright browser(s) if launched."""
@@ -584,15 +640,47 @@ class SchemaDrivenCrawler:
 
                 markdown = self._render_markdown(html, current_url)
                 if not markdown.strip():
-                    result.record_error(
-                        CrawlError(
-                            code="empty_markdown",
-                            url=current_url,
-                            html_length=len(html),
-                            stage=fetch_meta.stage,
+                    # Large empty-markdown HTML is usually a JS shell fetched
+                    # via httpx. Escalate to Playwright once before giving up.
+                    if (
+                        len(html) >= _EMPTY_MARKDOWN_PLAYWRIGHT_MIN_HTML
+                        and (fetch_meta.stage or "") != "playwright"
+                        and (fetch_meta.stage or "") != "playwright_http1"
+                    ):
+                        logger.info(
+                            "SchemaDrivenCrawler: empty_markdown (html_len=%d) "
+                            "for %s — forcing Playwright re-render",
+                            len(html),
+                            current_url,
                         )
-                    )
-                    continue
+                        await self._ensure_playwright()
+                        rendered = await self._fetch_text_rendered(current_url)
+                        fetch_meta.record_attempt("playwright", rendered)
+                        if rendered.html:
+                            html = rendered.html
+                            markdown = self._render_markdown(html, current_url)
+                    if not markdown.strip():
+                        result.record_error(
+                            CrawlError(
+                                code="empty_markdown",
+                                url=current_url,
+                                html_length=len(html),
+                                stage=fetch_meta.stage,
+                            )
+                        )
+                        continue
+
+                # Always surface off-site board-portal links (Diligent /
+                # BoardOnTrack / Granicus / BoardDocs) into the frontier —
+                # Acushnet-class sites have 0 on-domain data pages because
+                # minutes live only on the portal.
+                for portal_url, portal_conf in self._extract_board_platform_links(
+                    html=html,
+                    page_url=current_url,
+                    visited=visited,
+                    existing_frontier_urls={u for u, _, _ in frontier},
+                ):
+                    frontier.append((portal_url, portal_conf, current_depth + 1))
 
                 try:
                     page = await self.classifier.classify(current_url, markdown, today)
@@ -744,7 +832,6 @@ class SchemaDrivenCrawler:
             attempt = await self._fetch_httpx(client, url)
             return attempt.html
 
-        urls: list[str] = []
         # 1. WordPress sitemap
         try:
             wp = await _collect_urls_from_sitemap_helper(
@@ -878,6 +965,35 @@ class SchemaDrivenCrawler:
         html = attempt.html
         status = attempt.http_status
 
+        # www↔apex rewrite on CN-mismatch / cert hostname errors before UA
+        # rotation or Playwright (cheap, often unlocks Hancock-class hosts).
+        if html is None and _ssl_cert_host_error(attempt):
+            for alt_url in _www_apex_alternates(url):
+                logger.info(
+                    "SchemaDrivenCrawler: SSL host error for %s — trying %s",
+                    url,
+                    alt_url,
+                )
+                alt_attempt = await self._fetch_httpx(client, alt_url)
+                meta.record_attempt("httpx_www_apex", alt_attempt)
+                if alt_attempt.html is not None:
+                    return alt_attempt.html, meta
+                # Also try Playwright against the alternate host.
+                await self._ensure_playwright()
+                rendered = await self._fetch_text_rendered(alt_url)
+                meta.record_attempt("playwright_www_apex", rendered)
+                if rendered.html:
+                    return rendered.html, meta
+
+        # Optional curl_cffi Chrome-impersonation stage for empty-reply /
+        # broken-ALPN hosts (HTTP2 cohort). Soft-depends on curl_cffi.
+        if html is None and _should_retry(status):
+            cffi_attempt = await self._fetch_curl_cffi(url)
+            if cffi_attempt is not None:
+                meta.record_attempt("curl_cffi", cffi_attempt)
+                if cffi_attempt.html is not None:
+                    return cffi_attempt.html, meta
+
         if html is None and _should_retry(status):
             for alt_ua in _ALT_USER_AGENTS:
                 attempt = await self._fetch_httpx(
@@ -966,6 +1082,47 @@ class SchemaDrivenCrawler:
             )
         return html, meta
 
+    async def _fetch_curl_cffi(self, url: str) -> FetchAttempt | None:
+        """Optional Chrome-impersonate fetch via curl_cffi.
+
+        Returns ``None`` when curl_cffi is not installed (so the ladder stays
+        intact without a hard dependency). Used as a transport unlock for
+        hosts that reject both httpx and Playwright HTTP/2 with empty replies.
+        """
+        try:
+            from curl_cffi.requests import AsyncSession  # type: ignore[import-untyped]
+        except ImportError:
+            return None
+        try:
+            async with AsyncSession() as session:
+                resp = await session.get(
+                    url,
+                    impersonate="chrome",
+                    timeout=self.fetch_timeout,
+                    allow_redirects=True,
+                )
+                if resp.status_code == 200 and resp.text:
+                    return FetchAttempt(
+                        html=resp.text,
+                        http_status=resp.status_code,
+                        final_url=str(getattr(resp, "url", url)),
+                    )
+                return FetchAttempt(
+                    http_status=resp.status_code,
+                    final_url=str(getattr(resp, "url", url)),
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(
+                "SchemaDrivenCrawler: curl_cffi failed for %s (%s): %s",
+                url,
+                type(exc).__name__,
+                exc,
+            )
+            return FetchAttempt(
+                exception_type=type(exc).__name__,
+                exception_message=str(exc),
+            )
+
     async def _fetch_httpx(
         self,
         client: httpx.AsyncClient,
@@ -997,6 +1154,48 @@ class SchemaDrivenCrawler:
                 exception_type=type(exc).__name__,
                 exception_message=str(exc),
             )
+
+    def _extract_board_platform_links(
+        self,
+        *,
+        html: str,
+        page_url: str,
+        visited: set[str],
+        existing_frontier_urls: set[str],
+        max_per_page: int = 5,
+    ) -> list[tuple[str, float]]:
+        """Extract Diligent / BoardOnTrack / Granicus / BoardDocs hrefs.
+
+        These portals are off-domain by design; without an explicit harvest
+        the same-domain frontier never reaches them and the crawl reports
+        0 data pages despite a working school homepage.
+        """
+        if not html:
+            return []
+        try:
+            soup = BeautifulSoup(html, "html.parser")
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("board-portal extract failed for %s: %s", page_url, exc)
+            return []
+
+        found: list[tuple[str, float]] = []
+        seen: set[str] = set()
+        for a in soup.find_all("a", href=True):
+            href = a["href"].strip()
+            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+                continue
+            abs_url = self._normalize_url(urljoin(page_url, href))
+            abs_url = _percent_encode_url(abs_url.split("#", 1)[0])
+            if abs_url in seen or abs_url in visited or abs_url in existing_frontier_urls:
+                continue
+            if not is_board_platform_url(abs_url):
+                continue
+            seen.add(abs_url)
+            # High confidence: board portals are the primary archive when linked.
+            found.append((abs_url, 0.9))
+            if len(found) >= max_per_page:
+                break
+        return found
 
     def _harvest_hub_links(
         self,

@@ -1,0 +1,1179 @@
+{
+  "generated_at": "2026-09-16T08:48:05Z",
+  "purpose": "Residual districts for ONE prod Layer-1 discover pass after P0 seed. Excludes confirmed batches + P0 JSON.",
+  "counts": {
+    "remaining_after_p0": 146
+  },
+  "schools": [
+    {
+      "org_code": "00030000",
+      "name": "Acushnet",
+      "website": "https://www.acushnetschools.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00080000",
+      "name": "Amherst",
+      "website": "https://arps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00170000",
+      "name": "Auburn",
+      "website": "https://www.auburn.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00200000",
+      "name": "Barnstable",
+      "website": "http://www.barnstable.k12.ma.us/",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00230000",
+      "name": "Bedford",
+      "website": "https://bedfordps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "ssl_cert_error",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00250000",
+      "name": "Bellingham",
+      "website": "https://www.bellinghamk12.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00270000",
+      "name": "Berkley",
+      "website": "https://www.BerkleyPublicSchools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00310000",
+      "name": "Billerica",
+      "website": "https://www.billericak12.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00380000",
+      "name": "Boxford",
+      "website": "https://www.tritownschoolunion.com",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00400000",
+      "name": "Braintree",
+      "website": "http://www.braintreeschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00500000",
+      "name": "Canton",
+      "website": "https://www.cantonma.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "schema_crawl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00520000",
+      "name": "Carver",
+      "website": "https://www.carver.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00560000",
+      "name": "Chelmsford",
+      "website": "https://www.chelmsford.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00630000",
+      "name": "Clarksburg",
+      "website": "https://www.clarksburgschool.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00640000",
+      "name": "Clinton",
+      "website": "https://www.clinton.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00670000",
+      "name": "Concord",
+      "website": "https://www.concordpublicschools.net",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00730000",
+      "name": "Dedham",
+      "website": "http://www.dedham.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00790000",
+      "name": "Dracut",
+      "website": "https://dracutps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "00970000",
+      "name": "Fitchburg",
+      "website": "http://www.fitchburgschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http_404",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "00980000",
+      "name": "Florida",
+      "website": "https://www.abbottmemorial.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01070000",
+      "name": "Gloucester",
+      "website": "https://www.gloucesterschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01100000",
+      "name": "Grafton",
+      "website": "http://graftonps.org/Domain/11",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01180000",
+      "name": "Halifax",
+      "website": "https://hes.slrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_ssl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01210000",
+      "name": "Hancock",
+      "website": "https://www.hancockschool.org",
+      "district_type": "Public School District",
+      "failure_bucket": "ssl_cert_error",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01220000",
+      "name": "Hanover",
+      "website": "http://hanoverschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01250000",
+      "name": "Harvard",
+      "website": "https://www.psharvard.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01280000",
+      "name": "Haverhill",
+      "website": "http://www.haverhill-ps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01350000",
+      "name": "Holland",
+      "website": "https://www.tantasqua.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http_404",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01450000",
+      "name": "Kingston",
+      "website": "https://slrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_ssl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01490000",
+      "name": "Lawrence",
+      "website": "https://www.lawrence.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01520000",
+      "name": "Lenox",
+      "website": "https://www.lenoxps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01570000",
+      "name": "Lincoln",
+      "website": "https://www.lincnet.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01610000",
+      "name": "Ludlow",
+      "website": "https://ludlowps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01620000",
+      "name": "Lunenburg",
+      "website": "http://www.lunenburgschools.net",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01630000",
+      "name": "Lynn",
+      "website": "https://www.lynnschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01650000",
+      "name": "Malden",
+      "website": "http://www.maldenps.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01730000",
+      "name": "Mattapoisett",
+      "website": "https://www.oldrochester.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01760000",
+      "name": "Medford",
+      "website": "https://www.mps02155.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01780000",
+      "name": "Melrose",
+      "website": "https://www.melroseschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01840000",
+      "name": "Middleton",
+      "website": "https://www.tritownschoolunion.com",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01850000",
+      "name": "Milford",
+      "website": "https://www.milfordpublicschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01860000",
+      "name": "Millbury",
+      "website": "http://www.millburyschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "01870000",
+      "name": "Millis",
+      "website": "https://www.millisps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "01960000",
+      "name": "Nahant",
+      "website": "http://www.johnsonschool.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02010000",
+      "name": "New Bedford",
+      "website": "http://www.newbedfordschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02070000",
+      "name": "Newton",
+      "website": "http://www.newton.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02080000",
+      "name": "Norfolk",
+      "website": "https://www.norfolk.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02100000",
+      "name": "Northampton",
+      "website": "https://northamptonschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02130000",
+      "name": "Northborough",
+      "website": "http://www.nsboro.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02180000",
+      "name": "Norton",
+      "website": "https://www.norton.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02260000",
+      "name": "Oxford",
+      "website": "https://www.oxps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02290000",
+      "name": "Peabody",
+      "website": "https://www.peabody.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02300000",
+      "name": "Pelham",
+      "website": "https://arps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02360000",
+      "name": "Pittsfield",
+      "website": "https://www.pittsfield.net",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02400000",
+      "name": "Plympton",
+      "website": "https://des.slrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_ssl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02420000",
+      "name": "Provincetown",
+      "website": "https://www.provincetownschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02430000",
+      "name": "Quincy",
+      "website": "https://QuincyPublicSchools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02520000",
+      "name": "Rockport",
+      "website": "https://www.rpk12.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02530000",
+      "name": "Rowe",
+      "website": "https://Roweschool.com",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_connection_error",
+      "in_failure_batch_84": false,
+      "needs_website_fix": true,
+      "note": "DNS fails for Roweschool.com \u2014 fix via fix_seed_websites.py before discover"
+    },
+    {
+      "org_code": "02610000",
+      "name": "Sandwich",
+      "website": "http://www.sandwichk12.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02630000",
+      "name": "Savoy",
+      "website": "https://Savoyelementary.com",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02640000",
+      "name": "Scituate",
+      "website": "https://scit.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02740000",
+      "name": "Somerville",
+      "website": "https://www.somerville.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "ssl_cert_error",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02760000",
+      "name": "Southborough",
+      "website": "http://www.nsboro.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02770000",
+      "name": "Southbridge",
+      "website": "http://www.southbridgepublic.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02810000",
+      "name": "Springfield",
+      "website": "https://www.springfieldpublicschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02840000",
+      "name": "Stoneham",
+      "website": "https://www.stonehamschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "schema_crawl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02870000",
+      "name": "Sturbridge",
+      "website": "https://www.tantasqua.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http_404",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02900000",
+      "name": "Sutton",
+      "website": "https://www.suttonschools.net",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "02930000",
+      "name": "Taunton",
+      "website": "http://www.tauntonschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "02980000",
+      "name": "Topsfield",
+      "website": "https://www.tritownschoolunion.com",
+      "district_type": "Public School District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03010000",
+      "name": "Tyngsborough",
+      "website": "https://www.tyngsboroughps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "03040000",
+      "name": "Uxbridge",
+      "website": "https://www.uxbridgeschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03050000",
+      "name": "Wakefield",
+      "website": "http://www.wakefieldpublicschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03080000",
+      "name": "Waltham",
+      "website": "https://www.walthampublicschools.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03120000",
+      "name": "Warwick",
+      "website": "https://warwick-k12.us/",
+      "district_type": "Public School District",
+      "failure_bucket": "unknown_empty",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03140000",
+      "name": "Watertown",
+      "website": "http://www.watertown.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03150000",
+      "name": "Wayland",
+      "website": "http://www.wayland.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03170000",
+      "name": "Wellesley",
+      "website": "https://wellesleyps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "03220000",
+      "name": "West Boylston",
+      "website": "https://www.wbschools.com/",
+      "district_type": "Public School District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03270000",
+      "name": "Westhampton",
+      "website": "http://www.hr-k12.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "03350000",
+      "name": "Westwood",
+      "website": "https://www.westwood.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "crawled_no_media",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03400000",
+      "name": "Williamsburg",
+      "website": "http://www.hr-k12.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "03440000",
+      "name": "Winchester",
+      "website": "https://www.winchesterps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "03470000",
+      "name": "Woburn",
+      "website": "https://www.woburnpublicschools.com",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_ssl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04070000",
+      "name": "Dudley Street Neighborhood Charter School (District)",
+      "website": "http://www.dudleystreetschool.org/",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04090000",
+      "name": "Alma del Mar Charter School (District)",
+      "website": "https://almadelmar.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04100000",
+      "name": "Excel Academy Charter (District)",
+      "website": "https://www.excelacademy.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04130000",
+      "name": "Four Rivers Charter Public (District)",
+      "website": "https://www.fourriverscharter.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04180000",
+      "name": "Christa McAuliffe Charter School (District)",
+      "website": "https://www.mcauliffecharter.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04240000",
+      "name": "Boston Day and Evening Academy Charter (District)",
+      "website": "https://www.bdea.com",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04290000",
+      "name": "KIPP Academy Lynn Charter (District)",
+      "website": "https://www.kippma.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04380000",
+      "name": "Codman Academy Charter Public (District)",
+      "website": "https://www.codmanacademy.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04400000",
+      "name": "Community Day Charter Public School (District)",
+      "website": "https://www.cdcps.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04410000",
+      "name": "Springfield International Charter (District)",
+      "website": "https://www.sics.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04440000",
+      "name": "Neighborhood House Charter (District)",
+      "website": "https://www.thenhcs.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04490000",
+      "name": "Boston Collegiate Charter (District)",
+      "website": "https://www.bostoncollegiate.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04530000",
+      "name": "Holyoke Community Charter (District)",
+      "website": "https://www.hccs-sabis.net",
+      "district_type": "Charter District",
+      "failure_bucket": "ssl_cert_error",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "04630000",
+      "name": "KIPP Academy Boston Charter School (District)",
+      "website": "https://www.kippma.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04640000",
+      "name": "Marblehead Community Charter Public (District)",
+      "website": "https://marbleheadcharter.org",
+      "district_type": "Charter District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "04660000",
+      "name": "Martha's Vineyard Charter Public School (District)",
+      "website": "https://www.mvpcs.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04680000",
+      "name": "Ma Academy for Math and Science",
+      "website": "https://www.massacademy.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04690000",
+      "name": "Match Charter Public School (District)",
+      "website": "https://www.matchschool.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04790000",
+      "name": "Pioneer Valley Performing Arts Charter Public (District)",
+      "website": "https://www.pvpa.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04810000",
+      "name": "Boston Renaissance Charter Public (District)",
+      "website": "https://www.bostonrenaissance.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04830000",
+      "name": "Rising Tide Charter Public (District)",
+      "website": "https://www.risingtide.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04840000",
+      "name": "Roxbury Preparatory Charter (District)",
+      "website": "https://roxburyprep.uncommonschools.org/",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04870000",
+      "name": "Prospect Hill Academy Charter (District)",
+      "website": "https://www.phacs.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04910000",
+      "name": "Atlantis Charter (District)",
+      "website": "https://www.atlantiscs.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04920000",
+      "name": "Martin Luther King, Jr. Charter School of Excellence (District)",
+      "website": "https://www.mlkcs.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04960000",
+      "name": "Global Learning Charter Public (District)",
+      "website": "https://www.glcps.org/",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "04980000",
+      "name": "Veritas Preparatory Charter School (District)",
+      "website": "https://veritasprepma.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "06000000",
+      "name": "Acton-Boxborough",
+      "website": "http://www.abschools.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "06050000",
+      "name": "Amherst-Pelham",
+      "website": "https://arps.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "06100000",
+      "name": "Ashburnham-Westminster",
+      "website": "https://www.awrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "06150000",
+      "name": "Athol-Royalston",
+      "website": "https://www.arrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "crawled_no_media",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "06180000",
+      "name": "Berkshire Hills",
+      "website": "https://www.bhrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "06450000",
+      "name": "Dennis-Yarmouth",
+      "website": "https://www.dy-regional.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "06580000",
+      "name": "Dudley-Charlton Reg",
+      "website": "http://dcrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "06650000",
+      "name": "Freetown-Lakeville",
+      "website": "https://www.freelake.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "06950000",
+      "name": "Lincoln-Sudbury",
+      "website": "https://www.lsrhs.net",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "07000000",
+      "name": "Martha's Vineyard",
+      "website": "https://www.mvrhs.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "07300000",
+      "name": "Northboro-Southboro",
+      "website": "http://www.nsboro.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "07400000",
+      "name": "Old Rochester",
+      "website": "https://www.oldrochester.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "07450000",
+      "name": "Pentucket",
+      "website": "https://www.prsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http_404",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "07600000",
+      "name": "Silver Lake",
+      "website": "https://slrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_ssl_error",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "07650000",
+      "name": "Southern Berkshire",
+      "website": "https://www.sbrsd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "07660000",
+      "name": "Southwick-Tolland-Granville Regional School District",
+      "website": "https://www.stgrsd.org/",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "07730000",
+      "name": "Triton",
+      "website": "http://www.tritonschools.org",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08010000",
+      "name": "Assabet Valley Regional Vocational Technical",
+      "website": "https://www.assabet.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08050000",
+      "name": "Blackstone Valley Regional Vocational Technical",
+      "website": "https://www.valleytech.k12.ma.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08150000",
+      "name": "Cape Cod Regional Vocational Technical",
+      "website": "https://capetech.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08250000",
+      "name": "Greater New Bedford Regional Vocational Technical",
+      "website": "http://www.gnbvt.edu",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "08300000",
+      "name": "Minuteman Regional Vocational Technical",
+      "website": "https://www.minuteman.org",
+      "district_type": "Public School District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "08320000",
+      "name": "Montachusett Regional Vocational Technical",
+      "website": "http://www.montytech.net",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08530000",
+      "name": "Northeast Metropolitan Regional Vocational Technical",
+      "website": "https://northeastmetrotech.com",
+      "district_type": "Public School District",
+      "failure_bucket": "unreachable_http_520",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08550000",
+      "name": "Old Colony Regional Vocational Technical",
+      "website": "https://www.oldcolony.us",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "08720000",
+      "name": "Southeastern Regional Vocational Technical",
+      "website": "https://www.sersd.org",
+      "district_type": "Public School District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "35020000",
+      "name": "Baystate Academy Charter Public School (District)",
+      "website": "https://www.bacps.net",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "35030000",
+      "name": "Collegiate Charter School of Lowell (District)",
+      "website": "https://collegiatelowell.org",
+      "district_type": "Charter District",
+      "failure_bucket": "http2_protocol_blocked",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "35050000",
+      "name": "UP Academy Charter School of Dorchester (District)",
+      "website": "https://www.upacademydorchester.org",
+      "district_type": "Charter District",
+      "failure_bucket": "fetch_failed_other",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "35090000",
+      "name": "Argosy Collegiate Charter School (District)",
+      "website": "https://www.argosycollegiate.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "35130000",
+      "name": "New Heights Charter School of Brockton (District)",
+      "website": "https://www.newheightscharterschool.com",
+      "district_type": "Charter District",
+      "failure_bucket": "unreachable_http_403",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "35140000",
+      "name": "Libertas Academy Charter School (District)",
+      "website": "https://libertasacademy.org",
+      "district_type": "Charter District",
+      "failure_bucket": "never_confirmed_no_crawl_record",
+      "in_failure_batch_84": false
+    },
+    {
+      "org_code": "35150000",
+      "name": "Old Sturbridge Academy Charter Public School (District)",
+      "website": "http://www.osacps.org",
+      "district_type": "Charter District",
+      "failure_bucket": "unknown_empty",
+      "in_failure_batch_84": true
+    },
+    {
+      "org_code": "35190000",
+      "name": "Worcester Cultural Academy Charter Public School (District)",
+      "website": "https://www.wcacps.org/",
+      "district_type": "Charter District",
+      "failure_bucket": "unknown_empty",
+      "in_failure_batch_84": true
+    }
+  ]
+}

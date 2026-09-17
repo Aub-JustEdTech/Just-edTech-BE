@@ -10,7 +10,10 @@ class DistrictReportRequest(BaseModel):
 
     query_id: str = Field(
         ...,
-        description="Fixed query ID (Q1-Q7). See GET /district-reports/queries.",
+        description=(
+            "Fixed query ID for the selected tenant "
+            "(e.g. Q1). See GET /district-reports/queries?tenant_id=..."
+        ),
     )
     tenant_id: int = Field(
         ...,
@@ -26,6 +29,14 @@ class DistrictReportRequest(BaseModel):
         description=(
             "Optional chatbot config to use for the writer LLM. When omitted, "
             "the tenant's default chatbot config is used."
+        ),
+    )
+    district_org_code: str | None = Field(
+        None,
+        description=(
+            "Optional focus district org_code for single-district (CA) "
+            "reports. When omitted, the tenant default is used "
+            "(Saddleback Valley USD for California)."
         ),
     )
 
@@ -50,10 +61,11 @@ class DistrictReportStatusResponse(BaseModel):
 
 
 class DistrictQueryInfo(BaseModel):
-    """A fixed query supported by the report API."""
+    """A fixed query supported by the report API for one tenant."""
 
     query_id: str
+    tenant_id: int
     title: str
     research_goal: str
     question: str
-    geography: str = "Massachusetts"
+    geography: str

@@ -64,9 +64,12 @@ headings (##):
 {compiled_date}
 
 ## Documents analyzed
-A 1-2 sentence stakeholder summary of the corpus (e.g. "Agendas, \
-minutes, and policies from N Massachusetts school districts"). Do NOT \
-mention counts of records, chunks, or vectors.
+A 1-2 sentence stakeholder summary of the corpus. For a single focus \
+district, name that district explicitly (e.g. "Agendas and minutes \
+from Saddleback Valley Unified School District"). For multi-district \
+reports, summarize the geography (e.g. "Agendas, minutes, and policies \
+from N Massachusetts school districts"). Do NOT mention counts of \
+records, chunks, or vectors.
 
 ## Research goal
 One sentence restating the research goal.
@@ -88,10 +91,21 @@ evidence and those only potentially relevant.
 
 ## Discussion
 The substantive discussion and argument, with inline citations to \
-specific meetings (e.g. "Rochester School Committee agenda, June 15, \
-2026, p. 123"). When a citation includes a document_link, you may \
-optionally mention it inline as a markdown link. Group by district \
-where useful.
+specific meetings (e.g. "06.02.25 Minutes, p. 14" or "Rochester School \
+Committee agenda, June 15, 2026, p. 123"). When a citation includes a \
+document_link, you may optionally mention it inline as a markdown link.
+
+SINGLE-DISTRICT GUIDANCE (when evidence.focus_district is present):
+- Name that district throughout. Do not invent other districts.
+- Organize Discussion by thematic categories that answer the research \
+goal (e.g. budget deficits, declining enrollment, public-comment \
+themes, board-vs-public alignment).
+- Prefer concrete figures, named speakers, and recurring concerns \
+ONLY when they appear in the citation snippets. Never invent dollar \
+amounts, speaker names, or meeting citations.
+- For comparative questions (board priorities vs public comments), \
+explicitly label themes as alignment or disconnect.
+- Group by district only when analyzing more than one district.
 
 ## Trend
 Only include if the evidence shows a clear change over time; otherwise \
@@ -218,9 +232,13 @@ def build_evidence_payload(
         "research_goal": spec.research_goal,
         "question": spec.question,
         "geography": spec.geography,
+        "focus_district": corpus_summary.get("focus_district"),
         "corpus": {
             "district_count": corpus_summary.get("district_count", 0),
             "state": corpus_summary.get("state", "MA"),
+            "district_name": (
+                (corpus_summary.get("focus_district") or {}).get("district_name")
+            ),
         },
         "primary_evidence": districts_used,
         "other_matching_districts": other_districts,

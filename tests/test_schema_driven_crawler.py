@@ -739,6 +739,9 @@ async def test_http1_fallback_fires_on_http2_protocol_error():
     with patch.object(crawler, "_fetch_httpx", return_value=FetchAttempt(
         exception_type="RemoteProtocolError", exception_message="http2 protocol error"
     )), \
+         patch.object(crawler, "_fetch_curl_cffi", return_value=FetchAttempt(
+             exception_type="RemoteProtocolError", exception_message="http2 protocol error"
+         )), \
          patch.object(crawler, "_ensure_playwright", side_effect=fake_ensure_playwright), \
          patch.object(crawler, "_ensure_http1_playwright", side_effect=fake_ensure_http1_playwright), \
          patch.object(crawler, "_fetch_text_rendered", side_effect=fake_rendered):
@@ -775,4 +778,122 @@ async def test_http1_fallback_not_fired_on_generic_404():
     assert result.pages_crawled == 1
     assert len(result.error_details) == 1
     assert result.error_details[0].http_status == 404
+
+
+# ---------------------------------------------------------------------------
+# HTTP/1 browser wiring (target.new_page) + SSL / board-portal unlocks
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_fetch_text_rendered_uses_passed_http1_browser():
+    """Regression: HTTP/1 fallback must open pages on the http1 browser,
+    not silently ignore ``browser=`` and use ``self._browser``.
+    """
+    crawler = SchemaDrivenCrawler(max_pages=1)
+
+    default_browser = MagicMock(name="default_browser")
+    http1_browser = MagicMock(name="http1_browser")
+    crawler._browser = default_browser
+
+    context = MagicMock()
+    page = MagicMock()
+    page.url = "https://example.com"
+    page.goto = AsyncMock()
+    page.content = AsyncMock(return_value=HOMEPAGE_HTML)
+    page.close = AsyncMock()
+    context.new_page = AsyncMock(return_value=page)
+    context.close = AsyncMock()
+    http1_browser.new_context = AsyncMock(return_value=context)
+    default_browser.new_context = AsyncMock()
+
+    attempt = await crawler._fetch_text_rendered(
+        "https://example.com", browser=http1_browser
+    )
+
+    assert attempt.html == HOMEPAGE_HTML
+    http1_browser.new_context.assert_awaited_once()
+    assert http1_browser.new_context.await_args.kwargs.get("ignore_https_errors") is True
+    default_browser.new_context.assert_not_called()
+    context.new_page.assert_awaited_once()
+
+
+def test_www_apex_alternates():
+    from app.services.web_scraper.schema_driven_crawler import _www_apex_alternates
+
+    assert _www_apex_alternates("https://www.hancockschool.org/path") == [
+        "https://hancockschool.org/path"
+    ]
+    assert _www_apex_alternates("https://hancockschool.org/") == [
+        "https://www.hancockschool.org/"
+    ]
+
+
+def test_extract_board_platform_links_surfaces_diligent():
+    crawler = SchemaDrivenCrawler(max_pages=1)
+    html = textwrap.dedent(
+        """
+        <html><body>
+          <a href="https://acushnetschools.community.diligentoneplatform.com/Portal/">
+            Board portal
+          </a>
+          <a href="/school-committee">local</a>
+        </body></html>
+        """
+    )
+    with patch(
+        "app.services.web_scraper.schema_driven_crawler.is_board_platform_url",
+        side_effect=lambda u: "diligentoneplatform.com" in (u or ""),
+    ):
+        found = crawler._extract_board_platform_links(
+            html=html,
+            page_url="https://www.acushnetschools.us",
+            visited=set(),
+            existing_frontier_urls=set(),
+        )
+    assert len(found) == 1
+    assert "diligentoneplatform.com" in found[0][0]
+    assert found[0][1] >= 0.9
+
+
+@pytest.mark.asyncio
+async def test_empty_markdown_escalates_to_playwright_for_large_html():
+    """Large empty-markdown HTML (JS shell) forces a Playwright re-render."""
+    crawler = SchemaDrivenCrawler(max_pages=3, confidence_threshold=0.4)
+    crawler.classifier = MagicMock()
+    crawler.classifier.classify = AsyncMock(
+        return_value=_page("https://example.com")
+    )
+
+    shell_html = "<html>" + ("x" * 6000) + "</html>"
+    call_count = {"n": 0}
+
+    async def fake_fetch(client, url):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return shell_html, FetchMeta(stage="httpx", http_status=200)
+
+        # After escalation path inside crawl, _fetch isn't called again —
+        # escalation uses _fetch_text_rendered directly.
+        return shell_html, FetchMeta(stage="httpx", http_status=200)
+
+    rendered_html = HOMEPAGE_HTML
+
+    async def fake_ensure_playwright():
+        crawler._browser = object()
+
+    async def fake_rendered(url, *, browser=None):
+        return FetchAttempt(
+            html=rendered_html, http_status=200, final_url=url
+        )
+
+    with patch.object(crawler, "_fetch", side_effect=fake_fetch), \
+         patch.object(crawler, "_collect_seed_frontier", return_value=[]), \
+         patch.object(crawler, "_render_markdown", side_effect=["", "Meeting minutes"]), \
+         patch.object(crawler, "_ensure_playwright", side_effect=fake_ensure_playwright), \
+         patch.object(crawler, "_fetch_text_rendered", side_effect=fake_rendered):
+        result = await crawler.crawl("https://example.com")
+
+    assert result.llm_calls == 1
+    assert len(result.data_pages) == 1
 

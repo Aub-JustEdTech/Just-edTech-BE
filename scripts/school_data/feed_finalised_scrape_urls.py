@@ -327,11 +327,19 @@ def main() -> None:
             "authoritative URL set per school."
         ),
     )
+    parser.add_argument(
+        "--tenant-id",
+        type=int,
+        default=1,
+        help="Tenant ID to feed scrape URLs into (default: 1).",
+    )
     args = parser.parse_args()
 
     try:
         asyncio.run(
-            feed_finalised_scrape_urls(args.json, args.dry_run, args.prune)
+            feed_finalised_scrape_urls(
+                args.json, args.dry_run, args.prune, tenant_id=args.tenant_id
+            )
         )
     except Exception as exc:
         print(f"\nFeed failed: {exc}", file=sys.stderr)

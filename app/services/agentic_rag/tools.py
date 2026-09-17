@@ -366,6 +366,16 @@ async def search_knowledge_base(
                     "page_number": meta.get("page_number"),
                     "chunk_index": meta.get("chunk_index", 0),
                     "document_type": meta.get("document_type", ""),
+                    # District / meeting fields used by district-report
+                    # semantic retrieval (and any caller that wants to
+                    # cite by meeting without a second scroll).
+                    "district_name": meta.get("district_name") or "",
+                    "state": meta.get("state") or "",
+                    "meeting_date": meta.get("meeting_date"),
+                    "meeting_doc_type": meta.get("meeting_doc_type"),
+                    "action_stage": meta.get("action_stage"),
+                    "source_media_url": meta.get("source_media_url") or "",
+                    "source_page_url": meta.get("source_page_url") or "",
                     # Expose the combined score used for ranking so downstream
                     # components (e.g. citation selection) can use the same
                     # ordering signal.

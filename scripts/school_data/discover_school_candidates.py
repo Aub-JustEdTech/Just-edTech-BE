@@ -107,6 +107,10 @@ async def run(
     with json_path.open("r", encoding="utf-8") as f:
         records = json.load(f)
 
+    # Support residual_discover_once_schools.json shape: {"schools": [...]}
+    if isinstance(records, dict) and "schools" in records:
+        records = records["schools"]
+
     print("=" * 60)
     print("Just-EdTech School Candidate URL Discovery")
     print(f"  input          : {json_path}")

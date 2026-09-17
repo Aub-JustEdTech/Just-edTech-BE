@@ -1,8 +1,8 @@
 """District analytics report API.
 
-Generate stakeholder-facing PDF reports for the fixed Q1-Q7 district
-queries. Async flow: POST enqueues a Celery task, GET status polls it,
-GET download streams the PDF from S3 once ready.
+Generate stakeholder-facing PDF reports for the tenant-scoped fixed
+district queries. Async flow: POST enqueues a Celery task, GET status
+polls it, GET download streams the PDF from S3 once ready.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from app.schemas.district_reports import (
     DistrictReportTaskResponse,
 )
 from app.schemas.users import User
-from app.services.district_report.queries import QUERIES, get_query_spec
+from app.services.district_report.queries import get_query_spec, list_queries_for_tenant
 from app.utils.dependencies import (
     get_authorized_tenant_id,
     get_current_tenant_user,
@@ -48,24 +48,27 @@ def _s3_manager() -> S3Manager:
 @router.get(
     "/queries",
     response_model=list[DistrictQueryInfo],
-    summary="List the fixed district analytics queries (Q1-Q7)",
+    summary="List the fixed district analytics queries for a tenant",
 )
 async def list_district_queries(
     current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_authorized_tenant_id),
 ) -> list[DistrictQueryInfo]:
-    """Return the supported fixed query IDs and their titles.
+    """Return fixed query IDs for the selected tenant.
 
-    Used by clients to populate a query picker without free text.
+    Used by clients to populate a query picker after the tenant picker.
+    Tenants without a catalog receive an empty list.
     """
     return [
         DistrictQueryInfo(
             query_id=spec.query_id,
+            tenant_id=spec.tenant_id,
             title=spec.title,
             research_goal=spec.research_goal,
             question=spec.question,
             geography=spec.geography,
         )
-        for spec in QUERIES.values()
+        for spec in list_queries_for_tenant(tenant_id)
     ]
 
 
@@ -93,17 +96,17 @@ async def create_district_report(
     result, then GET /district-reports/download?task_id=...&tenant_id=...
     to fetch the PDF.
     """
+    # Authorize the body's tenant_id. super_admin bypasses; tenant_admin
+    # must have a row in user_tenant_access; non-admins are rejected.
+    await _authorize_tenant(current_user, db, request.tenant_id)
+
     try:
-        get_query_spec(request.query_id)
+        get_query_spec(request.query_id, request.tenant_id)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
-
-    # Authorize the body's tenant_id. super_admin bypasses; tenant_admin
-    # must have a row in user_tenant_access; non-admins are rejected.
-    await _authorize_tenant(current_user, db, request.tenant_id)
 
     # Import here to avoid the tasks -> models import cycle.
     from app.tasks.district_report_tasks import generate_district_report_task
@@ -112,6 +115,7 @@ async def create_district_report(
         request.tenant_id,
         request.query_id,
         request.chatbot_config_id,
+        request.district_org_code,
     )
     return DistrictReportTaskResponse(task_id=task.id, status="PENDING")
 

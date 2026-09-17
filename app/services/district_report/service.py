@@ -15,11 +15,18 @@ from typing import Any
 
 from app.db.connector import AsyncSessionLocal
 from app.services.district_report.pdf import render_report_pdf
-from app.services.district_report.queries import QuerySpec, get_query_spec
+from app.services.district_report.queries import (
+    RETRIEVAL_SEMANTIC,
+    QuerySpec,
+    default_district_org_code,
+    geography_to_state,
+    get_query_spec,
+)
 from app.services.district_report.retriever import (
     fetch_corpus_summary,
     gather_citations,
     resolve_chatbot_config_id,
+    resolve_focus_district,
     run_retrieval_passes,
 )
 from app.services.district_report.writer import (
@@ -44,8 +51,13 @@ class DistrictReportService:
         tenant_id: int,
         query_id: str,
         chatbot_config_id: int | None = None,
+        district_org_code: str | None = None,
     ) -> dict[str, Any]:
         """Generate one PDF report for a fixed query.
+
+        For CA (semantic) queries, analysis is pinned to a single focus
+        district. Pass `district_org_code` to override the tenant default
+        (Saddleback Valley USD for tenant 5).
 
         Returns a dict with:
           - report_id: stable per (tenant_id, query_id, compiled_date)
@@ -54,13 +66,37 @@ class DistrictReportService:
           - compiled_at (ISO 8601 UTC)
           - filename
           - pdf_bytes
+          - focus_district (when single-district)
         """
-        spec = get_query_spec(query_id)
+        spec = get_query_spec(query_id, tenant_id)
         chatbot_config_id = chatbot_config_id or await resolve_chatbot_config_id(tenant_id)
 
-        ranked = await run_retrieval_passes(spec, tenant_id, chatbot_config_id)
-        citations = await gather_citations(spec, ranked, tenant_id, chatbot_config_id)
-        corpus_summary = await fetch_corpus_summary(tenant_id, chatbot_config_id)
+        focus_district: dict[str, str] | None = None
+        if spec.retrieval_mode == RETRIEVAL_SEMANTIC:
+            org_code = district_org_code or default_district_org_code(tenant_id)
+            if not org_code:
+                raise ValueError(
+                    f"Semantic query {query_id!r} for tenant {tenant_id} "
+                    "requires a focus district_org_code."
+                )
+            focus_district = await resolve_focus_district(tenant_id, org_code)
+
+        ranked = await run_retrieval_passes(
+            spec, tenant_id, chatbot_config_id, focus_district=focus_district
+        )
+        citations = await gather_citations(
+            spec,
+            ranked,
+            tenant_id,
+            chatbot_config_id,
+            focus_district=focus_district,
+        )
+        corpus_summary = await fetch_corpus_summary(
+            tenant_id,
+            chatbot_config_id,
+            state=geography_to_state(spec.geography),
+            focus_district=focus_district,
+        )
 
         compiled_at = datetime.now(UTC)
         compiled_date = compiled_at.strftime("%Y-%m-%d")
@@ -93,6 +129,7 @@ class DistrictReportService:
             "compiled_at": compiled_at.isoformat(),
             "filename": filename,
             "pdf_bytes": pdf_buffer.getvalue(),
+            "focus_district": focus_district,
         }
 
     def _make_report_id(self, tenant_id: int, query_id: str, compiled_date: str) -> str:

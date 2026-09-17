@@ -1,4 +1,4 @@
-"""Generate district analytics report PDFs from the CLI for the fixed Q1-Q7 queries.
+"""Generate district analytics report PDFs from the CLI for tenant-scoped queries.
 
 Calls the same `district_report_service` the Celery task uses, so the PDF
 output is identical to the API. Writes one PDF per query to disk (no HTTP,
@@ -9,9 +9,11 @@ Run (host-side — Postgres needs the localhost override):
     POSTGRES_SERVER=localhost poetry run python scripts/generate_district_reports.py \
         --tenant-id 4 --query Q1
 
-Generate all seven:
+Generate all queries for a tenant:
     POSTGRES_SERVER=localhost poetry run python scripts/generate_district_reports.py \
         --tenant-id 4 --all
+    POSTGRES_SERVER=localhost poetry run python scripts/generate_district_reports.py \
+        --tenant-id 5 --all
 
 Output:
     scripts/output/district_reports/tenant_{id}/Q1_<title>_tenant{id}_{date}.pdf
@@ -57,13 +59,22 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Generate a separate PDF for every fixed query (Q1-Q7).",
+        help="Generate a separate PDF for every fixed query on this tenant.",
     )
     parser.add_argument(
         "--chatbot-config-id",
         type=int,
         default=None,
         help="Optional chatbot config ID for the writer LLM (default: tenant's default).",
+    )
+    parser.add_argument(
+        "--district-org-code",
+        type=str,
+        default=None,
+        help=(
+            "Focus district org_code for single-district (CA) reports. "
+            "Default for tenant 5: Saddleback Valley USD (30-73635)."
+        ),
     )
     parser.add_argument(
         "--out-dir",
@@ -79,19 +90,27 @@ async def _generate_one(
     query_id: str,
     chatbot_config_id: int | None,
     out_dir: Path,
+    district_org_code: str | None = None,
 ) -> Path:
     print(f"[{query_id}] generating...", flush=True)
     result = await district_report_service.generate_report(
         tenant_id=tenant_id,
         query_id=query_id,
         chatbot_config_id=chatbot_config_id,
+        district_org_code=district_org_code,
     )
 
     tenant_dir = out_dir / f"tenant_{tenant_id}"
     tenant_dir.mkdir(parents=True, exist_ok=True)
     out_path = tenant_dir / result["filename"]
     out_path.write_bytes(result["pdf_bytes"])
-    print(f"[{query_id}] wrote {out_path} ({len(result['pdf_bytes'])} bytes)", flush=True)
+    focus = result.get("focus_district") or {}
+    focus_label = focus.get("district_name") or ""
+    suffix = f" focus={focus_label}" if focus_label else ""
+    print(
+        f"[{query_id}] wrote {out_path} ({len(result['pdf_bytes'])} bytes){suffix}",
+        flush=True,
+    )
     return out_path
 
 
@@ -107,14 +126,26 @@ async def _run(args: argparse.Namespace) -> int:
     if args.query:
         query_ids = [args.query]
     else:
-        query_ids = list_query_ids()
+        query_ids = list_query_ids(args.tenant_id)
+        if not query_ids:
+            print(
+                f"error: no fixed queries configured for tenant_id={args.tenant_id}",
+                file=sys.stderr,
+            )
+            return 2
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     failures = 0
     for qid in query_ids:
         try:
-            await _generate_one(args.tenant_id, qid, args.chatbot_config_id, args.out_dir)
+            await _generate_one(
+                args.tenant_id,
+                qid,
+                args.chatbot_config_id,
+                args.out_dir,
+                district_org_code=args.district_org_code,
+            )
         except Exception as exc:  # noqa: BLE001
             failures += 1
             print(f"[{qid}] FAILED: {exc}", file=sys.stderr)
