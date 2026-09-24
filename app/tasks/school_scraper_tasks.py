@@ -16,8 +16,8 @@ from __future__ import annotations
 import logging
 import shutil
 import tempfile
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from sqlalchemy.exc import IntegrityError
@@ -52,6 +52,53 @@ class MediaPayload:
     extra_metadata: dict = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class ScrapedMediaSnapshot:
+    """Plain values copied off ScrapedMedia before long download/OCR work.
+
+    Holding an AsyncSession (and its ORM instance) open across Playwright /
+    Tesseract can take many minutes; the connection goes idle and the next
+    ORM attribute access raises MissingGreenlet (sqlalchemy.exc xd2s).
+    Snapshot first, close the session, materialize, then open a fresh session.
+    """
+
+    id: int
+    tenant_id: int
+    school_id: int
+    school_org_code: str
+    school_name: str | None
+    district_type: str | None
+    source_page_url: str
+    source_media_url: str
+    url_hash: str
+    media_type: str
+    file_extension: str | None
+    original_name: str | None
+    document_type: str | None
+    meeting_date: date | None
+    doc_year: int | None
+
+
+def _snapshot_scraped_media(sm: ScrapedMedia) -> ScrapedMediaSnapshot:
+    return ScrapedMediaSnapshot(
+        id=int(sm.id),
+        tenant_id=int(sm.tenant_id),
+        school_id=int(sm.school_id),
+        school_org_code=str(sm.school_org_code),
+        school_name=sm.school_name,
+        district_type=sm.district_type,
+        source_page_url=str(sm.source_page_url),
+        source_media_url=str(sm.source_media_url),
+        url_hash=str(sm.url_hash),
+        media_type=str(sm.media_type),
+        file_extension=sm.file_extension,
+        original_name=sm.original_name,
+        document_type=sm.document_type,
+        meeting_date=sm.meeting_date,
+        doc_year=sm.doc_year,
+    )
+
+
 @celery_app.task(
     name="app.tasks.school_scraper_tasks.ingest_scraped_media",
     bind=True,
@@ -82,6 +129,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
     )
     from app.services.web_scraper.year_filter import evaluate_media_year_async
 
+    # --- Phase 1: short DB transaction (load + gates + mark downloading) ---
     async with AsyncSessionLocal() as db:
         sm = await db.get(ScrapedMedia, scraped_media_id)
         if not sm:
@@ -125,68 +173,78 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                 "doc_year": inferred_year,
             }
 
-        await update_scraped_media(db, sm.id, status="downloading")
-
+        snap = _snapshot_scraped_media(sm)
+        download_fields: dict = {"status": "downloading"}
         if inferred_year is not None:
-            sm.doc_year = inferred_year
-            await db.flush()
+            download_fields["doc_year"] = inferred_year
+            snap = replace(snap, doc_year=inferred_year)
+        await update_scraped_media(db, sm.id, **download_fields)
 
-        # Temp dir is load-bearing: celery-scraper shares the temp_uploads
-        # volume with the documents worker, so a leaked multi-GB file takes
-        # down both. Always cleaned, even on failure.
-        Path(settings.SCHOOL_SCRAPER_MEDIA_TEMP_DIR).mkdir(parents=True, exist_ok=True)
-        workdir = Path(
-            tempfile.mkdtemp(dir=settings.SCHOOL_SCRAPER_MEDIA_TEMP_DIR)
-        )
+    # --- Phase 2: download / OCR / transcribe with NO open AsyncSession ---
+    Path(settings.SCHOOL_SCRAPER_MEDIA_TEMP_DIR).mkdir(parents=True, exist_ok=True)
+    workdir = Path(tempfile.mkdtemp(dir=settings.SCHOOL_SCRAPER_MEDIA_TEMP_DIR))
 
+    try:
         try:
-            try:
-                payload = await _materialize_media(sm, workdir)
-            except TerminalTranscriptionError as exc:
-                # Deterministic: retrying re-does identical work and fails the
-                # same way. Record and return WITHOUT raising.
-                logger.warning(
-                    "Terminal failure for scraped_media %s (%s): %s",
-                    scraped_media_id,
-                    exc.status,
-                    exc,
-                )
+            payload = await _materialize_media(snap, workdir)
+        except TerminalTranscriptionError as exc:
+            logger.warning(
+                "Terminal failure for scraped_media %s (%s): %s",
+                scraped_media_id,
+                exc.status,
+                exc,
+            )
+            async with AsyncSessionLocal() as db:
                 await update_scraped_media(
                     db,
-                    sm.id,
+                    scraped_media_id,
                     status=exc.status,
                     error_message=str(exc),
                 )
-                return {
-                    "scraped_media_id": scraped_media_id,
-                    "status": exc.status,
-                }
-            except Exception as exc:
-                logger.exception("Ingest failed for scraped_media %s", scraped_media_id)
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": exc.status,
+            }
+        except Exception as exc:
+            logger.exception("Ingest failed for scraped_media %s", scraped_media_id)
+            async with AsyncSessionLocal() as db:
                 await update_scraped_media(
                     db,
-                    sm.id,
+                    scraped_media_id,
                     status="failed",
                     error_message=str(exc),
                 )
-                raise
+            raise
 
-            # An empty transcript must not create a Document: stage 2 raises
-            # on empty text, which would strand the Document in PROCESSING.
-            if not payload.text.strip():
-                logger.warning(
-                    "Empty transcript for scraped_media %s; not creating a Document",
-                    scraped_media_id,
-                )
+        if not payload.text.strip():
+            logger.warning(
+                "Empty transcript for scraped_media %s; not creating a Document",
+                scraped_media_id,
+            )
+            async with AsyncSessionLocal() as db:
                 await update_scraped_media(
                     db,
-                    sm.id,
+                    scraped_media_id,
                     status="no_transcript",
                     error_message="transcript was empty",
                 )
+            return {
+                "scraped_media_id": scraped_media_id,
+                "status": "no_transcript",
+            }
+
+        # --- Phase 3: fresh session for dedup + Document create ---
+        async with AsyncSessionLocal() as db:
+            sm = await db.get(ScrapedMedia, scraped_media_id)
+            if not sm:
+                logger.warning(
+                    "ScrapedMedia %s disappeared during materialize", scraped_media_id
+                )
+                return {"scraped_media_id": scraped_media_id, "error": "not found"}
+            if sm.status == "cancelled":
                 return {
                     "scraped_media_id": scraped_media_id,
-                    "status": "no_transcript",
+                    "status": "cancelled",
                 }
 
             content_h = payload.content_hash
@@ -213,12 +271,6 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                     content_hash=content_h,
                 )
             except IntegrityError:
-                # Concurrent race: another worker processing a different row
-                # for the same school with identical content committed its
-                # content_hash between our dedup check above and this UPDATE.
-                # We lost the race — mark this row as a duplicate WITHOUT
-                # writing content_hash (the winning row already owns it under
-                # uq_scraped_media_school_content).
                 await db.rollback()
                 await update_scraped_media(
                     db,
@@ -230,10 +282,11 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                     "status": "skipped_duplicate",
                 }
 
-            # Everything past this point runs AFTER transcription has already
-            # been paid for. An S3 or DB failure here must NOT propagate to the
-            # wrapper's self.retry(), or the retry re-transcribes and re-bills
-            # the same media up to three more times. Record and stop.
+            # Reload after update_scraped_media commit so we mutate a live row.
+            sm = await db.get(ScrapedMedia, scraped_media_id)
+            if sm is None:
+                return {"scraped_media_id": scraped_media_id, "error": "not found"}
+
             try:
                 document_id = await _create_document_and_enqueue(db, sm, payload)
             except Exception as exc:  # noqa: BLE001
@@ -244,7 +297,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                 )
                 await update_scraped_media(
                     db,
-                    sm.id,
+                    scraped_media_id,
                     status="failed",
                     error_message=f"post-transcription persist failed: {exc}",
                     duration_seconds=payload.duration_seconds,
@@ -258,7 +311,7 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
 
             await update_scraped_media(
                 db,
-                sm.id,
+                scraped_media_id,
                 status="completed",
                 document_id=document_id,
                 duration_seconds=payload.duration_seconds,
@@ -270,11 +323,13 @@ async def _ingest_scraped_media_async(scraped_media_id: int) -> dict:
                 "status": "completed",
                 "document_id": document_id,
             }
-        finally:
-            shutil.rmtree(workdir, ignore_errors=True)
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
 
 
-async def _materialize_media(sm, workdir: Path) -> MediaPayload:
+async def _materialize_media(
+    sm: ScrapedMediaSnapshot, workdir: Path
+) -> MediaPayload:
     """Produce text (and, for A/V, a transcript) for one ScrapedMedia item."""
     import hashlib
 
