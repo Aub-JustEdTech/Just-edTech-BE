@@ -17,6 +17,10 @@ Modes:
 
 Prod stores ``file_extension`` with a leading dot (``.pdf``).
 
+By default only filenames matching meeting-doc keywords (meeting / minutes /
+agenda / packet) are requeued. Pass ``--no-name-filter`` to include all
+empty PDFs, or ``--name-keywords`` to override the default set.
+
 Usage (prod — start once, walk away):
 
     docker compose -f docker-compose.prod.yml stop celery-beat
@@ -43,7 +47,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from app.core.config import settings
 from app.db.connector import AsyncSessionLocal
@@ -53,6 +57,8 @@ from app.models.school import ScrapedMedia
 DOC_MEDIA_TYPES = ("document",)
 # Prod stores leading-dot extensions (".pdf"); accept both forms via normalize.
 DEFAULT_EXTS = (".pdf",)
+# Prefer board meeting docs for the bulk OCR pass (original_name ILIKE).
+DEFAULT_NAME_KEYWORDS = ("meeting", "minutes", "agenda", "packet")
 
 # Statuses while ingest_scraped_media / early pipeline is still working the row.
 IN_FLIGHT = frozenset({"discovered", "downloading", "ingesting"})
@@ -80,6 +86,28 @@ def _normalize_exts(exts: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(sorted(out))
 
 
+def _normalize_name_keywords(keywords: tuple[str, ...]) -> tuple[str, ...]:
+    """Dedupe and strip; preserve order of first occurrence."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for raw in keywords:
+        kw = (raw or "").strip().lower()
+        if not kw or kw in seen:
+            continue
+        seen.add(kw)
+        out.append(kw)
+    return tuple(out)
+
+
+def _name_keyword_clause(keywords: tuple[str, ...] | None):
+    """Case-insensitive substring match on original_name, or None if disabled."""
+    if not keywords:
+        return None
+    return or_(
+        *(ScrapedMedia.original_name.ilike(f"%{kw}%") for kw in keywords)
+    )
+
+
 def _ts() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
@@ -88,6 +116,7 @@ async def count_remaining(
     tenant_id: int,
     exts: tuple[str, ...],
     exclude_ids: set[int] | None = None,
+    name_keywords: tuple[str, ...] | None = None,
 ) -> int:
     async with AsyncSessionLocal() as db:
         stmt = (
@@ -100,6 +129,9 @@ async def count_remaining(
                 ScrapedMedia.file_extension.in_(exts),
             )
         )
+        name_clause = _name_keyword_clause(name_keywords)
+        if name_clause is not None:
+            stmt = stmt.where(name_clause)
         if exclude_ids:
             stmt = stmt.where(ScrapedMedia.id.notin_(exclude_ids))
         return (await db.execute(stmt)).scalar_one()
@@ -110,6 +142,7 @@ async def fetch_batch_ids(
     limit: int,
     exts: tuple[str, ...],
     exclude_ids: set[int],
+    name_keywords: tuple[str, ...] | None = None,
 ) -> list[dict]:
     async with AsyncSessionLocal() as db:
         stmt = (
@@ -123,6 +156,9 @@ async def fetch_batch_ids(
             .order_by(ScrapedMedia.id.asc())
             .limit(limit)
         )
+        name_clause = _name_keyword_clause(name_keywords)
+        if name_clause is not None:
+            stmt = stmt.where(name_clause)
         if exclude_ids:
             stmt = stmt.where(ScrapedMedia.id.notin_(exclude_ids))
         rows = (await db.execute(stmt)).scalars().all()
@@ -234,6 +270,7 @@ async def run_until_empty(
     tenant_id: int,
     limit: int,
     exts: tuple[str, ...],
+    name_keywords: tuple[str, ...] | None,
     poll_seconds: float,
     batch_timeout_seconds: float,
     max_batches: int | None,
@@ -241,12 +278,14 @@ async def run_until_empty(
     skip_ids: set[int] = set()
     batch_num = 0
     totals = {"enqueued": 0, "ok": 0, "failed_again": 0, "other": 0, "timeout": 0}
+    kw_label = ", ".join(name_keywords) if name_keywords else "(none — all names)"
 
     print("=" * 60, flush=True)
     print("Empty-document OCR re-queue — UNTIL EMPTY", flush=True)
     print(f"  tenant_id              : {tenant_id}", flush=True)
     print(f"  limit (batch size)     : {limit}", flush=True)
     print(f"  extensions             : {', '.join(exts)}", flush=True)
+    print(f"  name_keywords          : {kw_label}", flush=True)
     print(f"  ENABLE_OCR             : {settings.ENABLE_OCR}", flush=True)
     print(f"  OCR_DPI                : {settings.OCR_DPI}", flush=True)
     print(f"  poll_seconds           : {poll_seconds}", flush=True)
@@ -259,7 +298,9 @@ async def run_until_empty(
         sys.exit(2)
 
     while True:
-        remaining = await count_remaining(tenant_id, exts, exclude_ids=skip_ids)
+        remaining = await count_remaining(
+            tenant_id, exts, exclude_ids=skip_ids, name_keywords=name_keywords
+        )
         print(
             f"\n[{_ts()}] remaining (excl. skip)={remaining}  "
             f"skipped_this_run={len(skip_ids)}",
@@ -278,7 +319,9 @@ async def run_until_empty(
             break
 
         batch_num += 1
-        batch = await fetch_batch_ids(tenant_id, limit, exts, skip_ids)
+        batch = await fetch_batch_ids(
+            tenant_id, limit, exts, skip_ids, name_keywords=name_keywords
+        )
         if not batch:
             print(f"[{_ts()}] No rows left to enqueue.", flush=True)
             break
@@ -312,7 +355,7 @@ async def run_until_empty(
     for k, v in totals.items():
         print(f"  {k:<16}: {v}", flush=True)
     print(f"  skipped_ids     : {len(skip_ids)}", flush=True)
-    final = await count_remaining(tenant_id, exts)
+    final = await count_remaining(tenant_id, exts, name_keywords=name_keywords)
     print(f"  remaining_raw   : {final}  (incl. failed_again still no_transcript)", flush=True)
 
 
@@ -322,8 +365,10 @@ async def requeue_once(
     limit: int,
     dry_run: bool,
     exts: tuple[str, ...],
+    name_keywords: tuple[str, ...] | None,
 ) -> dict:
-    remaining = await count_remaining(tenant_id, exts)
+    remaining = await count_remaining(tenant_id, exts, name_keywords=name_keywords)
+    kw_label = ", ".join(name_keywords) if name_keywords else "(none — all names)"
 
     print("=" * 60)
     print("Empty-document OCR re-queue")
@@ -331,6 +376,7 @@ async def requeue_once(
     print(f"  dry_run       : {dry_run}")
     print(f"  limit         : {limit}")
     print(f"  extensions    : {', '.join(exts)}")
+    print(f"  name_keywords : {kw_label}")
     print(f"  ENABLE_OCR    : {settings.ENABLE_OCR}")
     print(f"  OCR_DPI       : {settings.OCR_DPI}")
     print(f"  remaining     : {remaining}")
@@ -343,7 +389,9 @@ async def requeue_once(
         )
         sys.exit(2)
 
-    batch = await fetch_batch_ids(tenant_id, limit, exts, exclude_ids=set())
+    batch = await fetch_batch_ids(
+        tenant_id, limit, exts, exclude_ids=set(), name_keywords=name_keywords
+    )
     print(f"  this batch    : {len(batch)}")
     stats = {
         "remaining_before": remaining,
@@ -368,7 +416,7 @@ async def requeue_once(
 
     ids = await enqueue_batch(batch)
     stats["enqueued"] = len(ids)
-    left = await count_remaining(tenant_id, exts)
+    left = await count_remaining(tenant_id, exts, name_keywords=name_keywords)
     print("\nBatch results:")
     for k, v in stats.items():
         print(f"  {k:<18}: {v}")
@@ -416,8 +464,40 @@ def main() -> None:
         default=None,
         help="File extension filter (repeatable). Default: .pdf.",
     )
+    parser.add_argument(
+        "--name-keywords",
+        action="append",
+        dest="name_keywords",
+        default=None,
+        help=(
+            "Substring filter on original_name (repeatable, case-insensitive). "
+            f"Default: {', '.join(DEFAULT_NAME_KEYWORDS)}."
+        ),
+    )
+    parser.add_argument(
+        "--no-name-filter",
+        action="store_true",
+        help="Disable filename keyword filter (requeue all empty PDFs).",
+    )
     args = parser.parse_args()
     exts = _normalize_exts(tuple(args.exts) if args.exts else DEFAULT_EXTS)
+
+    if args.no_name_filter and args.name_keywords:
+        print(
+            "Cannot combine --no-name-filter with --name-keywords",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    if args.no_name_filter:
+        name_keywords: tuple[str, ...] | None = None
+    elif args.name_keywords:
+        name_keywords = _normalize_name_keywords(tuple(args.name_keywords))
+        if not name_keywords:
+            print("Empty --name-keywords after normalize.", file=sys.stderr)
+            sys.exit(2)
+    else:
+        name_keywords = DEFAULT_NAME_KEYWORDS
 
     if args.until_empty and args.dry_run:
         print("Cannot combine --until-empty with --dry-run", file=sys.stderr)
@@ -430,6 +510,7 @@ def main() -> None:
                     tenant_id=args.tenant_id,
                     limit=args.limit,
                     exts=exts,
+                    name_keywords=name_keywords,
                     poll_seconds=args.poll_seconds,
                     batch_timeout_seconds=args.batch_timeout_seconds,
                     max_batches=args.max_batches,
@@ -442,6 +523,7 @@ def main() -> None:
                     limit=args.limit,
                     dry_run=args.dry_run,
                     exts=exts,
+                    name_keywords=name_keywords,
                 )
             )
     except KeyboardInterrupt:
