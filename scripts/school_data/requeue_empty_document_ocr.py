@@ -39,7 +39,23 @@ from app.models.school import ScrapedMedia
 
 # Rows we can recover with OCR. A/V no_transcript is a different plan.
 DOC_MEDIA_TYPES = ("document",)
-DEFAULT_EXTS = ("pdf", "PDF")
+# Prod stores leading-dot extensions (".pdf"); accept both forms.
+DEFAULT_EXTS = (".pdf",)
+
+
+def _normalize_exts(exts: tuple[str, ...]) -> tuple[str, ...]:
+    """Expand user/default exts to with-dot, without-dot, and case variants."""
+    out: set[str] = set()
+    for raw in exts:
+        e = (raw or "").strip()
+        if not e:
+            continue
+        bare = e.lstrip(".")
+        if not bare:
+            continue
+        for variant in (bare, f".{bare}", bare.lower(), bare.upper(), f".{bare.lower()}", f".{bare.upper()}"):
+            out.add(variant)
+    return tuple(sorted(out))
 
 
 async def count_remaining(tenant_id: int, exts: tuple[str, ...]) -> int:
@@ -182,7 +198,7 @@ def main() -> None:
         help="File extension filter (repeatable). Default: pdf only.",
     )
     args = parser.parse_args()
-    exts = tuple(args.exts) if args.exts else DEFAULT_EXTS
+    exts = _normalize_exts(tuple(args.exts) if args.exts else DEFAULT_EXTS)
 
     try:
         asyncio.run(
