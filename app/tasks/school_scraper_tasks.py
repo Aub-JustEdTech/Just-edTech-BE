@@ -77,6 +77,7 @@ class ScrapedMediaSnapshot:
     document_type: str | None
     meeting_date: date | None
     doc_year: int | None
+    scraped_at: datetime | None
 
 
 def _snapshot_scraped_media(sm: ScrapedMedia) -> ScrapedMediaSnapshot:
@@ -96,6 +97,7 @@ def _snapshot_scraped_media(sm: ScrapedMedia) -> ScrapedMediaSnapshot:
         document_type=sm.document_type,
         meeting_date=sm.meeting_date,
         doc_year=sm.doc_year,
+        scraped_at=sm.scraped_at,
     )
 
 
@@ -484,7 +486,13 @@ async def _create_document_and_enqueue(
     sm,
     payload: MediaPayload,
 ) -> int | None:
-    """Persist the artifacts, create the Document, enqueue the pipeline."""
+    """Persist the artifacts, create the Document, enqueue the pipeline.
+
+    All ScrapedMedia column values are copied into locals *before* any
+    ``await`` (S3 uploads). Touching the ORM instance after aioboto3 runs
+    triggers MissingGreenlet (xd2s) — SQLAlchemy tries lazy IO outside its
+    greenlet after the alternate async stack has run.
+    """
     from app.models.documents import Document, ProcessingStatus
     from app.models.school import School
     from app.utils.school_calendar import (
@@ -492,11 +500,30 @@ async def _create_document_and_enqueue(
         derive_school_year,
     )
 
+    # --- snapshot ORM columns before any await ---
+    sm_id = int(sm.id)
+    tenant_id = int(sm.tenant_id)
+    school_id = int(sm.school_id)
+    school_org_code = str(sm.school_org_code)
+    school_name = sm.school_name
+    district_type = sm.district_type
+    source_page_url = str(sm.source_page_url)
+    source_media_url = str(sm.source_media_url)
+    url_hash = str(sm.url_hash)
+    media_type = str(sm.media_type)
+    file_extension = sm.file_extension
+    original_name = sm.original_name
+    document_type_meta = sm.document_type
+    meeting_date = sm.meeting_date
+    doc_year = sm.doc_year
+    scraped_at = sm.scraped_at
+    db.expunge(sm)
+
     s3 = _get_s3_manager()
     key_prefix = (
         f"{settings.SCHOOL_SCRAPER_S3_PREFIX}"
-        f"tenants/{sm.tenant_id}/schools/{sm.school_org_code}/"
-        f"{sm.media_type}/{payload.content_hash or sm.url_hash}"
+        f"tenants/{tenant_id}/schools/{school_org_code}/"
+        f"{media_type}/{payload.content_hash or url_hash}"
     )
 
     if payload.transcript is not None:
@@ -524,17 +551,17 @@ async def _create_document_and_enqueue(
     # source_media_url remains the pointer to playable media.
     s3_key_raw = None
     if payload.raw_bytes is not None:
-        ext = (sm.file_extension or "bin").lstrip(".")
-        s3_key_raw = f"{key_prefix}/{sm.original_name or f'file.{ext}'}"
+        ext = (file_extension or "bin").lstrip(".")
+        s3_key_raw = f"{key_prefix}/{original_name or f'file.{ext}'}"
         await s3.upload_file_object(payload.raw_bytes, s3_key_raw)
 
     # Prefer the raw binary for document types so the pipeline (including OCR)
     # can process the real file instead of our own no-OCR local extraction.
     # Audio/video/YouTube stay on the transcript text artifact.
     _RAW_DOC_EXTS = {"pdf", "docx", "doc", "pptx", "xlsx", "xls"}
-    file_ext = (sm.file_extension or "bin").lstrip(".").lower()
+    file_ext = (file_extension or "bin").lstrip(".").lower()
     use_raw_document = (
-        sm.media_type == "document"
+        media_type == "document"
         and s3_key_raw is not None
         and file_ext in _RAW_DOC_EXTS
     )
@@ -548,7 +575,7 @@ async def _create_document_and_enqueue(
     # Resolve the school's state (2-letter abbreviation) so it can be
     # denormalized onto the Document row + source_metadata. Falls back to
     # 'MA' if the school row is missing (V1 corpus is MA-only).
-    school = await db.get(School, sm.school_id)
+    school = await db.get(School, school_id)
     state = (school.state if school else None) or "MA"
 
     # Derive school_year + quarter_month from the scraped meeting_date if
@@ -557,45 +584,45 @@ async def _create_document_and_enqueue(
     # have correct values.
     school_year: str | None = None
     quarter_month: str | None = None
-    if sm.meeting_date:
-        school_year = derive_school_year(sm.meeting_date)
-        quarter_month = derive_quarter_month(sm.meeting_date)
+    if meeting_date:
+        school_year = derive_school_year(meeting_date)
+        quarter_month = derive_quarter_month(meeting_date)
 
     transcript = payload.transcript
     doc = Document(
-        name=sm.original_name or sm.source_media_url,
+        name=original_name or source_media_url,
         doc_id=(
-            f"school-{sm.school_org_code}-"
-            f"{payload.content_hash or sm.url_hash[:16]}"
+            f"school-{school_org_code}-"
+            f"{payload.content_hash or url_hash[:16]}"
         ),
         s3_url=doc_s3_url,
-        tenant_id=sm.tenant_id,
+        tenant_id=tenant_id,
         document_type=doc_type,
         processing_status=ProcessingStatus.PENDING,
         source_type="school_scraper",
         content_hash=payload.content_hash,
         # Heatmap V1 doc-level denorm (spec: Heatmap Ingest Metadata v1).
         state=state,
-        district_name=sm.school_name,
+        district_name=school_name,
         school_year=school_year,
         quarter_month=quarter_month,
-        meeting_date=sm.meeting_date,
+        meeting_date=meeting_date,
         source_metadata={
-            "scraped_media_id": sm.id,
-            "school_id": sm.school_id,
-            "school_org_code": sm.school_org_code,
-            "school_name": sm.school_name,
-            "district_type": sm.district_type,
+            "scraped_media_id": sm_id,
+            "school_id": school_id,
+            "school_org_code": school_org_code,
+            "school_name": school_name,
+            "district_type": district_type,
             "state": state,
-            "source_page_url": sm.source_page_url,
-            "source_media_url": sm.source_media_url,
-            "media_type": sm.media_type,
-            "document_type": sm.document_type,
-            "meeting_date": sm.meeting_date.isoformat() if sm.meeting_date else None,
+            "source_page_url": source_page_url,
+            "source_media_url": source_media_url,
+            "media_type": media_type,
+            "document_type": document_type_meta,
+            "meeting_date": meeting_date.isoformat() if meeting_date else None,
             "school_year": school_year,
             "quarter_month": quarter_month,
-            "doc_year": sm.doc_year,
-            "scraped_at": sm.scraped_at.isoformat() if sm.scraped_at else None,
+            "doc_year": doc_year,
+            "scraped_at": scraped_at.isoformat() if scraped_at else None,
             # Provenance needed to resolve a citation back to playable media.
             "transcript_source": transcript.source if transcript else None,
             "speech_model": transcript.speech_model if transcript else None,
@@ -623,14 +650,14 @@ async def _create_document_and_enqueue(
             "marking scraped_media %s as skipped_duplicate",
             doc.doc_id,
             existing_doc.id,
-            sm.id,
+            sm_id,
         )
         await db.rollback()
         from app.crud.schools import update_scraped_media as _update_sm
 
         await _update_sm(
             db,
-            sm.id,
+            sm_id,
             status="skipped_duplicate",
             document_id=existing_doc.id,
         )
@@ -639,10 +666,14 @@ async def _create_document_and_enqueue(
     db.add(doc)
     await db.flush()
 
-    sm.s3_key_raw = s3_key_raw
-    sm.s3_key_text = s3_key_text
+    # Re-load after flush — never reuse the expunged instance across awaits.
+    row = await db.get(ScrapedMedia, sm_id)
+    if row is None:
+        raise RuntimeError(f"ScrapedMedia {sm_id} missing during document persist")
+    row.s3_key_raw = s3_key_raw
+    row.s3_key_text = s3_key_text
     if payload.size_bytes is not None:
-        sm.size_bytes = payload.size_bytes
+        row.size_bytes = payload.size_bytes
 
     from app.models.processing_jobs import DocumentProcessingJob, JobStatus
 
