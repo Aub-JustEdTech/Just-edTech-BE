@@ -4,14 +4,30 @@ These endpoints demonstrate role-based access control.
 """
 
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
+from app.crud.tenants import tenant as tenant_crud
+from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.models.users import User
+from app.schemas.admin import (
+    InviteAdminRequest,
+    InviteAdminResponse,
+    MemberResponse,
+    TenantCreateRequest,
+    TenantResponse,
+)
 from app.schemas.users import User as UserSchema
 from app.schemas.users import UserCreate, UserUpdate
+from app.services.chatbot_config_service import chatbot_config_service
+from app.services.invitation_service import invitation_service
+from app.services.tenant_access_service import list_tenants_for_principal
 from app.utils.dependencies import (
+    get_current_tenant_admin,
     get_db,
     require_role,
     require_super_admin,
@@ -36,16 +52,107 @@ async def list_all_users(
     return success_response(data=[])
 
 
-@router.get("/tenants/all")
+@router.get("/tenants/all", response_model=list[TenantResponse])
 async def list_all_tenants(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+):
+    """List tenants scoped by the caller's role.
+
+    super_admin: all tenants (optional skip/limit).
+    tenant_admin: tenants they have access to via user_tenant_access.
+    Creating tenants remains super_admin-only (POST /tenants).
+    """
+    if user.is_super_admin(current_user):
+        tenants = await list_tenants_for_principal(
+            db, current_user, skip=skip, limit=limit
+        )
+    else:
+        tenants = await list_tenants_for_principal(db, current_user)
+    return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
+
+
+@router.post("/tenants", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
+async def create_tenant(
+    payload: TenantCreateRequest,
+    db: AsyncSession = Depends(get_db),
     admin: User = require_super_admin,
 ):
-    """List all tenants (Super Admin only)"""
-    # Implementation would go here
-    return success_response(data=[])
+    """Create a new tenant (Super Admin only)"""
+    domain = payload.name.lower().replace(" ", "-") + ".local"
+
+    if await tenant_crud.get_by_name(db, payload.name):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A tenant with this name already exists",
+        )
+    if await tenant_crud.get_by_domain(db, domain):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A tenant with this domain already exists",
+        )
+
+    new_tenant = await tenant_crud.create(
+        db, name=payload.name, domain=domain, logo_url=payload.logo_url
+    )
+
+    await chatbot_config_service.provision_default_chatbot(
+        db, tenant_id=new_tenant.id, tenant_name=new_tenant.name
+    )
+
+    # Grant all existing tenant_admins access to the new tenant
+    await user_tenant_access.grant_new_tenant_to_all_admins(
+        db, tenant_id=new_tenant.id, tenant_admin_role_id=settings.DEFAULT_ROLE_ID
+    )
+
+    return success_response(
+        data=TenantResponse.model_validate(new_tenant),
+        status_code=status.HTTP_201_CREATED,
+    )
+
+
+@router.post("/tenants/{tenant_id}/invite-admin", response_model=InviteAdminResponse)
+async def invite_tenant_admin(
+    tenant_id: int,
+    payload: InviteAdminRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: User = require_super_admin,
+):
+    """Invite a user to become tenant_admin (Super Admin only).
+
+    tenant_admin always means access to ALL tenants — there is no such thing
+    as a tenant admin scoped to one tenant. `tenant_id` here is only used to
+    confirm the tenant exists (this route is reached from a tenant's admin
+    page); the invite itself grants access to every tenant, same as the
+    unified invite flow.
+    """
+    if not await tenant_crud.get(db, tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
+        )
+
+    existing_user = await user.get_by_email(db, email=payload.email)
+    if existing_user:
+        return success_response(
+            data=InviteAdminResponse(email=payload.email, status="already_member")
+        )
+
+    sent = await invitation_service.create_and_send(
+        db,
+        tenant_id=None,
+        email=payload.email,
+        role_id=settings.DEFAULT_ROLE_ID,
+        enforce_tenant_user=False,
+    )
+
+    return success_response(
+        data=InviteAdminResponse(
+            email=payload.email,
+            status="sent" if sent else "cooldown",
+        )
+    )
 
 
 # Tenant Admin or Super Admin Endpoints
@@ -156,6 +263,68 @@ async def get_my_tenant_info(
             "is_tenant_admin": user.is_tenant_admin(current_user),
         }
     )
+
+
+@router.get("/members", response_model=list[MemberResponse])
+async def list_members(
+    tenant_id: int | None = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+):
+    """List members scoped by the caller's role.
+
+    super_admin: all users (optional tenant_id filter).
+    tenant_admin: users in their accessible tenants + all other tenant_admins.
+    """
+    if user.is_super_admin(current_user):
+        stmt = (
+            select(User)
+            .options(selectinload(User.role), selectinload(User.tenant))
+            .offset(skip)
+            .limit(limit)
+        )
+        if tenant_id is not None:
+            stmt = stmt.where(User.tenant_id == tenant_id)
+    else:
+        # tenant_admin: their accessible tenants + all tenant_admins
+        accessible_tenants = await user_tenant_access.get_tenants_for_user(
+            db, user_id=current_user.id
+        )
+        accessible_ids = [t.id for t in accessible_tenants]
+
+        stmt = (
+            select(User)
+            .options(selectinload(User.role), selectinload(User.tenant))
+            .where(
+                or_(
+                    User.tenant_id.in_(accessible_ids),
+                    User.role_id == settings.DEFAULT_ROLE_ID,  # all tenant_admins
+                )
+            )
+            .offset(skip)
+            .limit(limit)
+        )
+
+    res = await db.execute(stmt)
+    members = list(res.scalars().all())
+
+    data = []
+    for m in members:
+        data.append(
+            MemberResponse(
+                id=m.id,
+                name=m.name,
+                email=m.email,
+                role_id=m.role_id,
+                role_name=user.get_role_name(m),
+                tenant_id=m.tenant_id,
+                tenant_name=user.get_tenant_name(m),
+            )
+        )
+
+    return success_response(data=data)
 
 
 # Health check endpoint that shows role info

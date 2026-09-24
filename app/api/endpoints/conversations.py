@@ -18,6 +18,7 @@ from app.models.documents import Document
 from app.schemas.conversations import (
     ConversationListResponse,
     ConversationResponse,
+    CreateEmptyConversationRequest,
 )
 from app.schemas.messages import (
     MessageListResponse,
@@ -33,6 +34,7 @@ from app.services.token_tracking_service import token_tracking_service
 from app.utils.dependencies import (
     get_db,
     require_api_key_user_or_chat_consumer,
+    resolve_chat_tenant_id,
 )
 from app.utils.response import success_response
 from app.utils.rag import generate_conversation_title, process_rag_query_with_citations
@@ -142,18 +144,20 @@ async def _attach_presigned_urls_to_citations(
 async def list_conversations(
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
 ):
     """Get user's or chat consumer's conversations with pagination"""
-    # Extract tenant_id and user/consumer info based on authentication type
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 
@@ -180,24 +184,26 @@ async def list_conversations(
 @router.get("/{conversation_id}", response_model=ConversationResponse)
 async def get_conversation(
     conversation_id: int,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
 ):
     """Get a specific conversation details"""
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
     db_conversation = await conversation.get(db, conversation_id=conversation_id)
     if not db_conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
         )
 
-    # Extract tenant_id and user/consumer info based on authentication type
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 
@@ -226,24 +232,26 @@ async def get_conversation(
 @router.delete("/{conversation_id}")
 async def delete_conversation(
     conversation_id: int,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
 ):
     """Delete a specific conversation"""
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
     db_conversation = await conversation.get(db, conversation_id=conversation_id)
     if not db_conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
         )
 
-    # Extract tenant_id and user/consumer info based on authentication type
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 
@@ -269,21 +277,82 @@ async def delete_conversation(
     return success_response( data={"message": "Conversation deleted successfully"}, status_code=status.HTTP_200_OK )
     
 
+@router.post(
+    "/empty",
+    response_model=ConversationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_empty_conversation(
+    payload: CreateEmptyConversationRequest,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
+    db: AsyncSession = Depends(get_db),
+    current_user_or_consumer: User
+    | ChatConsumer = require_api_key_user_or_chat_consumer,
+):
+    """Create a conversation with no first message — backs the "New Chat"
+    action, which selects the new chat immediately instead of waiting on
+    RAG. The conversation gets a generic, auto-generated title; it is
+    replaced with a content-derived one (see generate_conversation_title)
+    the moment the first real message is sent.
+    """
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    if isinstance(current_user_or_consumer, ChatConsumer):
+        user_id = None
+        chat_consumer_id = current_user_or_consumer.id
+    else:
+        user_id = current_user_or_consumer.id
+        chat_consumer_id = None
+
+    chatbot_config_obj = await chatbot_config_service.get_chatbot_config(
+        db, payload.chatbot_id
+    )
+    if not chatbot_config_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Chatbot not found"
+        )
+    if chatbot_config_obj.tenant_id != tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chatbot does not belong to your tenant",
+        )
+
+    version_index = chatbot_config_service.get_latest_version_index(chatbot_config_obj)
+
+    db_conversation = await conversation.create_conversation(
+        db,
+        tenant_id=tenant_id,
+        chatbot_config_id=payload.chatbot_id,
+        title="New Chat",
+        user_id=user_id,
+        chat_consumer_id=chat_consumer_id,
+        chatbot_config_version_index=version_index,
+    )
+
+    return success_response(
+        data=ConversationResponse.model_validate(db_conversation),
+        status_code=status.HTTP_201_CREATED,
+    )
+
+
 @router.post("", response_model=SendMessageResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
     message_request: SendMessageRequest,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
 ):
     """Start a new conversation"""
-    # Extract tenant_id and user/consumer info based on authentication type
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 
@@ -434,18 +503,20 @@ async def create_conversation(
 async def send_message(
     conversation_id: int,
     message_request: SendMessageRequest,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
 ):
     """Send a message to an existing conversation"""
-    # Extract tenant_id and user/consumer info based on authentication type
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 
@@ -605,18 +676,20 @@ async def get_conversation_messages(
     conversation_id: int,
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=100, description="Items per page"),
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
 ):
     """Get paginated message history for a conversation"""
-    # Extract tenant_id and user/consumer info based on authentication type
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 
@@ -668,6 +741,9 @@ async def get_conversation_messages(
 @router.get("/{conversation_id}/report")
 async def get_conversation_report(
     conversation_id: int,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User
     | ChatConsumer = require_api_key_user_or_chat_consumer,
@@ -678,13 +754,12 @@ async def get_conversation_report(
     Access rules mirror normal conversation access: anyone who can view the
     conversation can generate its report.
     """
-    # Extract tenant_id and user/consumer info based on authentication type
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+    # Extract user/consumer info based on authentication type
     if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = None
         chat_consumer_id = current_user_or_consumer.id
     else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
         user_id = current_user_or_consumer.id
         chat_consumer_id = None
 

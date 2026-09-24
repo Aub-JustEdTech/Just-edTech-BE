@@ -1,0 +1,1290 @@
+# Eval set for the heatmap chunk classifier.
+#
+# Each entry is a chunk with the *expected* classification. The runner calls
+# gpt-4o-mini, parses the structured response, and computes per-label
+# precision/recall/F1 against these expectations.
+#
+# Composition (100 chunks total):
+#   - ~30 substantive single-topic chunks (one topic, no actions)
+#   - ~25 multi-topic chunks (topics + action_types)
+#   - ~20 action-type-only chunks (action present, topic implied)
+#   - ~15 off_topic / boilerplate chunks (roll calls, adjournments, TOC)
+#   - ~10 ambiguous / hard negatives (passing mention vs substantive)
+#
+# Labels use the values defined in scripts/classifier_eval/taxonomy.py.
+# `topics`, `action_types`, `subtopics` are *sets*: the runner compares
+# predicted vs expected as sets (no ordering). `off_topic` is a bool.
+
+# ── Section 1: substantive single-topic chunks ──────────────────────────────
+
+- id: sex_ed_comprehensive_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-14"
+  chunk_text: |
+    The School Committee voted 5-2 to adopt the revised health curriculum,
+    which expands comprehensive sex education to include grades 7-12. The
+    new modules cover consent, healthy relationships, and STI prevention.
+    Implementation begins fall 2025 with teacher training scheduled for
+    August.
+  topics: ["sex_education"]
+  action_types: ["protection_adopted"]
+  subtopics: ["comprehensive"]
+  off_topic: false
+
+- id: sex_ed_abstinence_1
+  entity_type: policy_document
+  meeting_date: "2024-09-10"
+  chunk_text: |
+    The district's updated family life curriculum emphasizes abstinence as
+    the only 100% effective method of pregnancy and STI prevention. The
+    policy reaffirms that instruction will not demonstrate or distribute
+    contraceptives. Parents may opt their children out with written notice.
+  topics: ["sex_education", "parental_rights"]
+  action_types: []
+  subtopics: ["abstinence_only"]
+  off_topic: false
+
+- id: sex_ed_reduced_1
+  entity_type: board_minutes
+  meeting_date: "2025-01-22"
+  chunk_text: |
+    Motion by Member Jones, seconded by Member Lee, to reduce sex education
+    instruction from 12 weeks to 4 weeks for the 2025-26 school year. Motion
+    passed 4-3. The health teacher will revise the unit to focus on the
+    minimum state-mandated content.
+  topics: ["sex_education"]
+  action_types: ["instruction_reduced"]
+  subtopics: ["curriculum_change"]
+  off_topic: false
+
+- id: sex_ed_eliminated_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-08"
+  chunk_text: |
+    The Committee voted 6-1 to eliminate the standalone sex education unit
+    from the middle school curriculum entirely, citing community feedback
+    and a desire to refocus instructional time on core academics. Relevant
+    content will be folded into the general health unit at the discretion
+    of the principal.
+  topics: ["sex_education"]
+  action_types: ["instruction_eliminated"]
+  subtopics: ["curriculum_change"]
+  off_topic: false
+
+- id: book_challenge_1
+  entity_type: book_challenge
+  meeting_date: "2025-02-11"
+  chunk_text: |
+    A parent formally challenged the inclusion of 'Gender Queer' by Maia
+    Kobabe in the high school library. The reconsideration committee will
+    meet within 30 days per policy 3210. The book remains on shelves pending
+    the review outcome.
+  topics: ["curriculum_censorship", "lgbtq_student_rights"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: book_challenge_2
+  entity_type: book_challenge
+  meeting_date: "2024-11-19"
+  chunk_text: |
+    Three books were removed from the 8th-grade reading list following
+    parent complaints about sexual content: 'Looking for Alaska', 'Thirteen
+    Reasons Why', and 'Speak'. The assistant superintendent will issue
+    revised lists by the end of the month.
+  topics: ["curriculum_censorship"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: parental_rights_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-25"
+  chunk_text: |
+    The Board approved Policy 5755 requiring staff to notify parents within
+    48 hours if a student discloses gender identity or requests to use a
+    different name or pronoun at school. The policy takes effect July 1.
+  topics: ["parental_rights", "transgender_policy", "lgbtq_student_rights"]
+  action_types: ["protection_adopted"]
+  subtopics: []
+  off_topic: false
+
+- id: parental_rights_notification_1
+  entity_type: policy_document
+  meeting_date: "2024-12-03"
+  chunk_text: |
+    Under the new parental notification procedure, teachers must inform
+    parents before any classroom discussion of human sexuality, gender
+    identity, or sexual orientation, and must provide an opt-out form at
+    least five school days in advance.
+  topics: ["parental_rights", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["policy_proposed"]
+  subtopics: []
+  off_topic: false
+
+- id: trans_protections_1
+  entity_type: policy_document
+  meeting_date: "2025-05-20"
+  chunk_text: |
+    The district adopted an updated nondiscrimination policy affirming that
+    students may use facilities and participate in athletics consistent with
+    their gender identity. Staff will receive training on the updated
+    guidance before the start of the next school year.
+  topics: ["lgbtq_student_rights", "transgender_policy", "gender_identity"]
+  action_types: ["protection_adopted"]
+  subtopics: []
+  off_topic: false
+
+- id: trans_policy_debate_1
+  entity_type: board_minutes
+  meeting_date: "2025-02-04"
+  chunk_text: |
+    Public comment ran 90 minutes on the proposed transgender athlete
+    participation policy. Twelve community members spoke in favor and nine
+    opposed. The Committee deferred the vote to the March 11 meeting to
+    allow additional review of the legal guidance from the state
+    association.
+  topics: ["transgender_policy", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: election_overview_1
+  entity_type: election_record
+  meeting_date: "2025-04-29"
+  chunk_text: |
+    Three seats on the School Committee are up for election on May 20.
+    Candidates: Sarah Chen (incumbent), Marcus Reyes, and Deborah Olsen.
+    Candidate statements and a voter guide will be mailed to all
+    registered households next week.
+  topics: ["school_board_election"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: candidate_profile_1
+  entity_type: candidate_profile
+  meeting_date: "2025-04-15"
+  chunk_text: |
+    Candidate Sarah Chen, seeking a third term, has emphasized her
+    opposition to comprehensive sex education expansion and her support
+    for parental notification requirements. She has been endorsed by the
+    Massachusetts Parents Alliance and the Worcester GOP committee.
+  topics: ["school_board_election", "sex_education", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: advocacy_organizing_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    A group identifying itself as 'Worcester Parents for Safe Schools' held
+    a rally outside the administration building this afternoon, calling on
+    the district to maintain its current LGBTQ-inclusive policies. The
+    group distributed flyers and collected signatures for a petition to be
+    presented at the next public meeting.
+  topics: ["advocacy_organizing", "lgbtq_student_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: news_media_1
+  entity_type: news_media
+  meeting_date: "2025-05-02"
+  chunk_text: |
+    The Worcester Telegram reported today on the school committee's
+    4-3 vote to restrict library books with sexual content. The article
+    quoted Superintendent Alvarez defending the decision as 'responsive
+    to community concerns' and quoted an ACLU representative calling it
+    'a clear First Amendment concern.'
+  topics: ["curriculum_censorship"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: public_comment_sex_ed_1
+  entity_type: public_comment
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    During public comment, four parents spoke in favor of restoring
+    comprehensive sex education, citing rising STI rates among teens.
+    Two parents spoke against, arguing the curriculum should be limited
+    to abstinence-based instruction and require parental consent.
+  topics: ["sex_education", "parental_rights"]
+  action_types: []
+  subtopics: ["comprehensive", "abstinence_only"]
+  off_topic: false
+
+- id: policy_proposed_book_review_1
+  entity_type: policy_document
+  meeting_date: "2025-01-14"
+  chunk_text: |
+    The proposed policy 3210.1 would establish a standing committee of
+    three parents and two staff to review any challenged library materials
+    within 45 days. The committee's decision would be binding unless
+    overturned by a supermajority of the School Committee.
+  topics: ["curriculum_censorship", "parental_rights"]
+  action_types: ["policy_proposed"]
+  subtopics: []
+  off_topic: false
+
+- id: gender_identity_facility_1
+  entity_type: board_minutes
+  meeting_date: "2024-10-08"
+  chunk_text: |
+    The Committee discussed a proposed update to the facilities policy
+    to allow students to use restrooms and locker rooms corresponding to
+    their gender identity. Member Park asked for a survey of other
+    district policies; vote deferred to next meeting.
+  topics: ["transgender_policy", "gender_identity", "lgbtq_student_rights"]
+  action_types: ["policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: curriculum_censorship_resolution_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    Resolution R-2025-04 affirming that 'the district shall prioritize
+    age-appropriate, community-aligned instructional materials' passed 5-2.
+    The resolution directs the superintendent to review all health
+    curriculum within 90 days and report back.
+  topics: ["curriculum_censorship", "sex_education"]
+  action_types: ["policy_proposed"]
+  subtopics: []
+  off_topic: false
+
+- id: parental_rights_opt_out_1
+  entity_type: policy_document
+  meeting_date: "2024-08-27"
+  chunk_text: |
+    Parents or guardians may opt their child out of any portion of the
+    health curriculum by submitting a written request to the principal.
+    Opted-out students will be assigned an alternative assignment of
+    equivalent academic rigor.
+  topics: ["sex_education", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: advocacy_intervention_pac_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-04-30"
+  chunk_text: |
+    A political action committee, 'Mass Parents First', reported spending
+    $42,000 on mailers supporting three school committee candidates who
+    favor parental notification and book review policies. The PAC is funded
+    primarily by the state party and an out-of-state donor network.
+  topics: ["advocacy_organizing", "school_board_election", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: election_candidate_statement_1
+  entity_type: candidate_profile
+  meeting_date: "2025-05-01"
+  chunk_text: |
+    Candidate Marcus Reyes, in his voter statement, pledged to 'protect
+    parental rights in curriculum decisions and ensure transparency in all
+    library acquisitions.' He opposes the proposed expansion of
+    comprehensive sex education.
+  topics: ["school_board_election", "parental_rights", "sex_education"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: board_minutes_budget_pure_1
+  entity_type: board_minutes
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    The FY26 budget of $84.3 million was approved 7-0. The budget includes
+    a 3% cost-of-living adjustment for staff, three new special education
+    positions, and capital improvements to the middle school HVAC system.
+    The tax rate impact is estimated at $42 per $100,000 of assessed value.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: trans_policy_proposed_1
+  entity_type: policy_document
+  meeting_date: "2025-02-25"
+  chunk_text: |
+    Draft Policy 5760, presented for first reading, would require parental
+    consent before a student may socially transition at school, and would
+    require staff to use the student's legal name in all official
+    communications. Second reading and vote scheduled for March.
+  topics: ["transgender_policy", "lgbtq_student_rights", "parental_rights", "gender_identity"]
+  action_types: ["policy_proposed"]
+  subtopics: []
+  off_topic: false
+
+- id: sex_ed_debate_no_vote_1
+  entity_type: board_minutes
+  meeting_date: "2025-01-28"
+  chunk_text: |
+    Member Williams introduced a motion to delay the adoption of the
+    revised sex education curriculum pending a community survey. Discussion
+    lasted 45 minutes. The motion to delay was defeated 3-4, and the
+    original adoption vote was deferred to the February 11 meeting.
+  topics: ["sex_education"]
+  action_types: ["policy_debated"]
+  subtopics: ["curriculum_change"]
+  off_topic: false
+
+- id: lgbtq_protections_resolution_1
+  entity_type: board_minutes
+  meeting_date: "2024-12-17"
+  chunk_text: |
+    The Committee unanimously adopted a resolution reaffirming the
+    district's commitment to nondiscrimination on the basis of sexual
+    orientation and gender identity. The resolution directs staff to
+    display the district's nondiscrimination statement in all school
+    buildings and on the website.
+  topics: ["lgbtq_student_rights", "transgender_policy", "gender_identity"]
+  action_types: ["protection_adopted"]
+  subtopics: []
+  off_topic: false
+
+- id: book_challenge_formal_1
+  entity_type: book_challenge
+  meeting_date: "2025-03-04"
+  chunk_text: |
+    A formal book challenge was filed against 'All Boys Aren't Blue' by
+    George M. Johnson. The complainant cited explicit sexual content. Per
+    policy, the book will remain available during the 30-day review window.
+    A reconsideration committee has been empaneled and will report at the
+    April 8 meeting.
+  topics: ["curriculum_censorship", "lgbtq_student_rights"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: election_results_1
+  entity_type: election_record
+  meeting_date: "2025-05-21"
+  chunk_text: |
+    Election results: Sarah Chen (1,842), Marcus Reyes (1,510), Deborah
+    Olsen (1,398). Chen and Reyes will serve three-year terms; Olsen will
+    serve the remaining one year of a vacant seat. Turnout was 14%.
+  topics: ["school_board_election"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: advocacy_organizing_petition_1
+  entity_type: public_comment
+  meeting_date: "2025-04-15"
+  chunk_text: |
+    A petition with 1,247 signatures was presented during public comment,
+    urging the Committee to retain comprehensive sex education and reject
+    the proposed abstinence-only curriculum change. Organizers requested
+    the petition be entered into the official record.
+  topics: ["advocacy_organizing", "sex_education"]
+  action_types: []
+  subtopics: ["comprehensive"]
+  off_topic: false
+
+- id: news_media_editorial_1
+  entity_type: news_media
+  meeting_date: "2025-04-02"
+  chunk_text: |
+    The Boston Globe published an editorial today criticizing the wave of
+    book challenges across Massachusetts school districts, calling the
+    trend 'a coordinated effort to remove LGBTQ voices from school
+    libraries under the guise of parental rights.'
+  topics: ["curriculum_censorship", "lgbtq_student_rights", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: parental_rights_state_law_1
+  entity_type: policy_document
+  meeting_date: "2025-01-30"
+  chunk_text: |
+    Per state law, parents have the right to inspect all instructional
+    materials used in connection with any survey, analysis, or evaluation
+    in which their child is required to participate. The district
+    maintains an online portal for such inspection at
+    portal.district.org/curriculum.
+  topics: ["parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+# ── Section 2: multi-topic + action chunks ────────────────────────────────────
+
+- id: multi_topic_sex_ed_trans_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-25"
+  chunk_text: |
+    The Committee voted to adopt the parental notification policy AND
+    reduce comprehensive sex education instruction from 12 to 6 weeks,
+    in a single motion. Opponents argued both measures disproportionately
+    affect LGBTQ students. The vote was 4-3.
+  topics: ["sex_education", "parental_rights", "lgbtq_student_rights", "transgender_policy"]
+  action_types: ["instruction_reduced", "protection_adopted"]
+  subtopics: ["comprehensive", "curriculum_change"]
+  off_topic: false
+
+- id: multi_topic_censorship_election_1
+  entity_type: news_media
+  meeting_date: "2025-04-12"
+  chunk_text: |
+    The Telegram reported that three of the four school committee
+    candidates who won last week campaigned on removing library books with
+    LGBTQ themes and requiring parental consent for sex education. The
+    newly constituted committee is expected to revisit the book review
+    policy at its first meeting in June.
+  topics: ["curriculum_censorship", "lgbtq_student_rights", "school_board_election", "sex_education", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_advocacy_trans_book_1
+  entity_type: public_comment
+  meeting_date: "2025-02-25"
+  chunk_text: |
+    During a two-hour public comment period, 30 community members spoke,
+    most opposing the proposed transgender facility policy and the
+    concurrent challenge to 'Gender Queer'. Advocacy groups on both sides
+    distributed literature outside the meeting. No vote was taken.
+  topics: ["transgender_policy", "lgbtq_student_rights", "gender_identity", "curriculum_censorship", "advocacy_organizing"]
+  action_types: ["policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_election_advocacy_money_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-05-05"
+  chunk_text: |
+    A national advocacy organization reported spending $180,000 on
+    independent expenditures in the school committee race, supporting
+    candidates who back parental rights and book review policies. The
+    spending included digital ads, mailers, and door-to-door canvassing.
+  topics: ["advocacy_organizing", "school_board_election", "parental_rights", "curriculum_censorship"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_proposed_debated_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    Member Reyes introduced a proposal to require parental consent for any
+    student to use a name or pronoun differing from their enrollment
+    record. After 70 minutes of debate, the proposal was tabled 5-2
+    pending a legal opinion from district counsel.
+  topics: ["transgender_policy", "lgbtq_student_rights", "parental_rights", "gender_identity"]
+  action_types: ["policy_proposed", "policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_book_challenge_debate_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    The reconsideration committee's recommendation to retain 'Gender
+    Queer' was debated for 50 minutes. Three members spoke in favor of
+    overturning the committee; two defended the process. The book was
+    retained 4-3. A motion to remove it from the middle school only was
+    also defeated.
+  topics: ["curriculum_censorship", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["book_challenged", "policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_sex_ed_curriculum_change_1
+  entity_type: policy_document
+  meeting_date: "2025-06-10"
+  chunk_text: |
+    The revised health curriculum, effective September 2025, reduces
+    comprehensive sex education from 12 to 8 weeks and adds a new
+    abstinence-focused unit. Parents retain the right to opt their
+    student out of any unit. The change was prompted by a community
+    survey and a 4-3 committee vote in March.
+  topics: ["sex_education", "parental_rights"]
+  action_types: ["instruction_reduced"]
+  subtopics: ["comprehensive", "abstinence_only", "curriculum_change"]
+  off_topic: false
+
+- id: multi_topic_trans_protection_adopted_1
+  entity_type: policy_document
+  meeting_date: "2025-05-20"
+  chunk_text: |
+    Policy 5760, as finally adopted, affirms students' right to use
+    facilities consistent with their gender identity and prohibits staff
+    from disclosing a student's gender identity to parents without the
+    student's consent except in narrowly defined circumstances.
+  topics: ["lgbtq_student_rights", "transgender_policy", "gender_identity", "parental_rights"]
+  action_types: ["protection_adopted"]
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_book_challenge_eliminated_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-08"
+  chunk_text: |
+    The Committee voted 5-2 to remove 'Gender Queer', 'All Boys Aren't
+    Blue', and 'This Book Is Gay' from all district libraries and to
+    eliminate the standalone LGBTQ-inclusive book display at the high
+    school. The superintendent will issue revised purchasing guidelines
+    within 60 days.
+  topics: ["curriculum_censorship", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_election_lgbtq_1
+  entity_type: candidate_profile
+  meeting_date: "2025-04-20"
+  chunk_text: |
+    Candidate Deborah Olsen, in her voter statement, opposes the
+    transgender facility policy, supports parental notification, and
+    backs removing books with explicit LGBTQ content from elementary and
+    middle school libraries. She has been endorsed by the state family
+    council.
+  topics: ["school_board_election", "transgender_policy", "parental_rights", "lgbtq_student_rights", "gender_identity", "curriculum_censorship"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: multi_topic_advocacy_lgbtq_organizing_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-05-12"
+  chunk_text: |
+    A coalition of LGBTQ+ advocacy organizations and local parent groups
+    announced a coordinated campaign to support school committee candidates
+    who favor inclusive policies and to oppose book bans. The coalition
+    plans a $250,000 independent expenditure campaign including
+    canvassing and digital ads.
+  topics: ["advocacy_organizing", "lgbtq_student_rights", "transgender_policy", "school_board_election", "curriculum_censorship"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+# ── Section 3: action-type-focused chunks (action implied by topic) ─────────
+
+- id: action_reduced_only_1
+  entity_type: board_minutes
+  meeting_date: "2025-02-11"
+  chunk_text: |
+    Health instruction time was reduced from 250 minutes per week to 150
+    minutes per week effective fall 2025, with the eliminated time
+    reallocated to math and English. The change applies to grades 6-8.
+  topics: ["sex_education"]
+  action_types: ["instruction_reduced"]
+  subtopics: ["curriculum_change"]
+  off_topic: false
+
+- id: action_eliminated_only_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-18"
+  chunk_text: |
+    The standalone LGBTQ History month programming was eliminated from
+    the school calendar. The principal will integrate any remaining
+    content into the general social studies curriculum at her discretion.
+  topics: ["lgbtq_student_rights", "curriculum_censorship"]
+  action_types: ["instruction_eliminated"]
+  subtopics: []
+  off_topic: false
+
+- id: action_adopted_only_1
+  entity_type: board_minutes
+  meeting_date: "2025-01-14"
+  chunk_text: |
+    The Committee adopted Policy 5760 affirming that students may use
+    facilities consistent with their gender identity. The policy passed
+    6-1 and takes effect immediately.
+  topics: ["transgender_policy", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["protection_adopted"]
+  subtopics: []
+  off_topic: false
+
+- id: action_proposed_only_1
+  entity_type: policy_document
+  meeting_date: "2025-03-25"
+  chunk_text: |
+    A proposal was introduced at first reading that would require all
+    challenged library materials to be reviewed by a standing committee
+    of three parents and two staff within 45 days, with the committee's
+    decision binding unless overturned by a supermajority.
+  topics: ["curriculum_censorship", "parental_rights"]
+  action_types: ["policy_proposed"]
+  subtopics: []
+  off_topic: false
+
+- id: action_debated_only_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    The Committee debated the proposed parental notification policy for
+    90 minutes. Twelve members of the public spoke. No vote was taken;
+    the matter was continued to the May 13 meeting.
+  topics: ["parental_rights", "lgbtq_student_rights", "transgender_policy"]
+  action_types: ["policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: action_book_challenged_only_1
+  entity_type: book_challenge
+  meeting_date: "2025-02-04"
+  chunk_text: |
+    A parent filed a formal challenge against 'This Book Is Gay' by
+    Juno Dawson. The book will remain on the shelf during the 30-day
+    review period.
+  topics: ["curriculum_censorship", "lgbtq_student_rights"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+# ── Section 4: off_topic / boilerplate ───────────────────────────────────────
+
+- id: off_topic_roll_call_1
+  entity_type: board_minutes
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    Chair called the meeting to order at 7:02 PM. Members present: Chen,
+    Reyes, Olsen, Park, Williams, Jones, Lee. Also present:
+    Superintendent Alvarez, Business Manager Diaz. Quorum confirmed.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: off_topic_adjournment_1
+  entity_type: board_minutes
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    Hearing no further business, Member Jones moved to adjourn, seconded
+    by Member Lee. Meeting adjourned at 9:47 PM. Next regular meeting
+    scheduled for Tuesday, June 10 at 7:00 PM in the same location.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: off_topic_toc_1
+  entity_type: policy_document
+  meeting_date: "2024-12-03"
+  chunk_text: |
+    Table of Contents
+    1.0   Purpose
+    2.0   Definitions
+    3.0   Applicability
+    4.0   Procedures
+    5.0   Appeals
+    6.0   Review Cycle
+    Appendix A: Forms
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: off_topic_page_numbers_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    47
+    48
+    49
+    50
+    51
+    52
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: off_topic_header_repeated_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    Worcester School Committee
+    Regular Meeting Minutes
+    March 11, 2025
+    Page 1 of 14
+    Worcester School Committee
+    Regular Meeting Minutes
+    March 11, 2025
+    Page 2 of 14
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: off_topic_consent_agenda_no_topic_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    Consent agenda items approved 7-0 without discussion: minutes of the
+    April 8 meeting, field trip authorization for the robotics team,
+    acceptance of a $2,400 donation from the PTO, and approval of the
+    monthly financial report.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # substantive but no taxonomy topic — not "boilerplate"
+
+- id: off_topic_facilities_bond_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-25"
+  chunk_text: |
+    The Committee approved a $14.2 million bond for roof replacement at
+    the middle school and HVAC upgrades at the elementary school. The
+    bond will be repaid over 20 years from the capital stabilization
+    fund and a 0.4% increase to the debt service levy.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: off_topic_personnel_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-08"
+  chunk_text: |
+    The Committee accepted the resignation of Middle School Principal
+    Patricia Huang effective June 30, and appointed Assistant Principal
+    Daniel Kim as interim principal effective July 1.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: off_topic_calendar_1
+  entity_type: board_minutes
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    The 2025-26 school calendar was approved 7-0. First day for students
+    is August 27. Winter break December 22 - January 2. Spring break
+    April 13-17. Last day for students June 12, 2026, pending snow days.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: off_topic_signature_block_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    Respectfully submitted,
+    Maria Santos
+    District Clerk
+    Worcester Public Schools
+    msantos@worc.k12.ma.us
+    (508) 555-0142
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: off_topic_attendance_log_1
+  entity_type: board_minutes
+  meeting_date: "2025-02-11"
+  chunk_text: |
+    Attendance log: 7:00 PM Chen present, 7:00 PM Reyes present, 7:01 PM
+    Olsen arrived, 7:00 PM Park present, 7:00 PM Williams present, 7:00
+    PM Jones present, 7:00 PM Lee present.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+# ── Section 5: ambiguous / hard negatives ─────────────────────────────────────
+
+- id: ambiguous_passing_mention_sex_ed_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    The superintendent's report included updates on the bond project, the
+    new transportation contract, and a brief mention that the sex
+    education curriculum review is ongoing. No action was taken.
+  topics: ["sex_education"]
+  action_types: []
+  subtopics: []
+  off_topic: false  # topic IS substantively named even though no action
+
+- id: ambiguous_passing_mention_lgbtq_1
+  entity_type: board_minutes
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    During the facilities bond discussion, a community member referenced
+    'the recent controversy over transgender student facilities' as an
+    example of why the district needs clearer policy guidance overall.
+    The remark was not the subject of discussion and no action was taken.
+  topics: ["transgender_policy"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: hard_negative_book_drive_1
+  entity_type: public_comment
+  meeting_date: "2025-06-12"
+  chunk_text: |
+    The PTO announced the annual spring book drive collected 2,800 books
+    for classroom libraries. Donations of gently used children's books
+    will be accepted through June 20 at the main office.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # the word 'book' appears but it's a book DRIVE, not a challenge
+
+- id: hard_negative_parent_email_list_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-29"
+  chunk_text: |
+    The Communications subcommittee reported that the parent email list
+    has grown to 4,200 subscribers. Open rates average 38%. The
+    superintendent will pilot a weekly digest format starting in
+    September.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # 'parent' appears but it's an email list, not parental rights
+
+- id: hard_negative_election_other_1
+  entity_type: news_media
+  meeting_date: "2025-11-04"
+  chunk_text: |
+    Voter turnout for the municipal election was 22%, with the mayoral
+    race and three city council seats on the ballot. Results will be
+    certified by Friday.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # election but NOT a school board election
+
+- id: hard_negative_sexual_harassment_policy_1
+  entity_type: policy_document
+  meeting_date: "2024-09-10"
+  chunk_text: |
+    The district's annual review of the sexual harassment policy found
+    no substantive changes are needed. Training will be delivered to all
+    staff in October.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # 'sexual' appears but it's a harassment policy, not sex education
+
+- id: hard_negative_board_election_other_state_1
+  entity_type: news_media
+  meeting_date: "2025-11-04"
+  chunk_text: |
+    The Massachusetts Teachers Association held its annual officer
+    elections this week. The union represents 110,000 educators
+    statewide.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # 'election' appears but it's a union, not a school board
+
+- id: ambiguous_book_review_generic_1
+  entity_type: policy_document
+  meeting_date: "2025-01-14"
+  chunk_text: |
+    The library maintains a standing materials review process for any
+    parent or guardian who wishes to question the appropriateness of a
+    library resource. The process is described in policy 3210.
+  topics: ["curriculum_censorship", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false  # describes the standing process — relevant to the taxonomy
+
+- id: ambiguous_news_unrelated_state_1
+  entity_type: news_media
+  meeting_date: "2025-03-30"
+  chunk_text: |
+    Florida lawmakers advanced a bill this week requiring parental
+    consent for social media accounts held by minors. The bill is
+    unrelated to Massachusetts school district policy.
+  topics: ["parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false  # substantively about parental rights even if not local
+
+- id: hard_negative_curriculum_general_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-08"
+  chunk_text: |
+    The Committee approved the math curriculum adoption for grades K-5,
+    selecting the Eureka Math series. Implementation training is
+    scheduled for August. Total cost is $84,000 over three years.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false  # 'curriculum' appears but it's math, not censorship
+
+# ── Section 6: edge cases — long chunks, formatting artifacts ───────────────
+
+- id: edge_long_motion_text_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-11"
+  chunk_text: |
+    WHEREAS, the District has reviewed its current health curriculum and
+    found that comprehensive sex education is currently offered in
+    grades 7-12 over 12 instructional weeks; and WHEREAS, community
+    feedback has indicated a desire to refocus on abstinence-based
+    instruction and to increase parental notification; NOW THEREFORE BE
+    IT RESOLVED that the Committee directs the Superintendent to reduce
+    sex education instruction to no more than 6 weeks, to add an
+    abstinence-focused unit, and to provide written parental
+    notification at least 10 days before any unit addressing human
+    sexuality, gender identity, or sexual orientation.
+  topics: ["sex_education", "parental_rights", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["instruction_reduced"]
+  subtopics: ["comprehensive", "abstinence_only", "curriculum_change"]
+  off_topic: false
+
+- id: edge_mixed_minutes_with_action_1
+  entity_type: board_minutes
+  meeting_date: "2025-02-25"
+  chunk_text: |
+    Member Chen reported on the second reading of Policy 5760. Member
+    Park moved to amend to require parental consent for any social
+    transition; motion failed 2-5. The original policy was then adopted
+    5-2, affirming students' right to use facilities consistent with
+    their gender identity without parental consent.
+  topics: ["transgender_policy", "lgbtq_student_rights", "parental_rights", "gender_identity"]
+  action_types: ["protection_adopted", "policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: edge_ocr_artifact_1
+  entity_type: board_minutes
+  meeting_date: "2025-01-14"
+  chunk_text: |
+    Th e Comrn ittee voted 5-2 to adopt comprehensive sex education for
+    grades 7- 12, includmg consent and STI prevention units. The
+    curric ulum review committee's report is attached as Exhibit B.
+  topics: ["sex_education"]
+  action_types: ["protection_adopted"]
+  subtopics: ["comprehensive"]
+  off_topic: false  # OCR errors shouldn't change the substantive label
+
+- id: edge_empty_chunk_1
+  entity_type: board_minutes
+  meeting_date: "2025-03-25"
+  chunk_text: |
+    .
+    .
+    .
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true
+
+- id: edge_table_only_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    Item                Yes   No   Abstain   Result
+    Motion 2025-22       5    2    0        Passed
+    Motion 2025-23       7    0    0        Passed
+    Motion 2025-24       3    4    0        Failed
+    Motion 2025-25       6    1    0        Passed
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true  # raw vote table with no substantive content
+
+- id: edge_news_letter_to_editor_1
+  entity_type: news_media
+  meeting_date: "2025-05-09"
+  chunk_text: |
+    In a letter to the editor this week, a parent criticized the
+    Committee's recent vote to retain 'Gender Queer' in the high school
+    library, arguing the book is inappropriate for minors and calling
+    for a public referendum on library materials.
+  topics: ["curriculum_censorship", "lgbtq_student_rights", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+# ── Section 7: misc coverage to round out to 100 ──────────────────────────────
+
+- id: misc_education_news_advocacy_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-03-18"
+  chunk_text: |
+    A new statewide coalition of parent groups announced today that it
+    will field candidates in 12 Massachusetts school committee races this
+    spring, focusing on parental rights, curriculum transparency, and
+    book review policies. The coalition has raised $400,000.
+  topics: ["advocacy_organizing", "school_board_election", "parental_rights", "curriculum_censorship"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_curriculum_transparency_law_1
+  entity_type: policy_document
+  meeting_date: "2024-12-03"
+  chunk_text: |
+    In accordance with the state curriculum transparency law, the
+    district publishes all instructional materials, syllabi, and
+    reading lists on a public website updated quarterly. Parents may
+    request a paper copy of any material at no cost.
+  topics: ["parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_book_reinstated_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-08"
+  chunk_text: |
+    The reconsideration committee's 4-1 decision to retain 'All Boys
+    Aren't Blue' was upheld by the full Committee 5-2. The book returns
+    to circulation at the high school library immediately.
+  topics: ["curriculum_censorship", "lgbtq_student_rights"]
+  action_types: ["book_challenged", "policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: misc_pride_event_1
+  entity_type: board_minutes
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    The GSA requested and the Committee approved a Pride awareness week
+    June 3-7 with student-led programming, a guest speaker, and a
+    school-wide assembly. No parental opt-out was provided; the event
+    falls under the district's general enrichment policy.
+  topics: ["lgbtq_student_rights", "gender_identity", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_state_assessment_results_1
+  entity_type: board_minutes
+  meeting_date: "2025-09-09"
+  chunk_text: |
+    The 2025 MCAS results were presented: 62% of students scored
+    proficient or above in ELA, 58% in math, and 41% in science. The
+    superintendent will present an improvement plan at the October
+    meeting.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_transportation_contract_1
+  entity_type: board_minutes
+  meeting_date: "2025-06-10"
+  chunk_text: |
+    The Committee approved a three-year transportation contract with
+    Durham School Services at $1.4M per year, a 6% increase over the
+    prior contract. The contract includes GPS tracking and a parent
+    app.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_field_trip_stem_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-29"
+  chunk_text: |
+    Approved: 8th grade STEM field trip to the Boston Museum of
+    Science on May 22. Cost: $32/student, transportation included.
+    Forty-eight students and four chaperones will attend.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_facilities_use_policy_1
+  entity_type: policy_document
+  meeting_date: "2025-01-30"
+  chunk_text: |
+    Updated facilities use policy: community groups may reserve school
+    spaces through an online portal. The district retains discretion to
+    deny reservations that conflict with educational use or district
+    values. Religious organizations may rent under the same terms as
+    other community groups.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_public_comment_procedural_1
+  entity_type: public_comment
+  meeting_date: "2025-03-25"
+  chunk_text: |
+    Public comment is limited to three minutes per speaker. Speakers
+    must sign in at the clerk's table before the meeting begins. The
+    Committee does not respond to public comment during the meeting but
+    may address concerns at a subsequent meeting.
+  topics: []
+  action_types: []
+  subtopics: []
+  off_topic: true  # pure procedural rule about public comment, not a comment itself
+
+- id: misc_agenda_item_only_1
+  entity_type: board_agenda
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    Agenda Item 7.2: Discussion and possible vote on Policy 5760
+    (Transgender Student Facilities). Sponsors: Members Chen and Park.
+    Attached: Draft policy, legal memo from counsel, public comment
+    log (47 entries).
+  topics: ["transgender_policy", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["policy_debated"]
+  subtopics: []
+  off_topic: false
+
+- id: misc_resolution_text_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-22"
+  chunk_text: |
+    Resolution R-2025-08: The Committee reaffirms its commitment to
+    maintaining a library collection that reflects the diversity of
+    the student body, including LGBTQ voices, and rejects the premise
+    that any group of parents may veto materials on behalf of all
+    families. Adopted 5-2.
+  topics: ["curriculum_censorship", "lgbtq_student_rights", "parental_rights"]
+  action_types: ["protection_adopted"]
+  subtopics: []
+  off_topic: false
+
+- id: misc_intervention_letter_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-04-15"
+  chunk_text: |
+    An open letter signed by 18 local clergy was delivered to the
+    Committee this week, opposing the proposed parental notification
+    policy on the grounds that it would harm LGBTQ youth. The letter
+    was read into the public record at the April 15 meeting.
+  topics: ["advocacy_organizing", "lgbtq_student_rights", "transgender_policy", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_candidate_forum_1
+  entity_type: candidate_profile
+  meeting_date: "2025-04-25"
+  chunk_text: |
+    At the League of Women Voters forum, all three school committee
+    candidates were asked about book challenges. Chen supported the
+    current review process; Reyes called for mandatory parental
+    approval; Olsen supported removing books with explicit content.
+  topics: ["school_board_election", "curriculum_censorship", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_book_challenge_outcome_1
+  entity_type: book_challenge
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    The reconsideration committee voted 3-2 to remove 'This Book Is
+    Gay' from all district libraries. The decision is final unless
+    appealed to the full Committee within 14 days. The book will be
+    removed from circulation on June 1.
+  topics: ["curriculum_censorship", "lgbtq_student_rights"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: misc_news_school_choice_1
+  entity_type: news_media
+  meeting_date: "2025-01-15"
+  chunk_text: |
+    The Worcester Telegram covered last night's school committee
+    decision to reduce sex education from 12 to 4 weeks, quoting two
+    parents in favor and three students opposed. The article also
+    noted the upcoming school committee election in May.
+  topics: ["sex_education", "school_board_election"]
+  action_types: ["instruction_reduced"]
+  subtopics: ["curriculum_change"]
+  off_topic: false
+
+- id: misc_advocacy_letter_parents_1
+  entity_type: public_comment
+  meeting_date: "2025-05-13"
+  chunk_text: |
+    A letter signed by 84 parents was read during public comment,
+    supporting the comprehensive sex education curriculum and opposing
+    the proposed reduction. The letter cited rising STI rates and the
+    importance of consent education.
+  topics: ["advocacy_organizing", "sex_education"]
+  action_types: []
+  subtopics: ["comprehensive"]
+  off_topic: false
+
+- id: misc_book_challenge_pending_1
+  entity_type: book_challenge
+  meeting_date: "2025-05-20"
+  chunk_text: |
+    A parent has filed a challenge against 'Lawn Boy' by Jonathan
+    Evison, citing explicit sexual content. The reconsideration
+    committee will convene within 30 days. The book remains available
+    pending review.
+  topics: ["curriculum_censorship", "lgbtq_student_rights"]
+  action_types: ["book_challenged"]
+  subtopics: []
+  off_topic: false
+
+- id: misc_election_candidate_stance_1
+  entity_type: candidate_profile
+  meeting_date: "2025-04-30"
+  chunk_text: |
+    Candidate Reyes released a position statement today opposing any
+    expansion of comprehensive sex education, supporting mandatory
+    parental notification for any discussion of gender identity, and
+    endorsing the removal of books with explicit LGBTQ content from
+    elementary libraries.
+  topics: ["school_board_election", "sex_education", "parental_rights", "transgender_policy", "lgbtq_student_rights", "gender_identity", "curriculum_censorship"]
+  action_types: []
+  subtopics: ["comprehensive"]
+  off_topic: false
+
+- id: misc_policy_first_reading_no_vote_1
+  entity_type: board_minutes
+  meeting_date: "2025-06-10"
+  chunk_text: |
+    First reading of revised Policy 5755, which would require staff to
+    notify parents within 48 hours of any student disclosure of gender
+    identity. No vote was taken; second reading and vote scheduled for
+    July 8.
+  topics: ["parental_rights", "transgender_policy", "lgbtq_student_rights", "gender_identity"]
+  action_types: ["policy_proposed"]
+  subtopics: []
+  off_topic: false
+
+- id: misc_advocacy_press_release_1
+  entity_type: advocacy_intervention
+  meeting_date: "2025-03-04"
+  chunk_text: |
+    The Massachusetts ACLU issued a press release today calling on the
+    Worcester School Committee to reject the proposed book removal
+    policy, arguing it would violate students' First Amendment rights
+    and disproportionately target LGBTQ-authored materials.
+  topics: ["advocacy_organizing", "curriculum_censorship", "lgbtq_student_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false
+
+- id: misc_minutes_with_two_actions_1
+  entity_type: board_minutes
+  meeting_date: "2025-04-08"
+  chunk_text: |
+    In a single agenda item, the Committee voted 4-3 to eliminate the
+    comprehensive sex education unit AND voted 5-2 to adopt the
+    parental notification policy. Both measures take effect July 1.
+  topics: ["sex_education", "parental_rights", "lgbtq_student_rights"]
+  action_types: ["instruction_eliminated", "protection_adopted"]
+  subtopics: ["comprehensive", "curriculum_change"]
+  off_topic: false
+
+- id: misc_election_endorsement_1
+  entity_type: news_media
+  meeting_date: "2025-04-19"
+  chunk_text: |
+    The Boston Globe endorsed Chen and Olsen in the Worcester school
+    committee race, citing their support for inclusive policies and
+    opposition to book removals. The editorial criticized Reyes's
+    positions on parental notification and sex education.
+  topics: ["school_board_election", "curriculum_censorship", "lgbtq_student_rights", "sex_education", "parental_rights"]
+  action_types: []
+  subtopics: []
+  off_topic: false

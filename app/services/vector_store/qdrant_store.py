@@ -33,7 +33,9 @@ class QdrantStore(VectorStore):
         try:
             # Disable version check for compatibility with older servers
             self.client = QdrantClient(
-                url=self.url, check_compatibility=False
+                url=self.url,
+                check_compatibility=False,
+                timeout=settings.QDRANT_CLIENT_TIMEOUT_SECONDS,
             )
             logger.info(f"Qdrant initialized with URL: {self.url}")
         except Exception as e:
@@ -163,10 +165,151 @@ class QdrantStore(VectorStore):
                 )
                 logger.info(f"Created new Qdrant collection: {collection_name}")
 
+            # Ensure payload indexes exist for commonly-filtered keys.
+            # These make searches on school-scraper metadata efficient.
+            # Idempotent: creating an index that already exists is a no-op.
+            await self._ensure_payload_indexes(collection_name)
+
             return collection_name
         except Exception as e:
             logger.error(f"Error getting/creating Qdrant collection: {e}", exc_info=True)
             raise
+
+    async def _ensure_payload_indexes(self, collection_name: str) -> None:
+        """Create payload indexes for school-scraper filterable fields.
+
+        Safe to call repeatedly; Qdrant treats duplicate index creation as
+        a no-op. Wrapped per-field so one missing index doesn't block others.
+        """
+        # keyword fields
+        keyword_fields = [
+            "tenant_id",
+            "document_id",
+            "document_type",
+            "school_org_code",
+            "school_name",
+            "school_id",
+            "district_type",
+            "document_type",
+            "source_page_url",
+            "source_media_url",
+            "scrape_run_id",
+        ]
+        for field in keyword_fields:
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                # Already exists or field not present yet; either way, ignore.
+                pass
+
+        # `meeting_date` is indexed as DATETIME (not KEYWORD) so the heatmap
+        # engine's custom date-range filter can use a native Qdrant `Range`
+        # condition. Stored values are still plain ISO date strings
+        # ("YYYY-MM-DD") written at ingest time — Qdrant parses those as
+        # midnight UTC, which compares correctly against the RFC3339 bounds
+        # built in `heatmap_engine/timeframe.py`.
+        for field in ("meeting_date",):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.DATETIME,
+                )
+            except Exception:
+                # Most likely the field already has the legacy KEYWORD index
+                # from before this change — drop and recreate so range
+                # queries work instead of silently swallowing the mismatch.
+                try:
+                    await asyncio.to_thread(
+                        self.client.delete_payload_index,
+                        collection_name=collection_name,
+                        field_name=field,
+                    )
+                    await asyncio.to_thread(
+                        self.client.create_payload_index,
+                        collection_name=collection_name,
+                        field_name=field,
+                        field_schema=models.PayloadSchemaType.DATETIME,
+                    )
+                except Exception:
+                    pass
+
+        # `scraped_at` has no range-filter use case today — keep it KEYWORD.
+        for field in ("scraped_at",):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
+        # Heatmap-ingest classification fields. These are written by the
+        # batch classifier after a Batch API run completes (see
+        # app/services/heatmap_ingest/batch_classifier.py).
+        for field in (
+            "entity_type",
+            "classified",
+        ):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
+        # Multi-label array fields (topics, action_types, subtopics) —
+        # Qdrant indexes array payloads with the same KEYWORD schema so
+        # `topics contains 'sex_education'` queries are fast.
+        for field in ("topics", "action_types", "subtopics"):
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
+
+        # Heatmap V1 metadata fields (spec: Heatmap Ingest Metadata v1).
+        # Doc-level denorm + per-chunk keyword flags + placeholders for the
+        # batch classifier output. Indexed as KEYWORD so payload pre-filter
+        # queries on state / district_name / school_year / etc. are fast.
+        v1_keyword_fields = (
+            "state",
+            "district_name",
+            "school_year",
+            "quarter_month",
+            "meeting_doc_type",
+            "meeting_body",
+            "document_quality",
+            "action_stage",
+            "keyword_flags",
+            "topic_tags",
+            "speakers",
+        )
+        for field in v1_keyword_fields:
+            try:
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass
 
     async def add_chunks(
         self,
@@ -176,68 +319,118 @@ class QdrantStore(VectorStore):
         metadatas: list[dict[str, Any]],
     ) -> bool:
         """Store chunks in Qdrant"""
-        try:
-            if not chunks or not embeddings or not metadatas:
-                logger.warning("Empty chunks, embeddings, or metadatas provided")
-                return False
+        point_ids = await self.add_chunks_returning_ids(
+            document_id, chunks, embeddings, metadatas
+        )
+        return bool(point_ids)
 
-            if len(chunks) != len(embeddings) != len(metadatas):
-                logger.error("Mismatch in lengths of chunks, embeddings, and metadatas")
-                return False
+    async def add_chunks_returning_ids(
+        self,
+        document_id: str,
+        chunks: list[str],
+        embeddings: list[list[float]],
+        metadatas: list[dict[str, Any]],
+    ) -> list[str]:
+        """
+        Store chunks in Qdrant and return the list of generated point IDs.
 
-            # Get tenant_id from first metadata
-            tenant_id = metadatas[0].get("tenant_id")
-            if not tenant_id:
-                logger.error("tenant_id not found in metadata")
-                return False
+        Used by the heatmap ingest pipeline (step6_accumulate_batch) which
+        needs the per-chunk point IDs to write pending_classifications rows
+        and later apply batch results via set_payload.
 
-            vector_size = len(embeddings[0]) if embeddings else 1536
-            collection_name = await self._get_or_create_collection(tenant_id, vector_size)
+        Contract: raises on failure instead of returning ``[]``. Callers
+        (notably ``step5_store_vectors``) treat this as a fatal stage and
+        mark the document FAILED via ``_mark_stage_failed`` — the previous
+        behaviour of swallowing the exception and returning ``[]`` produced
+        documents stuck at COMPLETED with a ``chunk_count`` that disagreed
+        with Qdrant (the "MISSING" category in tenant_qdrant_chunk_audit).
 
-            # Prepare points for Qdrant
-            # Use dict format for better compatibility with older server versions
-            points = []
-            for i, (chunk, embedding, metadata) in enumerate(
-                zip(chunks, embeddings, metadatas)
-            ):
-                # Generate a proper UUID for the point ID
-                # Qdrant only accepts unsigned integers or valid UUIDs
-                # We generate a unique UUID4 for each chunk
-                point_id = str(uuid.uuid4())
+        Upserts are batched (``QDRANT_UPSERT_BATCH_SIZE`` points/call) so a
+        large document does not exceed the client's write timeout in a
+        single request. A failed batch is raised, not swallowed.
+        """
+        # Input validation: these are caller bugs, not transient Qdrant
+        # failures. Raise so they surface immediately rather than silently
+        # marking the doc COMPLETED with zero chunks.
+        if not chunks or not embeddings or not metadatas:
+            raise ValueError(
+                f"add_chunks_returning_ids: empty input for document {document_id} "
+                f"(chunks={len(chunks)}, embeddings={len(embeddings)}, "
+                f"metadatas={len(metadatas)})"
+            )
 
-                # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
-                # Qdrant payload can contain: str, int, float, bool, list, dict
-                normalized_metadata = {}
-                for key, value in metadata.items():
-                    if value is None:
-                        continue  # Skip None values
-                    elif isinstance(value, (str, int, float, bool)):
-                        normalized_metadata[key] = value
-                    elif isinstance(value, (list, dict)):
-                        # Qdrant supports nested structures
-                        normalized_metadata[key] = value
-                    else:
-                        normalized_metadata[key] = str(value)
+        if (
+            len(chunks) != len(embeddings)
+            or len(embeddings) != len(metadatas)
+        ):
+            raise ValueError(
+                f"add_chunks_returning_ids: length mismatch for document {document_id} "
+                f"(chunks={len(chunks)}, embeddings={len(embeddings)}, "
+                f"metadatas={len(metadatas)})"
+            )
 
-                # Ensure tenant_id is consistent
-                normalized_metadata["tenant_id"] = tenant_id
-                normalized_metadata["document_id"] = document_id
-                normalized_metadata["text"] = chunk  # Store text in payload
-                normalized_metadata["chunk_index"] = i  # Store index for reference
+        # Get tenant_id from first metadata
+        tenant_id = metadatas[0].get("tenant_id")
+        if not tenant_id:
+            raise ValueError(
+                f"add_chunks_returning_ids: tenant_id missing from metadata "
+                f"for document {document_id}"
+            )
 
-                # Use dict format for compatibility with older Qdrant server versions
-                points.append(
-                    {
-                        "id": point_id,
-                        "vector": embedding,
-                        "payload": normalized_metadata,
-                    }
-                )
+        vector_size = len(embeddings[0]) if embeddings else 1536
+        collection_name = await self._get_or_create_collection(tenant_id, vector_size)
 
+        # Prepare points for Qdrant
+        # Use dict format for better compatibility with older server versions
+        points = []
+        point_ids: list[str] = []
+        for i, (chunk, embedding, metadata) in enumerate(
+            zip(chunks, embeddings, metadatas)
+        ):
+            # Generate a proper UUID for the point ID
+            # Qdrant only accepts unsigned integers or valid UUIDs
+            # We generate a unique UUID4 for each chunk
+            point_id = str(uuid.uuid4())
+            point_ids.append(point_id)
+
+            # Normalize metadata for Qdrant (Qdrant supports more types than ChromaDB)
+            # Qdrant payload can contain: str, int, float, bool, list, dict
+            normalized_metadata = {}
+            for key, value in metadata.items():
+                if value is None:
+                    continue  # Skip None values
+                elif isinstance(value, (str, int, float, bool)):
+                    normalized_metadata[key] = value
+                elif isinstance(value, (list, dict)):
+                    # Qdrant supports nested structures
+                    normalized_metadata[key] = value
+                else:
+                    normalized_metadata[key] = str(value)
+
+            # Ensure tenant_id is consistent
+            normalized_metadata["tenant_id"] = tenant_id
+            normalized_metadata["document_id"] = document_id
+            normalized_metadata["text"] = chunk  # Store text in payload
+            normalized_metadata["chunk_index"] = i  # Store index for reference
+
+            # Use dict format for compatibility with older Qdrant server versions
+            points.append(
+                {
+                    "id": point_id,
+                    "vector": embedding,
+                    "payload": normalized_metadata,
+                }
+            )
+
+        batch_size = settings.QDRANT_UPSERT_BATCH_SIZE
+        for start in range(0, len(points), batch_size):
+            batch = points[start : start + batch_size]
             try:
                 await asyncio.to_thread(
                     self.client.upsert,
-                    collection_name=collection_name, points=points, wait=True,
+                    collection_name=collection_name,
+                    points=batch,
+                    wait=True,
                 )
             except UnexpectedResponse as e:
                 if "PointInsertOperations" in str(e):
@@ -246,19 +439,17 @@ class QdrantStore(VectorStore):
                         "using individual point inserts via REST API"
                     )
                     await asyncio.to_thread(
-                        self._upsert_points_individually, collection_name, points,
+                        self._upsert_points_individually,
+                        collection_name,
+                        batch,
                     )
                 else:
                     raise
 
-            logger.info(
-                f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
-            )
-            return True
-
-        except Exception as e:
-            logger.error(f"Error adding chunks to Qdrant: {e}", exc_info=True)
-            return False
+        logger.info(
+            f"Added {len(chunks)} chunks for document {document_id} to tenant {tenant_id}"
+        )
+        return point_ids
 
     async def search(
         self,
@@ -271,55 +462,98 @@ class QdrantStore(VectorStore):
         try:
             collection_name = self._get_collection_name(tenant_id)
 
-            # Build query filter
-            # Always include tenant_id filter for security
-            must_conditions = [
-                models.FieldCondition(
-                    key="tenant_id",
-                    match=models.MatchValue(value=tenant_id),
-                )
-            ]
+            # Two filter shapes are accepted, for backward compatibility:
+            #
+            # 1. Legacy: `filters={"document_id": {"$in": [...]},
+            #    "document_type": [".pdf", ...]}` — handled inline below.
+            #
+            # 2. Engine-style: `filters` carries any of
+            #    `must_match` / `must_match_any` / `nested_match_any` /
+            #    `nested_subtopic_match_any` / `range_match` — routed
+            #    through `_build_payload_filter` so the agentic RAG tools
+            #    can pass topic / district / date / action_type filters
+            #    without duplicating the Qdrant condition assembly here.
+            #
+            # The two shapes are mutually exclusive: when engine-style
+            # keys are present we route through `_build_payload_filter`
+            # and ignore the legacy keys. Otherwise we fall back to the
+            # inline document_id / document_type handling so existing
+            # callers (search_knowledge_base, search_tables,
+            # answer_faq_exact_match) keep working unchanged.
 
-            # Add document_id filter if provided
-            if filters and "document_id" in filters:
-                doc_filter = filters["document_id"]
-                if isinstance(doc_filter, dict) and "$in" in doc_filter:
-                    doc_ids = doc_filter["$in"]
-                    if doc_ids:
+            engine_keys = (
+                "must_match",
+                "must_match_any",
+                "nested_match_any",
+                "nested_subtopic_match_any",
+                "range_match",
+            )
+            filters = filters or {}
+            use_engine_shape = any(k in filters for k in engine_keys)
+
+            if use_engine_shape:
+                query_filter = self._build_payload_filter(
+                    tenant_id,
+                    must_match=filters.get("must_match"),
+                    must_match_any=filters.get("must_match_any"),
+                    nested_match_any=filters.get("nested_match_any"),
+                    nested_subtopic_match_any=filters.get(
+                        "nested_subtopic_match_any"
+                    ),
+                    nested_field_match_any=filters.get(
+                        "nested_field_match_any"
+                    ),
+                    range_match=filters.get("range_match"),
+                )
+            else:
+                # Build query filter inline.
+                # Always include tenant_id filter for security.
+                must_conditions = [
+                    models.FieldCondition(
+                        key="tenant_id",
+                        match=models.MatchValue(value=tenant_id),
+                    )
+                ]
+
+                # Add document_id filter if provided
+                if "document_id" in filters:
+                    doc_filter = filters["document_id"]
+                    if isinstance(doc_filter, dict) and "$in" in doc_filter:
+                        doc_ids = doc_filter["$in"]
+                        if doc_ids:
+                            must_conditions.append(
+                                models.FieldCondition(
+                                    key="document_id",
+                                    match=models.MatchAny(any=doc_ids),
+                                )
+                            )
+                    elif isinstance(doc_filter, str):
                         must_conditions.append(
                             models.FieldCondition(
                                 key="document_id",
-                                match=models.MatchAny(any=doc_ids),
+                                match=models.MatchValue(value=doc_filter),
                             )
                         )
-                elif isinstance(doc_filter, str):
-                    must_conditions.append(
-                        models.FieldCondition(
-                            key="document_id",
-                            match=models.MatchValue(value=doc_filter),
-                        )
-                    )
 
-            # Add document_type filter if provided (e.g. for search_tables)
-            if filters and "document_type" in filters:
-                type_filter = filters["document_type"]
-                if isinstance(type_filter, list) and type_filter:
-                    must_conditions.append(
-                        models.FieldCondition(
-                            key="document_type",
-                            match=models.MatchAny(any=type_filter),
+                # Add document_type filter if provided (e.g. for search_tables)
+                if "document_type" in filters:
+                    type_filter = filters["document_type"]
+                    if isinstance(type_filter, list) and type_filter:
+                        must_conditions.append(
+                            models.FieldCondition(
+                                key="document_type",
+                                match=models.MatchAny(any=type_filter),
+                            )
                         )
-                    )
-                elif isinstance(type_filter, str):
-                    must_conditions.append(
-                        models.FieldCondition(
-                            key="document_type",
-                            match=models.MatchValue(value=type_filter),
+                    elif isinstance(type_filter, str):
+                        must_conditions.append(
+                            models.FieldCondition(
+                                key="document_type",
+                                match=models.MatchValue(value=type_filter),
+                            )
                         )
-                    )
 
-            # Create filter with all conditions
-            query_filter = models.Filter(must=must_conditions)
+                query_filter = models.Filter(must=must_conditions)
 
             try:
                 try:
@@ -450,39 +684,330 @@ class QdrantStore(VectorStore):
             logger.error(f"Error getting document chunks: {e}", exc_info=True)
             return []
 
-    async def update_metadata(
-        self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int
-    ) -> bool:
-        """Update metadata for chunks"""
+    def _build_payload_filter(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+        nested_subtopic_match_any: dict[str, list] | None = None,
+        nested_field_match_any: dict[str, dict[str, list]] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
+    ) -> models.Filter:
+        """
+        Build a Qdrant `Filter` from the engine-style filter fragments.
+
+        - `must_match`: `{field: value}` → FieldCondition(MatchValue)
+        - `must_match_any`: `{field: [values]}` → FieldCondition(MatchAny)
+        - `nested_match_any`: `{array_field: [values]}` where the array
+          holds objects — translates to a NestedCondition with a
+          `MatchAny` on the nested `category`-like field. Concretely
+          used for `topic_tags` (list of `{category, subtopic}` objects)
+          where the key is the array field name and the values are the
+          `category` strings to match.
+        - `nested_subtopic_match_any`: same shape as `nested_match_any`
+          but matches the nested `subtopic` sub-field. Used to filter
+          `topic_tags` by fine-grained subtopic (e.g. `comprehensive`,
+          `book_challenge_filed`, `transgender_student_policy`). Can be
+          combined with `nested_match_any` on the same `topic_tags`
+          field — both must match within the same nested object.
+        - `nested_field_match_any`: `{array_field: {sub_field: [values]}}`
+          — the general form for nested-object arrays whose sub-field
+          name is neither `category` nor `subtopic`. Used for
+          `speakers: [{name, role}]` so the agent can filter by
+          `speaker.name` or `speaker.role` without needing a dedicated
+          fragment shape for each.
+        - `range_match`: `{field: {"gte": iso, "lte": iso}}` → FieldCondition
+          with a `DatetimeRange`. Requires the field to have a `DATETIME`
+          payload index (see `_ensure_payload_indexes`); used by the
+          heatmap engine's custom date-range filter on `meeting_date`.
+        """
+        must_conditions: list[models.FieldCondition] = [
+            models.FieldCondition(
+                key="tenant_id",
+                match=models.MatchValue(value=tenant_id),
+            )
+        ]
+
+        for field, value in (must_match or {}).items():
+            if value is None:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    match=models.MatchValue(value=value),
+                )
+            )
+
+        for field, values in (must_match_any or {}).items():
+            if not values:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        for field, bounds in (range_match or {}).items():
+            if not bounds:
+                continue
+            must_conditions.append(
+                models.FieldCondition(
+                    key=field,
+                    range=models.DatetimeRange(
+                        gte=bounds.get("gte"),
+                        lte=bounds.get("lte"),
+                    ),
+                )
+            )
+
+        # Nested array-of-objects filters (e.g. topic_tags[].category,
+        # topic_tags[].subtopic, speakers[].role). The legacy
+        # `nested_match_any` / `nested_subtopic_match_any` shapes are
+        # special-cased for `topic_tags`; the general
+        # `nested_field_match_any` covers every other nested-object
+        # array. When `nested_match_any` and `nested_subtopic_match_any`
+        # target the same field (e.g. both on `topic_tags`), we AND
+        # them inside one NestedCondition so the match must occur
+        # within the same nested object — a chunk tagged
+        # `[{category: sexed, subtopic: comprehensive}]` matches both
+        # but a chunk tagged `[{category: sexed, subtopic: abstinence},
+        # {category: lgbtq, subtopic: comprehensive}]` does not.
+        nested_conditions: list[models.NestedCondition] = []
+        nested_field_to_idx: dict[str, int] = {}
+
+        def _ensure_nested(field_name: str) -> int:
+            """Get or create a NestedCondition for `field_name`."""
+            if field_name in nested_field_to_idx:
+                return nested_field_to_idx[field_name]
+            nested_conditions.append(
+                models.NestedCondition(
+                    nested=models.Nested(
+                        key=field_name,
+                        filter=models.Filter(must=[]),
+                    )
+                )
+            )
+            nested_field_to_idx[field_name] = len(nested_conditions) - 1
+            return nested_field_to_idx[field_name]
+
+        for nested_field, values in (nested_match_any or {}).items():
+            if not values:
+                continue
+            idx = _ensure_nested(nested_field)
+            nested_conditions[idx].nested.filter.must.append(
+                models.FieldCondition(
+                    key="category",
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        for nested_field, values in (nested_subtopic_match_any or {}).items():
+            if not values:
+                continue
+            idx = _ensure_nested(nested_field)
+            nested_conditions[idx].nested.filter.must.append(
+                models.FieldCondition(
+                    key="subtopic",
+                    match=models.MatchAny(any=list(values)),
+                )
+            )
+
+        for nested_field, sub_fields in (nested_field_match_any or {}).items():
+            for sub_field, values in sub_fields.items():
+                if not values:
+                    continue
+                idx = _ensure_nested(nested_field)
+                nested_conditions[idx].nested.filter.must.append(
+                    models.FieldCondition(
+                        key=sub_field,
+                        match=models.MatchAny(any=list(values)),
+                    )
+                )
+
+        return models.Filter(
+            must=must_conditions,
+            should=nested_conditions or None,
+        )
+
+    async def filter_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+        nested_subtopic_match_any: dict[str, list] | None = None,
+        nested_field_match_any: dict[str, dict[str, list]] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        """
+        Scroll chunks by payload filter (no vector query).
+
+        Used by the heatmap citations path: retrieve all chunks for a
+        given (source_id, topic) without computing an embedding.
+        """
         try:
             collection_name = self._get_collection_name(tenant_id)
 
-            points = await asyncio.to_thread(
-                self.client.retrieve,
-                collection_name=collection_name,
-                ids=chunk_ids,
-                with_payload=True,
-                with_vectors=False,
+            scroll_filter = self._build_payload_filter(
+                tenant_id,
+                must_match=must_match,
+                must_match_any=must_match_any,
+                nested_match_any=nested_match_any,
+                nested_subtopic_match_any=nested_subtopic_match_any,
+                nested_field_match_any=nested_field_match_any,
+                range_match=range_match,
             )
 
-            for point in points:
-                existing_payload = point.payload or {}
-                updated_payload = {**existing_payload, **metadata}
-                updated_payload["tenant_id"] = tenant_id
-
-                await asyncio.to_thread(
-                    self.client.set_payload,
-                    collection_name=collection_name,
-                    payload=updated_payload,
-                    points=[point.id],
+            try:
+                await asyncio.to_thread(self.client.get_collection, collection_name)
+            except Exception:
+                logger.debug(
+                    f"Qdrant collection {collection_name} does not exist; "
+                    f"returning empty filter_chunks result"
                 )
+                return []
 
-            logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
-            return True
+            collected: list[dict[str, Any]] = []
+            offset = None
+            # Qdrant scroll caps at 10000 per call; loop until we hit limit.
+            page_size = min(limit, 10000)
+            while len(collected) < limit:
+                batch, next_offset = await asyncio.to_thread(
+                    self.client.scroll,
+                    collection_name=collection_name,
+                    scroll_filter=scroll_filter,
+                    limit=page_size,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+                if not batch:
+                    break
+                for point in batch:
+                    payload = point.payload or {}
+                    collected.append(
+                        {
+                            "id": str(point.id),
+                            "text": payload.get("text", ""),
+                            "metadata": {
+                                k: v for k, v in payload.items() if k != "text"
+                            },
+                            "score": 1.0,
+                        }
+                    )
+                    if len(collected) >= limit:
+                        break
+                if next_offset is None:
+                    break
+                offset = next_offset
+
+            logger.info(
+                f"filter_chunks: {len(collected)} chunks for tenant {tenant_id} "
+                f"(must_match={must_match}, must_match_any={must_match_any}, "
+                f"nested_match_any={nested_match_any})"
+            )
+            return collected[:limit]
 
         except Exception as e:
-            logger.error(f"Error updating metadata: {e}", exc_info=True)
-            return False
+            logger.error(f"Error filtering chunks in Qdrant: {e}", exc_info=True)
+            return []
+
+    async def count_chunks(
+        self,
+        tenant_id: int,
+        *,
+        must_match: dict[str, Any] | None = None,
+        must_match_any: dict[str, list] | None = None,
+        nested_match_any: dict[str, list] | None = None,
+        nested_subtopic_match_any: dict[str, list] | None = None,
+        nested_field_match_any: dict[str, dict[str, list]] | None = None,
+        range_match: dict[str, dict[str, str]] | None = None,
+    ) -> int:
+        """
+        Count chunks matching a payload filter using Qdrant's native count.
+
+        Far cheaper than `filter_chunks` + `len()` for the Heatmap Engine,
+        which counts chunk instances per district without materializing
+        the chunks themselves.
+        """
+        try:
+            collection_name = self._get_collection_name(tenant_id)
+
+            count_filter = self._build_payload_filter(
+                tenant_id,
+                must_match=must_match,
+                must_match_any=must_match_any,
+                nested_match_any=nested_match_any,
+                nested_subtopic_match_any=nested_subtopic_match_any,
+                nested_field_match_any=nested_field_match_any,
+                range_match=range_match,
+            )
+
+            try:
+                await asyncio.to_thread(self.client.get_collection, collection_name)
+            except Exception:
+                logger.debug(
+                    f"Qdrant collection {collection_name} does not exist; "
+                    f"returning 0 count"
+                )
+                return 0
+
+            result = await asyncio.to_thread(
+                self.client.count,
+                collection_name=collection_name,
+                count_filter=count_filter,
+                exact=True,
+            )
+            count = int(result.count)
+            logger.info(
+                f"count_chunks: {count} chunks for tenant {tenant_id} "
+                f"(must_match={must_match}, must_match_any={must_match_any}, "
+                f"nested_match_any={nested_match_any})"
+            )
+            return count
+
+        except Exception as e:
+            logger.error(f"Error counting chunks in Qdrant: {e}", exc_info=True)
+            return 0
+
+    async def update_metadata(
+        self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int
+    ) -> bool:
+        """Update metadata for chunks.
+
+        Raises on failure rather than swallowing it -- callers (e.g. the
+        batch-classification apply step) rely on the exception to mark a
+        chunk 'failed' instead of treating a no-op write as success.
+        """
+        collection_name = self._get_collection_name(tenant_id)
+
+        points = await asyncio.to_thread(
+            self.client.retrieve,
+            collection_name=collection_name,
+            ids=chunk_ids,
+            with_payload=True,
+            with_vectors=False,
+        )
+
+        for point in points:
+            existing_payload = point.payload or {}
+            updated_payload = {**existing_payload, **metadata}
+            updated_payload["tenant_id"] = tenant_id
+
+            await asyncio.to_thread(
+                self.client.set_payload,
+                collection_name=collection_name,
+                payload=updated_payload,
+                points=[point.id],
+            )
+
+        logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
+        return True
 
     async def add_image_captions(
         self,

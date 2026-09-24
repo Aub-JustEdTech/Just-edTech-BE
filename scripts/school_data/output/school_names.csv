@@ -1,0 +1,397 @@
+number,name,org_code,district_type,website
+1,Abby Kelley Foster Charter Public (District),04450000,Charter District,https://www.akfcs.org
+2,Abington,00010000,Public School District,https://www.abingtonps.org
+3,Academy Of the Pacific Rim Charter Public (District),04120000,Charter District,https://www.pacrim.org
+4,Acton-Boxborough,06000000,Public School District,http://www.abschools.org/
+5,Acushnet,00030000,Public School District,https://www.acushnetschools.us
+6,Advanced Math and Science Academy Charter (District),04300000,Charter District,https://www.amsacs.org
+7,Agawam,00050000,Public School District,https://www.agawamed.org/
+8,Alma del Mar Charter School (District),04090000,Charter District,https://almadelmar.org
+9,Amesbury,00070000,Public School District,https://schools.amesburyma.gov/
+10,Amherst,00080000,Public School District,https://arps.org
+11,Amherst-Pelham,06050000,Public School District,https://arps.org
+12,Andover,00090000,Public School District,https://www.aps1.net
+13,Argosy Collegiate Charter School (District),35090000,Charter District,https://www.argosycollegiate.org
+14,Arlington,00100000,Public School District,https://www.arlington.k12.ma.us/
+15,Ashburnham-Westminster,06100000,Public School District,https://www.awrsd.org
+16,Ashland,00140000,Public School District,http://www.ashland.k12.ma.us
+17,Assabet Valley Regional Vocational Technical,08010000,Public School District,https://www.assabet.org
+18,Athol-Royalston,06150000,Public School District,https://www.arrsd.org
+19,Atlantis Charter (District),04910000,Charter District,https://www.atlantiscs.org
+20,Attleboro,00160000,Public School District,https://www.attleboroschools.com
+21,Auburn,00170000,Public School District,https://www.auburn.k12.ma.us
+22,Avon,00180000,Public School District,https://avon.k12.ma.us
+23,Ayer Shirley School District,06160000,Public School District,https://www.asrsd.org/
+24,Barnstable,00200000,Public School District,http://www.barnstable.k12.ma.us/
+25,Baystate Academy Charter Public School (District),35020000,Charter District,https://www.bacps.net
+26,Bedford,00230000,Public School District,https://bedfordps.org
+27,Belchertown,00240000,Public School District,https://www.belchertownps.org
+28,Bellingham,00250000,Public School District,https://www.bellinghamk12.org
+29,Belmont,00260000,Public School District,https://www.belmont.k12.ma.us
+30,Benjamin Banneker Charter Public (District),04200000,Charter District,https://www.banneker.org
+31,Benjamin Franklin Classical Charter Public (District),04470000,Charter District,https://www.bfccps.org
+32,Berkley,00270000,Public School District,https://www.BerkleyPublicSchools.org
+33,Berkshire Arts and Technology Charter Public (District),04140000,Charter District,https://www.bartcharter.org
+34,Berkshire Hills,06180000,Public School District,https://www.bhrsd.org
+35,Berlin-Boylston,06200000,Public School District,https://www.bbrsd.org
+36,Beverly,00300000,Public School District,https://www.beverlyschools.org
+37,Billerica,00310000,Public School District,https://www.billericak12.com
+38,Blackstone Valley Regional Vocational Technical,08050000,Public School District,https://www.valleytech.k12.ma.us
+39,Blackstone-Millville,06220000,Public School District,https://www.bmrsd.net
+40,Blue Hills Regional Vocational Technical,08060000,Public School District,https://www.bluehills.org
+41,Boston,00350000,Public School District,https://www.bostonpublicschools.org
+42,Boston Collegiate Charter (District),04490000,Charter District,https://www.bostoncollegiate.org
+43,Boston Day and Evening Academy Charter (District),04240000,Charter District,https://www.bdea.com
+44,Boston Green Academy Horace Mann Charter School (District),04110000,Charter District,https://www.bostongreenacademy.org
+45,Boston Preparatory Charter Public (District),04160000,Charter District,https://www.bostonprep.org
+46,Boston Renaissance Charter Public (District),04810000,Charter District,https://www.bostonrenaissance.org
+47,Bourne,00360000,Public School District,https://www.bourneps.org/
+48,Boxford,00380000,Public School District,https://www.tritownschoolunion.com
+49,Braintree,00400000,Public School District,http://www.braintreeschools.org
+50,Brewster,00410000,Public School District,http://nausetschools.org
+51,Bridge Boston Charter School (District),04170000,Charter District,https://www.bridgebostoncs.org
+52,Bridgewater-Raynham,06250000,Public School District,https://bridge-rayn.org
+53,Brimfield,00430000,Public School District,https://www.tantasqua.org
+54,Bristol County Agricultural,09100000,Public School District,https://www.bristolaggie.org
+55,Bristol-Plymouth Regional Vocational Technical,08100000,Public School District,https://www.bptech.org
+56,Brockton,00440000,Public School District,https://www.bpsma.org
+57,Brooke Charter School (District),04280000,Charter District,https://www.ebrooke.org
+58,Brookfield,00450000,Public School District,https://www.tantasqua.org
+59,Brookline,00460000,Public School District,http://www.brookline.k12.ma.us/
+60,Burlington,00480000,Public School District,https://www.burlingtonpublicschools.org
+61,Cambridge,00490000,Public School District,https://www.cpsd.us
+62,Canton,00500000,Public School District,https://www.cantonma.org/
+63,Cape Cod Lighthouse Charter (District),04320000,Charter District,http://www.cclighthouseschool.org
+64,Cape Cod Regional Vocational Technical,08150000,Public School District,https://capetech.us
+65,Carlisle,00510000,Public School District,https://www.carlisle.k12.ma.us
+66,Carver,00520000,Public School District,https://www.carver.org
+67,Central Berkshire,06350000,Public School District,https://www.cbrsd.org
+68,Chelmsford,00560000,Public School District,https://www.chelmsford.k12.ma.us
+69,Chelsea,00570000,Public School District,https://www.chelseaschools.com/
+70,Chesterfield-Goshen,06320000,Public School District,https://www.hr-k12.org
+71,Chicopee,00610000,Public School District,https://www.chicopeeps.org
+72,Christa McAuliffe Charter School (District),04180000,Charter District,https://www.mcauliffecharter.org
+73,Clarksburg,00630000,Public School District,https://www.clarksburgschool.org
+74,Clinton,00640000,Public School District,https://www.clinton.k12.ma.us
+75,Codman Academy Charter Public (District),04380000,Charter District,https://www.codmanacademy.org
+76,Cohasset,00650000,Public School District,http://www.cohassetk12.org
+77,Collegiate Charter School of Lowell (District),35030000,Charter District,https://collegiatelowell.org
+78,Community Charter School of Cambridge (District),04360000,Charter District,https://www.ccscambridge.org
+79,Community Day Charter Public School (District),04400000,Charter District,https://www.cdcps.org
+80,Concord,00670000,Public School District,https://www.concordpublicschools.net
+81,Concord-Carlisle,06400000,Public School District,https://www.concordps.org
+82,Conservatory Lab Charter (District),04390000,Charter District,https://www.conservatorylab.org
+83,Conway,00680000,Public School District,https://www.frsu38.org
+84,Danvers,00710000,Public School District,https://danverspublicschools.org
+85,Dartmouth,00720000,Public School District,https://www.dartmouth.school
+86,Dedham,00730000,Public School District,http://www.dedham.k12.ma.us
+87,Deerfield,00740000,Public School District,https://www.frsu38.org
+88,Dennis-Yarmouth,06450000,Public School District,https://www.dy-regional.k12.ma.us
+89,Dighton-Rehoboth,06500000,Public School District,https://www.drregional.org
+90,Douglas,00770000,Public School District,https://www.douglasps.net
+91,Dover,00780000,Public School District,http://www.doversherborn.org
+92,Dover-Sherborn,06550000,Public School District,http://www.doversherborn.org
+93,Dracut,00790000,Public School District,https://dracutps.org
+94,Dudley Street Neighborhood Charter School (District),04070000,Charter District,http://www.dudleystreetschool.org/
+95,Dudley-Charlton Reg,06580000,Public School District,http://dcrsd.org
+96,Duxbury,00820000,Public School District,https://www.duxbury.k12.ma.us
+97,East Bridgewater,00830000,Public School District,https://www.ebps.net
+98,East Longmeadow,00870000,Public School District,https://www.eastlongmeadowma.gov/378/Schools
+99,Eastham,00850000,Public School District,http://nausetschools.org
+100,Easthampton,00860000,Public School District,https://www.epsd.us
+101,Easton,00880000,Public School District,https://eastonmaschools.org
+102,Edgartown,00890000,Public School District,https://mvyps.org
+103,Edward M. Kennedy Academy for Health Careers: A Horace Mann Charter Public,,Charter District,https://www.kennedyacademy.org
+104,Erving,00910000,Public School District,https://www.union28.org
+105,Essex North Shore Agricultural and Technical School District,08170000,Public School District,https://essexnorthshore.org
+106,Everett,00930000,Public School District,https://www.everettpublicschools.org/
+107,Excel Academy Charter (District),04100000,Charter District,https://www.excelacademy.org
+108,Fairhaven,00940000,Public School District,https://www.fairhavenps.org/
+109,Fall River,00950000,Public School District,https://www.fallriverschools.org
+110,Falmouth,00960000,Public School District,https://www.falmouth.k12.ma.us
+111,Farmington River Reg,06620000,Public School District,https://www.frrsd.org
+112,Fitchburg,00970000,Public School District,http://www.fitchburgschools.org
+113,Florida,00980000,Public School District,https://www.abbottmemorial.org
+114,Four Rivers Charter Public (District),04130000,Charter District,https://www.fourriverscharter.org
+115,Foxborough,00990000,Public School District,http://www.foxborough.k12.ma.us
+116,Foxborough Regional Charter (District),04460000,Charter District,https://www.foxboroughrcs.org/
+117,Framingham,01000000,Public School District,https://framingham.k12.ma.us/23249_1
+118,Francis W. Parker Charter Essential (District),04780000,Charter District,https://www.theparkerschool.org
+119,Franklin,01010000,Public School District,http://www.franklinps.net
+120,Franklin County Regional Vocational Technical,08180000,Public School District,https://www.fcts.us
+121,Freetown-Lakeville,06650000,Public School District,https://www.freelake.org
+122,Frontier,06700000,Public School District,https://www.frsu38.org
+123,Gardner,01030000,Public School District,https://www.gardnerk12.org
+124,Gateway,06720000,Public School District,https://www.grsd.org
+125,Georgetown,01050000,Public School District,https://georgetown.k12.ma.us
+126,Gill-Montague,06740000,Public School District,https://www.gmrsd.org
+127,Global Learning Charter Public (District),04960000,Charter District,https://www.glcps.org/
+128,Gloucester,01070000,Public School District,https://www.gloucesterschools.com
+129,Gosnold,01090000,Public School District,https://www.gosnold-ma.gov
+130,Grafton,01100000,Public School District,http://graftonps.org/Domain/11
+131,Granby,01110000,Public School District,https://www.granbyschoolsma.org/
+132,Greater Commonwealth Virtual District,39010000,Public School District,https://www.gcvs.org
+133,Greater Fall River Regional Vocational Technical,08210000,Public School District,https://www.dimanregional.org
+134,Greater Lawrence Regional Vocational Technical,08230000,Public School District,https://www.glts.net
+135,Greater Lowell Regional Vocational Technical,08280000,Public School District,http://www.gltech.org
+136,Greater New Bedford Regional Vocational Technical,08250000,Public School District,http://www.gnbvt.edu
+137,Greenfield,01140000,Public School District,https://gpsk12.org/
+138,Groton-Dunstable,06730000,Public School District,https://www.gdrsd.org
+139,Hadley,01170000,Public School District,https://www.hadleyschools.org
+140,Halifax,01180000,Public School District,https://hes.slrsd.org
+141,Hamilton-Wenham,06750000,Public School District,https://www.hwschools.net
+142,Hampden Charter School of Science (District),04990000,Charter District,http://www.hampdencharter.org
+143,Hampden-Wilbraham,06800000,Public School District,https://www.hwrsd.org
+144,Hampshire,06830000,Public School District,https://www.hr-k12.org
+145,Hancock,01210000,Public School District,https://www.hancockschool.org
+146,Hanover,01220000,Public School District,http://hanoverschools.org
+147,Harvard,01250000,Public School District,https://www.psharvard.org
+148,Hatfield,01270000,Public School District,http://www.hatfieldps.net
+149,Haverhill,01280000,Public School District,http://www.haverhill-ps.org
+150,Hawlemont,06850000,Public School District,https://www.mtrsd.org/
+151,Hill View Montessori Charter Public (District),04550000,Charter District,https://www.hillviewmontessori.org
+152,Hilltown Cooperative Charter Public (District),04500000,Charter District,https://hilltowncharter.org
+153,Hingham,01310000,Public School District,https://www.hinghamschools.org
+154,Holbrook,01330000,Public School District,https://www.holbrook.k12.ma.us
+155,Holland,01350000,Public School District,https://www.tantasqua.org
+156,Holliston,01360000,Public School District,https://www.holliston.k12.ma.us
+157,Holyoke,01370000,Public School District,http://www.hps.holyoke.ma.us/
+158,Holyoke Community Charter (District),04530000,Charter District,https://www.hccs-sabis.net
+159,Hoosac Valley Regional,06030000,Public School District,https://www.hoosacvalley.org
+160,Hopedale,01380000,Public School District,https://www.hopedaleschools.org
+161,Hopkinton,01390000,Public School District,http://www.hopkinton.k12.ma.us
+162,Hudson,01410000,Public School District,https://www.hudson.k12.ma.us/
+163,Hull,01420000,Public School District,https://www.hullpublicschools.org/
+164,Innovation Academy Charter (District),04350000,Charter District,https://www.innovationcharter.org
+165,Institutional Schools,03700000,Public School District,https://www.doe.mass.edu/seis
+166,Ipswich,01440000,Public School District,http://www.ipsk12.net
+167,KIPP Academy Boston Charter School (District),04630000,Charter District,https://www.kippma.org
+168,KIPP Academy Lynn Charter (District),04290000,Charter District,https://www.kippma.org
+169,King Philip,06900000,Public School District,http://www.kingphilip.org
+170,Kingston,01450000,Public School District,https://slrsd.org
+171,Lawrence,01490000,Public School District,https://www.lawrence.k12.ma.us
+172,Lawrence Family Development Charter (District),04540000,Charter District,https://lfdcs.org
+173,Learning First Charter Public School (District),04860000,Charter District,https://learningfirstcharter.org
+174,Lee,01500000,Public School District,https://www.leepublicschools.net
+175,Leicester,01510000,Public School District,https://www.leicester.k12.ma.us
+176,Lenox,01520000,Public School District,https://www.lenoxps.org
+177,Leominster,01530000,Public School District,https://www.leominsterps.org
+178,Leverett,01540000,Public School District,https://www.union28.org
+179,Lexington,01550000,Public School District,https://www.lexingtonma.org/
+180,Libertas Academy Charter School (District),35140000,Charter District,https://libertasacademy.org
+181,Lincoln,01570000,Public School District,https://www.lincnet.org
+182,Lincoln-Sudbury,06950000,Public School District,https://www.lsrhs.net
+183,Littleton,01580000,Public School District,https://www.littletonps.org
+184,Longmeadow,01590000,Public School District,https://www.longmeadow.k12.ma.us
+185,Lowell,01600000,Public School District,http://www.lowell.k12.ma.us/
+186,Lowell Community Charter Public (District),04560000,Charter District,https://www.lccps.org
+187,Lowell Middlesex Academy Charter (District),04580000,Charter District,https://www.lmacs.org
+188,Ludlow,01610000,Public School District,https://ludlowps.org
+189,Lunenburg,01620000,Public School District,http://www.lunenburgschools.net
+190,Lynn,01630000,Public School District,https://www.lynnschools.org
+191,Lynnfield,01640000,Public School District,http://www.lynnfield.k12.ma.us
+192,Ma Academy for Math and Science,04680000,Public School District,https://www.massacademy.org
+193,Malden,01650000,Public School District,http://www.maldenps.org/
+194,Manchester Essex Regional,06980000,Public School District,https://www.mersd.org
+195,Mansfield,01670000,Public School District,https://www.mansfieldschools.com
+196,Map Academy Charter School (District),35170000,Charter District,https://themapacademy.org
+197,Marblehead,01680000,Public School District,https://www.marbleheadschools.org/
+198,Marblehead Community Charter Public (District),04640000,Charter District,https://marbleheadcharter.org
+199,Marion,01690000,Public School District,https://www.oldrochester.org
+200,Marlborough,01700000,Public School District,https://www.mps-edu.org
+201,Marshfield,01710000,Public School District,http://www.mpsd.org
+202,Martha's Vineyard,07000000,Public School District,https://www.mvrhs.org
+203,Martha's Vineyard Charter Public School (District),04660000,Charter District,https://www.mvpcs.org
+204,"Martin Luther King, Jr. Charter School of Excellence (District)",04920000,Charter District,https://www.mlkcs.org
+205,Masconomet,07050000,Public School District,https://www.masconomet.org
+206,Mashpee,01720000,Public School District,https://www.mpspk12.org
+207,Match Charter Public School (District),04690000,Charter District,https://www.matchschool.org
+208,Mattapoisett,01730000,Public School District,https://www.oldrochester.org
+209,Maynard,01740000,Public School District,https://www.maynard.k12.ma.us
+210,Medfield,01750000,Public School District,https://www.medfield.net
+211,Medford,01760000,Public School District,https://www.mps02155.org/
+212,Medway,01770000,Public School District,https://www.medwayschools.org
+213,Melrose,01780000,Public School District,https://www.melroseschools.com
+214,Mendon-Upton,07100000,Public School District,https://www.mursd.org
+215,Methuen,01810000,Public School District,https://www.methuen.k12.ma.us
+216,Middleborough,01820000,Public School District,https://www.middleboro.k12.ma.us
+217,Middleton,01840000,Public School District,https://www.tritownschoolunion.com
+218,Milford,01850000,Public School District,https://www.milfordpublicschools.com
+219,Millbury,01860000,Public School District,http://www.millburyschools.org
+220,Millis,01870000,Public School District,https://www.millisps.org
+221,Milton,01890000,Public School District,https://www.miltonps.org
+222,Minuteman Regional Vocational Technical,08300000,Public School District,https://www.minuteman.org
+223,Mohawk Trail,07170000,Public School District,https://www.mtrsd.org/
+224,Monomoy Regional School District,07120000,Public School District,https://www.monomoy.edu
+225,Monson,01910000,Public School District,https://www.monsonschools.com
+226,Montachusett Regional Vocational Technical,08320000,Public School District,http://www.montytech.net
+227,Mount Greylock,07150000,Public School District,https://www.mgrsd.org
+228,Mystic Valley Regional Charter (District),04700000,Charter District,https://www.mvrcs.com
+229,Nahant,01960000,Public School District,http://www.johnsonschool.org
+230,Nantucket,01970000,Public School District,https://www.npsk.org
+231,Narragansett,07200000,Public School District,https://www.nrsd.org
+232,Nashoba,07250000,Public School District,https://www.nrsd.net
+233,Nashoba Valley Regional Vocational Technical,08520000,Public School District,http://www.nashobatech.net
+234,Natick,01980000,Public School District,https://www.natickps.org
+235,Nauset,06600000,Public School District,http://nausetschools.org
+236,Needham,01990000,Public School District,http://www.needham.k12.ma.us
+237,Neighborhood House Charter (District),04440000,Charter District,https://www.thenhcs.org
+238,New Bedford,02010000,Public School District,http://www.newbedfordschools.org
+239,New Heights Charter School of Brockton (District),35130000,Charter District,https://www.newheightscharterschool.com
+240,New Salem-Wendell,07280000,Public School District,https://www.union28.org
+241,Newburyport,02040000,Public School District,https://www.newburyport.k12.ma.us
+242,Newton,02070000,Public School District,http://www.newton.k12.ma.us
+243,Norfolk,02080000,Public School District,https://www.norfolk.k12.ma.us
+244,Norfolk County Agricultural,09150000,Public School District,https://www.norfolkaggie.org
+245,North Adams,02090000,Public School District,https://www.napsk12.org
+246,North Andover,02110000,Public School District,https://www.northandoverpublicschools.com
+247,North Attleborough,02120000,Public School District,https://www.naschools.net
+248,North Brookfield,02150000,Public School District,https://www.nbschools.org
+249,North Middlesex,07350000,Public School District,http://www.nmrsd.org
+250,North Reading,02170000,Public School District,http://www.north-reading.k12.ma.us/Pages/index
+251,Northampton,02100000,Public School District,https://northamptonschools.org
+252,Northampton-Smith Vocational Agricultural,04060000,Public School District,https://www.smithtec.org
+253,Northboro-Southboro,07300000,Public School District,http://www.nsboro.k12.ma.us
+254,Northborough,02130000,Public School District,http://www.nsboro.k12.ma.us
+255,Northbridge,02140000,Public School District,https://www.nps.org
+256,Northeast Metropolitan Regional Vocational Technical,08530000,Public School District,https://northeastmetrotech.com
+257,Northern Berkshire Regional Vocational Technical,08510000,Public School District,https://www.mccanntech.org
+258,Norton,02180000,Public School District,https://www.norton.k12.ma.us
+259,Norwell,02190000,Public School District,https://www.norwellschools.org
+260,Norwood,02200000,Public School District,https://www.norwood.k12.ma.us
+261,Oak Bluffs,02210000,Public School District,http://www.mvyps.org/
+262,Old Colony Regional Vocational Technical,08550000,Public School District,https://www.oldcolony.us
+263,Old Rochester,07400000,Public School District,https://www.oldrochester.org/
+264,Old Sturbridge Academy Charter Public School (District),35150000,Charter District,http://www.osacps.org
+265,Orange,02230000,Public School District,http://www.orange-elem.org/
+266,Orleans,02240000,Public School District,http://nausetschools.org
+267,Oxford,02260000,Public School District,https://www.oxps.org
+268,Palmer,02270000,Public School District,https://www.palmerschools.org
+269,Pathfinder Regional Vocational Technical,08600000,Public School District,https://pathfindertech.org
+270,Peabody,02290000,Public School District,https://www.peabody.k12.ma.us
+271,Pelham,02300000,Public School District,https://arps.org
+272,Pembroke,02310000,Public School District,https://www.pembrokek12.org
+273,Pentucket,07450000,Public School District,https://www.prsd.org
+274,Petersham,02340000,Public School District,https://www.petershamcenterschool.org
+275,"Phoenix Academy Charter Public High School, Chelsea (District)",04930000,Charter District,https://www.phoenixcharteracademy.org
+276,"Phoenix Academy Public Charter High School, Lawrence (District)",35180000,Charter District,http://www.phoenixcharteracademy.org
+277,"Phoenix Academy Public Charter High School, Springfield (District)",35080000,Charter District,https://www.phoenixcharteracademy.org
+278,Pioneer Charter School of Science (District),04940000,Charter District,https://www.pioneercss.org
+279,Pioneer Charter School of Science II (District),35060000,Charter District,https://saugus.pioneercss.org
+280,Pioneer Valley,07500000,Public School District,https://www.pvrsdk12.org
+281,Pioneer Valley Chinese Immersion Charter (District),04970000,Charter District,https://www.pvcics.org
+282,Pioneer Valley Performing Arts Charter Public (District),04790000,Charter District,https://www.pvpa.org
+283,Pittsfield,02360000,Public School District,https://www.pittsfield.net
+284,Plainville,02380000,Public School District,http://www.plainville.k12.ma.us
+285,Plymouth,02390000,Public School District,https://www.plymouth.k12.ma.us
+286,Plympton,02400000,Public School District,https://des.slrsd.org
+287,Prospect Hill Academy Charter (District),04870000,Charter District,https://www.phacs.org
+288,Provincetown,02420000,Public School District,https://www.provincetownschools.com
+289,Quabbin,07530000,Public School District,https://www.qrsd.org
+290,Quaboag Regional,07780000,Public School District,https://www.quaboagrsd.org
+291,Quincy,02430000,Public School District,https://QuincyPublicSchools.com
+292,Ralph C Mahar,07550000,Public School District,https://www.rcmahar.org
+293,Randolph,02440000,Public School District,https://www.randolph.k12.ma.us
+294,Reading,02460000,Public School District,https://www.reading.k12.ma.us
+295,Revere,02480000,Public School District,https://www.reverek12.org
+296,Richmond,02490000,Public School District,http://www.richmondconsolidated.org
+297,Rising Tide Charter Public (District),04830000,Charter District,https://www.risingtide.org
+298,River Valley Charter (District),04820000,Charter District,https://www.rivervalleycharter.org
+299,Rochester,02500000,Public School District,https://www.oldrochester.org
+300,Rockland,02510000,Public School District,https://www.rocklandschools.org
+301,Rockport,02520000,Public School District,https://www.rpk12.org
+302,Rowe,02530000,Public School District,https://Roweschool.com
+303,Roxbury Preparatory Charter (District),04840000,Charter District,https://roxburyprep.uncommonschools.org/
+304,Salem,02580000,Public School District,http://salemk12.org
+305,Salem Academy Charter (District),04850000,Charter District,https://www.salemacademycs.org
+306,Sandwich,02610000,Public School District,http://www.sandwichk12.org/
+307,Saugus,02620000,Public School District,https://www.saugus.k12.ma.us
+308,Savoy,02630000,Public School District,https://Savoyelementary.com
+309,Scituate,02640000,Public School District,https://scit.org/
+310,Seekonk,02650000,Public School District,https://www.seekonkschools.org
+311,Sharon,02660000,Public School District,https://www.sharonschools.net
+312,Shawsheen Valley Regional Vocational Technical,08710000,Public School District,https://www.shawsheentech.org/
+313,Sherborn,02690000,Public School District,http://www.doversherborn.org
+314,Shrewsbury,02710000,Public School District,https://schools.shrewsburyma.gov/
+315,Shutesbury,02720000,Public School District,https://www.union28.org
+316,Silver Lake,07600000,Public School District,https://slrsd.org
+317,Sizer School: A North Central Charter Essential (District),04740000,Charter District,http://www.sizerschool.org
+318,Somerset,02730000,Public School District,https://www.somersetschools.org
+319,Somerset Berkley Regional School District,07630000,Public School District,https://somersetschools.org
+320,Somerville,02740000,Public School District,https://www.somerville.k12.ma.us
+321,South Hadley,02780000,Public School District,http://www.southhadleyschools.org
+322,South Middlesex Regional Vocational Technical,08290000,Public School District,https://www.KeefeTech.org
+323,South Shore Charter Public (District),04880000,Charter District,https://www.sscps.org
+324,South Shore Regional Vocational Technical,08730000,Public School District,https://southshore.tech
+325,Southampton,02750000,Public School District,http://www.hr-k12.org
+326,Southborough,02760000,Public School District,http://www.nsboro.k12.ma.us
+327,Southbridge,02770000,Public School District,http://www.southbridgepublic.org/
+328,Southeastern Regional Vocational Technical,08720000,Public School District,https://www.sersd.org
+329,Southern Berkshire,07650000,Public School District,https://www.sbrsd.org
+330,Southern Worcester County Regional Vocational School District,08760000,Public School District,https://www.baypath.net
+331,Southwick-Tolland-Granville Regional School District,07660000,Public School District,https://www.stgrsd.org/
+332,Spencer-E Brookfield,07670000,Public School District,https://www.sebrsd.org
+333,Springfield,02810000,Public School District,https://www.springfieldpublicschools.com
+334,Springfield International Charter (District),04410000,Charter District,https://www.sics.org
+335,Springfield Preparatory Charter School (District),35100000,Charter District,https://springfieldprep.org
+336,Stoneham,02840000,Public School District,https://www.stonehamschools.org
+337,Stoughton,02850000,Public School District,https://www.stoughtonschools.org
+338,Sturbridge,02870000,Public School District,https://www.tantasqua.org
+339,Sturgis Charter Public (District),04890000,Charter District,https://www.sturgischarterschool.com
+340,Sudbury,02880000,Public School District,http://www.sudbury.k12.ma.us
+341,Sunderland,02890000,Public School District,https://www.frsu38.org
+342,Sutton,02900000,Public School District,https://www.suttonschools.net
+343,Swampscott,02910000,Public School District,https://www.swampscottps.org
+344,Swansea,02920000,Public School District,https://www.swanseaschools.org
+345,TEC Connections Academy Commonwealth Virtual School District,,Public School District,https://www.connectionsacademy.com/massachusetts-virtual-school
+346,Tantasqua,07700000,Public School District,https://www.tantasqua.org
+347,Taunton,02930000,Public School District,http://www.tauntonschools.org
+348,Tewksbury,02950000,Public School District,https://www.tewksbury.k12.ma.us
+349,Tisbury,02960000,Public School District,http://www.mvyps.org/
+350,Topsfield,02980000,Public School District,https://www.tritownschoolunion.com
+351,Tri-County Regional Vocational Technical,08780000,Public School District,https://www.tri-county.us
+352,Triton,07730000,Public School District,http://www.tritonschools.org
+353,Truro,03000000,Public School District,https://www.truromass.org
+354,Tyngsborough,03010000,Public School District,https://www.tyngsboroughps.org
+355,UP Academy Charter School of Dorchester (District),35050000,Charter District,https://www.upacademydorchester.org
+356,Up-Island Regional,07740000,Public School District,http://www.mvyps.org/
+357,Upper Cape Cod Regional Vocational Technical,08790000,Public School District,https://www.uppercapetech.com
+358,Uxbridge,03040000,Public School District,https://www.uxbridgeschools.com
+359,Veritas Preparatory Charter School (District),04980000,Charter District,https://veritasprepma.org
+360,Wachusett,07750000,Public School District,https://www.wrsd.net
+361,Wakefield,03050000,Public School District,http://www.wakefieldpublicschools.org
+362,Wales,03060000,Public School District,https://www.tantasqua.org
+363,Walpole,03070000,Public School District,http://www.walpole.k12.ma.us/
+364,Waltham,03080000,Public School District,https://www.walthampublicschools.org/
+365,Ware,03090000,Public School District,https://www.wareps.org
+366,Wareham,03100000,Public School District,https://warehamps.schoolblocks.com
+367,Warwick,03120000,Public School District,https://warwick-k12.us/
+368,Watertown,03140000,Public School District,http://www.watertown.k12.ma.us
+369,Wayland,03150000,Public School District,http://www.wayland.k12.ma.us
+370,Webster,03160000,Public School District,https://www.webster-schools.org
+371,Wellesley,03170000,Public School District,https://wellesleyps.org
+372,Wellfleet,03180000,Public School District,http://nausetschools.org
+373,West Boylston,03220000,Public School District,https://www.wbschools.com/
+374,West Bridgewater,03230000,Public School District,https://www.wbridgewaterschools.org
+375,West Springfield,03320000,Public School District,https://www.wsps.org
+376,Westborough,03210000,Public School District,https://www.westboroughk12.org
+377,Westfield,03250000,Public School District,https://www.schoolsofwestfield.org
+378,Westford,03260000,Public School District,http://westfordk12.us/Pages/index
+379,Westhampton,03270000,Public School District,http://www.hr-k12.org
+380,Weston,03300000,Public School District,https://www.westonschools.org
+381,Westport,03310000,Public School District,https://www.westportschools.org
+382,Westwood,03350000,Public School District,https://www.westwood.k12.ma.us
+383,Weymouth,03360000,Public School District,http://www.weymouthschools.org/
+384,Whately,03370000,Public School District,https://www.frsu38.org
+385,Whitman-Hanson,07800000,Public School District,https://whrsd.org
+386,Whittier Regional Vocational Technical,08850000,Public School District,https://www.whittiertech.org
+387,Williamsburg,03400000,Public School District,http://www.hr-k12.org
+388,Wilmington,03420000,Public School District,https://www.wpsk12.com
+389,Winchendon,03430000,Public School District,https://www.winchendonk12.org
+390,Winchester,03440000,Public School District,https://www.winchesterps.org
+391,Winthrop,03460000,Public School District,https://www.winthrop.k12.ma.us
+392,Woburn,03470000,Public School District,https://www.woburnpublicschools.com
+393,Worcester,03480000,Public School District,https://www.worcesterschools.org
+394,Worcester Cultural Academy Charter Public School (District),35190000,Charter District,https://www.wcacps.org/
+395,Worthington,03490000,Public School District,https://www.rhconwell.org/
+396,Wrentham,03500000,Public School District,https://wrentham.k12.ma.us

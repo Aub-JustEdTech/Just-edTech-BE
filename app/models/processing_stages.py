@@ -26,6 +26,11 @@ class ProcessingStage(str, enum.Enum):
 
     PENDING = "pending"
     DOWNLOADING = "downloading"
+    # Media only, and it runs BEFORE downloading: the transcript envelope the
+    # rest of the pipeline downloads does not exist until this stage produces
+    # it. It is also the slowest stage by far (minutes), which is why it is
+    # tracked rather than folded into downloading.
+    TRANSCRIBING = "transcribing"
     EXTRACTING = "extracting"
     SUMMARIZING = "summarizing"
     CHUNKING = "chunking"
@@ -49,6 +54,7 @@ class StageStatus(str, enum.Enum):
 _processing_stage_enum = PG_ENUM(
     "pending",
     "downloading",
+    "transcribing",
     "extracting",
     "summarizing",
     "chunking",

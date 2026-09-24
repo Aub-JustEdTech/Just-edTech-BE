@@ -4,7 +4,7 @@ RAG (Retrieval-Augmented Generation) endpoints for querying documents.
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.conversations import conversation
@@ -13,7 +13,7 @@ from app.crud.messages import message
 from app.models.chat_consumers import ChatConsumer
 from app.schemas.rag import DocumentChunk, RAGQuery, RAGResponse
 from app.schemas.users import User
-from app.utils.dependencies import get_db, require_user_or_chat_consumer
+from app.utils.dependencies import get_db, require_user_or_chat_consumer, resolve_chat_tenant_id
 from app.utils.response import success_response
 from app.schemas.common import APIResponse
 from app.services.chatbot_config_service import chatbot_config_service
@@ -24,6 +24,9 @@ router = APIRouter()
 @router.post("/query", response_model=APIResponse[RAGResponse])
 async def rag_query(
     rag_query: RAGQuery,
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User | ChatConsumer = require_user_or_chat_consumer,
 ):
@@ -31,13 +34,12 @@ async def rag_query(
     start_time = time.time()
 
     try:
-        # Extract tenant_id and user/consumer info based on authentication type
+        tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
+        # Extract user/consumer info based on authentication type
         if isinstance(current_user_or_consumer, ChatConsumer):
-            tenant_id = current_user_or_consumer.tenant_id
             user_id = None
             chat_consumer_id = current_user_or_consumer.id
         else:  # User
-            tenant_id = current_user_or_consumer.tenant_id
             user_id = current_user_or_consumer.id
             chat_consumer_id = None
 
@@ -200,15 +202,14 @@ async def rag_query(
 
 @router.get("/documents/status")
 async def get_document_status(
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
     db: AsyncSession = Depends(get_db),
     current_user_or_consumer: User | ChatConsumer = require_user_or_chat_consumer,
 ):
     """Get processing status of tenant's documents"""
-    # Extract tenant_id based on authentication type
-    if isinstance(current_user_or_consumer, ChatConsumer):
-        tenant_id = current_user_or_consumer.tenant_id
-    else:  # User
-        tenant_id = current_user_or_consumer.tenant_id
+    tenant_id = await resolve_chat_tenant_id(current_user_or_consumer, tenant_id, db)
 
     # Get all documents for the tenant
     tenant_documents = await document.get_by_tenant(db, tenant_id=tenant_id)
