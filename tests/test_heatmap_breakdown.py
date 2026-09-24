@@ -55,6 +55,7 @@ class FakeVectorStore:
         must_match=None,
         must_match_any=None,
         nested_match_any=None,
+        **_kwargs,
     ) -> int:
         district = (must_match or {}).get("district_name", "")
         requested = tuple((nested_match_any or {}).get("topic_tags", ()))
@@ -98,7 +99,11 @@ def stub_service(monkeypatch):
         async def _list_schools(db, tenant_id, state):
             return schools
 
+        async def _count_confirmed(db, tenant_id, state):
+            return len(schools)
+
         monkeypatch.setattr(svc, "_list_schools", _list_schools)
+        monkeypatch.setattr(svc, "_count_confirmed_source_districts", _count_confirmed)
         return svc, store
 
     return _build

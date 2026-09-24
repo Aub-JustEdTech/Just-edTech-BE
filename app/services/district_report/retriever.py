@@ -15,15 +15,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 
 from app.db.connector import AsyncSessionLocal
 from app.models.chatbot_configs import ChatbotConfig
-from app.models.school import School
+from app.models.school import School, SchoolScrapeUrl
 from app.services.agentic_rag.tools import (
     count_districts_by_topic,
     get_district_citations,
-    list_districts,
     search_knowledge_base,
 )
 from app.services.district_report.queries import (
@@ -105,14 +104,18 @@ async def resolve_focus_district(
 
 
 def _config(tenant_id: int, chatbot_config_id: int) -> dict[str, Any]:
-    return {"configurable": {"tenant_id": tenant_id, "chatbot_config_id": chatbot_config_id}}
+    return {
+        "configurable": {"tenant_id": tenant_id, "chatbot_config_id": chatbot_config_id}
+    }
 
 
 async def _safe_invoke(tool, args: dict[str, Any], config: dict[str, Any]) -> Any:
     """Invoke a tool and normalize errors into an empty result."""
     try:
         return await tool.ainvoke(args, config=config)
-    except Exception as exc:  # noqa: BLE001 — surface as a logged error, never crash the report
+    except (
+        Exception
+    ) as exc:  # noqa: BLE001 — surface as a logged error, never crash the report
         logger.error("Retrieval tool failed: %s", exc, exc_info=True)
         return []
 
@@ -171,7 +174,9 @@ async def _run_topic_count_retrieval(
             if org is None:
                 continue
             existing = merged.get(org)
-            if existing is None or row.get("chunk_count", 0) > existing.get("chunk_count", 0):
+            if existing is None or row.get("chunk_count", 0) > existing.get(
+                "chunk_count", 0
+            ):
                 merged[org] = row
 
     ranked = sorted(
@@ -379,7 +384,9 @@ async def gather_citations(
         if org_code is None:
             continue
         pass_idx = row.get("retrieval_pass", 0)
-        filters = filter_sets[pass_idx] if pass_idx < len(filter_sets) else filter_sets[0]
+        filters = (
+            filter_sets[pass_idx] if pass_idx < len(filter_sets) else filter_sets[0]
+        )
         resp = await fetch_citations_for_district(
             org_code=org_code,
             filters=filters,
@@ -402,6 +409,12 @@ async def fetch_corpus_summary(
 
     When `focus_district` is set (CA single-district reports), the
     summary is that one district only — not the full state roster.
+
+    For multi-district reports, ``district_count`` is the Confirmed Source
+    total: active schools (public + charter) that have at least one active
+    ``school_scrape_urls`` row. That matches the Source URL Manager badge
+    and is what reports mean by "active districts" — not every school row
+    on file.
     """
     if focus_district is not None:
         return {
@@ -417,10 +430,36 @@ async def fetch_corpus_summary(
             "focus_district": focus_district,
         }
 
-    config = _config(tenant_id, chatbot_config_id)
-    districts = await _safe_invoke(list_districts, {"state": state}, config)
-    if not isinstance(districts, list):
-        districts = []
+    # chatbot_config_id kept for call-site parity with other retriever helpers.
+    _ = chatbot_config_id
+    has_confirmed_source = exists(
+        select(1).where(
+            SchoolScrapeUrl.school_id == School.id,
+            SchoolScrapeUrl.is_active.is_(True),
+        )
+    )
+    async with AsyncSessionLocal() as db:
+        stmt = (
+            select(School)
+            .where(
+                School.tenant_id == tenant_id,
+                School.is_active.is_(True),
+                School.state == state,
+                has_confirmed_source,
+            )
+            .order_by(School.name)
+        )
+        schools = list((await db.execute(stmt)).scalars().all())
+
+    districts = [
+        {
+            "org_code": s.org_code,
+            "district_name": s.name,
+            "state": s.state or state,
+            "district_type": s.district_type,
+        }
+        for s in schools
+    ]
     return {
         "district_count": len(districts),
         "state": state,
