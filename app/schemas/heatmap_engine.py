@@ -63,6 +63,12 @@ class DistrictCountResponse(BaseModel):
     timeframe: TimeframePreset
     categories: list[TopicCategory]
     total_districts: int
+    # Confirmed Source total (public + charter): active schools with at
+    # least one active scrape URL when available; otherwise districts
+    # with chunk_count > 0 for the current filters. Powers the
+    # legend/report "N active districts" badge — not the same as
+    # `total_districts` (all school rows returned for map polygons).
+    active_districts: int = 0
     total_chunks: int
     districts: list[DistrictCountItem]
     # Echoed back only when the request used the custom date-range filter
