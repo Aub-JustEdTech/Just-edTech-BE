@@ -25,9 +25,9 @@ from app.schemas.schools import (
     STATUS_GROUP_LABELS,
     STATUS_GROUP_RAW_VALUES,
     DatePresetOption,
+    SchoolCreate,
     SchoolCandidateReviewListOut,
     SchoolCandidateReviewOut,
-    SchoolCreate,
     SchoolListOut,
     SchoolOut,
     SchoolScrapeUrlOut,
@@ -61,7 +61,9 @@ SCRAPED_MEDIA_S3_URL_EXPIRATION_SECONDS = 3600
 # ---------------------------------------------------------------------------
 
 
-async def _school_or_404(db: AsyncSession, tenant_id: int, school_id: int) -> School:
+async def _school_or_404(
+    db: AsyncSession, tenant_id: int, school_id: int
+) -> School:
     school = await crud.get_school(db, tenant_id, school_id)
     if not school:
         raise HTTPException(
@@ -129,9 +131,7 @@ async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
         # application/octet-stream, which browsers force-download regardless
         # of the inline Content-Disposition set below.
         content_type = (
-            MIME_BY_EXTENSION.get(
-                (item.file_extension or "").lower(), "application/octet-stream"
-            )
+            MIME_BY_EXTENSION.get((item.file_extension or "").lower(), "application/octet-stream")
             if is_raw_file
             else MIME_BY_EXTENSION[".transcript"]
         )
@@ -146,7 +146,7 @@ async def _attach_presigned_s3_urls(media: list[ScrapedMediaOut]) -> None:
         *(_presign(item, key, is_raw_file) for item, key, is_raw_file in keyed),
         return_exceptions=True,
     )
-    for (item, key, _is_raw_file), url in zip(keyed, urls, strict=False):
+    for (item, key, _is_raw_file), url in zip(keyed, urls):
         if isinstance(url, BaseException):
             logger.warning(
                 "Failed to presign s3_url for scraped media %s (key=%s): %s",
@@ -174,8 +174,7 @@ async def list_schools(
     search: str | None = Query(None, description="name or org_code substring"),
     district_type: str | None = Query(None),
     is_active: bool | None = Query(None),
-    crawl_failed: bool
-    | None = Query(
+    crawl_failed: bool | None = Query(
         None,
         description=(
             "Narrow to schools whose last scrape attempt failed (true) or "
@@ -183,35 +182,9 @@ async def list_schools(
             "URL manager without a separate table."
         ),
     ),
-    status_filter: ScrapedMediaStatusGroup
-    | None = Query(
-        None,
-        alias="status",
-        description=(
-            "Knowledge Base status chip. Filters the district list to schools "
-            "with matching scraped_media (or zero media for not_discovered), "
-            "sorted by newest matching activity when applicable."
-        ),
-    ),
-    date_from: date
-    | None = Query(
-        None,
-        description="Inclusive lower bound on scraped_media.scraped_at (date).",
-    ),
-    date_to: date
-    | None = Query(
-        None,
-        description="Inclusive upper bound on scraped_media.scraped_at (date).",
-    ),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_effective_tenant_id),
 ) -> SchoolListOut:
-    not_discovered = status_filter == "not_discovered"
-    status_values = (
-        None
-        if not_discovered or status_filter is None
-        else STATUS_GROUP_RAW_VALUES.get(status_filter)
-    )
     schools, total = await crud.list_schools(
         db,
         tenant_id,
@@ -221,10 +194,6 @@ async def list_schools(
         district_type=district_type,
         is_active=is_active,
         crawl_failed=crawl_failed,
-        status_values=status_values,
-        not_discovered=not_discovered,
-        date_from=date_from,
-        date_to=date_to,
     )
     items = [await _enrich_school(db, school) for school in schools]
     return SchoolListOut(items=items, total=total, skip=skip, limit=limit)
@@ -241,8 +210,7 @@ async def list_schools(
     summary="List schools with offline URL-discovery candidates",
 )
 async def list_scrape_url_candidates(
-    confirmation_status: str
-    | None = Query(
+    confirmation_status: str | None = Query(
         None,
         description="Filter by confirm state: `added` (has confirmed URL) or `not_added`.",
     ),
@@ -266,18 +234,15 @@ async def list_scrape_url_candidates(
             detail="confirmation_status must be 'added' or 'not_added'",
         )
     try:
-        (
-            items,
-            total,
-            added_count,
-            not_added_count,
-        ) = await confirmation_service.list_candidate_reviews(
-            db,
-            tenant_id,
-            confirmation_status=confirmation_status,  # type: ignore[arg-type]
-            skip=skip,
-            limit=limit,
-            max_candidates=max_candidates,
+        items, total, added_count, not_added_count = (
+            await confirmation_service.list_candidate_reviews(
+                db,
+                tenant_id,
+                confirmation_status=confirmation_status,  # type: ignore[arg-type]
+                skip=skip,
+                limit=limit,
+                max_candidates=max_candidates,
+            )
         )
     except FileNotFoundError as exc:
         raise HTTPException(

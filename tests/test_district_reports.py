@@ -24,8 +24,8 @@ from app.services.district_report.queries import (
     CA_TENANT_ID,
     MA_TENANT_ID,
     get_query_spec,
-    list_queries_for_tenant,
     list_query_ids,
+    list_queries_for_tenant,
     list_tenant_ids,
     resolve_filters,
 )
@@ -198,9 +198,7 @@ def test_ma_queries_use_topic_count_retrieval():
     from app.services.district_report.queries import RETRIEVAL_TOPIC_COUNTS
 
     for qid in list_query_ids(MA_TENANT_ID):
-        assert (
-            get_query_spec(qid, MA_TENANT_ID).retrieval_mode == RETRIEVAL_TOPIC_COUNTS
-        )
+        assert get_query_spec(qid, MA_TENANT_ID).retrieval_mode == RETRIEVAL_TOPIC_COUNTS
 
 
 def test_geography_to_state():
@@ -619,86 +617,3 @@ def test_district_reports_post_rejects_ma_query_on_ca_tenant():
         assert "Q7" in str(detail)
     finally:
         app.dependency_overrides.clear()
-
-
-# ---------------------------------------------------------------------------
-# 5. Corpus summary = Confirmed Source (active districts)
-# ---------------------------------------------------------------------------
-
-
-def test_fallback_report_appends_active_districts():
-    from app.services.district_report.writer import _fallback_report
-
-    text = _fallback_report(
-        {
-            "report_id": "DR-4-Q1-test",
-            "compiled_date": "2026-09-24",
-            "research_goal": "goal",
-            "question": "q",
-            "corpus": {"district_count": 241, "state": "MA"},
-            "primary_evidence": [],
-        }
-    )
-    assert "241 MA active districts" in text
-
-
-async def test_fetch_corpus_summary_counts_confirmed_sources_only(monkeypatch):
-    """Multi-district corpus count excludes schools without scrape URLs."""
-    from types import SimpleNamespace
-    from unittest.mock import AsyncMock, MagicMock
-
-    from app.services.district_report import retriever as retriever_mod
-
-    confirmed = [
-        SimpleNamespace(
-            org_code="A",
-            name="Alpha Public",
-            state="MA",
-            district_type="Public School District",
-        ),
-        SimpleNamespace(
-            org_code="B",
-            name="Beta Charter",
-            state="MA",
-            district_type="Charter District",
-        ),
-    ]
-
-    result_mock = MagicMock()
-    result_mock.scalars.return_value.all.return_value = confirmed
-
-    db = AsyncMock()
-    db.execute = AsyncMock(return_value=result_mock)
-    db.__aenter__ = AsyncMock(return_value=db)
-    db.__aexit__ = AsyncMock(return_value=None)
-
-    monkeypatch.setattr(retriever_mod, "AsyncSessionLocal", lambda: db)
-
-    summary = await retriever_mod.fetch_corpus_summary(
-        tenant_id=MA_TENANT_ID,
-        chatbot_config_id=1,
-        state="MA",
-    )
-    assert summary["district_count"] == 2
-    assert {d["org_code"] for d in summary["districts"]} == {"A", "B"}
-    # Query must require an active scrape URL (Confirmed Source), not all schools.
-    compiled = str(db.execute.await_args.args[0])
-    assert "school_scrape_urls" in compiled
-
-
-async def test_fetch_corpus_summary_focus_district_stays_one():
-    from app.services.district_report.retriever import fetch_corpus_summary
-
-    focus = {
-        "org_code": "SVUSD",
-        "district_name": "Saddleback Valley Unified School District",
-        "state": "CA",
-    }
-    summary = await fetch_corpus_summary(
-        tenant_id=CA_TENANT_ID,
-        chatbot_config_id=1,
-        state="CA",
-        focus_district=focus,
-    )
-    assert summary["district_count"] == 1
-    assert summary["focus_district"] == focus

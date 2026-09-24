@@ -9,14 +9,13 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
-from sqlalchemy import and_, asc, desc, func, or_, select
+from sqlalchemy import asc, desc, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy.sql import ColumnElement
 
 from app.models.school import School, SchoolScrapeUrl, ScrapedMedia
 from app.schemas.schools import (
@@ -64,27 +63,6 @@ def content_hash(data: bytes) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _scraped_media_match_clause(
-    tenant_id: int,
-    *,
-    status_values: list[str] | None = None,
-    date_from: date | None = None,
-    date_to: date | None = None,
-) -> ColumnElement[bool]:
-    """Predicates correlating ScrapedMedia rows to School for list filters."""
-    clauses: list[ColumnElement[bool]] = [
-        ScrapedMedia.school_id == School.id,
-        ScrapedMedia.tenant_id == tenant_id,
-    ]
-    if status_values:
-        clauses.append(ScrapedMedia.status.in_(status_values))
-    if date_from is not None:
-        clauses.append(func.date(ScrapedMedia.scraped_at) >= date_from)
-    if date_to is not None:
-        clauses.append(func.date(ScrapedMedia.scraped_at) <= date_to)
-    return and_(*clauses)
-
-
 async def list_schools(
     db: AsyncSession,
     tenant_id: int,
@@ -95,10 +73,6 @@ async def list_schools(
     district_type: str | None = None,
     is_active: bool | None = None,
     crawl_failed: bool | None = None,
-    status_values: list[str] | None = None,
-    not_discovered: bool = False,
-    date_from: date | None = None,
-    date_to: date | None = None,
 ) -> tuple[list[School], int]:
     """Return (schools, total_count) for a tenant with optional filters.
 
@@ -109,19 +83,15 @@ async def list_schools(
     - False -> only schools whose active scrape URLs all succeeded on the
                last attempt (last_http_status == 200). Schools with no
                attempted URLs are excluded from both True and False.
-
-    ``not_discovered`` / ``status_values`` / ``date_from`` / ``date_to`` drive
-    the Knowledge Base district sidebar: filter to schools whose scraped_media
-    match the selected status group + timeline, ordered by newest matching
-    ``scraped_at`` first. ``not_discovered`` means zero scraped_media rows
-    (date range ignored). With none of these set, order stays A–Z by name.
     """
     stmt = select(School).where(School.tenant_id == tenant_id)
     count_stmt = select(func.count(School.id)).where(School.tenant_id == tenant_id)
 
     if search:
         like = f"%{search}%"
-        stmt = stmt.where((School.name.ilike(like)) | (School.org_code.ilike(like)))
+        stmt = stmt.where(
+            (School.name.ilike(like)) | (School.org_code.ilike(like))
+        )
         count_stmt = count_stmt.where(
             (School.name.ilike(like)) | (School.org_code.ilike(like))
         )
@@ -165,42 +135,10 @@ async def list_schools(
             stmt = stmt.where(ok_url_exists).where(no_failed_url)
             count_stmt = count_stmt.where(ok_url_exists).where(no_failed_url)
 
-    order_by_clauses: list = [School.name.asc()]
-
-    if not_discovered:
-        # Absence of any scraped_media row — date range does not apply.
-        no_media = ~(
-            select(ScrapedMedia.id)
-            .where(
-                ScrapedMedia.school_id == School.id,
-                ScrapedMedia.tenant_id == tenant_id,
-            )
-            .exists()
-        )
-        stmt = stmt.where(no_media)
-        count_stmt = count_stmt.where(no_media)
-    elif status_values is not None or date_from is not None or date_to is not None:
-        match = _scraped_media_match_clause(
-            tenant_id,
-            status_values=status_values,
-            date_from=date_from,
-            date_to=date_to,
-        )
-        matching_exists = select(ScrapedMedia.id).where(match).exists()
-        stmt = stmt.where(matching_exists)
-        count_stmt = count_stmt.where(matching_exists)
-        latest_activity = (
-            select(func.max(ScrapedMedia.scraped_at))
-            .where(match)
-            .correlate(School)
-            .scalar_subquery()
-        )
-        order_by_clauses = [latest_activity.desc().nulls_last(), School.name.asc()]
-
     total = (await db.execute(count_stmt)).scalar_one()
     stmt = (
         stmt.options(selectinload(School.scrape_urls))
-        .order_by(*order_by_clauses)
+        .order_by(School.name.asc())
         .offset(skip)
         .limit(limit)
     )
@@ -208,7 +146,9 @@ async def list_schools(
     return items, total
 
 
-async def get_school(db: AsyncSession, tenant_id: int, school_id: int) -> School | None:
+async def get_school(
+    db: AsyncSession, tenant_id: int, school_id: int
+) -> School | None:
     stmt = (
         select(School)
         .options(selectinload(School.scrape_urls))
@@ -269,7 +209,9 @@ async def list_active_scrape_urls(
     return list((await db.execute(stmt)).scalars().all())
 
 
-async def create_school(db: AsyncSession, tenant_id: int, data: SchoolCreate) -> School:
+async def create_school(
+    db: AsyncSession, tenant_id: int, data: SchoolCreate
+) -> School:
     school = School(
         tenant_id=data.tenant_id or tenant_id,
         org_code=data.org_code,
@@ -285,7 +227,9 @@ async def create_school(db: AsyncSession, tenant_id: int, data: SchoolCreate) ->
     return school
 
 
-async def update_school(db: AsyncSession, school: School, data: SchoolUpdate) -> School:
+async def update_school(
+    db: AsyncSession, school: School, data: SchoolUpdate
+) -> School:
     for field in ("org_code", "name", "district_type", "website", "is_active", "notes"):
         value = getattr(data, field, None)
         if value is not None:
@@ -319,7 +263,7 @@ async def record_scrape_result(
     if row is None:
         raise ValueError(f"SchoolScrapeUrl {scrape_url.id} not found")
 
-    when = datetime.now(UTC)
+    when = datetime.now(timezone.utc)
     row.last_scraped_at = when
     row.last_http_status = http_status
     row.last_crawl_page_count = page_count
@@ -357,7 +301,7 @@ async def add_scrape_url(
         existing.crawl_depth = data.crawl_depth
         existing.use_playwright = data.use_playwright
         existing.confirmed_by_user_id = user_id
-        existing.confirmed_at = datetime.now(UTC)
+        existing.confirmed_at = datetime.now(timezone.utc)
         existing.is_active = True
         await db.commit()
         await db.refresh(existing)
@@ -369,7 +313,7 @@ async def add_scrape_url(
         crawl_depth=data.crawl_depth,
         use_playwright=data.use_playwright,
         confirmed_by_user_id=user_id,
-        confirmed_at=datetime.now(UTC),
+        confirmed_at=datetime.now(timezone.utc),
         is_active=True,
     )
     db.add(url)
@@ -402,7 +346,9 @@ async def update_scrape_url(
         await db.commit()
     except IntegrityError as exc:
         await db.rollback()
-        raise ValueError(f"URL {data.url!r} is already listed for this school") from exc
+        raise ValueError(
+            f"URL {data.url!r} is already listed for this school"
+        ) from exc
     await db.refresh(scrape_url)
     return scrape_url
 
@@ -618,7 +564,9 @@ async def list_scraped_media(
     return items, total
 
 
-async def count_scraped_media(db: AsyncSession, school_id: int) -> int:
+async def count_scraped_media(
+    db: AsyncSession, school_id: int
+) -> int:
     stmt = select(func.count(ScrapedMedia.id)).where(
         ScrapedMedia.school_id == school_id
     )

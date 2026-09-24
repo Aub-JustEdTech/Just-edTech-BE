@@ -67,10 +67,9 @@ headings (##):
 A 1-2 sentence stakeholder summary of the corpus. For a single focus \
 district, name that district explicitly (e.g. "Agendas and minutes \
 from Saddleback Valley Unified School District"). For multi-district \
-reports, use evidence.corpus.district_count (Confirmed Source / active \
-districts, public + charter combined) and end with "active districts" \
-(e.g. "Agendas, minutes, and policies from N Massachusetts active \
-districts"). Do NOT mention counts of records, chunks, or vectors.
+reports, summarize the geography (e.g. "Agendas, minutes, and policies \
+from N Massachusetts school districts"). Do NOT mention counts of \
+records, chunks, or vectors.
 
 ## Research goal
 One sentence restating the research goal.
@@ -283,7 +282,7 @@ def _fallback_report(evidence: dict[str, Any]) -> str:
     lines.append(
         "## Documents analyzed\n"
         f"School board documents from {evidence.get('corpus', {}).get('district_count', 0)} "
-        f"{evidence.get('corpus', {}).get('state', 'MA')} active districts."
+        f"{evidence.get('corpus', {}).get('state', 'MA')} districts."
     )
     lines.append(f"## Research goal\n{evidence.get('research_goal', '')}")
     lines.append(f"## Query\n{evidence.get('question', '')}")
@@ -333,7 +332,5 @@ def scrub_banned_terms(text: str) -> str:
         pattern = re.compile(rf"\b{re.escape(term)}\b", re.IGNORECASE)
         text = pattern.sub(repl, text)
     # Soft "count"/"counts" — only strip the bare words, keep "document".
-    text = re.compile(r"\bcount(s?)\b", re.IGNORECASE).sub(
-        r"number of documents\1", text
-    )
+    text = re.compile(r"\bcount(s?)\b", re.IGNORECASE).sub(r"number of documents\1", text)
     return text

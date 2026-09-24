@@ -15,13 +15,13 @@ import math
 from datetime import date
 from typing import Any
 
-from sqlalchemy import exists, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.connector import AsyncSessionLocal
 from app.models.documents import Document
-from app.models.school import School, SchoolScrapeUrl
+from app.models.school import School
 from app.schemas.heatmap_engine import (
     CitationSort,
     DistrictCitationsEngineResponse,
@@ -152,9 +152,6 @@ class HeatmapEngineService:
 
         async with AsyncSessionLocal() as db:
             schools = await self._list_schools(db, tenant_id, state)
-            confirmed_source_count = await self._count_confirmed_source_districts(
-                db, tenant_id, state
-            )
 
         items: list[DistrictCountItem] = []
         total_chunks = 0
@@ -201,20 +198,10 @@ class HeatmapEngineService:
             )
         )
 
-        # "Active districts" = public + charter with data for this filter set.
-        # Prefer Confirmed Source (Source URL Manager) when the tenant has
-        # scrape URLs seeded; otherwise fall back to districts with
-        # chunk_count > 0 so local/partial tenants are not stuck at 0.
-        with_data = sum(1 for item in items if item.chunk_count > 0)
-        active_districts = (
-            confirmed_source_count if confirmed_source_count > 0 else with_data
-        )
-
         return DistrictCountResponse(
             timeframe=timeframe,
             categories=categories,
             total_districts=len(items),
-            active_districts=active_districts,
             total_chunks=total_chunks,
             districts=items,
             start_date=start_date.isoformat() if start_date else None,
@@ -432,33 +419,6 @@ class HeatmapEngineService:
         stmt = stmt.order_by(School.name)
         result = await db.execute(stmt)
         return list(result.scalars().all())
-
-    async def _count_confirmed_source_districts(
-        self, db: AsyncSession, tenant_id: int, state: str
-    ) -> int:
-        """Count active schools (public + charter) with a confirmed scrape URL.
-
-        Matches the Source URL Manager "Confirmed source" badge — the
-        heatmap legend/report "active districts" figure.
-        """
-        has_confirmed_source = exists(
-            select(1).where(
-                SchoolScrapeUrl.school_id == School.id,
-                SchoolScrapeUrl.is_active.is_(True),
-            )
-        )
-        stmt = (
-            select(func.count())
-            .select_from(School)
-            .where(
-                School.tenant_id == tenant_id,
-                School.is_active.is_(True),
-                has_confirmed_source,
-            )
-        )
-        if state:
-            stmt = stmt.where(School.state == state)
-        return int((await db.execute(stmt)).scalar_one() or 0)
 
     async def _find_school_by_org_code(
         self, db: AsyncSession, tenant_id: int, org_code: str
