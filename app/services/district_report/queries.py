@@ -134,7 +134,7 @@ VOTE_ACTION_STAGES = (
 def _ma_q1_filters(_today: date) -> dict[str, Any]:
     return {
         "topic_categories": ["sexed"],
-        "meeting_doc_types": ["Agenda"],
+        "meeting_doc_types": ["Agenda", "Minutes"],
         "meeting_date_from": "2025-09-01",
     }
 
@@ -142,7 +142,7 @@ def _ma_q1_filters(_today: date) -> dict[str, Any]:
 def _ma_q2_filters_a(today: date) -> dict[str, Any]:
     return {
         "topic_categories": ["sexed"],
-        "meeting_doc_types": ["Agenda"],
+        "meeting_doc_types": ["Agenda", "Minutes"],
         "action_stages": list(CHANGE_ACTION_STAGES),
         "meeting_date_from": _last_12_months(today),
     }
@@ -151,7 +151,7 @@ def _ma_q2_filters_a(today: date) -> dict[str, Any]:
 def _ma_q2_filters_b(today: date) -> dict[str, Any]:
     return {
         "action_types": ["instruction_reduced", "instruction_eliminated"],
-        "meeting_doc_types": ["Agenda"],
+        "meeting_doc_types": ["Agenda", "Minutes"],
         "meeting_date_from": _last_12_months(today),
     }
 

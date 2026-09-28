@@ -52,6 +52,56 @@ FIELD_MEETING_DATE = "meeting_date"  # ISO date, DATETIME-indexed
 FIELD_SCHOOL_YEAR = "school_year"  # e.g. "2025-2026"
 FIELD_QUARTER_MONTH = "quarter_month"  # e.g. "2026-03"
 FIELD_SPEAKERS = "speakers"  # array of {name, role}
+FIELD_KEYWORD_FLAGS = "keyword_flags"  # lexical A4 safety-net array
+
+
+# Classifier / prompt drift: the same concept is stored under several
+# literal subtopic strings across the corpus. Expanding aliases here
+# means the agent (and sample scripts) can pass any one spelling and
+# still match chunks tagged with a sibling form.
+_SUBTOPIC_ALIAS_GROUPS: tuple[frozenset[str], ...] = (
+    frozenset(
+        {
+            "curriculum.chpe_framework",
+            "curriculum_chpe_framework",
+            "chpe_framework",
+        }
+    ),
+    frozenset({"curriculum.3rs", "curriculum_3rs"}),
+    frozenset({"curriculum.get_real", "curriculum_get_real"}),
+    frozenset({"change.expansion", "change_expansion"}),
+    frozenset({"change.reduction", "change_reduction"}),
+    frozenset({"change.under_review", "change_under_review"}),
+    # Taxonomy drift noted in golden_dataset_sample_answers.md
+    frozenset({"gender_identity_discussion", "gender_identity"}),
+)
+
+
+def expand_topic_subtopics(subtopics: list[str] | None) -> list[str] | None:
+    """Expand known alias spellings so one label matches corpus variants.
+
+    Preserves caller order for the first occurrence of each alias group,
+    then appends the remaining aliases. Returns ``None`` when input is
+    empty/None so callers can treat "no subtopic filter" uniformly.
+    """
+    if not subtopics:
+        return None
+    expanded: list[str] = []
+    seen: set[str] = set()
+    for raw in subtopics:
+        label = (raw or "").strip()
+        if not label or label in seen:
+            continue
+        group = next((g for g in _SUBTOPIC_ALIAS_GROUPS if label in g), None)
+        members = group if group is not None else frozenset({label})
+        # Prefer the caller's spelling first, then the rest sorted for
+        # stable Qdrant filters across runs.
+        ordered = [label, *sorted(m for m in members if m != label)]
+        for member in ordered:
+            if member not in seen:
+                seen.add(member)
+                expanded.append(member)
+    return expanded or None
 
 
 class FilterFragments(TypedDict, total=False):
@@ -155,6 +205,7 @@ def build_filter_fragments(
     speaker_roles: list[str] | None = None,
     school_years: list[str] | None = None,
     quarter_months: list[str] | None = None,
+    keyword_flags: list[str] | None = None,
     timeframe: TimeframePreset | str | None = None,
     meeting_date_from: str | date | datetime | None = None,
     meeting_date_to: str | date | datetime | None = None,
@@ -185,6 +236,9 @@ def build_filter_fragments(
       `speakers` is `[{name, role}]`). Both can be active at once and
       are ANDed within the same NestedCondition so the match must
       occur inside the same speaker object.
+    - `keyword_flags` (lexical A4 array, e.g. `["CHPE Framework"]`) →
+      `must_match_any` on `keyword_flags`. Use as a classifier safety
+      net when taxonomy tags are sparse or drifted.
     - `school_years` / `quarter_months` → `must_match_any`.
     - `timeframe` (preset) or `meeting_date_from` / `meeting_date_to`
       (explicit ISO range) → `must_match_any` on `school_year` /
@@ -208,8 +262,9 @@ def build_filter_fragments(
         must_match_any[FIELD_TOPICS] = list(topics)
     if topic_categories:
         nested_match_any[FIELD_TOPIC_TAGS] = list(topic_categories)
-    if topic_subtopics:
-        nested_subtopic_match_any[FIELD_TOPIC_TAGS] = list(topic_subtopics)
+    expanded_subtopics = expand_topic_subtopics(topic_subtopics)
+    if expanded_subtopics:
+        nested_subtopic_match_any[FIELD_TOPIC_TAGS] = expanded_subtopics
     if action_types:
         must_match_any[FIELD_ACTION_TYPES] = list(action_types)
     if action_stages:
@@ -220,6 +275,8 @@ def build_filter_fragments(
         must_match_any[FIELD_MEETING_BODY] = list(meeting_bodies)
     if entity_types:
         must_match_any[FIELD_ENTITY_TYPE] = list(entity_types)
+    if keyword_flags:
+        must_match_any[FIELD_KEYWORD_FLAGS] = list(keyword_flags)
     if districts:
         # Single district → use the cheaper `must_match` equality.
         if len(districts) == 1:

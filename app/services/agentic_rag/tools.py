@@ -26,6 +26,10 @@ from app.core.config import settings
 from app.db.connector import AsyncSessionLocal
 from app.models.documents import Document, ProcessingStatus
 from app.models.school import School
+from app.services.agentic_rag.fallback import (
+    resolve_keyword_flags,
+    resolve_semantic_query,
+)
 from app.services.agentic_rag.filters import build_filter_fragments
 from app.services.embeddings.embedding_service import EmbeddingService
 from app.services.heatmap_ingest.taxonomy import (
@@ -143,6 +147,7 @@ async def search_knowledge_base(
     speaker_roles: list[str] | None = None,
     school_years: list[str] | None = None,
     quarter_months: list[str] | None = None,
+    keyword_flags: list[str] | None = None,
     timeframe: str | None = None,
     meeting_date_from: str | None = None,
     meeting_date_to: str | None = None,
@@ -168,6 +173,9 @@ async def search_knowledge_base(
                               for the full list). Filter via
                               `topic_categories` (e.g. "sexed") and/or
                               `topic_subtopics` (e.g. "comprehensive").
+      - `keyword_flags`      — lexical A4 safety-net strings computed at
+                              ingest (e.g. "CHPE Framework", "Get Real",
+                              "opt-out"). Use when taxonomy tags miss.
       - `action_types`       — instruction_reduced, book_challenged,
                               protection_adopted, policy_proposed,
                               policy_debated, instruction_eliminated
@@ -236,6 +244,8 @@ async def search_knowledge_base(
                        Public Commenter, Student, External Presenter.
         school_years: e.g. ["2025-2026"].
         quarter_months: e.g. ["2026-03"].
+        keyword_flags: Lexical A4 flags (e.g. ["CHPE Framework",
+                       "Get Real", "opt-out"]) — classifier safety net.
         timeframe: Optional TimeframePreset value ("month",
                    "last_2_months", "quarter", "year", "2_years",
                    "3_years"). Used when the question maps cleanly to
@@ -267,6 +277,7 @@ async def search_knowledge_base(
             meeting_doc_types=meeting_doc_types,
             meeting_bodies=meeting_bodies,
             entity_types=entity_types,
+            keyword_flags=keyword_flags,
             districts=districts,
             states=states,
             speaker_names=speaker_names,
@@ -623,14 +634,44 @@ async def search_tables(
             filters=filters,
         )
 
+        # Resolve vector-store UUIDs → Document DB ids so extract_citations
+        # can emit `/documents/{id}` (document URLs), not scrape resource URLs.
+        uuid_to_db_id: dict[str, int] = {}
+        try:
+            doc_uuids = {
+                (r.get("metadata") or {}).get("document_id")
+                for r in results
+                if (r.get("metadata") or {}).get("document_id")
+            }
+            if doc_uuids:
+                async with AsyncSessionLocal() as db:
+                    db_result = await db.execute(
+                        select(Document.doc_id, Document.id).where(
+                            Document.doc_id.in_(doc_uuids),
+                            Document.tenant_id == tenant_id,
+                        )
+                    )
+                    for doc_uuid, db_id in db_result.all():
+                        uuid_to_db_id[str(doc_uuid)] = int(db_id)
+        except Exception as mapping_exc:
+            logger.warning(
+                "search_tables: failed to map document UUIDs to DB IDs: %s",
+                mapping_exc,
+                exc_info=True,
+            )
+
         return [
             {
                 "text": r.get("text", ""),
-                "document_name": r.get("metadata", {}).get("document_name", ""),
-                "document_id": r.get("metadata", {}).get("document_id", ""),
-                "sheet_name": r.get("metadata", {}).get("sheet_name", ""),
-                "row_start": r.get("metadata", {}).get("row_start"),
-                "row_end": r.get("metadata", {}).get("row_end"),
+                "document_name": (r.get("metadata") or {}).get("document_name", ""),
+                "document_id": (r.get("metadata") or {}).get("document_id", ""),
+                "document_db_id": uuid_to_db_id.get(
+                    str((r.get("metadata") or {}).get("document_id", ""))
+                ),
+                "sheet_name": (r.get("metadata") or {}).get("sheet_name", ""),
+                "row_start": (r.get("metadata") or {}).get("row_start"),
+                "row_end": (r.get("metadata") or {}).get("row_end"),
+                "page_number": (r.get("metadata") or {}).get("page_number"),
                 "score": round(r.get("score", 0.0), 4),
             }
             for r in results
@@ -828,86 +869,61 @@ async def count_districts_by_topic(
     meeting_doc_types: list[str] | None = None,
     meeting_bodies: list[str] | None = None,
     entity_types: list[str] | None = None,
+    keyword_flags: list[str] | None = None,
     states: list[str] | None = None,
     school_years: list[str] | None = None,
     quarter_months: list[str] | None = None,
     timeframe: str | None = None,
     meeting_date_from: str | None = None,
     meeting_date_to: str | None = None,
+    semantic_query: str | None = None,
     sort_by: str = "chunk_count",
     include_zero: bool = False,
     limit: int = 100,
+    auto_broaden: bool = True,
+    semantic_fallback: bool = True,
     config: Annotated[RunnableConfig, InjectedToolArg] = None,
 ) -> list[dict[str, Any]]:
     """Aggregate chunk counts per district for the given topic/action filters.
 
     Use this for cross-district analytics — "which districts", "how many
-    districts", "highest volume of <topic>", "any districts that
-    <action> in the last N months", etc. Returns one row per district
-    with `district_name`, `state`, `org_code`, `chunk_count`, and the
-    date range of matching chunks.
+    districts", "highest volume of <topic>", etc.
 
-    Prefer this over `search_knowledge_base` when the question asks
-    "which districts" or ranks districts by volume — it scans every
-    district in one call instead of returning chunks that the LLM
-    would have to group by hand.
+    Fallback chain (when `auto_broaden` / `semantic_fallback` are True and
+    the first pass is empty):
+      1. Drop topic_subtopics / meeting_doc_types / action_stages
+      2. Lexical `keyword_flags` safety-net (explicit or inferred from
+         topic_categories / topics) — taxonomy fields dropped
+      3. Semantic embedding search aggregated by district
+         (`semantic_query` or inferred from categories/topics)
+
+    Rows from later passes include `filters_relaxed=True` and
+    `retrieval_mode` = "taxonomy" | "keyword_flags" | "semantic".
+    Use matching filters (or `search_knowledge_base` for semantic mode)
+    when calling `get_district_citations`.
 
     Args:
-        topics: Coarse topic labels (e.g. ["sex_education"]).
-        topic_categories: V1 categories: sexed, lgbtq, censorship,
-                          governance, advocacy.
-        topic_subtopics: V1 subtopics (e.g. "comprehensive",
-                         "book_challenge_filed",
-                         "transgender_student_policy",
-                         "gender_identity_discussion"). See the
-                         system prompt for the full list.
-        action_types: instruction_reduced, instruction_eliminated,
-                       protection_adopted, policy_proposed,
-                       policy_debated, book_challenged.
-        action_stages: Discussion Only, Public Comment, Motion Made,
-                        Vote — Passed, Vote — Failed, Vote — Tabled,
-                        Policy First Reading, Policy Adoption (Final),
-                        Presentation/Report Given,
-                        Correspondence Referenced.
-        meeting_doc_types: Minutes, Agenda, Agenda Attachment,
-                           Public Comment Transcript, Policy Document,
-                           Presentation Slide.
-        meeting_bodies: Full Board, Curriculum Subcommittee,
-                       Policy Subcommittee, Public Hearing,
-                       Special Meeting.
-        entity_types: board_minutes, board_agenda, policy_document,
-                      book_challenge, public_comment,
-                      candidate_profile, election_record,
-                      news_media, advocacy_intervention.
-        states: 2-letter state codes. Defaults to ["MA"] when
-                omitted (the seeded corpus is all Massachusetts).
-        school_years: e.g. ["2025-2026"].
-        quarter_months: e.g. ["2026-03"].
-        timeframe: TimeframePreset value ("month",
-                   "last_2_months", "quarter", "year", "2_years",
-                   "3_years"). Used when the question maps cleanly to
-                   a rolling academic-year bucket; otherwise pass
-                   explicit `meeting_date_from`/`meeting_date_to`.
-        meeting_date_from: ISO date (YYYY-MM-DD). When both from/to
-                           are given the explicit range wins over
-                           `timeframe`. Translate "since Sept 2025"
-                           to "2025-09-01", "last 12 months" to
-                           <today-365>, "this year" to Jan 1 of the
-                           current year.
-        meeting_date_to: ISO date (YYYY-MM-DD).
-        sort_by: One of chunk_count (default), first_meeting_date,
-                 last_meeting_date. last_meeting_date sorts most
-                 recent activity first.
-        include_zero: When False (default) districts with zero
-                      matching chunks are omitted. Pass True to
-                      get a full district roster with zero counts.
-        limit: Maximum number of districts to return (default 100).
-               Counts beyond this are still computed but truncated.
+        topics / topic_categories / topic_subtopics / action_types /
+        action_stages / meeting_doc_types / meeting_bodies /
+        entity_types / states / school_years / quarter_months /
+        timeframe / meeting_date_from / meeting_date_to:
+            taxonomy + metadata filters (see system prompt playbook).
+        keyword_flags: Lexical A4 flags already on chunks
+                       (e.g. ["CHPE Framework","Get Real","opt-out"]).
+                       Also auto-inferred during the keyword fallback
+                       pass from topic_categories / topics.
+        semantic_query: Optional embedding query for the semantic
+                        fallback pass. Auto-inferred when omitted.
+        sort_by: chunk_count (default) | first_meeting_date |
+                 last_meeting_date.
+        include_zero: Keep zero-count districts when True.
+        limit: Max districts returned (default 100).
+        auto_broaden: Retry without narrowing filters if empty.
+        semantic_fallback: After taxonomy/keyword passes fail, run
+                           semantic district aggregation.
     """
     tenant_id, _ = _get_context(config)
 
-    # Validate the time window early so we surface a clean error
-    # rather than a 280-district loop that returns all zeros.
     try:
         from app.schemas.heatmap_engine import TimeframePreset
 
@@ -917,9 +933,6 @@ async def count_districts_by_topic(
         return [{"error": f"Invalid timeframe: {exc}"}]
 
     try:
-        # Resolve the active schools for the tenant. The engine uses
-        # the same lookup, so the district roster here matches the map
-        # view exactly.
         async with AsyncSessionLocal() as db:
             stmt = select(School).where(
                 School.tenant_id == tenant_id,
@@ -934,25 +947,65 @@ async def count_districts_by_topic(
             return []
 
         store = _vector_store()
+        schools_by_name = {s.name: s for s in schools}
 
-        # Build the filter fragments once per district (district_name
-        # changes per school), reusing the same dict for the other
-        # conditions. We can't share the exact dict because
-        # `must_match` is mutated per-district, so we rebuild fragments
-        # each iteration — cheap (a few dict copies) relative to the
-        # Qdrant round trip it enables.
-        rows: list[dict[str, Any]] = []
-        for school in schools:
+        async def _run_pass(
+            *,
+            pass_topics: list[str] | None,
+            pass_categories: list[str] | None,
+            pass_subtopics: list[str] | None,
+            pass_action_types: list[str] | None,
+            pass_doc_types: list[str] | None,
+            pass_stages: list[str] | None,
+            pass_keyword_flags: list[str] | None,
+            relaxed: bool,
+            retrieval_mode: str,
+        ) -> list[dict[str, Any]]:
+            rows: list[dict[str, Any]] = []
+            for school in schools:
+                fragments = build_filter_fragments(
+                    topics=pass_topics,
+                    topic_categories=pass_categories,
+                    topic_subtopics=pass_subtopics,
+                    action_types=pass_action_types,
+                    action_stages=pass_stages,
+                    meeting_doc_types=pass_doc_types,
+                    meeting_bodies=meeting_bodies,
+                    entity_types=entity_types,
+                    keyword_flags=pass_keyword_flags,
+                    districts=[school.name],
+                    states=resolved_states,
+                    school_years=school_years,
+                    quarter_months=quarter_months,
+                    timeframe=timeframe,
+                    meeting_date_from=meeting_date_from,
+                    meeting_date_to=meeting_date_to,
+                    require_classified=True,
+                )
+                count = await store.count_chunks(
+                    tenant_id=tenant_id,
+                    **fragments,
+                )
+                if count == 0 and not include_zero:
+                    continue
+                row: dict[str, Any] = {
+                    "org_code": school.org_code,
+                    "district_name": school.name,
+                    "state": school.state or "MA",
+                    "district_type": school.district_type,
+                    "chunk_count": count,
+                    "retrieval_mode": retrieval_mode,
+                }
+                if relaxed:
+                    row["filters_relaxed"] = True
+                rows.append(row)
+            return rows
+
+        async def _semantic_pass(query: str) -> list[dict[str, Any]]:
+            embedding = await _embed(query)
+            # Date / state only — no taxonomy. Keep classified=True so
+            # we stay on the same corpus surface as taxonomy passes.
             fragments = build_filter_fragments(
-                topics=topics,
-                topic_categories=topic_categories,
-                topic_subtopics=topic_subtopics,
-                action_types=action_types,
-                action_stages=action_stages,
-                meeting_doc_types=meeting_doc_types,
-                meeting_bodies=meeting_bodies,
-                entity_types=entity_types,
-                districts=[school.name],
                 states=resolved_states,
                 school_years=school_years,
                 quarter_months=quarter_months,
@@ -961,38 +1014,124 @@ async def count_districts_by_topic(
                 meeting_date_to=meeting_date_to,
                 require_classified=True,
             )
-            count = await store.count_chunks(
+            results = await store.search(
+                query_embedding=embedding,
                 tenant_id=tenant_id,
-                **fragments,
+                limit=max(limit * 5, 50),
+                filters=dict(fragments) or None,
             )
-            if count == 0 and not include_zero:
-                continue
-            rows.append(
-                {
-                    "org_code": school.org_code,
-                    "district_name": school.name,
-                    "state": school.state or "MA",
-                    "district_type": school.district_type,
-                    "chunk_count": count,
-                }
+            from collections import Counter
+
+            counts: Counter[str] = Counter()
+            for item in results:
+                meta = item.get("metadata") or {}
+                name = meta.get("district_name")
+                if not name or name not in schools_by_name:
+                    continue
+                counts[name] += 1
+            rows: list[dict[str, Any]] = []
+            for name, count in counts.most_common():
+                school = schools_by_name[name]
+                rows.append(
+                    {
+                        "org_code": school.org_code,
+                        "district_name": school.name,
+                        "state": school.state or "MA",
+                        "district_type": school.district_type,
+                        "chunk_count": count,
+                        "retrieval_mode": "semantic",
+                        "filters_relaxed": True,
+                        "semantic_query": query,
+                    }
+                )
+            return rows
+
+        rows = await _run_pass(
+            pass_topics=topics,
+            pass_categories=topic_categories,
+            pass_subtopics=topic_subtopics,
+            pass_action_types=action_types,
+            pass_doc_types=meeting_doc_types,
+            pass_stages=action_stages,
+            pass_keyword_flags=keyword_flags,
+            relaxed=False,
+            retrieval_mode="taxonomy",
+        )
+
+        can_broaden = auto_broaden and not include_zero and (
+            bool(topic_subtopics)
+            or bool(meeting_doc_types)
+            or bool(action_stages)
+        )
+        if not rows and can_broaden and (
+            topics or topic_categories or action_types or keyword_flags
+        ):
+            logger.info(
+                "count_districts_by_topic: 0 hits; broadening "
+                "(drop subtopics/doc_types/stages)"
+            )
+            rows = await _run_pass(
+                pass_topics=topics,
+                pass_categories=topic_categories,
+                pass_subtopics=None,
+                pass_action_types=action_types,
+                pass_doc_types=None,
+                pass_stages=None,
+                pass_keyword_flags=keyword_flags,
+                relaxed=True,
+                retrieval_mode="taxonomy",
             )
 
-        # `last_meeting_date` / `first_meeting_date` would require a
-        # second scroll per district; defer until a query actually
-        # asks for date-range ranking. For now `sort_by` accepts the
-        # values but only `chunk_count` changes the order.
-        if sort_by == "chunk_count":
-            rows.sort(key=lambda r: r.get("chunk_count", 0), reverse=True)
-        elif sort_by == "last_meeting_date":
-            # Without a per-district date fetch we keep chunk_count
-            # ordering but log a warning so the agent's prompt knows
-            # to call get_district_citations for date-ordering.
-            rows.sort(key=lambda r: r.get("chunk_count", 0), reverse=True)
-        elif sort_by == "first_meeting_date":
-            rows.sort(key=lambda r: r.get("chunk_count", 0), reverse=True)
-        else:
-            rows.sort(key=lambda r: r.get("chunk_count", 0), reverse=True)
+        # Keyword-flags safety net (classifier miss / taxonomy drift).
+        inferred_flags = resolve_keyword_flags(
+            keyword_flags=keyword_flags,
+            topic_categories=topic_categories,
+            topics=topics,
+        )
+        if (
+            not rows
+            and auto_broaden
+            and not include_zero
+            and inferred_flags
+        ):
+            logger.info(
+                "count_districts_by_topic: 0 hits; keyword_flags pass %s",
+                inferred_flags,
+            )
+            rows = await _run_pass(
+                pass_topics=None,
+                pass_categories=None,
+                pass_subtopics=None,
+                pass_action_types=None,
+                pass_doc_types=None,
+                pass_stages=None,
+                pass_keyword_flags=inferred_flags,
+                relaxed=True,
+                retrieval_mode="keyword_flags",
+            )
 
+        # Semantic embedding fallback — finds text like CHPE even when
+        # keyword_flags missed (e.g. "CHPE frameworks" vs "CHPE Framework").
+        inferred_semantic = resolve_semantic_query(
+            semantic_query=semantic_query,
+            topic_categories=topic_categories,
+            topics=topics,
+            action_types=action_types,
+            topic_subtopics=topic_subtopics,
+        )
+        if (
+            not rows
+            and semantic_fallback
+            and not include_zero
+            and inferred_semantic
+        ):
+            logger.info(
+                "count_districts_by_topic: 0 hits; semantic pass %r",
+                inferred_semantic[:80],
+            )
+            rows = await _semantic_pass(inferred_semantic)
+
+        rows.sort(key=lambda r: r.get("chunk_count", 0), reverse=True)
         return rows[:limit]
 
     except Exception as exc:
@@ -1026,6 +1165,7 @@ async def get_district_citations(
     meeting_doc_types: list[str] | None = None,
     meeting_bodies: list[str] | None = None,
     entity_types: list[str] | None = None,
+    keyword_flags: list[str] | None = None,
     states: list[str] | None = None,
     school_years: list[str] | None = None,
     quarter_months: list[str] | None = None,
@@ -1039,10 +1179,17 @@ async def get_district_citations(
 ) -> dict[str, Any]:
     """Retrieve paginated chunk citations for one district + filter set.
 
-    Use this AFTER `count_districts_by_topic` to pull the actual
-    text snippets + source document metadata for the top-N districts
-    so the final answer can cite specific meetings by name, date,
-    and page number.
+    REQUIRED before naming a district in the final answer after
+    `count_districts_by_topic`. Use this to pull the actual text
+    snippets + source document metadata for the top-N districts so
+    the final answer can cite specific meetings by name, date, and
+    page number. Do not list a district unless this (or
+    `search_knowledge_base`) returned at least one citation for it.
+
+    When count rows have `retrieval_mode="keyword_flags"`, pass the
+    same `keyword_flags` (and drop taxonomy filters). When
+    `retrieval_mode="semantic"`, prefer `search_knowledge_base` with
+    `districts=[district_name]` and the `semantic_query` instead.
 
     Args:
         org_code: The district's `org_code` (returned by
@@ -1050,8 +1197,8 @@ async def get_district_citations(
                   pass the `org_code` field exactly as returned.
         topics, topic_categories, topic_subtopics, action_types,
         action_stages, meeting_doc_types, meeting_bodies,
-        entity_types, states, school_years, quarter_months,
-        timeframe, meeting_date_from, meeting_date_to:
+        entity_types, keyword_flags, states, school_years,
+        quarter_months, timeframe, meeting_date_from, meeting_date_to:
             same filter surface as `count_districts_by_topic`.
             Pass the SAME filters you used for the count so the
             citations match the counted chunks.
@@ -1105,6 +1252,7 @@ async def get_district_citations(
             meeting_doc_types=meeting_doc_types,
             meeting_bodies=meeting_bodies,
             entity_types=entity_types,
+            keyword_flags=keyword_flags,
             districts=[school.name],
             states=states,
             school_years=school_years,

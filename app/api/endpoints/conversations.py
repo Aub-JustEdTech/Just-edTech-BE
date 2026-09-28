@@ -144,6 +144,10 @@ async def _attach_presigned_urls_to_citations(
 async def list_conversations(
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
+    chatbot_id: int | None = Query(
+        None,
+        description="When set, only return conversations for this chatbot.",
+    ),
     tenant_id: int | None = Query(
         None, description="Tenant to scope to. Required for admins with access to all tenants."
     ),
@@ -166,6 +170,7 @@ async def list_conversations(
         tenant_id=tenant_id,
         user_id=user_id,
         chat_consumer_id=chat_consumer_id,
+        chatbot_config_id=chatbot_id,
         page=page,
         per_page=per_page,
     )
@@ -564,8 +569,10 @@ async def send_message(
         content=message_request.content,
     )
 
-    # Generate title if this is the first message
-    if not db_conversation.title:
+    # Generate a content-derived title on the first real message. Empty
+    # conversations are created with the placeholder "New Chat", so treat
+    # that the same as a missing title.
+    if not db_conversation.title or db_conversation.title == "New Chat":
         title = generate_conversation_title(message_request.content)
         await conversation.update_conversation_title(db, conversation_id, title)
 
