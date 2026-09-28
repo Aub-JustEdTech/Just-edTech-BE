@@ -107,7 +107,7 @@ def test_q1_filter_uses_fixed_sept_2025_window():
     filters = resolve_filters(spec, date(2026, 9, 3))
     assert len(filters) == 1
     assert filters[0]["topic_categories"] == ["sexed"]
-    assert filters[0]["meeting_doc_types"] == ["Agenda"]
+    assert filters[0]["meeting_doc_types"] == ["Agenda", "Minutes"]
     assert filters[0]["meeting_date_from"] == "2025-09-01"
 
 

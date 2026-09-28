@@ -77,6 +77,17 @@ def test_topic_subtopics_maps_to_nested_subtopic_match_any():
     }
 
 
+def test_keyword_flags_maps_to_must_match_any():
+    fragments = build_filter_fragments(
+        keyword_flags=["CHPE Framework", "Get Real"],
+        require_classified=False,
+    )
+    assert fragments["must_match_any"]["keyword_flags"] == [
+        "CHPE Framework",
+        "Get Real",
+    ]
+
+
 def test_topics_maps_to_must_match_any():
     fragments = build_filter_fragments(topics=["sex_education"])
     assert fragments["must_match_any"] == {"topics": ["sex_education"]}
@@ -235,23 +246,20 @@ def _school(name: str, org_code: str, district_type: str = "public") -> Any:
 
 
 class FakeVectorStore:
-    """Records calls + returns scripted counts / chunks.
-
-    A `script` is a `{district_name: chunk_count}` for count_chunks,
-    plus a `chunks` list for filter_chunks. The recorded `calls` let
-    tests assert exactly which filter primitives each tool call
-    produced.
-    """
+    """Records calls + returns scripted counts / chunks / search hits."""
 
     def __init__(
         self,
         counts: dict[str, int] | None = None,
         chunks: list[dict[str, Any]] | None = None,
+        search_results: list[dict[str, Any]] | None = None,
     ) -> None:
         self.counts = counts or {}
         self.chunks = chunks or []
+        self.search_results = search_results or []
         self.count_calls: list[dict[str, Any]] = []
         self.filter_calls: list[dict[str, Any]] = []
+        self.search_calls: list[dict[str, Any]] = []
 
     async def count_chunks(self, tenant_id: int, **kwargs: Any) -> int:
         self.count_calls.append(kwargs)
@@ -263,6 +271,24 @@ class FakeVectorStore:
     ) -> list[dict[str, Any]]:
         self.filter_calls.append({"limit": limit, **kwargs})
         return list(self.chunks[:limit])
+
+    async def search(
+        self,
+        *,
+        query_embedding: list[float],
+        tenant_id: int,
+        limit: int = 10,
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        self.search_calls.append(
+            {
+                "tenant_id": tenant_id,
+                "limit": limit,
+                "filters": filters,
+                "embedding_len": len(query_embedding),
+            }
+        )
+        return list(self.search_results[:limit])
 
 
 def _extract_org_code_literal(stmt_str: str) -> str | None:
@@ -466,6 +492,92 @@ async def test_count_districts_by_topic_include_zero_keeps_zero_rows(
     assert result[0]["chunk_count"] == 0
 
 
+async def test_count_districts_semantic_fallback_when_taxonomy_empty(
+    stub_db, stub_vector_store, runnable_config, monkeypatch
+):
+    """When taxonomy counts are 0, semantic search aggregates by district."""
+    import app.services.agentic_rag.tools as tools_module
+    from app.services.agentic_rag.tools import count_districts_by_topic
+
+    fake_db, schools, _docs = stub_db
+    schools.extend([_school("Wachusett", "WACH")])
+    stub_vector_store.counts = {"Wachusett": 0}
+    stub_vector_store.search_results = [
+        {
+            "text": "CHPE frameworks for the state",
+            "metadata": {"district_name": "Wachusett", "meeting_date": "2025-01-24"},
+            "score": 0.9,
+        },
+        {
+            "text": "another CHPE mention",
+            "metadata": {"district_name": "Wachusett", "meeting_date": "2025-01-24"},
+            "score": 0.8,
+        },
+    ]
+
+    async def _fake_embed(query: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
+
+    monkeypatch.setattr(tools_module, "_embed", _fake_embed)
+
+    result = await count_districts_by_topic.ainvoke(
+        {
+            "topic_categories": ["sexed"],
+            "topic_subtopics": ["comprehensive"],
+            "meeting_doc_types": ["Agenda"],
+            "auto_broaden": True,
+            "semantic_fallback": True,
+        },
+        config=runnable_config,
+    )
+
+    assert len(result) == 1
+    assert result[0]["district_name"] == "Wachusett"
+    assert result[0]["chunk_count"] == 2
+    assert result[0]["retrieval_mode"] == "semantic"
+    assert result[0]["filters_relaxed"] is True
+    assert stub_vector_store.search_calls, "expected semantic search call"
+
+
+async def test_count_districts_keyword_flags_fallback(
+    stub_db, stub_vector_store, runnable_config
+):
+    """Keyword-flags pass runs before semantic when taxonomy is empty."""
+    from app.services.agentic_rag.tools import count_districts_by_topic
+
+    fake_db, schools, _docs = stub_db
+    schools.extend([_school("Worcester", "WOR")])
+
+    async def _count(tenant_id: int, **kwargs):
+        stub_vector_store.count_calls.append(kwargs)
+        district = (kwargs.get("must_match") or {}).get("district_name", "")
+        flags = (kwargs.get("must_match_any") or {}).get("keyword_flags")
+        # Only the keyword-flags pass (no topic nested filters) scores.
+        has_topics = bool(kwargs.get("nested_match_any")) or bool(
+            (kwargs.get("must_match_any") or {}).get("topics")
+        )
+        if flags and not has_topics and district == "Worcester":
+            return 3
+        return 0
+
+    stub_vector_store.count_chunks = _count  # type: ignore[method-assign]
+
+    result = await count_districts_by_topic.ainvoke(
+        {
+            "topic_categories": ["sexed"],
+            "topic_subtopics": ["comprehensive"],
+            "meeting_doc_types": ["Agenda"],
+            "semantic_fallback": False,
+        },
+        config=runnable_config,
+    )
+
+    assert len(result) == 1
+    assert result[0]["district_name"] == "Worcester"
+    assert result[0]["retrieval_mode"] == "keyword_flags"
+    assert result[0]["chunk_count"] == 3
+
+
 async def test_count_districts_by_topic_invalid_timeframe_returns_error(
     stub_db, stub_vector_store, runnable_config
 ):
@@ -634,68 +746,109 @@ async def test_get_taxonomy_ma_pack_includes_state_curricula(runnable_config):
     assert isinstance(result["state_orgs"], list)
 
 
+def test_topic_subtopics_expanded_for_chpe_aliases():
+    """CHPE / 3Rs spellings must OR-match across known corpus variants."""
+    from app.services.agentic_rag.filters import expand_topic_subtopics
+
+    assert set(expand_topic_subtopics(["curriculum_chpe_framework"])) == {
+        "curriculum_chpe_framework",
+        "curriculum.chpe_framework",
+        "chpe_framework",
+    }
+    fragments = build_filter_fragments(
+        topic_subtopics=["curriculum.chpe_framework"],
+        require_classified=False,
+    )
+    assert set(fragments["nested_subtopic_match_any"]["topic_tags"]) == {
+        "curriculum.chpe_framework",
+        "curriculum_chpe_framework",
+        "chpe_framework",
+    }
+
+
+def test_topic_subtopics_expanded_for_gender_identity_drift():
+    fragments = build_filter_fragments(
+        topic_subtopics=["gender_identity_discussion"],
+        require_classified=False,
+    )
+    assert set(fragments["nested_subtopic_match_any"]["topic_tags"]) == {
+        "gender_identity_discussion",
+        "gender_identity",
+    }
+
+
 # ---------------------------------------------------------------------------
 # Sample-query filter mapping — assert each of the 7 sample queries
-# produces the expected Qdrant filter fragments.
+# produces the expected Qdrant filter fragments (playbook recipes).
 # ---------------------------------------------------------------------------
 
 
 def test_q1_comprehensive_sex_ed_since_sept_2025():
-    """Q1: Since Sept 2025, which districts have discussed comprehensive
-    sex education as part of the agenda?"""
+    """Q1: sexed + Agenda/Minutes + since 2025-09-01 (no comprehensive)."""
     fragments = build_filter_fragments(
         topic_categories=["sexed"],
-        topic_subtopics=["comprehensive"],
-        meeting_doc_types=["Agenda"],
+        meeting_doc_types=["Agenda", "Minutes"],
         meeting_date_from="2025-09-01",
         meeting_date_to="2026-09-02",
     )
     assert fragments["nested_match_any"] == {"topic_tags": ["sexed"]}
-    assert fragments["nested_subtopic_match_any"] == {
-        "topic_tags": ["comprehensive"]
-    }
-    assert fragments["must_match_any"]["meeting_doc_type"] == ["Agenda"]
+    assert "nested_subtopic_match_any" not in fragments
+    assert fragments["must_match_any"]["meeting_doc_type"] == [
+        "Agenda",
+        "Minutes",
+    ]
     assert fragments["range_match"]["meeting_date"]["gte"].startswith("2025-09-01")
 
 
 def test_q2_sex_ed_curriculum_changes_last_12_months():
-    """Q2: In the last twelve months, districts with sex education
-    curriculum changes on their agenda."""
+    """Q2 Pass A: sexed + agenda/minutes + change stages + 12mo."""
     from datetime import date
 
     today = date(2026, 9, 2)
     f, t = relative_window(12, today=today)
     fragments = build_filter_fragments(
         topic_categories=["sexed"],
-        topic_subtopics=[
-            "change_expansion",
-            "change_reduction",
-            "change_under_review",
+        meeting_doc_types=["Agenda", "Minutes"],
+        action_stages=[
+            "Motion Made",
+            "Vote — Passed",
+            "Vote — Failed",
+            "Vote — Tabled",
+            "Policy First Reading",
+            "Policy Adoption (Final)",
         ],
-        action_types=[
-            "instruction_reduced",
-            "instruction_eliminated",
-        ],
-        meeting_doc_types=["Agenda"],
         meeting_date_from=f,
         meeting_date_to=t,
     )
-    assert fragments["nested_subtopic_match_any"] == {
-        "topic_tags": [
-            "change_expansion",
-            "change_reduction",
-            "change_under_review",
-        ]
-    }
+    assert fragments["nested_match_any"] == {"topic_tags": ["sexed"]}
+    assert fragments["must_match_any"]["meeting_doc_type"] == [
+        "Agenda",
+        "Minutes",
+    ]
+    assert "Motion Made" in fragments["must_match_any"]["action_stage"]
+    assert fragments["range_match"]["meeting_date"]["gte"].startswith("2025-")
+
+
+def test_q2_pass_b_instruction_action_types():
+    """Q2 Pass B: instruction_reduced/eliminated + Agenda/Minutes + 12mo."""
+    from datetime import date
+
+    today = date(2026, 9, 2)
+    f, t = relative_window(12, today=today)
+    fragments = build_filter_fragments(
+        action_types=["instruction_reduced", "instruction_eliminated"],
+        meeting_doc_types=["Agenda", "Minutes"],
+        meeting_date_from=f,
+        meeting_date_to=t,
+    )
     assert fragments["must_match_any"]["action_types"] == [
         "instruction_reduced",
         "instruction_eliminated",
     ]
-    assert fragments["range_match"]["meeting_date"]["gte"].startswith("2025-")
 
 
 def test_q3_curriculum_censorship_this_year():
-    """Q3: Summarize all curriculum censorship efforts discussed this year."""
+    """Q3 Pass B: censorship category + calendar year."""
     from datetime import date
 
     today = date(2026, 9, 2)
@@ -705,12 +858,13 @@ def test_q3_curriculum_censorship_this_year():
         meeting_date_to=today.isoformat(),
     )
     assert fragments["nested_match_any"] == {"topic_tags": ["censorship"]}
-    assert fragments["range_match"]["meeting_date"]["gte"].startswith(f"{today.year}-01-01")
+    assert fragments["range_match"]["meeting_date"]["gte"].startswith(
+        f"{today.year}-01-01"
+    )
 
 
 def test_q4_highest_volume_of_book_challenges():
-    """Q4: Which districts are experiencing the highest volume of book
-    challenges?"""
+    """Q4 Pass B: censorship book_* subtopics (Pass A is action_types alone)."""
     fragments = build_filter_fragments(
         topic_categories=["censorship"],
         topic_subtopics=[
@@ -719,7 +873,6 @@ def test_q4_highest_volume_of_book_challenges():
             "book_retained",
             "curriculum_material_challenge",
         ],
-        action_types=["book_challenged"],
     )
     assert set(fragments["nested_subtopic_match_any"]["topic_tags"]) == {
         "book_challenge_filed",
@@ -727,15 +880,13 @@ def test_q4_highest_volume_of_book_challenges():
         "book_retained",
         "curriculum_material_challenge",
     }
-    assert fragments["must_match_any"]["action_types"] == ["book_challenged"]
+    assert fragments["nested_match_any"] == {"topic_tags": ["censorship"]}
 
 
 def test_q5_parental_rights_search_agenda_minutes_votes():
-    """Q5: Analyze parental rights policies. Search agenda items, minutes,
-    and board votes."""
+    """Q5 Pass A: parental_rights + Agenda/Minutes + vote stages."""
     fragments = build_filter_fragments(
-        topic_categories=["censorship"],
-        topic_subtopics=["parental_rights_policy"],
+        topics=["parental_rights"],
         meeting_doc_types=["Agenda", "Minutes"],
         action_stages=[
             "Motion Made",
@@ -746,6 +897,7 @@ def test_q5_parental_rights_search_agenda_minutes_votes():
             "Policy Adoption (Final)",
         ],
     )
+    assert fragments["must_match_any"]["topics"] == ["parental_rights"]
     assert fragments["must_match_any"]["meeting_doc_type"] == [
         "Agenda",
         "Minutes",
@@ -761,32 +913,21 @@ def test_q5_parental_rights_search_agenda_minutes_votes():
 
 
 def test_q6_transgender_policies_last_12_months():
-    """Q6: Identify districts debating transgender student policies in the
-    past 12 months."""
+    """Q6 Pass A: coarse transgender_policy + last 12 months."""
     from datetime import date
 
     f, t = relative_window(12, today=date(2026, 9, 2))
     fragments = build_filter_fragments(
-        topic_categories=["lgbtq"],
-        topic_subtopics=["transgender_student_policy"],
-        action_stages=["Discussion Only", "Public Comment", "Motion Made"],
+        topics=["transgender_policy"],
         meeting_date_from=f,
         meeting_date_to=t,
     )
-    assert fragments["nested_match_any"] == {"topic_tags": ["lgbtq"]}
-    assert fragments["nested_subtopic_match_any"] == {
-        "topic_tags": ["transgender_student_policy"]
-    }
+    assert fragments["must_match_any"]["topics"] == ["transgender_policy"]
     assert fragments["range_match"]["meeting_date"]["gte"].startswith("2025-")
 
 
 def test_q7_gender_identity_discussions():
-    """Q7: Summarize all board discussions involving gender identity."""
-    fragments = build_filter_fragments(
-        topic_categories=["lgbtq"],
-        topic_subtopics=["gender_identity_discussion"],
-    )
-    assert fragments["nested_match_any"] == {"topic_tags": ["lgbtq"]}
-    assert fragments["nested_subtopic_match_any"] == {
-        "topic_tags": ["gender_identity_discussion"]
-    }
+    """Q7 Pass A: coarse gender_identity topic."""
+    fragments = build_filter_fragments(topics=["gender_identity"])
+    assert fragments["must_match_any"]["topics"] == ["gender_identity"]
+    assert "nested_subtopic_match_any" not in fragments

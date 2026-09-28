@@ -91,14 +91,13 @@ async def query_1_comprehensive_sex_ed_since_sept_2025() -> None:
     print("Q1. Since Sept 2025, which districts have discussed comprehensive")
     print("    sex education as part of the agenda?")
     print("=" * 78)
-    # Use coarse `sex_education` topic + Agenda doc type + date range,
-    # plus the fine `sexed` category as a parallel filter via topics.
-    # (topic_subtopics=["comprehensive"] returns 0 — classifier didn't
-    # use that exact label; coarse `sex_education` has only 2 chunks
-    # but `topic_categories=["sexed"]` has 6.)
+    # Prefer sexed category + Agenda/Minutes + date range. Do not require
+    # topic_subtopics=["comprehensive"] — that label is nearly unused;
+    # CHPE / 3Rs / Get Real sexed tags still count. Minutes packets often
+    # carry the agenda-item text the user is looking for.
     filters = {
         "topic_categories": ["sexed"],
-        "meeting_doc_types": ["Agenda"],
+        "meeting_doc_types": ["Agenda", "Minutes"],
         "meeting_date_from": "2025-09-01",
         "meeting_date_to": TODAY,
     }
@@ -131,7 +130,7 @@ async def query_2_sex_ed_curriculum_changes_last_12_months() -> None:
     # (Motion Made, Vote, Policy First Reading, Policy Adoption).
     filters = {
         "topic_categories": ["sexed"],
-        "meeting_doc_types": ["Agenda"],
+        "meeting_doc_types": ["Agenda", "Minutes"],
         "action_stages": [
             "Motion Made",
             "Vote — Passed",
@@ -149,7 +148,7 @@ async def query_2_sex_ed_curriculum_changes_last_12_months() -> None:
     # Also try the action_types-only path (instruction_reduced/eliminated).
     filters2 = {
         "action_types": ["instruction_reduced", "instruction_eliminated"],
-        "meeting_doc_types": ["Agenda"],
+        "meeting_doc_types": ["Agenda", "Minutes"],
         "meeting_date_from": LAST_12_FROM,
         "meeting_date_to": TODAY,
     }

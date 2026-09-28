@@ -56,6 +56,7 @@ class ConversationListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
     last_message_preview: str | None = None
+    chatbot_config_id: int | None = None
 
     class Config:
         from_attributes = True
