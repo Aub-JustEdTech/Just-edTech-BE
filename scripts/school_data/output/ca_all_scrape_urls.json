@@ -1,0 +1,841 @@
+[
+  {
+    "name": "Natomas Unified School District",
+    "org_code": "34-75283",
+    "website": "https://www.natomasunified.org",
+    "urls": [
+      {
+        "url": "https://www.natomasunified.org/board/board-meeting-information",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.natomasunified.org/board/board-meeting-videos",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.natomasunified.org/board/board-governance-handbook",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.natomasunified.org/board/board-meeting-highlights",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Contra Costa Community College District",
+    "org_code": "07-69134",
+    "website": "https://www.4cd.edu",
+    "urls": [
+      {
+        "url": "https://www.4cd.edu/about/committees/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.4cd.edu/about/committees/cscc/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.4cd.edu/about/committees/deeoac/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.4cd.edu/about/committees/dgc/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.4cd.edu/about/committees/district-office-classified-senate/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Glendale Unified School District",
+    "org_code": "19-64568",
+    "website": "https://www.gusd.net",
+    "urls": []
+  },
+  {
+    "name": "Antioch Unified School District",
+    "org_code": "07-61648",
+    "website": "https://www.antiochschools.net",
+    "urls": [
+      {
+        "url": "https://www.youtube.com/playlist?list=PL1GEJlB3bMxGlHJSPsyyV4XshcGyy9pK5",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PL1GEJlB3bMxFMzuqXzQWNsW2dsgibyMJ5",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PL1GEJlB3bMxHX8uqgXhZoZWg4wRs5Ja_h",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.antiochschools.net/documents/board-of-education/board-meetings/board-meeting-archives-/2016---2017-archives/2016---2017-minutes/461987",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.antiochschools.net/documents/board-of-education/board-meetings/board-meeting-archives-/2016---2017-archives/2016---2017-agendas/461986",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.antiochschools.net/documents/board-of-education/board-meetings/board-meeting-archives-/2015---2016-archives/2015---2016-agendas/461988",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ],
+    "verdict": "PARTIAL",
+    "youtube_playlists": [
+      "https://www.youtube.com/playlist?list=PL1GEJlB3bMxGlHJSPsyyV4XshcGyy9pK5",
+      "https://www.youtube.com/playlist?list=PL1GEJlB3bMxFMzuqXzQWNsW2dsgibyMJ5",
+      "https://www.youtube.com/playlist?list=PL1GEJlB3bMxHX8uqgXhZoZWg4wRs5Ja_h"
+    ]
+  },
+  {
+    "name": "Berryessa Union Elementary School District",
+    "org_code": "43-69369",
+    "website": "https://www.berryessa.k12.ca.us",
+    "urls": [
+      {
+        "url": "https://www.berryessa.k12.ca.us/OUR-DISTRICT/Board-of-Trustees/Board-Meeting-Agendas-and-Minutes/OUR-DISTRICT/About-Us/District-Communication/District-Newsletter/Archive/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.berryessa.k12.ca.us/OUR-DISTRICT/Board-of-Trustees/Board-Meeting-Agendas-and-Minutes/__catapult_pages/de1cb993-d47e-4ef9-b2d4-cc9abe09c19d/School-Consolidation-Advisory-Committee.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.berryessa.k12.ca.us/OUR-DISTRICT/Board-of-Trustees/Board-Meeting-Agendas-and-Minutes/__catapult_pages/74fc155a-4a4e-4985-b6b7-66ee9a7c1c1b/District-Committees.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.berryessa.k12.ca.us/OUR-DISTRICT/Board-of-Trustees/Board-Meeting-Agendas-and-Minutes/OUR-DISTRICT/Superintendents-Office/CPRA-Freedom-of-Information-Act-Public-Records/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.berryessa.k12.ca.us/OUR-DISTRICT/Board-of-Trustees/Board-Meeting-Agendas-and-Minutes/OUR-DISTRICT/About-Us/District-Videos/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Franklin-McKinley Elementary School District",
+    "org_code": "43-69450",
+    "website": "https://www.fmsd.org",
+    "urls": [
+      {
+        "url": "https://www.fmsd.org/board-of-education/current-agendas-and-minutes-new",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.fmsd.org/board-of-education/board-of-education-meeting-calendar-and-governance-calendar",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "East Side Union High School District",
+    "org_code": "43-69427",
+    "website": "https://www.esuhsd.org",
+    "urls": [
+      {
+        "url": "https://esuhsd.community.highbond.com/Portal/Default.aspx",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.youtube.com/@ESUHSDBoardMeetings/videos",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.esuhsd.org/BoardSuperintendent/Board-Meeting-Agendas--Reports/documents/Board - Admin/BA_APPROVED_MINUTES/BA_Approved_Minutes_2018_2019/Minutes_2019_02_12_Regular.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.esuhsd.org/BoardSuperintendent/Board-Meeting-Agendas--Reports/documents/Board - Admin/BA_APPROVED_MINUTES/BA_Approved_Minutes_2018_2019/Minutes_2019_02_02_Retreat.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.esuhsd.org/BoardSuperintendent/Board-Meeting-Agendas--Reports/documents/Board - Admin/BA_APPROVED_MINUTES/BA_Approved_Minutes_2018_2019/Minutes_2019_01_17_Regular.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.esuhsd.org/BoardSuperintendent/Board-Meeting-Agendas--Reports/Students--Parents/Resources/Parent-Resources/DACDELACLCAP--District-Advisory-Committee/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "San Jose-Evergreen Community College District",
+    "org_code": "43-69641",
+    "website": "https://www.sjeccd.edu",
+    "urls": [
+      {
+        "url": "https://www.sjeccd.edu/sites/default/files/documents/EEO.MINUTESforDistrictwideEEO-DiversityAdvisoryCommitteeforMonday2026May18.3.15PM meeting.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjeccd.edu/sites/default/files/documents/EEO.AGENDA%20for%20DistrictwideEEO-DiversityAdvisoryCommitteeforMonday2026Sept21.3.15PMeeting.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjeccd.edu/sites/default/files/documents/EEO.AGENDA for DistrictwideEEO-DiversityAdvisoryCommitteeforMonday2026May18.3.15PM meeting.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjeccd.edu/sites/default/files/documents/EEO.AGENDA for DistrictwideEEO-DiversityAdvisoryCommitteeforMonday2026April20.3.15PM meeting.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjeccd.edu/sites/default/files/documents/EEO.MINUTES for DistrictwideEEO-DiversityAdvisoryCommitteeforMonday2026April20.3.15PM meeting_0.pdf",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Oak Grove Elementary School District",
+    "org_code": "43-69609",
+    "website": "https://www.ogsd.net",
+    "urls": [
+      {
+        "url": "https://www.ogsd.net/board-of-education/meeting-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ogsd.net/board-of-education/board-meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ogsd.net/board-of-education/board-governance-handbook",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Santa Ana Unified School District",
+    "org_code": "30-66670",
+    "website": "https://www.sausd.us",
+    "urls": [
+      {
+        "url": "https://www.sausd.us/school-board/httpssausdusfinalsitecomfsadminsitepages27694/2026-27-board-meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sausd.us/school-board/meeting-videos-livestream/meeting-video-archives",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sausd.us/school-board/meeting-videos-livestream/meeting-video-archives/2026",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sausd.us/school-board/meeting-videos-livestream/meeting-video-archives/2025",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sausd.us/school-board/meeting-videos-livestream/meeting-video-archives/2024",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sausd.us/school-board/meeting-videos-livestream/meeting-video-archives/2023",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Culver City Unified School District",
+    "org_code": "19-64444",
+    "website": "https://www.ccusd.org",
+    "urls": []
+  },
+  {
+    "name": "Capistrano Unified School District",
+    "org_code": "30-66464",
+    "website": "https://www.capousd.org",
+    "urls": [
+      {
+        "url": "https://www.capousd.org/District/Board/Board-Archive/2024-25-Board-Meeting-Agendas--Minutes/District/Board/Board-Archive/Audio-Archives/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.capousd.org/District/Board/Board-Archive/2024-25-Board-Meeting-Agendas--Minutes/District/Board/Board-Archive/Board-Resolutions-Archives/2024-25-Board-Resolutions/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.capousd.org/District/Board/Board-Archive/2024-25-Board-Meeting-Agendas--Minutes/District/Board/Board-Archive/Board-Resolutions-Archives/2023-24-Board-Resolutions/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.capousd.org/District/Board/Board-Archive/2024-25-Board-Meeting-Agendas--Minutes/District/Board/Board-Archive/Board-Resolutions-Archives/2022-23-Board-Resolutions/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.capousd.org/District/Board/Board-Archive/2024-25-Board-Meeting-Agendas--Minutes/District/Board/Board-Archive/Board-Resolutions-Archives/2018-19-to-2021-22-Board-Resolutions/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "San Francisco Unified School District",
+    "org_code": "38-68478",
+    "website": "https://www.sfusd.edu",
+    "urls": [
+      {
+        "url": "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2023-board-education-meeting-documents-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2022-board-education-meeting-documents-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2020-board-education-meeting-documents-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/board-education-meeting-documents-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2021-board-education-meeting-documents-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sfusd.edu/about-sfusd/board-education/board-meeting-calendar-and-agendas/2024-meeting-documents",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Saddleback Valley Unified School District",
+    "org_code": "30-73635",
+    "website": "https://www.svusd.org",
+    "urls": [
+      {
+        "url": "https://www.svusd.org/board/board-meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.svusd.org/board/agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Alum Rock Union Elementary School District",
+    "org_code": "43-69336",
+    "website": "https://www.arusd.org",
+    "urls": [
+      {
+        "url": "https://www.arusd.org/about-us/board-of-trustees/current-board-agenda",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.arusd.org/about-us/board-of-trustees/board-agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.arusd.org/about-us/board-of-trustees/board-committees",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.arusd.org/about-us/board-of-trustees/board-committees/facilities-repurposing-advisory-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.arusd.org/about-us/board-of-trustees/board-committees/budget-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Murrieta Valley Unified School District",
+    "org_code": "33-75200",
+    "website": "https://www.murrieta.k12.ca.us",
+    "urls": [
+      {
+        "url": "https://www.murrieta.k12.ca.us/about-us/board-of-education/meeting-minutes/meeting-minutes-2024",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.murrieta.k12.ca.us/about-us/board-of-education/meeting-minutes/meeting-minutes-2023",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=36030338",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.murrieta.k12.ca.us/about-us/board-of-education/meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.murrieta.k12.ca.us/about-us/board-of-education/202627-board-meetings-clone",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.murrieta.k12.ca.us/about-us/board-of-education/meeting-conduct-and-standards",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Visalia Unified School District",
+    "org_code": "54-72256",
+    "website": "https://www.vusd.org",
+    "urls": [
+      {
+        "url": "https://www.vusd.org/boe/board-meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.vusd.org/departments/teaching-learning/multilingual-education/english-learner-advisory-committee-elac-meeting-documents",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.vusd.org/boe/board-policy-search",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Sunnyvale School District",
+    "org_code": "43-69682",
+    "website": "https://www.sesd.org",
+    "urls": [
+      {
+        "url": "https://www.sesd.org/about-usnew/departments/business-services/fy-report-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sesd.org/about-usnew/board-of-education",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sesd.org/about-usnew/board-of-education/trustee-areas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sesd.org/about-usnew/board-of-education/board-members",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sesd.org/about-usnew/board-of-education/district-policies",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sesd.org/about-usnew/board-of-education/district-policies/recognition-of-religious-beliefs-and-customs",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Evergreen Elementary School District",
+    "org_code": "43-69419",
+    "website": "https://www.eesd.org",
+    "urls": [
+      {
+        "url": "https://www.eesd.org/district/board-of-trustees/board-meetings/agendas-and-minutes-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.eesd.org/district/board-of-trustees/board-meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.eesd.org/district/board-of-trustees/board-meetings/schedule",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.eesd.org/district/board-of-trustees/policies/public-records-act-requests",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Yolo County Office of Education",
+    "org_code": "57-10575",
+    "website": "https://www.ycoe.org",
+    "urls": [
+      {
+        "url": "https://www.ycoe.org/Board/2026-Executive-Committee-Meetings/Divisions/Educational-Services/Early-Childhood-Education/Policy-Council/Policy-Council-Archives/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ycoe.org/Board/2026-Executive-Committee-Meetings/SELPA/SELPA-Governance/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ycoe.org/Board/2026-Executive-Committee-Meetings/__catapult_pages/01f4c51d-a890-46e2-8a6b-8f86a0d39ef7/2025-Executive-Board-Archive.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ycoe.org/Board/2026-Executive-Committee-Meetings/__catapult_pages/e190022b-ab1a-4e03-9891-3ddd78f7741a/2024-Executive-Board-Archive.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.ycoe.org/Board/2026-Executive-Committee-Meetings/__catapult_pages/25aa6b43-f588-4cf3-9f48-1d403d083652/2023-Executive-Board-Archive.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Fresno Unified School District",
+    "org_code": "10-62166",
+    "website": "https://www.fresnounified.org",
+    "urls": [
+      {
+        "url": "https://www.fresnounified.org/board/board-agendas-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.fresnounified.org/departments/special-education/community-advisory-committee/cac-meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.fresnounified.org/departments/special-education/community-advisory-committee/cac-meeting-minutes/cac-meeting-minutes-november-12th-2024",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.fresnounified.org/departments/special-education/community-advisory-committee/cac-meeting-minutes/cac-meeting-minutes-december-10th-2024",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.fresnounified.org/departments/special-education/community-advisory-committee/cac-meeting-minutes/cac-meeting-minutes-january-14th-2025",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "San Jose Unified School District",
+    "org_code": "43-69666",
+    "website": "https://www.sjusd.org",
+    "urls": [
+      {
+        "url": "https://www.sjusd.org/about/board-of-education",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjusd.org/about/advisory-committees-groups",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjusd.org/about/advisory-committees-groups/advisory-committee-on-use-of-sjpd-officers",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjusd.org/about/advisory-committees-groups/asset-management-advisory-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjusd.org/about/advisory-committees-groups/budget-advisory-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.sjusd.org/about/advisory-committees-groups/cacse",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "West Contra Costa Unified School District",
+    "org_code": "07-61796",
+    "website": "https://www.wccusd.net",
+    "urls": [
+      {
+        "url": "https://www.wccusd.net/about-us/our-board/our-board-home/board-meetings-agendas/agendas-packets-and-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.wccusd.net/about-us/our-board/our-board-home/board-meetings-agendas/board-meeting-video-recordings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.wccusd.net/about-us/our-board/our-board-home/board-meetings-agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.wccusd.net/about-us/our-board/wccusdnet-22-us-west1-01.preview.finalsitecdn.com/about-us/our-board/our-board-home/board-meetings-agendas",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.wccusd.net/about-us/our-board/our-board-home/meeting-policies",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Conejo Valley Unified School District",
+    "org_code": "56-73759",
+    "website": "https://www.cvusd.us",
+    "urls": []
+  },
+  {
+    "name": "Compton Unified School District",
+    "org_code": "19-73437",
+    "website": "https://www.compton.k12.ca.us",
+    "urls": [
+      {
+        "url": "https://www.compton.k12.ca.us/departments/business-services/facilities-department/measure-s/cboc-agendasminutesdocuments",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.compton.k12.ca.us/board/meeting-recordingsvideos",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.compton.k12.ca.us/board/meeting-schedules",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.compton.k12.ca.us/board/agenda-certified-board-reports",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Emery Unified School District",
+    "org_code": "01-61192",
+    "website": "https://emeryusd.k12.ca.us",
+    "urls": [
+      {
+        "url": "https://simbli.eboardsolutions.com/SB_Meetings/SB_MeetingListing.aspx?S=36030774",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "West Park Elementary School District",
+    "org_code": "10-62547",
+    "website": "https://www.westpark.k12.ca.us",
+    "urls": [
+      {
+        "url": "https://www.westpark.k12.ca.us/Board/Agendas-and-Minutes/Agendas/",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.westpark.k12.ca.us/Board/Agendas-and-Minutes/Minutes/",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.westpark.k12.ca.us/Board/Agendas-and-Minutes/Agendas/Board/Schedule-of-Meetings/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.westpark.k12.ca.us/Board/Agendas-and-Minutes/Agendas/Board/Board-Meeting-Packets/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.westpark.k12.ca.us/Board/Agendas-and-Minutes/Agendas/District-Office/Public-Programs/DELAC-Meeting/index.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.westpark.k12.ca.us/Board/Agendas-and-Minutes/Agendas/__catapult_pages/a38b3ae0-d5d5-400d-a9c5-4b0f45e8bbad/Meeting-Agendas-and-Minutes.html",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Vacaville Unified School District",
+    "org_code": "48-70557",
+    "website": "https://www.vcusd.org",
+    "urls": [
+      {
+        "url": "https://www.vcusd.org/7-11-meeting-agenda/~board/7-11-committee/post/introduction",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.vcusd.org/7-11-meeting-agenda/~board/7-11-committee/post/jul-28-2025-7-11-committee-meeting",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.vcusd.org/7-11-meeting-agenda/~board/7-11-committee/post/jul-7-2025-7-11-committee-meeting",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.vcusd.org/7-11-meeting-agenda/~board/7-11-committee/post/jun-23-2025-7-11-committee-meeting",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.vcusd.org/7-11-meeting-agenda/~board/7-11-committee/post/aug-11-2025-7-11-committee-meeting",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "San Mateo Union High School District",
+    "org_code": "41-69062",
+    "website": "https://www.smcjuhsd.org",
+    "urls": []
+  },
+  {
+    "name": "Inglewood Unified School District",
+    "org_code": "19-64634",
+    "website": "https://www.inglewoodusd.com",
+    "urls": [
+      {
+        "url": "https://www.inglewoodusd.com/apps/video/",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.inglewoodusd.com/apps/video/watch.jsp?v=396669",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.inglewoodusd.com/apps/video/list.jsp?showType=featured",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.inglewoodusd.com/apps/video/watch.jsp?v=394702",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "name": "Chino Valley Unified School District",
+    "org_code": "36-67678",
+    "website": "https://www.chino.k12.ca.us",
+    "urls": [
+      {
+        "url": "https://www.chino.k12.ca.us/253390_3",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.chino.k12.ca.us/136690_3",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.chino.k12.ca.us/136686_3",
+        "crawl_depth": 2,
+        "use_playwright": true
+      },
+      {
+        "url": "https://www.chino.k12.ca.us/136687_3",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  }
+]
