@@ -861,6 +861,149 @@ def test_step3_pops_pdf_pages_text_inside_async_impl():
     assert "_pdf_pages_text" not in ctx.doc_metadata
 
 
+# ===========================================================================
+# Chunk-count gate (post-chunking OOM guard)
+# ===========================================================================
+
+
+def test_step3_skips_when_chunk_count_exceeds_max():
+    """Docs over PIPELINE_MAX_CHUNKS must be SKIPPED before contextualize/
+    embed — otherwise celery-ingest (2G) SIGKILLs and requeues forever.
+    """
+    from app.tasks.document_pipeline import _step3_chunk_async
+
+    ctx = PipelineContext(document_id=1, job_id=10, batch_id=None)
+    ctx.tenant_id = 1
+    ctx.doc_uuid = "doc-uuid-1"
+    ctx.document_type = ".txt"
+    ctx.extracted_text = "word " * 100
+    ctx.doc_metadata = {}
+    ctx.chunks = []
+    ctx.chunk_metadatas = []
+    ctx.stage_ids = {}
+    ctx.source_type = "school_scraper"
+
+    fake_doc = MagicMock(spec=Document)
+    fake_doc.id = 1
+    fake_doc.processing_status = ProcessingStatus.PROCESSING
+    fake_doc.chunk_count = 0
+    fake_doc.error_message = None
+
+    fake_db = AsyncMock()
+    fake_db.get = AsyncMock(return_value=fake_doc)
+    stage_record = MagicMock()
+    stage_record.id = 1
+    fake_chatbot_config = MagicMock()
+    fake_chatbot_config.id = 1
+    # Force many tiny chunks so we exceed the patched max of 5.
+    fake_chunking_config = {"chunk_size": 5, "chunk_overlap": 0}
+    fake_redis = MagicMock()
+
+    with (
+        patch(
+            "app.tasks.document_pipeline.AsyncSessionLocal",
+            return_value=_fake_async_ctx_mgr(fake_db),
+        ),
+        patch(
+            "app.tasks.document_pipeline._create_stage_record",
+            AsyncMock(return_value=stage_record),
+        ),
+        patch(
+            "app.tasks.document_pipeline._update_stage_status",
+            AsyncMock(),
+        ),
+        patch(
+            "app.tasks.document_pipeline._update_job_status",
+            AsyncMock(),
+        ) as mock_job_status,
+        patch(
+            "app.tasks.document_pipeline.chatbot_config_service.get_default_chatbot_config",
+            AsyncMock(return_value=fake_chatbot_config),
+        ),
+        patch(
+            "app.tasks.document_pipeline.chatbot_config_service.get_chunking_config",
+            AsyncMock(return_value=fake_chunking_config),
+        ),
+        patch(
+            "app.tasks.document_pipeline.settings.PIPELINE_MAX_CHUNKS",
+            5,
+        ),
+    ):
+        asyncio.run(_step3_chunk_async(ctx, fake_redis))
+
+    assert ctx.skip_remaining is True
+    assert ctx.skip_reason is not None
+    assert "PIPELINE_MAX_CHUNKS=5" in ctx.skip_reason
+    assert ctx.chunks == []
+    assert ctx.chunk_metadatas == []
+    assert fake_doc.processing_status == ProcessingStatus.SKIPPED
+    assert fake_doc.chunk_count > 5
+    assert fake_doc.error_message.startswith("skipped_chunk_limit:")
+    mock_job_status.assert_awaited_once()
+    assert mock_job_status.await_args.args[2] == JobStatus.SKIPPED
+
+
+def test_step3_proceeds_when_chunk_count_within_max():
+    """In-limit docs must not be skipped by the chunk-count gate."""
+    from app.tasks.document_pipeline import _step3_chunk_async
+
+    ctx = PipelineContext(document_id=1, job_id=10, batch_id=None)
+    ctx.tenant_id = 1
+    ctx.doc_uuid = "doc-uuid-1"
+    ctx.document_type = ".txt"
+    ctx.extracted_text = "hello world"
+    ctx.doc_metadata = {}
+    ctx.chunks = []
+    ctx.chunk_metadatas = []
+    ctx.stage_ids = {}
+    ctx.source_type = "upload"
+
+    fake_db = AsyncMock()
+    fake_db.get = AsyncMock(return_value=None)
+    stage_record = MagicMock()
+    stage_record.id = 1
+    fake_chatbot_config = MagicMock()
+    fake_chatbot_config.id = 1
+    fake_chunking_config = {"chunk_size": 1000, "chunk_overlap": 0}
+    fake_redis = MagicMock()
+
+    with (
+        patch(
+            "app.tasks.document_pipeline.AsyncSessionLocal",
+            return_value=_fake_async_ctx_mgr(fake_db),
+        ),
+        patch(
+            "app.tasks.document_pipeline._create_stage_record",
+            AsyncMock(return_value=stage_record),
+        ),
+        patch(
+            "app.tasks.document_pipeline._update_stage_status",
+            AsyncMock(),
+        ),
+        patch(
+            "app.tasks.document_pipeline._update_job_status",
+            AsyncMock(),
+        ) as mock_job_status,
+        patch(
+            "app.tasks.document_pipeline.chatbot_config_service.get_default_chatbot_config",
+            AsyncMock(return_value=fake_chatbot_config),
+        ),
+        patch(
+            "app.tasks.document_pipeline.chatbot_config_service.get_chunking_config",
+            AsyncMock(return_value=fake_chunking_config),
+        ),
+        patch(
+            "app.tasks.document_pipeline.settings.PIPELINE_MAX_CHUNKS",
+            2000,
+        ),
+    ):
+        asyncio.run(_step3_chunk_async(ctx, fake_redis))
+
+    assert ctx.skip_remaining is False
+    assert len(ctx.chunks) >= 1
+    mock_job_status.assert_not_awaited()
+
+
 def test_step5_drops_embeddings_after_storing():
     """After step 5 succeeds, embeddings (the largest per-doc field,
     1536-3072 floats × N chunks) must be cleared from the chain payload

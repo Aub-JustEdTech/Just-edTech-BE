@@ -1370,6 +1370,95 @@ class SchoolScraperService:
 
             extra_media: list[dict] = []
 
+            # BoardDocs: HTTP-first NSF agent expander. Headless Chromium is
+            # served a blank SPA, so skip the Playwright path entirely and
+            # never enqueue sub-pages (single-portal scope, like the other
+            # board platforms). /Private portals are login-walled -> skipped
+            # inside the expander.
+            if board_platform_kind(current_url) == "boarddocs":
+                from app.services.web_scraper.boarddocs_client import (
+                    expand_boarddocs_meetings,
+                )
+
+                logger.info(
+                    "Board platform dispatch: expanding BoardDocs meetings on %s",
+                    current_url,
+                )
+                try:
+                    boarddocs_media = await expand_boarddocs_meetings(
+                        page_url=current_url,
+                        max_meetings=getattr(
+                            settings, "SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS", 24
+                        ),
+                        timeout_ms=int(settings.WEB_SCRAPER_TIMEOUT_SECONDS * 1000),
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "BoardDocs expander failed for %s (%s): %s",
+                        current_url,
+                        type(exc).__name__,
+                        exc,
+                    )
+                    boarddocs_media = []
+                pages_crawled += 1
+                if boarddocs_media:
+                    all_media.extend(await filter_media_files_async(boarddocs_media))
+                continue
+
+            # Simbli / eBoard Solutions: hybrid Playwright + JSON-API expander.
+            # Like BoardDocs it enumerates meetings via a structured API and
+            # expands each one, but unlike BoardDocs it needs a real browser
+            # session (Imperva cookies + Angular ViewMeeting pages), so we
+            # keep the Playwright branch instead of going HTTP-only.
+            if board_platform_kind(current_url) == "simbli":
+                from app.services.web_scraper.simbli_client import (
+                    expand_simbli_meetings,
+                )
+
+                logger.info(
+                    "Board platform dispatch: expanding Simbli meetings on %s",
+                    current_url,
+                )
+                if not self._browser:
+                    await self._ensure_playwright()
+                simbli_page = await self._browser.new_page(
+                    user_agent=settings.SCHOOL_SCRAPER_USER_AGENT
+                )
+                simbli_media: list[dict] = []
+                try:
+                    simbli_media = await expand_simbli_meetings(
+                        simbli_page,
+                        page_url=current_url,
+                        timeout_ms=int(
+                            settings.WEB_SCRAPER_TIMEOUT_SECONDS * 1000
+                        ),
+                        max_meetings=getattr(
+                            settings,
+                            "SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS",
+                            24,
+                        ),
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "Simbli expander failed for %s (%s): %s",
+                        current_url,
+                        type(exc).__name__,
+                        exc,
+                    )
+                    simbli_media = []
+                finally:
+                    await simbli_page.close()
+                pages_crawled += 1
+                if simbli_media:
+                    logger.info(
+                        "Board platform dispatch: Simbli expander returned %d "
+                        "documents for %s",
+                        len(simbli_media),
+                        current_url,
+                    )
+                    all_media.extend(await filter_media_files_async(simbli_media))
+                continue
+
             # Board-meeting platform URLs (BoardDocs, Diligent, BoardOnTrack)
             # are JS/iframe-heavy SPAs — skip the httpx-fingerprint gate and
             # go straight to Playwright + iframe-merge, regardless of whether

@@ -1145,6 +1145,42 @@ async def _step3_chunk_async(ctx: PipelineContext, redis_tracker):
         # (Transcript/xlsx pre-chunks were already popped above.)
         ctx.doc_metadata.pop("_pdf_pages_text", None)
 
+        # Chunk-count gate: reject docs that would OOM celery-ingest during
+        # contextualize/embed/store (prod: 9514 chunks → SIGKILL on 2G
+        # workers, then infinite requeue via task_reject_on_worker_lost).
+        # Mirrors the year-gate skip pattern: mark SKIPPED, clear payload,
+        # let downstream stages noop via ctx.skip_remaining.
+        n_chunks = len(ctx.chunks)
+        max_chunks = int(getattr(settings, "PIPELINE_MAX_CHUNKS", 0) or 0)
+        if max_chunks > 0 and n_chunks > max_chunks:
+            skip_reason = (
+                f"{n_chunks} chunks exceeds PIPELINE_MAX_CHUNKS={max_chunks}"
+            )
+            document = await db.get(Document, ctx.document_id)
+            if document is not None:
+                document.processing_status = ProcessingStatus.SKIPPED
+                document.chunk_count = n_chunks
+                document.error_message = f"skipped_chunk_limit: {skip_reason}"
+            await _update_job_status(db, ctx.job_id, JobStatus.SKIPPED)
+            ctx.skip_remaining = True
+            ctx.skip_reason = skip_reason
+            # Drop the oversized payload so stages 2.7/4/5/6 don't
+            # re-serialize thousands of chunks through Redis while no-oping.
+            ctx.chunks = []
+            ctx.chunk_metadatas = []
+            logger.warning(
+                f"[Doc {ctx.document_id}] Skipping remaining pipeline stages "
+                f"({skip_reason})"
+            )
+            await _update_stage_status(
+                db,
+                stage_record.id,
+                StageStatus.COMPLETED,
+                input_size=len(ctx.extracted_text or ""),
+                output_size=n_chunks,
+            )
+            return
+
         # Update stage to completed
         await _update_stage_status(
             db,
