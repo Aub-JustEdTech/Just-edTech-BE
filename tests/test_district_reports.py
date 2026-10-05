@@ -322,6 +322,20 @@ def test_pdf_renders_markdown_links_as_anchors():
     assert "Open document" in html
 
 
+def test_pdf_html_includes_brand_chrome():
+    from app.services.district_report.pdf import _markdown_to_html
+    from app.services.report_branding import BRAND_NAME, BRAND_NAVY
+
+    html = _markdown_to_html("## Key points\n\nHello.\n", "Branded Title")
+    assert BRAND_NAME in html
+    assert "brand-header" in html
+    assert "accent-rule" in html
+    assert "continuation-accent" in html
+    assert BRAND_NAVY in html
+    assert "size: A4" in html
+    assert "data:image/jpeg;base64," in html
+
+
 # ---------------------------------------------------------------------------
 # 3. PDF renderer
 # ---------------------------------------------------------------------------
