@@ -16,6 +16,13 @@ from app.services.web_scraper.board_platforms import (
     normalize_boarddocs_url,
 )
 
+
+@pytest.fixture(autouse=True)
+def _no_pacing(monkeypatch):
+    monkeypatch.setattr(bd, "_REQUEST_DELAY_SECONDS", 0)
+    monkeypatch.setattr(bd, "_BACKOFF_SECONDS", 0)
+
+
 PUBLIC = "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public"
 BASE = "https://go.boarddocs.com/ma/nrsd/Board.nsf"
 
@@ -181,6 +188,131 @@ async def test_expander_respects_meeting_cap(monkeypatch):
     _install_mock(monkeypatch, handler)
     await bd.expand_boarddocs_meetings(page_url=PUBLIC, max_meetings=2)
     assert calls["agenda"] == 2
+
+
+# ------------------------------------------------- agenda / minutes only scope
+
+LONG = "Call to order. " * 30  # > minimum visible-text threshold
+
+AGENDA_WITH_MIXED_FILES = (
+    f"<div>{LONG}</div>"
+    '<a href="/ma/nrsd/Board.nsf/files/A1/$file/Warrant%20Report.pdf">Warrant Report</a>'
+    '<a href="/ma/nrsd/Board.nsf/files/A2/$file/Contract.pdf">Vendor Contract</a>'
+    '<a href="/ma/nrsd/Board.nsf/files/A3/$file/Approved%20Minutes%20June.pdf">Approved Minutes June</a>'
+    '<a href="/ma/nrsd/Board.nsf/files/A4/$file/Financials.pdf">Financials</a>'
+)
+
+
+def _scoped_handler(minutes_html: str):
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if request.method == "GET" and path.endswith("/Public"):
+            return httpx.Response(200, text=SHELL_HTML)
+        if path.endswith("BD-GetMeetingsList"):
+            return httpx.Response(200, text=json.dumps(MEETINGS[:1]))
+        if path.endswith("PRINT-AgendaDetailed"):
+            return httpx.Response(200, text=AGENDA_WITH_MIXED_FILES)
+        if path.endswith("BD-GetMinutes"):
+            return httpx.Response(200, text=minutes_html)
+        return httpx.Response(404)
+
+    return handler
+
+
+async def test_only_agenda_minutes_and_labelled_attachments(monkeypatch):
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_ALLOWED_YEARS", [2026])
+    _install_mock(monkeypatch, _scoped_handler(f"<p>{LONG}</p>"))
+
+    media = await bd.expand_boarddocs_meetings(page_url=PUBLIC)
+    names = sorted(m["name"] for m in media)
+
+    assert any(n.endswith("Agenda 2026-08-13.txt") for n in names)
+    assert any(n.endswith("Minutes 2026-08-13.txt") for n in names)
+    assert any("Approved Minutes June" in n for n in names)
+    # Out of scope: everything else attached to the meeting.
+    assert not any("Warrant" in n or "Contract" in n or "Financials" in n for n in names)
+    assert len(media) == 3
+    assert all(m["doc_year"] == 2026 for m in media)
+
+
+async def test_minutes_skipped_when_not_published(monkeypatch):
+    monkeypatch.setattr(settings, "SCHOOL_SCRAPER_ALLOWED_YEARS", [2026])
+    _install_mock(monkeypatch, _scoped_handler("<p>  </p>"))
+
+    media = await bd.expand_boarddocs_meetings(page_url=PUBLIC)
+    assert not any("Minutes 2026" in m["name"] for m in media)
+
+
+def test_agent_url_roundtrip():
+    url = bd.build_agent_url(
+        BASE, bd.MINUTES_AGENT, meeting_id="M1", committee_id="C1", meeting_date="2026-08-13"
+    )
+    parsed = bd.parse_agent_url(url)
+    assert parsed["kind"] == "minutes"
+    assert parsed["meeting_id"] == "M1"
+    assert parsed["committee_id"] == "C1"
+    assert parsed["meeting_date"] == "2026-08-13"
+    assert parsed["base_url"] == BASE
+    assert bd.parse_agent_url(BASE + "/files/A/$file/a.pdf") is None
+
+
+@pytest.mark.parametrize(
+    "label,expected",
+    [
+        ("Approved Minutes June", True),
+        ("Board_Agenda_Final.pdf", True),
+        ("School%20Committee%20Minutes%2020Nov2025.pdf", True),
+        ("Warrant Report", False),
+        ("Vendor Contract", False),
+        (None, False),
+    ],
+)
+def test_agenda_minutes_label(label, expected):
+    assert bd.is_agenda_or_minutes_label(label) is expected
+
+
+async def test_download_renders_agent_url_to_text(monkeypatch):
+    _install_mock(monkeypatch, lambda r: httpx.Response(200, text=f"<p>{LONG}</p>"))
+    url = bd.build_agent_url(
+        BASE, bd.AGENDA_AGENT, meeting_id="M1", committee_id="C1", meeting_date="2026-08-13"
+    )
+    raw = await bd.fetch_boarddocs_document(PUBLIC, url)
+    text = raw.decode()
+    assert text.startswith("Agenda - meeting date 2026-08-13")
+    assert "Call to order." in text
+
+
+async def test_download_agent_url_with_no_text_raises(monkeypatch):
+    _install_mock(monkeypatch, lambda r: httpx.Response(200, text="<p></p>"))
+    url = bd.build_agent_url(BASE, bd.MINUTES_AGENT, meeting_id="M1", committee_id="C1")
+    with pytest.raises(RuntimeError):
+        await bd.fetch_boarddocs_document(PUBLIC, url)
+
+
+async def test_throttled_request_is_retried_then_succeeds(monkeypatch):
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(429)
+        return httpx.Response(200, text=f"<p>{LONG}</p>")
+
+    _install_mock(monkeypatch, handler)
+    url = bd.build_agent_url(BASE, bd.AGENDA_AGENT, meeting_id="M1", committee_id="C1")
+    raw = await bd.fetch_boarddocs_document(PUBLIC, url)
+    assert calls["n"] == 2 and b"Call to order." in raw
+
+
+async def test_block_is_logged_as_warning_not_silent(monkeypatch, caplog):
+    import logging
+
+    _install_mock(monkeypatch, lambda r: httpx.Response(403))
+    url = bd.build_agent_url(BASE, bd.MINUTES_AGENT, meeting_id="M1", committee_id="C1")
+    with caplog.at_level(logging.WARNING, logger=bd.logger.name):
+        with pytest.raises(RuntimeError):
+            await bd.fetch_boarddocs_document(PUBLIC, url)
+    assert any("HTTP 403" in r.getMessage() for r in caplog.records)
 
 
 # ------------------------------------------------------------------- download
