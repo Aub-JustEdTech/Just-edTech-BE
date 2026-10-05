@@ -132,6 +132,7 @@ jobs:
 
           MAX_TOKENS=${{ vars.MAX_TOKENS }}
           MAX_FILE_SIZE_MB=${{ vars.MAX_FILE_SIZE_MB }}
+          PIPELINE_MAX_CHUNKS=${{ vars.PIPELINE_MAX_CHUNKS }}
 
           ALLOWED_DOCUMENT_TYPES=${{ vars.ALLOWED_DOCUMENT_TYPES }}
 
