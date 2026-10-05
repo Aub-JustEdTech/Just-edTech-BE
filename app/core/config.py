@@ -194,6 +194,12 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str
 
     # Document Processing
+    # Hard ceiling on chunks per document after stage 3. celery-ingest is
+    # capped at 2G in prod; embedding + situating-context + Celery chain
+    # serialization Docs over this limit are
+    # marked SKIPPED (skipped_chunk_limit) before contextualize/embed.
+    # 0 disables the gate.
+    PIPELINE_MAX_CHUNKS: int = 2000
     MAX_FILE_SIZE_MB: int = 50
     ALLOWED_DOCUMENT_TYPES: list[str] = [
         ".pdf",
@@ -380,6 +386,7 @@ class Settings(BaseSettings):
         "diligentoneplatform.com",
         "boardontrack.com",
         "granicus.com",
+        "eboardsolutions.com",  # Simbli / eBoard Solutions
     ]
     # Hard cap on meetings visited per board-platform portal per scrape
     # (Diligent/BoardOnTrack calendars can span 10+ years of history).

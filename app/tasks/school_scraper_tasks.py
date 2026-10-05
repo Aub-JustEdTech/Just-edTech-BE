@@ -342,6 +342,8 @@ async def _materialize_media(
     from app.services.web_scraper.board_platforms import (
         fetch_document_via_playwright_session,
         is_board_platform_url,
+        is_boarddocs_url,
+        is_simbli_url,
     )
 
     # --- YouTube: captions first, always free ---
@@ -393,10 +395,33 @@ async def _materialize_media(
     # if it occurs, fall through to the httpx/transcription paths above.
     board_doc_url = sm.source_media_url or sm.source_page_url or ""
     if sm.media_type == "document" and is_board_platform_url(board_doc_url):
-        raw = await fetch_document_via_playwright_session(
-            sm.source_page_url,
-            sm.source_media_url,
-        )
+        if is_boarddocs_url(board_doc_url):
+            # BoardDocs attachments are usually session-less: direct HTTP
+            # first, Playwright session only if the server returns HTML.
+            from app.services.web_scraper.boarddocs_client import (
+                fetch_boarddocs_document,
+            )
+
+            raw = await fetch_boarddocs_document(
+                sm.source_page_url,
+                sm.source_media_url,
+            )
+        elif is_simbli_url(board_doc_url):
+            # Simbli Attachment.aspx is Imperva-gated; needs the warmed
+            # Playwright session established against the ViewMeeting page.
+            from app.services.web_scraper.simbli_client import (
+                fetch_simbli_document,
+            )
+
+            raw = await fetch_simbli_document(
+                sm.source_page_url,
+                sm.source_media_url,
+            )
+        else:
+            raw = await fetch_document_via_playwright_session(
+                sm.source_page_url,
+                sm.source_media_url,
+            )
         return MediaPayload(
             text=_extract_text_from_document(raw, sm.file_extension),
             content_hash=hashlib.sha256(raw).hexdigest(),

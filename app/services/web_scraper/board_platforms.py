@@ -21,7 +21,7 @@ This module centralizes:
 from __future__ import annotations
 
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, urlunsplit
 
 from app.core.config import settings
 
@@ -57,13 +57,15 @@ def is_board_platform_url(url: str | None) -> bool:
 def board_platform_kind(url: str | None) -> str | None:
     """Return which configured board-platform family a URL belongs to.
 
-    Returns one of: "boarddocs", "diligent", "boardontrack", "granicus", or None.
+    Returns one of: "boarddocs", "diligent", "boardontrack", "granicus",
+    "simbli", or None.
 
     Maps each configured domain suffix to its platform kind:
     - diligentoneplatform.com -> "diligent"
     - boardontrack.com -> "boardontrack"
     - boarddocs.com -> "boarddocs"
     - granicus.com -> "granicus"
+    - eboardsolutions.com -> "simbli"
     """
     if not url:
         return None
@@ -80,6 +82,7 @@ def board_platform_kind(url: str | None) -> str | None:
         "boardontrack.com": "boardontrack",
         "boarddocs.com": "boarddocs",
         "granicus.com": "granicus",
+        "eboardsolutions.com": "simbli",
     }
 
     for domain, kind in domain_to_kind.items():
@@ -87,6 +90,193 @@ def board_platform_kind(url: str | None) -> str | None:
             return kind
 
     return None
+
+
+# ---------------------------------------------------------------------------
+# BoardDocs URL hygiene
+# ---------------------------------------------------------------------------
+
+# Path segments that mark a BoardDocs public SPA entry. Order matters: we
+# prefer the canonical ``/Public`` form when normalising.
+_BOARDDOCS_PUBLIC_ENTRIES: tuple[str, ...] = ("public", "vpublic")
+_BOARDDOCS_PRIVATE_ENTRIES: tuple[str, ...] = ("private", "vprivate")
+
+
+def is_boarddocs_url(url: str | None) -> bool:
+    """True when ``url`` is on a BoardDocs host (any subdomain of boarddocs.com)."""
+    return board_platform_kind(url) == "boarddocs"
+
+
+def is_boarddocs_private_url(url: str | None) -> bool:
+    """True when ``url`` points at a BoardDocs *private* (login-walled) portal.
+
+    BoardDocs public portals live under ``.../Board.nsf/Public`` (or
+    ``.../vpublic?open``). The ``/Private`` / ``/vprivate`` variants are the
+    authenticated board portal and are never scrapeable without credentials —
+    callers must detect and skip them so ENS-style confirmed rows don't
+    enqueue unfetchable work.
+    """
+    if not is_boarddocs_url(url):
+        return False
+    try:
+        path = (urlsplit(url).path or "").lower().strip()
+    except Exception:  # noqa: BLE001
+        return False
+    if not path:
+        return False
+    # Match the trailing entry segment, e.g. ``/Board.nsf/Private``.
+    parts = [p for p in path.split("/") if p]
+    if not parts:
+        return False
+    last = parts[-1]
+    return last in _BOARDDOCS_PRIVATE_ENTRIES
+
+
+def normalize_boarddocs_url(url: str | None) -> str | None:
+    """Normalise a BoardDocs portal URL to a canonical public entry.
+
+    - Drop client-only fragments (``#tab-meetings`` and friends) — the SPA
+      tab is unreachable for an HTTP client and the crawler already strips
+      fragments on crawl-normalize; this keeps the expander's view consistent.
+    - Map ``vpublic?open`` onto the canonical ``/Public`` entry so the same
+      NSF agents resolve regardless of which entry the school linked to.
+    - Leave non-BoardDocs URLs untouched (returns the input unchanged) and
+      return ``None`` for empty/invalid input.
+
+    ``/Private`` URLs are returned unchanged — callers should gate them with
+    :func:`is_boarddocs_private_url` before invoking the expander.
+    """
+    if not url:
+        return None
+    if not is_boarddocs_url(url):
+        return url
+
+    split = urlsplit(url)
+    scheme = split.scheme or "https"
+    netloc = split.netloc
+    path = split.path or ""
+    query = split.query or ""
+
+    # Strip client-only fragment entirely.
+    fragment = ""
+
+    # Map vpublic?open -> Public (same NSF app, canonical entry).
+    path_lower = path.lower()
+    if path_lower.endswith("/vpublic"):
+        path = path[: -len("vpublic")] + "Public"
+        # ``?open`` is a no-op cue for the NSF agent; drop it once we've
+        # mapped to the canonical Public entry.
+        query = ""
+    elif path_lower.endswith("/vprivate"):
+        # Don't rewrite Private variants — keep the signal for the skip check.
+        pass
+
+    return urlunsplit((scheme, netloc, path, query, fragment))
+
+
+def boarddocs_portal_base(url: str | None) -> str | None:
+    """Return the NSF base URL (``.../Board.nsf``) for a BoardDocs portal.
+
+    The expander posts NSF agents (``BD-GetMeetingsList``, ``PRINT-AgendaDetailed``)
+    relative to this base. Returns ``None`` for non-BoardDocs URLs or URLs that
+    don't carry a ``Board.nsf`` (case-insensitive) segment — those are
+    malformed and the expander cannot safely derive an agent URL from them.
+    """
+    if not is_boarddocs_url(url):
+        return None
+    try:
+        split = urlsplit(url)
+    except Exception:  # noqa: BLE001
+        return None
+    parts = [p for p in (split.path or "").split("/") if p]
+    base_idx = None
+    for i, p in enumerate(parts):
+        if p.lower() == "board.nsf":
+            base_idx = i
+            break
+    if base_idx is None:
+        return None
+    base_path = "/" + "/".join(parts[: base_idx + 1])
+    return urlunsplit((split.scheme or "https", split.netloc, base_path, "", ""))
+
+
+# ---------------------------------------------------------------------------
+# Simbli / eBoard Solutions URL hygiene
+# ---------------------------------------------------------------------------
+
+# Path segments that mark a Simbli public meeting-listing entry. The canonical
+# archive URL is ``/SB_Meetings/SB_MeetingListing.aspx?S={siteId}``; schools
+# sometimes link to the site home (``/Index.aspx?S=``) or directly to a
+# ``ViewMeeting`` detail page. The expander always works from the listing,
+# so we normalise those variants.
+_SIMBLI_LISTING_PATH = "/sb_meetings/sb_meetinglisting.aspx"
+
+
+def is_simbli_url(url: str | None) -> bool:
+    """True when ``url`` is on a Simbli / eBoard Solutions host."""
+    return board_platform_kind(url) == "simbli"
+
+
+def _query_param(query: str, name: str) -> str | None:
+    """Return the first value of ``name`` from a query string, case-insensitively."""
+    if not query:
+        return None
+    name_lower = name.lower()
+    for pair in query.split("&"):
+        if "=" in pair:
+            key, _, value = pair.partition("=")
+            if key.lower() == name_lower:
+                return value
+    return None
+
+
+def simbli_site_id(url: str | None) -> str | None:
+    """Extract the ``S`` (site id) query param from a Simbli URL.
+
+    The site id is the district key the listing/detail APIs key on (e.g.
+    ``36030338``). Returns ``None`` for non-Simbli URLs or URLs without ``S``.
+    """
+    if not is_simbli_url(url):
+        return None
+    try:
+        query = urlsplit(url).query or ""
+    except Exception:  # noqa: BLE001
+        return None
+    return _query_param(query, "S")
+
+
+def normalize_simbli_listing_url(url: str | None) -> str | None:
+    """Normalise a Simbli URL to the canonical meeting-listing entry.
+
+    - ``/Index.aspx?S=`` -> ``/SB_Meetings/SB_MeetingListing.aspx?S=``
+    - ``/SB_Meetings/ViewMeeting.aspx?S=&MID=`` -> listing (keeps ``S``,
+      drops ``MID`` — the listing enumerates meetings; ``MID`` is only
+      relevant for a single detail page).
+    - Bare host with ``?S=`` -> listing.
+    - Non-Simbli URLs are returned unchanged. Returns ``None`` for empty
+      input. URLs without ``S`` are returned unchanged so the expander can
+      log and skip them.
+    """
+    if not url:
+        return None
+    if not is_simbli_url(url):
+        return url
+    try:
+        split = urlsplit(url)
+    except Exception:  # noqa: BLE001
+        return url
+    scheme = split.scheme or "https"
+    netloc = split.netloc
+    query = split.query or ""
+    site_id = _query_param(query, "S")
+    if not site_id:
+        # Without a site id the listing API cannot be called; leave URL as-is
+        # so the caller can log/skip rather than silently emit a bad URL.
+        return url
+    # Always point at the canonical listing path, preserving the host.
+    return urlunsplit(
+        (scheme, netloc, _SIMBLI_LISTING_PATH, f"S={site_id}", "")
+    )
 
 
 # ---------------------------------------------------------------------------
