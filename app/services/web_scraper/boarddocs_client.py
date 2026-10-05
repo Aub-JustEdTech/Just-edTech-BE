@@ -95,6 +95,49 @@ _COMMITTEE_PRIORITY_KEYWORDS: tuple[str, ...] = (
 # a portal with dozens of sub-committees can't explode the budget).
 _MAX_FALLBACK_COMMITTEES = 3
 
+# Politeness: BoardDocs sits behind a CDN/WAF that answers 403/429 to bursts.
+# Pace every request and back off on throttling statuses. 403 is treated as a
+# block (retrying a block just extends it), so it is surfaced, not hammered.
+_REQUEST_DELAY_SECONDS = 0.5
+_RETRY_STATUSES = frozenset({429, 502, 503, 504})
+_MAX_ATTEMPTS = 3
+_BACKOFF_SECONDS = 5.0
+
+
+async def _send_post(
+    client: httpx.AsyncClient, endpoint: str, body: str, referer: str, what: str
+) -> httpx.Response | None:
+    """Paced POST with backoff. Returns the final response, or ``None`` on a
+    transport error. Throttling/blocking is logged at WARNING, never debug."""
+    import asyncio
+
+    headers = _client_headers(
+        {"Content-Type": "application/x-www-form-urlencoded", "Referer": referer}
+    )
+    resp: httpx.Response | None = None
+    for attempt in range(1, _MAX_ATTEMPTS + 1):
+        await asyncio.sleep(_REQUEST_DELAY_SECONDS)
+        try:
+            resp = await client.post(endpoint, content=body, headers=headers)
+        except httpx.HTTPError as exc:
+            logger.warning(
+                "boarddocs: %s transport error (%s): %s", what, type(exc).__name__, exc
+            )
+            return None
+        if resp.status_code not in _RETRY_STATUSES:
+            break
+        if attempt < _MAX_ATTEMPTS:
+            await asyncio.sleep(_BACKOFF_SECONDS * attempt)
+    assert resp is not None
+    if resp.status_code in (403, 429) or resp.status_code in _RETRY_STATUSES:
+        logger.warning(
+            "boarddocs: %s answered HTTP %d (throttled/blocked) at %s",
+            what,
+            resp.status_code,
+            endpoint,
+        )
+    return resp
+
 
 def _client_headers(extra: dict[str, str] | None = None) -> dict[str, str]:
     """Headers that mimic the BoardDocs SPA's own XHR requests.
@@ -466,24 +509,13 @@ async def expand_boarddocs_meetings(
                 portal_url,
             )
 
-            # 3. For each kept meeting, fetch PRINT-AgendaDetailed and
-            # collect attachment file URLs.
+            # 3. For each kept meeting collect ONLY the agenda, the minutes
+            # and agenda/minutes-labelled attachments (nothing else).
             for meeting in kept:
-                files = await _fetch_agenda_files(
-                    client, base_url, committee_id, meeting
-                )
-                meeting_year = _meeting_year(meeting)
-                for f in files:
-                    key = f["url"]
-                    if key in collected:
-                        continue
-                    collected[key] = {
-                        "url": f["url"],
-                        "media_type": "document",
-                        "source_page_url": portal_url,
-                        "doc_year": meeting_year,
-                        "name": f.get("name") or "",
-                    }
+                for item in await _collect_meeting_documents(
+                    client, base_url, portal_url, committee_id, meeting
+                ):
+                    collected.setdefault(item["url"], item)
 
             # Deduct this committee's meetings from the shared budget so the
             # portal-wide cap (SCHOOL_SCRAPER_BOARD_PORTAL_MAX_MEETINGS) is
@@ -518,82 +550,258 @@ async def _fetch_meetings_list(
     the expander loop can try the next committee without raising.
     """
     endpoint = urljoin(base_url + "/", "BD-GetMeetingsList?open")
-    body = f"current_committee_id={committee_id}"
-    try:
-        resp = await client.post(
-            endpoint,
-            content=body,
-            headers=_client_headers(
-                {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Referer": base_url,
-                }
-            ),
-        )
-        if resp.status_code != 200:
-            logger.debug(
-                "boarddocs: BD-GetMeetingsList %s returned HTTP %d for committee %s",
-                endpoint,
-                resp.status_code,
-                committee_id,
-            )
-            return []
-        return parse_boarddocs_meetings_list(resp.text)
-    except httpx.HTTPError as exc:
-        logger.debug(
-            "boarddocs: BD-GetMeetingsList error for %s (%s): %s",
-            endpoint,
-            type(exc).__name__,
-            exc,
-        )
+    resp = await _send_post(
+        client,
+        endpoint,
+        f"current_committee_id={committee_id}",
+        base_url,
+        f"BD-GetMeetingsList(committee={committee_id})",
+    )
+    if resp is None or resp.status_code != 200:
         return []
+    return parse_boarddocs_meetings_list(resp.text)
 
 
-async def _fetch_agenda_files(
+# ---------------------------------------------------------------------------
+# Agenda / minutes as text documents
+# ---------------------------------------------------------------------------
+#
+# On BoardDocs the agenda and the minutes are HTML served by NSF agents, not
+# downloadable files. We scope ingestion to exactly these two document kinds:
+#
+#   agenda  -> PRINT-AgendaDetailed  (full agenda incl. item bodies)
+#   minutes -> BD-GetMinutes
+#
+# Each becomes one media item whose URL is a stable *pseudo* URL that encodes
+# the agent + meeting + committee. It is deterministic (so url_hash dedupe
+# works) and ``fetch_boarddocs_document`` knows how to render it to text at
+# ingest time. Attachments are kept only when their label says agenda/minutes.
+
+AGENDA_AGENT = "PRINT-AgendaDetailed"
+MINUTES_AGENT = "BD-GetMinutes"
+_AGENT_KIND = {AGENDA_AGENT: "agenda", MINUTES_AGENT: "minutes"}
+
+# Below this many characters of visible text an agent response is treated as
+# "nothing published" (e.g. a meeting with no minutes yet) and skipped.
+_MIN_DOCUMENT_TEXT_CHARS = 200
+
+# Attachment labels worth keeping. Everything else on a meeting (warrants,
+# contracts, financials, presentations) is out of scope.
+_AGENDA_MINUTES_LABEL_RE = re.compile(r"\b(agenda|agendas|minutes|minute)\b", re.IGNORECASE)
+
+
+def is_agenda_or_minutes_label(label: str | None) -> bool:
+    """True when an attachment label/filename names an agenda or minutes."""
+    if not label:
+        return False
+    from urllib.parse import unquote
+
+    return bool(_AGENDA_MINUTES_LABEL_RE.search(unquote(label).replace("_", " ")))
+
+
+def html_to_text(html: str) -> str:
+    """Render an agent's HTML response as readable plain text."""
+    if not html:
+        return ""
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+    lines = [ln.strip() for ln in soup.get_text("\n").splitlines()]
+    out: list[str] = []
+    for ln in lines:
+        ln = ln.replace("\xa0", " ").strip()
+        if ln or (out and out[-1]):
+            out.append(ln)
+    return "\n".join(out).strip()
+
+
+def build_agent_url(
+    base_url: str,
+    agent: str,
+    *,
+    meeting_id: str,
+    committee_id: str,
+    meeting_date: str = "",
+) -> str:
+    """Stable pseudo-URL identifying one agenda/minutes document."""
+    from urllib.parse import urlencode
+
+    params = {"open": "", "id": meeting_id, "current_committee_id": committee_id}
+    if meeting_date:
+        params["meeting_date"] = meeting_date
+    query = urlencode(params).replace("open=", "open", 1)
+    return f"{base_url}/{agent}?{query}"
+
+
+def parse_agent_url(url: str | None) -> dict | None:
+    """Inverse of :func:`build_agent_url`; ``None`` for ordinary file URLs."""
+    if not url or not is_boarddocs_url(url):
+        return None
+    from urllib.parse import parse_qs, urlsplit
+
+    split = urlsplit(url)
+    agent = split.path.rsplit("/", 1)[-1]
+    if agent not in _AGENT_KIND:
+        return None
+    qs = parse_qs(split.query, keep_blank_values=True)
+    meeting_id = (qs.get("id") or [""])[0]
+    committee_id = (qs.get("current_committee_id") or [""])[0]
+    if not meeting_id or not committee_id:
+        return None
+    base = _nsf_base_from_split(split)
+    return {
+        "base_url": base,
+        "agent": agent,
+        "kind": _AGENT_KIND[agent],
+        "meeting_id": meeting_id,
+        "committee_id": committee_id,
+        "meeting_date": (qs.get("meeting_date") or [""])[0],
+    }
+
+
+def _nsf_base_from_split(split) -> str:
+    """``scheme://host/<path up to and including Board.nsf>``."""
+    parts = [p for p in split.path.split("/") if p]
+    idx = next((i for i, p in enumerate(parts) if p.lower() == "board.nsf"), None)
+    path = "/" + "/".join(parts[: idx + 1]) if idx is not None else ""
+    return f"{split.scheme}://{split.netloc}{path}"
+
+
+async def _post_agent(
     client: httpx.AsyncClient,
     base_url: str,
+    agent: str,
+    *,
+    committee_id: str,
+    meeting_id: str,
+) -> str | None:
+    """POST one NSF agent for a meeting; return HTML or ``None`` on failure."""
+    endpoint = urljoin(base_url + "/", f"{agent}?open")
+    resp = await _send_post(
+        client,
+        endpoint,
+        f"id={meeting_id}&current_committee_id={committee_id}",
+        base_url,
+        f"{agent}(meeting={meeting_id})",
+    )
+    if resp is None or resp.status_code != 200:
+        return None
+    return resp.text
+
+
+def _meeting_date_str(meeting: dict) -> str:
+    d = meeting.get("meeting_date")
+    return d.strftime("%Y-%m-%d") if d is not None else ""
+
+
+async def _collect_meeting_documents(
+    client: httpx.AsyncClient,
+    base_url: str,
+    portal_url: str,
     committee_id: str,
     meeting: dict,
 ) -> list[dict]:
-    """POST ``PRINT-AgendaDetailed`` for one meeting and parse attachments."""
+    """Agenda + minutes (+ agenda/minutes-labelled attachments) for one meeting."""
     meeting_id = meeting.get("unique")
     if not meeting_id:
         return []
-    endpoint = urljoin(base_url + "/", "PRINT-AgendaDetailed?open")
-    body = f"id={meeting_id}&current_committee_id={committee_id}"
-    try:
-        resp = await client.post(
-            endpoint,
-            content=body,
-            headers=_client_headers(
-                {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Referer": base_url,
-                }
-            ),
-        )
-        if resp.status_code != 200:
-            logger.debug(
-                "boarddocs: PRINT-AgendaDetailed %s returned HTTP %d for meeting %s",
-                endpoint,
-                resp.status_code,
-                meeting_id,
+    year = _meeting_year(meeting)
+    date_str = _meeting_date_str(meeting)
+    title = (meeting.get("name") or "Meeting").strip()
+    label_date = f" {date_str}" if date_str else ""
+    docs: list[dict] = []
+
+    def _item(url: str, name: str, ext: str) -> dict:
+        return {
+            "url": url,
+            "media_type": "document",
+            "source_page_url": portal_url,
+            "doc_year": year,
+            "name": name,
+            "file_extension": ext,
+        }
+
+    agenda_html = await _post_agent(
+        client, base_url, AGENDA_AGENT, committee_id=committee_id, meeting_id=meeting_id
+    )
+    if agenda_html:
+        if len(html_to_text(agenda_html)) >= _MIN_DOCUMENT_TEXT_CHARS:
+            docs.append(
+                _item(
+                    build_agent_url(
+                        base_url, AGENDA_AGENT, meeting_id=meeting_id,
+                        committee_id=committee_id, meeting_date=date_str,
+                    ),
+                    f"{title} - Agenda{label_date}.txt",
+                    ".txt",
+                )
             )
-            return []
-        return parse_boarddocs_agenda_files(resp.text, base_url=base_url)
-    except httpx.HTTPError as exc:
-        logger.debug(
-            "boarddocs: PRINT-AgendaDetailed error for %s (%s): %s",
-            endpoint,
-            type(exc).__name__,
-            exc,
+        # Only attachments that are themselves agendas / minutes.
+        for f in parse_boarddocs_agenda_files(agenda_html, base_url=base_url):
+            if is_agenda_or_minutes_label(f.get("name")) or is_agenda_or_minutes_label(f["url"]):
+                docs.append(_item(f["url"], f.get("name") or "", _ext_of(f["url"])))
+
+    minutes_html = await _post_agent(
+        client, base_url, MINUTES_AGENT, committee_id=committee_id, meeting_id=meeting_id
+    )
+    if minutes_html and len(html_to_text(minutes_html)) >= _MIN_DOCUMENT_TEXT_CHARS:
+        docs.append(
+            _item(
+                build_agent_url(
+                    base_url, MINUTES_AGENT, meeting_id=meeting_id,
+                    committee_id=committee_id, meeting_date=date_str,
+                ),
+                f"{title} - Minutes{label_date}.txt",
+                ".txt",
+            )
         )
-        return []
+    return docs
+
+
+def _ext_of(url: str) -> str | None:
+    from urllib.parse import unquote, urlsplit
+
+    name = unquote(urlsplit(url).path.rsplit("/", 1)[-1]).lower()
+    for ext in (".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt", ".txt"):
+        if name.endswith(ext):
+            return ext
+    return None
 
 
 # ---------------------------------------------------------------------------
 # Download helper — prefer direct HTTP, fall back to Playwright session
 # ---------------------------------------------------------------------------
+
+async def _render_agent_document(agent: dict, *, timeout_ms: int | None) -> bytes:
+    """Fetch an agenda/minutes agent and return it as UTF-8 text bytes."""
+    timeout = (
+        httpx.Timeout(timeout_ms / 1000, connect=10.0)
+        if timeout_ms
+        else _default_timeout()
+    )
+    async with httpx.AsyncClient(
+        timeout=timeout,
+        follow_redirects=True,
+        headers={"User-Agent": settings.SCHOOL_SCRAPER_USER_AGENT},
+    ) as client:
+        html = await _post_agent(
+            client,
+            agent["base_url"],
+            agent["agent"],
+            committee_id=agent["committee_id"],
+            meeting_id=agent["meeting_id"],
+        )
+    text = html_to_text(html or "")
+    if len(text) < _MIN_DOCUMENT_TEXT_CHARS:
+        raise RuntimeError(
+            f"boarddocs: {agent['kind']} for meeting {agent['meeting_id']} "
+            f"returned no usable text ({len(text)} chars)"
+        )
+    header = f"{agent['kind'].title()}"
+    if agent["meeting_date"]:
+        header += f" - meeting date {agent['meeting_date']}"
+    return f"{header}\n\n{text}\n".encode()
+
 
 async def fetch_boarddocs_document(
     source_page_url: str,
@@ -610,10 +818,17 @@ async def fetch_boarddocs_document(
     back to :func:`fetch_document_via_playwright_session`, which re-opens
     Chromium and downloads through its cookie jar.
 
+    Agenda / minutes pseudo-URLs (see :func:`build_agent_url`) are rendered
+    to UTF-8 text via the matching NSF agent instead of downloaded.
+
     Raises ``RuntimeError`` on any failure path so the caller's existing
     Celery retry wrapper (``ingest_scraped_media``) surfaces it as a
     retryable ``status="failed"`` row.
     """
+    agent = parse_agent_url(media_url)
+    if agent is not None:
+        return await _render_agent_document(agent, timeout_ms=timeout_ms)
+
     timeout = (
         httpx.Timeout(timeout_ms / 1000, connect=10.0)
         if timeout_ms
