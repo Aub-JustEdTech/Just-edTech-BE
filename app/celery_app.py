@@ -51,6 +51,9 @@ celery_app.conf.update(
         "app.tasks.school_scraper_tasks.scrape_media_batch": {
             "queue": "scraping"
         },
+        "app.tasks.school_scraper_tasks.drain_discovered_media": {
+            "queue": "scraping"
+        },
         # Transcription is minutes-long and I/O-bound — the same workload shape
         # the scraping queue already carries, and that queue runs with a 6000s
         # soft limit. The documents queue is sized for second-scale parses; a
@@ -126,6 +129,16 @@ celery_app.conf.update(
             "task": "app.tasks.school_scraper_tasks.sweep_school_media",
             "schedule": crontab(hour=1, minute=0),  # Daily at 1:00 AM UTC
             "options": {"expires": 3 * 3600},
+        },
+        # Drain deferred discovered rows left behind by the per-URL enqueue
+        # cap (SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL). Hourly at :30 so it
+        # does not collide with the 1:00 AM sweep tick; batch_size=50 keeps
+        # each wave within t4g.large scraper+ingest throughput.
+        "drain-discovered-media": {
+            "task": "app.tasks.school_scraper_tasks.drain_discovered_media",
+            "schedule": crontab(minute=30),  # Hourly at :30 UTC
+            "args": (50,),
+            "options": {"expires": 1800},
         },
     },
 )

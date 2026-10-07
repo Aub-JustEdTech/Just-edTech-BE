@@ -1027,8 +1027,8 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
     drains them in small bounded batches so the broker stays healthy while
     the historical backlog is gradually ingested.
 
-    Run it manually after a capped sweep, or wire it into beat_schedule at
-    a low cadence (e.g. hourly) once the sweep is proven stable.
+    Scheduled hourly via beat_schedule (``drain-discovered-media``). Can
+    still be triggered manually with ``drain_discovered_media.delay(n)``.
     """
     try:
         loop = get_event_loop()
@@ -1043,6 +1043,7 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
 async def _drain_discovered_media_async(batch_size: int) -> dict:
     from sqlalchemy import select
 
+    from app.crud.schools import update_scraped_media
     from app.models.school import ScrapedMedia
 
     async with AsyncSessionLocal() as db:
@@ -1054,7 +1055,10 @@ async def _drain_discovered_media_async(batch_size: int) -> dict:
         )
         rows = (await db.execute(stmt)).scalars().all()
 
+        # Mark queued BEFORE delay() so the next hourly tick cannot
+        # re-select the same rows and double-enqueue ingest.
         for row in rows:
+            await update_scraped_media(db, row.id, status="queued")
             ingest_scraped_media.delay(row.id)
 
         logger.info(
