@@ -1,9 +1,9 @@
-# Production Docker Compose — sized for EC2 t4g.large (2 vCPU, 8 GiB RAM).
+# Production Docker Compose — sized for EC2 t4g.2xlarge (8 vCPU, 32 GiB RAM).
 #
-# Steady-state only. Do NOT scale celery-*-batch or raise worker replicas on
-# this host — the bulk layout needs t4g.2xlarge (8 vCPU / 32 GiB). Batch
-# workers are behind Compose profile `bulk` so a plain `up -d` never starts
-# them on large.
+# This compose file targets t4g.2xlarge so it can run the failure-batch
+# re-scrape (84 districts) in parallel without starving the steady-state
+# workers. The t4g.large variant (2 vCPU, 8 GiB) cannot run the bulk layout
+# — see the RAM budget comment below and the separate `--scale` recipe.
 #
 # Postgres is NOT managed here; it runs on AWS RDS.
 # All environment variables are injected via .env.prod (CI/CD writes from secrets).
@@ -18,24 +18,30 @@
 #                   orphaned documents at processing_status=PROCESSING
 #                   forever during the 100-school incident). An OOM here
 #                   fails loudly instead of losing data.
-#                   Sized at 512mb on t4g.large: drain is 50/hr and the
-#                   per-URL enqueue cap is 5, so the broker never sees the
-#                   failure-batch burst that needed 4G on 2xlarge.
+#                   Sized at 4G on t4g.2xlarge: the failure-batch re-scrape
+#                   enqueues ~84 schools × ~3-4 docs = ~250-340 ingest +
+#                   9-stage pipeline messages. ignore_result=True with
+#                   result_expires=900s keeps the working set bounded; 4G
+#                   is headroom for a capped bulk run, not the full corpus.
 #
-# RAM budget on t4g.large (~8 GiB):
-#   api 1G + qdrant 1.5G + redis 256M + redis-broker 512M + beat 256M ≈ 3.5G
-#   celery-ingest 1.5G (×1) + celery-scraper 2G (×1) = 3.5G
-#   -> ~7G steady, ~1G left for the OS / page cache.
+# RAM budget on t4g.2xlarge (~32 GiB):
+#   api 2G + qdrant 4G + redis 0.5G + redis-broker 4G + beat 384M = 10.9G
+#   celery-ingest 2G (×1 steady) + celery-scraper 4G (×1 steady) = 6G
+#   -> ~16.9G steady, leaving ~15G for the batch-scaled replicas below.
 #
-# Steady state (this file's default):
-#   docker compose -f docker-compose.prod.yml up -d
-#   # implies --scale celery-ingest=1 --scale celery-scraper=1, no batch
-#
-# Bulk failure-batch (REQUIRES t4g.2xlarge — do not run on large):
-#   docker compose -f docker-compose.prod.yml --profile bulk up -d \
+# Bulk failure-batch re-scrape (this file's target workload):
+#   docker compose -f docker-compose.prod.yml up -d \
 #     --scale celery-ingest=3 --scale celery-scraper=2 \
 #     --scale celery-scraper-batch=2 --scale celery-ingest-batch=2
-#   # and raise redis-broker --maxmemory / service memory limits first
+#   The `-batch` services consume the same `scraping` / `documents` queues
+#   but are dedicated replicas for the failure-batch run — they add lanes
+#   without colliding with the steady-state workers. See the per-service
+#   comment blocks for the exact queue + concurrency layout.
+#
+# Steady state after batch completes (scale back to save cost):
+#   docker compose -f docker-compose.prod.yml up -d \
+#     --scale celery-ingest=1 --scale celery-scraper=1 \
+#     --scale celery-scraper-batch=0 --scale celery-ingest-batch=0
 #
 # Admin scripts (seed / scrape districts) run via docker exec on the api
 # container. Mount ./scripts from the EC2 checkout (git pull before ingest):
@@ -60,7 +66,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 256mb
+      --maxmemory 512mb
       --maxmemory-policy allkeys-lru
 
     volumes:
@@ -75,8 +81,11 @@ services:
   ##################################################
   # Redis Broker — Celery broker + result backend only.
   # noeviction: an in-flight task message must NEVER be evicted.
-  # t4g.large: 512mb is enough for capped sweep (≤5 enqueue/URL) + hourly
-  # drain of 50. If an OOM returns here, lower
+  # t4g.2xlarge (32 GiB host): sized at 4gb to absorb the failure-batch
+  # re-scrape enqueue burst (~250-340 ingest + 9-stage pipeline messages
+  # for 84 schools). ignore_result=True on sweep/ingest plus
+  # result_expires=900s keeps the steady-state working set far below this;
+  # 4gb is headroom for a capped bulk run. If an OOM returns here, lower
   # SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS, not this limit.
   ##################################################
   redis-broker:
@@ -90,7 +99,7 @@ services:
     command: >
       redis-server
       --appendonly yes
-      --maxmemory 512mb
+      --maxmemory 4gb
       --maxmemory-policy noeviction
 
     volumes:
@@ -127,8 +136,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 1.5G
+          cpus: "2"
+          memory: 4G
 
     healthcheck:
       test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/6333' || exit 1"]
@@ -205,13 +214,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 1G
+          cpus: "2"
+          memory: 2G
 
   ##################################################
   # Celery Ingest Worker — document pipeline + billing
   # Queues: celery (billing/batch poll), documents (chunk/embed/Qdrant)
-  # t4g.large: keep replicas=1, concurrency=1. Do not --scale above 1.
   ##################################################
   celery-ingest:
     image: ${ECR_IMAGE}
@@ -255,12 +263,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 1.5G
+          cpus: "2"
+          memory: 2G
 
   ##################################################
   # Celery Scraper Worker — download, transcribe, enqueue pipeline
-  # Queue: scraping. On t4g.large keep replicas=1 (do not scale).
+  # Queue: scraping. Scale replicas (--scale celery-scraper=N), not concurrency.
   ##################################################
 
   celery-scraper:
@@ -312,16 +320,17 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.75"
-          memory: 2G
+          cpus: "2"
+          memory: 4G
 
   ##################################################
-  # Celery Scraper Batch Worker — EXTRA scrape lane for bulk runs.
-  # Profile `bulk` only — never starts on a plain `up -d` (t4g.large).
-  # Requires t4g.2xlarge + raised redis-broker memory. See header.
+  # Celery Scraper Batch Worker — extra download/transcribe lane for the
+  # failure-batch re-scrape. Same `scraping` queue as celery-scraper, so
+  # scaling this replica adds a parallel scrape lane without colliding
+  # with the steady-state worker. Scale to 0 in steady state to save cost.
+  # See the header comment for the --scale recipe.
   ##################################################
   celery-scraper-batch:
-    profiles: ["bulk"]
     image: ${ECR_IMAGE}
     pull_policy: always
     restart: unless-stopped
@@ -375,11 +384,13 @@ services:
           memory: 4G
 
   ##################################################
-  # Celery Ingest Batch Worker — EXTRA document-pipeline lane for bulk.
-  # Profile `bulk` only — never starts on a plain `up -d` (t4g.large).
+  # Celery Ingest Batch Worker — extra document-pipeline lane for the
+  # failure-batch re-scrape. Same `documents` + `celery` queues as
+  # celery-ingest, so scaling this replica adds a parallel ingest lane.
+  # Scale to 0 in steady state to save cost. See the header comment for
+  # the --scale recipe.
   ##################################################
   celery-ingest-batch:
-    profiles: ["bulk"]
     image: ${ECR_IMAGE}
     pull_policy: always
     restart: unless-stopped
@@ -426,8 +437,9 @@ services:
 
   ##################################################
   # Celery Beat - Periodic Task Scheduler
-  # Daily sweep + hourly drain_discovered_media (50/hr).
-  # Keep replicas=1 to avoid duplicate periodic task firing.
+  # Fires the biweekly school scrape cycle + daily/monthly aggregations.
+  # Scale horizontally only with a distributed beat scheduler (e.g. redbeat);
+  # keep replicas=1 to avoid duplicate periodic task firing.
   ##################################################
 
   celery-beat:
@@ -472,8 +484,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: 256M
+          cpus: "0.5"
+          memory: 384M
 
 volumes:
   redis_data:
