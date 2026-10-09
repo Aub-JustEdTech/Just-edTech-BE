@@ -1027,8 +1027,10 @@ def drain_discovered_media(self, batch_size: int = 50) -> dict:
     drains them in small bounded batches so the broker stays healthy while
     the historical backlog is gradually ingested.
 
-    Scheduled hourly via beat_schedule (``drain-discovered-media``). Can
-    still be triggered manually with ``drain_discovered_media.delay(n)``.
+    Scheduled hourly via beat_schedule (``drain-discovered-media``), except
+    23:00–01:59 UTC so ingest does not crowd the scraping queue ahead of the
+    daily 1:00 AM sweep. Can still be triggered manually with
+    ``drain_discovered_media.delay(n)``.
     """
     try:
         loop = get_event_loop()

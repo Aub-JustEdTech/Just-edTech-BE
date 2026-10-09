@@ -131,12 +131,14 @@ celery_app.conf.update(
             "options": {"expires": 3 * 3600},
         },
         # Drain deferred discovered rows left behind by the per-URL enqueue
-        # cap (SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL). Hourly at :30 so it
-        # does not collide with the 1:00 AM sweep tick; batch_size=50 keeps
-        # each wave within steady-state scraper+ingest throughput.
+        # cap (SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL). Hourly at :30 UTC
+        # except 23:00–01:59 — stop enqueueing ingest ~2h before the 1:00 AM
+        # sweep (and through the sweep hour) so the shared scraping queue can
+        # drain and the sweep is not stuck behind backlog ingest. batch_size=50
+        # keeps each wave within steady-state scraper+ingest throughput.
         "drain-discovered-media": {
             "task": "app.tasks.school_scraper_tasks.drain_discovered_media",
-            "schedule": crontab(minute=30),  # Hourly at :30 UTC
+            "schedule": crontab(minute=30, hour="2-22"),  # :30 UTC, skip pre-sweep window
             "args": (50,),
             "options": {"expires": 1800},
         },
