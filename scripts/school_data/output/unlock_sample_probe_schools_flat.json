@@ -1,0 +1,51 @@
+[
+  {
+    "org_code": "06100000",
+    "name": "Ashburnham-Westminster",
+    "website": "https://www.awrsd.org",
+    "failure_bucket": "http2_protocol_blocked",
+    "unlock": "P1 HTTP/1 + curl_cffi"
+  },
+  {
+    "org_code": "01210000",
+    "name": "Hancock",
+    "website": "https://www.hancockschool.org",
+    "failure_bucket": "ssl_cert_error",
+    "unlock": "P2 ignore_https / www-apex CN"
+  },
+  {
+    "org_code": "01180000",
+    "name": "Halifax",
+    "website": "https://hes.slrsd.org",
+    "failure_bucket": "unreachable_ssl_error",
+    "unlock": "P2 SSL trust"
+  },
+  {
+    "org_code": "35150000",
+    "name": "Old Sturbridge Academy Charter Public School (District)",
+    "website": "http://www.osacps.org",
+    "failure_bucket": "unknown_empty",
+    "unlock": "P2 empty_markdown\u2192PW"
+  },
+  {
+    "org_code": "06150000",
+    "name": "Athol-Royalston",
+    "website": "https://www.arrsd.org",
+    "failure_bucket": "crawled_no_media",
+    "unlock": "P4 board/hub"
+  },
+  {
+    "org_code": "35090000",
+    "name": "Argosy Collegiate Charter School (District)",
+    "website": "https://www.argosycollegiate.org",
+    "failure_bucket": "unreachable_http_403",
+    "unlock": "UA/Playwright ladder"
+  },
+  {
+    "org_code": "00970000",
+    "name": "Fitchburg",
+    "website": "http://www.fitchburgschools.org",
+    "failure_bucket": "http_404",
+    "unlock": "hub harvest"
+  }
+]

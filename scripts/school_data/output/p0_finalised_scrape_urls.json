@@ -1,0 +1,206 @@
+[
+  {
+    "org_code": "04320000",
+    "name": "Cape Cod Lighthouse Charter (District)",
+    "website": "http://www.cclighthouseschool.org",
+    "urls": [
+      {
+        "url": "https://www.cclighthouseschool.org/governance",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "06350000",
+    "name": "Central Berkshire",
+    "website": "https://www.cbrsd.org",
+    "urls": [
+      {
+        "url": "https://www.cbrsd.org/school-committee/packets",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00570000",
+    "name": "Chelsea",
+    "website": "https://www.chelseaschools.com/",
+    "urls": [
+      {
+        "url": "https://www.chelseaschools.com/district-leadership/school-committee/school-committee-meeting-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "04360000",
+    "name": "Community Charter School of Cambridge (District)",
+    "website": "https://www.ccscambridge.org",
+    "urls": [
+      {
+        "url": "https://www.ccscambridge.org/our-community/our-board",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "00850000",
+    "name": "Eastham",
+    "website": "http://nausetschools.org",
+    "urls": [
+      {
+        "url": "http://nausetschools.org/page/regional-school-committee-agendas-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "04460000",
+    "name": "Foxborough Regional Charter (District)",
+    "website": "https://www.foxboroughrcs.org/",
+    "urls": [
+      {
+        "url": "https://www.foxboroughrcs.org/apps/pages/index.jsp?uREC_ID=1528459&type=d",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "08520000",
+    "name": "Nashoba Valley Regional Vocational Technical",
+    "website": "http://www.nashobatech.net",
+    "urls": [
+      {
+        "url": "https://www.nashobatech.net/documents/nashoba-valley-technical-high-school-foundation/nvths-foundation-meeting-minutes/103751",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "06600000",
+    "name": "Nauset",
+    "website": "http://nausetschools.org",
+    "urls": [
+      {
+        "url": "http://nausetschools.org/page/regional-school-committee-agendas-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02230000",
+    "name": "Orange",
+    "website": "http://www.orange-elem.org/",
+    "urls": [
+      {
+        "url": "https://www.orange-elem.org/school-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02240000",
+    "name": "Orleans",
+    "website": "http://nausetschools.org",
+    "urls": [
+      {
+        "url": "http://nausetschools.org/page/regional-school-committee-agendas-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02340000",
+    "name": "Petersham",
+    "website": "https://www.petershamcenterschool.org",
+    "urls": [
+      {
+        "url": "https://www.petershamcenterschool.org/school-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "04930000",
+    "name": "Phoenix Academy Charter Public High School, Chelsea (District)",
+    "website": "https://www.phoenixcharteracademy.org",
+    "urls": [
+      {
+        "url": "https://www.phoenixcharteracademy.org/who-we-are/governance/public-board-meeting-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "35180000",
+    "name": "Phoenix Academy Public Charter High School, Lawrence (District)",
+    "website": "http://www.phoenixcharteracademy.org",
+    "urls": [
+      {
+        "url": "https://www.phoenixcharteracademy.org/who-we-are/governance/public-board-meeting-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "35080000",
+    "name": "Phoenix Academy Public Charter High School, Springfield (District)",
+    "website": "https://www.phoenixcharteracademy.org",
+    "urls": [
+      {
+        "url": "https://www.phoenixcharteracademy.org/who-we-are/governance/public-board-meeting-archive",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "07550000",
+    "name": "Ralph C Mahar",
+    "website": "https://www.rcmahar.org",
+    "urls": [
+      {
+        "url": "https://www.rcmahar.org/school-committee",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "02510000",
+    "name": "Rockland",
+    "website": "https://www.rocklandschools.org",
+    "urls": [
+      {
+        "url": "https://www.rocklandschools.org/documents/our-district/school-committee/27868819",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  },
+  {
+    "org_code": "03180000",
+    "name": "Wellfleet",
+    "website": "http://nausetschools.org",
+    "urls": [
+      {
+        "url": "http://nausetschools.org/page/regional-school-committee-agendas-minutes",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
+  }
+]

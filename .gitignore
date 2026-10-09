@@ -341,3 +341,10 @@ migration_state.txt
 
 # FastAPI specific
 .fastapi_cache/
+
+# Generated transcripts (scripts/school_data/generate_transcripts.py).
+# ~8MB per run of derived data that is regenerable at zero cost, and every
+# regeneration rewrites every file with a new timestamp. The media inventory
+# JSON is small and IS tracked, since it is the evidence behind the cost model.
+scripts/school_data/output/transcripts/
+runs/

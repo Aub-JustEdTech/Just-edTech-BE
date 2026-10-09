@@ -103,6 +103,22 @@ class S3Manager:
         Raises:
             RuntimeError: If download fails
         """
+        content = await self.download_bytes(s3_key)
+        await asyncio.to_thread(self._write_file, local_path, content)
+
+    async def download_bytes(self, s3_key: str) -> bytes:
+        """
+        Download an object from S3 and return its bytes.
+
+        Args:
+            s3_key: S3 object key (path within bucket)
+
+        Returns:
+            Object content as bytes.
+
+        Raises:
+            RuntimeError: If download fails
+        """
         if not self.bucket_name:
             raise ValueError("S3 bucket name is not configured")
 
@@ -112,13 +128,8 @@ class S3Manager:
                     Bucket=self.bucket_name,
                     Key=s3_key,
                 )
-
-                # Read the streaming body and write to file
                 async with response["Body"] as stream:
-                    content = await stream.read()
-
-                # Write to local file
-                await asyncio.to_thread(self._write_file, local_path, content)
+                    return await stream.read()
         except ClientError as e:
             raise RuntimeError(f"Failed to download file from S3: {e}") from e
         except Exception as e:

@@ -380,7 +380,11 @@ class DocumentService:
         if status is not None:
             query = query.where(Document.processing_status == status)
         elif exclude_failed:
-            query = query.where(Document.processing_status != ProcessingStatus.FAILED)
+            query = query.where(
+                Document.processing_status.notin_(
+                    [ProcessingStatus.FAILED, ProcessingStatus.SKIPPED]
+                )
+            )
 
         if search:
             query = query.where(Document.name.ilike(f"%{search}%"))

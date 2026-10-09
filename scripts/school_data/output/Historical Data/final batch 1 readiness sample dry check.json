@@ -1,0 +1,168 @@
+[
+  {
+    "School name": "READINESS PROBE (composite)",
+    "School website": "https://example.com",
+    "note": "One synthetic entry pulling representative URLs from batch 1 to exercise each scrape path.",
+    "finalised urls": [
+      "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies",
+      "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public",
+      "https://app2.boardontrack.com/public/AZLeOG/meetingsList",
+      "https://drive.google.com/drive/folders/16PXPWD4sB8uYu8cAsqbvpfnN7krigoHB?usp=sharing",
+      "https://www.medfield.net/documents/school-committee/agendas/67053",
+      "https://www.youtube.com/playlist?list=PLypOllJHc4M2EgOMD_XarFqL3EXJi8KCv",
+      "https://www.youtube.com/watch?v=kmwe7eAPYyM&list=PLvzaeZrgURbrvZGl-YsfCgDjSNOuKwYTC",
+      "https://www.worcesterschools.org/page/live-and-archived-videos",
+      "https://wrenthamcable8.com/wrentham-school-committee-meetings"
+    ],
+    "clicks needed": 2,
+    "url_types": {
+      "generic_cms": "Abington archive page",
+      "boarddocs": "Narragansett BoardDocs portal",
+      "boardontrack": "Francis Parker BoardOnTrack meetings list",
+      "google_drive": "Somerset Berkeley Drive folder",
+      "apptegy_docs": "Medfield Apptegy document listing",
+      "youtube_playlist": "Medfield YouTube playlist",
+      "youtube_video": "Somerset Berkeley YouTube watch URL",
+      "video_page": "Worcester live/archived videos page",
+      "external_video_host": "Wrentham cable community video page"
+    },
+    "detected platform": [
+      "apptegy",
+      "boarddocs",
+      "boardontrack",
+      "generic",
+      "google-drive"
+    ],
+    "probe_depth": 1,
+    "probe media found": true,
+    "probe media count": 151,
+    "url probes": [
+      {
+        "url": "https://www.abingtonps.org/page/archived-school-committee-agendas-documents-minutes-and-policies",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 31,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {
+          "document": 31
+        },
+        "media_type_samples": {
+          "document": [
+            "https://core-docs.s3.us-east-1.amazonaws.com/documents/asset/uploaded_file/4756/APS/6111318/Regular_Agenda___Meeting_Materials_October_28__2025.pdf",
+            "https://core-docs.s3.us-east-1.amazonaws.com/documents/asset/uploaded_file/4756/APS/5981833/August_26__2025_Regular_Meeting%282%29.pdf"
+          ]
+        }
+      },
+      {
+        "url": "https://go.boarddocs.com/ma/nrsd/Board.nsf/Public",
+        "detected platform": "boarddocs",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {},
+        "media_type_samples": {}
+      },
+      {
+        "url": "https://app2.boardontrack.com/public/AZLeOG/meetingsList",
+        "detected platform": "boardontrack",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {},
+        "media_type_samples": {}
+      },
+      {
+        "url": "https://drive.google.com/drive/folders/16PXPWD4sB8uYu8cAsqbvpfnN7krigoHB?usp=sharing",
+        "detected platform": "google-drive",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 117,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {
+          "document": 117
+        },
+        "media_type_samples": {
+          "document": [
+            "https://drive.google.com/uc?export=download&id=1TXp_AV6T9vQIfZzV9HaznZBKHo1Wd9kv",
+            "https://drive.google.com/uc?export=download&id=1pEzoP78UJJP9jPRF1cL7DkoothsmzzE4"
+          ]
+        }
+      },
+      {
+        "url": "https://www.medfield.net/documents/school-committee/agendas/67053",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 1,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {
+          "document": 1
+        },
+        "media_type_samples": {
+          "document": [
+            "https://files-backend.assets.thrillshare.com/documents/asset/uploaded_file/775/Medfield_Public_Schools/aaa859e7-414c-42f4-9a96-cdde1fd8a576/MPS_Calendar_2026-2027_-_Approved_by_School_Co.pdf?disposition=inline"
+          ]
+        }
+      },
+      {
+        "url": "https://www.youtube.com/playlist?list=PLypOllJHc4M2EgOMD_XarFqL3EXJi8KCv",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {},
+        "media_type_samples": {}
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=kmwe7eAPYyM&list=PLvzaeZrgURbrvZGl-YsfCgDjSNOuKwYTC",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {},
+        "media_type_samples": {}
+      },
+      {
+        "url": "https://www.worcesterschools.org/page/live-and-archived-videos",
+        "detected platform": "apptegy",
+        "probe_depth": 1,
+        "media_found": true,
+        "media_count": 2,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {
+          "youtube": 2
+        },
+        "media_type_samples": {
+          "youtube": [
+            "https://www.youtube.com/watch?v=jBQDGpHDdhE",
+            "https://www.youtube.com/watch?v=Unm1E8k9sSQ"
+          ]
+        }
+      },
+      {
+        "url": "https://wrenthamcable8.com/wrentham-school-committee-meetings",
+        "detected platform": "generic",
+        "probe_depth": 1,
+        "media_found": false,
+        "media_count": 0,
+        "pages_crawled": 1,
+        "error": null,
+        "media_type_counts": {},
+        "media_type_samples": {}
+      }
+    ]
+  }
+]

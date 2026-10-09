@@ -48,3 +48,6 @@ class Tenant(BaseModel):
     monthly_billing = relationship(
         "MonthlyBilling", back_populates="tenant", cascade="all, delete-orphan"
     )
+    tenant_access = relationship(
+        "UserTenantAccess", back_populates="tenant", cascade="all, delete-orphan"
+    )

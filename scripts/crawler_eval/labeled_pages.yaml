@@ -1,0 +1,353 @@
+# Crawler eval harness — labeled pages.
+#
+# Top level: a YAML list. One row per page. Each row carries:
+#   - Ground truth (has_data, has_data_links, data_type, is_archive,
+#     data_years_available, expected_relevant_links) — what the LLM SHOULD
+#     return.
+#   - predicted: a verbatim snapshot of the POC's actual output for this page
+#     (copied from scripts/school_data/output/schema_crawl_results.json). Used
+#     by --offline mode (no LLM calls) and to compute per-page deltas in live
+#     mode. Rows without a predicted: block are live-only (they were not in
+#     the POC run).
+#
+# Target size: ~60 labeled pages. The first ~22 rows are seeded here from the
+# 20-school POC run (predicted snapshots verbatim, ground truth set by
+# inspecting the URL + stored markdown). The remaining rows are marked
+# `# TODO: label` with the URL pre-filled — fill these in to reach the full
+# eval set (~2-3 hours manual work, one-time).
+#
+# data_type values must be one of DATA_TYPES in
+# scripts/school_data/schema_crawl_poc/schemas.py:
+#   board_minutes, board_agenda, policy_document, book_challenge,
+#   public_comment, candidate_profile, election_record, news_media,
+#   advocacy_intervention, unknown
+# Use null for data_type when has_data=false (no data_page_info).
+
+# ── Section 1: positive data pages (has_data=true) ────────────────────────────
+
+- id: quabbin_school_committee_landing
+  school_name: Quabbin
+  url: https://www.qrsd.org/our_district/school_committee
+  # Section landing page; links to documents/minutes/policy. Both flags true.
+  has_data: true
+  has_data_links: true
+  data_type: unknown
+  is_archive: false
+  data_years_available: []
+  predicted:
+    has_data: true
+    has_data_links: true
+    data_type: unknown
+    is_archive: false
+  expected_relevant_links:
+    - url: https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes/
+      confidence: 0.9
+    - url: https://www.qrsd.org/our_district/school_committee/q_r_s_d_policy_manual/
+      confidence: 0.9
+  notes: "Section landing page; has_data and has_data_links both true."
+
+- id: quabbin_policy_manual
+  school_name: Quabbin
+  url: https://www.qrsd.org/our_district/school_committee/q_r_s_d_policy_manual
+  # Direct policy manual page; no sub-links needed.
+  has_data: true
+  has_data_links: false
+  data_type: policy_document
+  is_archive: false
+  data_years_available: []
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: policy_document
+    is_archive: false
+  expected_relevant_links: []
+  notes: "Policy manual page; policy_document, not archive."
+
+- id: quabbin_fy25_budget_archive
+  school_name: Quabbin
+  url: https://www.qrsd.org/our_district/fy25budgetdocuments
+  # Archive of FY25 budget meeting docs; is_archive=true gold example.
+  has_data: true
+  has_data_links: false
+  data_type: board_minutes
+  is_archive: true
+  data_years_available: [2025]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_minutes
+    is_archive: true
+  expected_relevant_links: []
+  notes: "Budget development archive; is_archive=true gold example."
+
+- id: wachusett_agendas_minutes
+  school_name: Wachusett
+  url: https://www.wrsd.net/school-committee/agendas-minutes
+  # Current-year agendas & minutes; not archive.
+  has_data: true
+  has_data_links: false
+  data_type: board_minutes
+  is_archive: false
+  data_years_available: [2025]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_minutes
+    is_archive: false
+  expected_relevant_links: []
+  notes: "Current-year minutes; data_type=board_minutes, not archive."
+
+- id: wachusett_subcommittee_minutes_archive
+  school_name: Wachusett
+  url: https://www.wrsd.net/school-committee/subcommittee-minutes
+  # Multi-year subcommittee minutes archive.
+  has_data: true
+  has_data_links: false
+  data_type: board_minutes
+  is_archive: true
+  data_years_available: [2021, 2024]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_minutes
+    is_archive: true
+  expected_relevant_links: []
+  notes: "Subcommittee minutes archive; is_archive=true gold example."
+
+- id: leicester_homepage_agenda
+  school_name: Leicester
+  url: https://www.leicester.k12.ma.us
+  # Homepage flagged by LLM as hosting agenda — debatable; both flags true.
+  has_data: true
+  has_data_links: true
+  data_type: board_agenda
+  is_archive: false
+  data_years_available: [2026]
+  predicted:
+    has_data: true
+    has_data_links: true
+    data_type: board_agenda
+    is_archive: false
+  expected_relevant_links:
+    - url: https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes
+      confidence: 0.8
+    - url: https://www.leicester.k12.ma.us/SC/LPSSchoolcommitteepolicybook
+      confidence: 0.7
+  notes: "Homepage; LLM said has_data=true (debatable) and flagged sub-links."
+
+- id: leicester_agenda_minutes
+  school_name: Leicester
+  url: https://www.leicester.k12.ma.us/SC/school_committee_mtg_agenda___minutes
+  # Direct agenda & minutes page.
+  has_data: true
+  has_data_links: false
+  data_type: board_agenda
+  is_archive: false
+  data_years_available: [2026]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_agenda
+    is_archive: false
+  expected_relevant_links: []
+  notes: "Agenda & minutes page; board_agenda, not archive."
+
+- id: bourne_minutes
+  school_name: Bourne
+  url: https://www.bourneps.org/our-school-committee/school-committee-minutes
+  # Current-year school committee minutes.
+  has_data: true
+  has_data_links: false
+  data_type: board_minutes
+  is_archive: false
+  data_years_available: [2025]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_minutes
+    is_archive: false
+  expected_relevant_links: []
+  notes: "School committee minutes; board_minutes, not archive."
+
+- id: union28_jsc_minutes_archive
+  school_name: New Salem-Wendell
+  url: https://www.union28.org/joint_supervisory_committee/meeting_minutes
+  # Multi-year meeting-minutes archive.
+  has_data: true
+  has_data_links: false
+  data_type: board_minutes
+  is_archive: true
+  data_years_available: [2023, 2024, 2025, 2026]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_minutes
+    is_archive: true
+  expected_relevant_links: []
+  notes: "JSC meeting minutes archive; is_archive=true gold example."
+
+- id: union28_jsc_agendas_archive
+  school_name: New Salem-Wendell
+  url: https://www.union28.org/joint_supervisory_committee/agendas
+  # Multi-year agendas archive; both flags true (links to minutes/policies).
+  has_data: true
+  has_data_links: true
+  data_type: board_agenda
+  is_archive: true
+  data_years_available: [2023, 2024, 2025, 2026]
+  predicted:
+    has_data: true
+    has_data_links: true
+    data_type: board_agenda
+    is_archive: true
+  expected_relevant_links:
+    - url: https://www.union28.org/joint_supervisory_committee/meeting_minutes
+      confidence: 0.8
+    - url: https://www.union28.org/joint_supervisory_committee/p_o_l_i_c_i_e_s
+      confidence: 0.8
+  notes: "JSC agendas archive; both flags true; is_archive=true gold example."
+
+- id: bptech_minutes_archive
+  school_name: Bristol-Plymouth Regional Vocational Technical
+  url: https://www.bptech.org/about/school-committee/meeting-minutes-archive
+  # Meeting minutes archive page.
+  has_data: true
+  has_data_links: false
+  data_type: board_minutes
+  is_archive: true
+  data_years_available: [2023, 2024, 2025]
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: board_minutes
+    is_archive: true
+  expected_relevant_links:
+    - url: https://www.bptech.org/about/school-committee/agenda
+      confidence: 0.8
+  notes: "Meeting minutes archive; is_archive=true gold example."
+
+# ── Section 2: landing / links pages (has_data=false, has_data_links=true) ────
+
+- id: quabbin_homepage
+  school_name: Quabbin
+  url: https://www.qrsd.org
+  # District homepage; no direct data but links to school committee.
+  has_data: false
+  has_data_links: true
+  data_type: null
+  is_archive: false
+  data_years_available: []
+  predicted:
+    has_data: false
+    has_data_links: true
+    data_type: null
+    is_archive: false
+  expected_relevant_links:
+    - url: https://www.qrsd.org/our_district/school_committee
+      confidence: 0.8
+  notes: "Homepage; has_data_links=true, links to school committee."
+
+- id: leicester_school_committee_webpage
+  school_name: Leicester
+  url: https://www.leicester.k12.ma.us/SC/school_committee_webpage
+  # Landing page that links out to Google Docs/Drive for the actual materials.
+  has_data: false
+  has_data_links: true
+  data_type: null
+  is_archive: false
+  data_years_available: []
+  predicted:
+    has_data: false
+    has_data_links: true
+    data_type: null
+    is_archive: false
+  expected_relevant_links: []
+  notes: "Landing page; links to Google Drive docs (off-domain, so excluded)."
+
+# ── Section 3: live-only negatives (no POC snapshot; --offline skips these) ──
+# These are hand-picked obvious-irrelevant pages on the same school domains.
+# They have no `predicted:` block (not in the POC run), so --offline mode
+# skips them and live mode must fetch + classify them.
+
+- id: quabbin_staff_directory_neg
+  school_name: Quabbin
+  url: https://www.qrsd.org/staff_directory
+  # Obvious negative: staff directory.
+  has_data: false
+  has_data_links: false
+  data_type: null
+  is_archive: false
+  data_years_available: []
+  expected_relevant_links: []
+  notes: "Staff directory — obvious negative. Live-only (no POC snapshot)."
+
+- id: quabbin_lunch_menu_neg
+  school_name: Quabbin
+  url: https://www.qrsd.org/schools
+  # Obvious negative: schools listing (no board/policy material).
+  has_data: false
+  has_data_links: false
+  data_type: null
+  is_archive: false
+  data_years_available: []
+  expected_relevant_links: []
+  notes: "Schools listing — obvious negative. Live-only (no POC snapshot)."
+
+- id: wachusett_athletics_neg
+  school_name: Wachusett
+  url: https://www.wrsd.net/schools
+  # Obvious negative: schools listing (no board/policy material).
+  has_data: false
+  has_data_links: false
+  data_type: null
+  is_archive: false
+  data_years_available: []
+  expected_relevant_links: []
+  notes: "Schools listing — obvious negative. Live-only (no POC snapshot)."
+
+- id: leicester_news_neg
+  school_name: Leicester
+  url: https://www.leicester.k12.ma.us/news
+  # Obvious negative: generic news page.
+  has_data: false
+  has_data_links: false
+  data_type: null
+  is_archive: false
+  data_years_available: []
+  expected_relevant_links: []
+  notes: "Generic news page — obvious negative. Live-only (no POC snapshot)."
+
+# ── Section 4: TODO — additional labeled rows to reach ~60 total ─────────────
+# Fill these in by visiting each URL, inspecting the page, and setting the
+# ground-truth fields. Copy the `predicted:` block verbatim from
+# scripts/school_data/output/schema_crawl_results.json for pages that were in
+# the POC run; omit it for live-only negatives.
+
+# TODO: label — Quabbin policy_manual_old (archive?)
+- id: quabbin_policy_manual_old
+  school_name: Quabbin
+  url: https://www.qrsd.org/our_district/school_committee/q_r_s_d_policy_manual_old
+  has_data: true
+  has_data_links: false
+  data_type: policy_document
+  is_archive: false
+  data_years_available: []
+  predicted:
+    has_data: true
+    has_data_links: false
+    data_type: policy_document
+    is_archive: false
+  expected_relevant_links: []
+  notes: "TODO: verify label by visiting the page."
+
+# TODO: label — additional pages from the 20-school POC visited_pages.
+# Candidate URLs to label (pull predicted: from schema_crawl_results.json):
+# - https://www.qrsd.org/our_district/school_committee/school_committee_documents
+# - https://www.qrsd.org/our_district/school_committee/school_committee_meeting_minutes
+# - https://www.wrsd.net/school-committee/policies
+# - https://www.wrsd.net/school-committee/meeting-recordings
+# - https://www.wrsd.net/school-committee/policies/series-1000-operations
+# - https://www.wareps.org/news/whats_new/school_committee_meeting
+# - https://www.plymouth.k12.ma.us/page/school-committee
+# - ... (see schema_crawl_results.json visited_pages for the full set)
+# Aim for ~25 more positive/archive rows and ~10 more negatives to reach 60.

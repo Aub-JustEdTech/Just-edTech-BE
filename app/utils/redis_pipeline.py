@@ -42,13 +42,21 @@ class RedisPipelineTracker:
     """
 
     def __init__(self):
-        """Initialize Redis connection for pipeline tracking"""
+        """Initialize Redis connection for pipeline tracking.
+
+        Lives on the app-cache Redis (db 3), NOT the Celery broker Redis
+        (db 2). Co-locating pipeline-status hashes with in-flight Celery
+        messages meant a broker OOM also dropped stage progress, and a
+        noeviction broker rejected status writes under load. DB 3 of the
+        app-cache Redis is sized independently and is the right home for
+        disposable 24h-TTL status keys.
+        """
         try:
             self.redis = Redis(
                 host=settings.REDIS_HOST,
                 port=settings.REDIS_PORT,
                 password=settings.REDIS_PASSWORD if settings.REDIS_PASSWORD else None,
-                db=2,  # Use separate DB for pipeline tracking
+                db=3,  # App-cache Redis, separate from broker (db 2)
                 decode_responses=True,  # Automatically decode bytes to strings
                 socket_connect_timeout=5,
                 socket_timeout=5,

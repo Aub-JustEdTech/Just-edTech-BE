@@ -1,0 +1,219 @@
+[
+  {
+    "name": "Natomas Unified School District",
+    "org_code": "34-75283",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.natomasunified.org"
+  },
+  {
+    "name": "Contra Costa Community College District",
+    "org_code": "07-69134",
+    "district_type": "Community College District",
+    "state": "CA",
+    "website": "https://www.4cd.edu"
+  },
+  {
+    "name": "Glendale Unified School District",
+    "org_code": "19-64568",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.gusd.net"
+  },
+  {
+    "name": "Antioch Unified School District",
+    "org_code": "07-61648",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.antiochschools.net"
+  },
+  {
+    "name": "Berryessa Union Elementary School District",
+    "org_code": "43-69369",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.berryessa.k12.ca.us"
+  },
+  {
+    "name": "Franklin-McKinley Elementary School District",
+    "org_code": "43-69450",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.fmsd.org"
+  },
+  {
+    "name": "East Side Union High School District",
+    "org_code": "43-69427",
+    "district_type": "High School District",
+    "state": "CA",
+    "website": "https://www.esuhsd.org"
+  },
+  {
+    "name": "San Jose-Evergreen Community College District",
+    "org_code": "43-69641",
+    "district_type": "Community College District",
+    "state": "CA",
+    "website": "https://www.sjeccd.edu"
+  },
+  {
+    "name": "Oak Grove Elementary School District",
+    "org_code": "43-69609",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.ogsd.net"
+  },
+  {
+    "name": "Santa Ana Unified School District",
+    "org_code": "30-66670",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.sausd.us"
+  },
+  {
+    "name": "Culver City Unified School District",
+    "org_code": "19-64444",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.ccusd.org"
+  },
+  {
+    "name": "Capistrano Unified School District",
+    "org_code": "30-66464",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.capousd.org"
+  },
+  {
+    "name": "San Francisco Unified School District",
+    "org_code": "38-68478",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.sfusd.edu"
+  },
+  {
+    "name": "Saddleback Valley Unified School District",
+    "org_code": "30-73635",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.svusd.org"
+  },
+  {
+    "name": "Alum Rock Union Elementary School District",
+    "org_code": "43-69336",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.arusd.org"
+  },
+  {
+    "name": "Murrieta Valley Unified School District",
+    "org_code": "33-75200",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.murrieta.k12.ca.us"
+  },
+  {
+    "name": "Visalia Unified School District",
+    "org_code": "54-72256",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.vusd.org"
+  },
+  {
+    "name": "Sunnyvale School District",
+    "org_code": "43-69682",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.sesd.org"
+  },
+  {
+    "name": "Evergreen Elementary School District",
+    "org_code": "43-69419",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.eesd.org"
+  },
+  {
+    "name": "Yolo County Office of Education",
+    "org_code": "57-10575",
+    "district_type": "County Office of Education",
+    "state": "CA",
+    "website": "https://www.ycoe.org"
+  },
+  {
+    "name": "Fresno Unified School District",
+    "org_code": "10-62166",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.fresnounified.org"
+  },
+  {
+    "name": "San Jose Unified School District",
+    "org_code": "43-69666",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.sjusd.org"
+  },
+  {
+    "name": "West Contra Costa Unified School District",
+    "org_code": "07-61796",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.wccusd.net"
+  },
+  {
+    "name": "Conejo Valley Unified School District",
+    "org_code": "56-73759",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.cvusd.us"
+  },
+  {
+    "name": "Compton Unified School District",
+    "org_code": "19-73437",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.compton.k12.ca.us"
+  },
+  {
+    "name": "Emery Unified School District",
+    "org_code": "01-61192",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://emeryusd.k12.ca.us"
+  },
+  {
+    "name": "West Park Elementary School District",
+    "org_code": "10-62547",
+    "district_type": "Elementary School District",
+    "state": "CA",
+    "website": "https://www.westpark.k12.ca.us"
+  },
+  {
+    "name": "Vacaville Unified School District",
+    "org_code": "48-70557",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.vcusd.org"
+  },
+  {
+    "name": "San Mateo Union High School District",
+    "org_code": "41-69062",
+    "district_type": "High School District",
+    "state": "CA",
+    "website": "https://www.smcjuhsd.org"
+  },
+  {
+    "name": "Inglewood Unified School District",
+    "org_code": "19-64634",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.inglewoodusd.com"
+  },
+  {
+    "name": "Chino Valley Unified School District",
+    "org_code": "36-67678",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.chino.k12.ca.us"
+  }
+]

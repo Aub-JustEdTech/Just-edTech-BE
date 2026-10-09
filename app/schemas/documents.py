@@ -49,6 +49,41 @@ class DocumentUploadResponse(BaseModel):
         from_attributes = True
 
 
+class MediaLinkIngestRequest(BaseModel):
+    """Request to ingest a YouTube video or direct audio/video URL."""
+
+    url: str = Field(
+        ...,
+        description=(
+            "YouTube video URL, or a direct link to an audio/video file. "
+            "YouTube videos that have captions are transcribed for free."
+        ),
+    )
+    name: str | None = Field(
+        None,
+        description="Display name. Defaults to the video ID or the filename in the URL.",
+    )
+
+    @field_validator("url")
+    @classmethod
+    def url_must_be_http(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v.lower().startswith(("http://", "https://")):
+            raise ValueError("URL must start with http:// or https://")
+        return v
+
+
+class MediaUsageResponse(BaseModel):
+    """This tenant's transcription spend against its monthly cap."""
+
+    used_minutes: int
+    limit_minutes: int
+    # None when the cap is disabled — "remaining" is meaningless without a
+    # limit, and 0 would read as "exhausted".
+    remaining_minutes: int | None = None
+    unlimited: bool = False
+
+
 class DocumentScrapeRequest(BaseModel):
     """Request for scraping a web page"""
 
