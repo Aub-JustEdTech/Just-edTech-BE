@@ -249,6 +249,64 @@ async def test_extract_citations_resolves_uuid_to_document_db_id() -> None:
 
 
 @pytest.mark.asyncio
+async def test_extract_citations_from_answer_faq_exact_match() -> None:
+    """Matched FAQ entries must become Document-linked citations."""
+    state = {
+        "tenant_id": 1,
+        "messages": [
+            ToolMessage(
+                name="answer_faq_exact_match",
+                content=json.dumps(
+                    {
+                        "matched": True,
+                        "question": "Can I choose a different school?",
+                        "answer": "Yes, via the school choice process.",
+                        "document_name": "Parent FAQ 2025",
+                        "document_id": 88,
+                        "page_number": 2,
+                        "chunk_index": 5,
+                    }
+                ),
+                tool_call_id="call-faq",
+            ),
+            AIMessage(content="Yes, via the school choice process."),
+        ]
+    }
+
+    result = await extract_citations_node(state)  # type: ignore[arg-type]
+
+    assert len(result["citations"]) == 1
+    citation = result["citations"][0]
+    assert citation["document_title"] == "Parent FAQ 2025"
+    assert citation["document_url"] == "/documents/88"
+    assert citation["page_number"] == 2
+    assert "school choice" in citation["snippet"]
+
+
+@pytest.mark.asyncio
+async def test_extract_citations_ignores_unmatched_faq() -> None:
+    state = {
+        "tenant_id": 1,
+        "messages": [
+            ToolMessage(
+                name="answer_faq_exact_match",
+                content=json.dumps(
+                    {
+                        "matched": False,
+                        "question": "Unrelated?",
+                        "answer": None,
+                    }
+                ),
+                tool_call_id="call-faq-miss",
+            ),
+        ]
+    }
+
+    result = await extract_citations_node(state)  # type: ignore[arg-type]
+    assert result["citations"] == []
+
+
+@pytest.mark.asyncio
 async def test_extract_citations_skips_chunks_without_resolvable_document() -> None:
     """No Document id and no resolvable UUID → no citation (no resource URL fallback)."""
     state = {

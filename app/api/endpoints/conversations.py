@@ -499,6 +499,8 @@ async def create_conversation(
         data=SendMessageResponse(
             user_message=MessageResponse.model_validate(user_msg_with_citations),
             bot_message=MessageResponse.model_validate(bot_msg_with_citations),
+            agent_iterations=metadata.get("agent_iterations"),
+            termination_reason=metadata.get("termination_reason"),
         ),
         status_code=status.HTTP_201_CREATED,
     )
@@ -674,6 +676,8 @@ async def send_message(
         data=SendMessageResponse(
             user_message=MessageResponse.model_validate(user_msg_with_citations),
             bot_message=MessageResponse.model_validate(bot_msg_with_citations),
+            agent_iterations=metadata.get("agent_iterations"),
+            termination_reason=metadata.get("termination_reason"),
         )
     )
 

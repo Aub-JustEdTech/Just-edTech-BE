@@ -203,7 +203,7 @@ class AgenticRAGService:
                 )
             )
 
-        # Metadata — match the shape expected by ChatService
+        # Metadata — match the shape expected by ChatService / conversations API
         token_usage: dict = state.get("token_usage") or {}
         metadata: dict[str, Any] = {
             "tokens_used": token_usage.get("total_tokens", 0),
@@ -212,6 +212,7 @@ class AgenticRAGService:
             "chunks_retrieved": len(citations),
             "model": "gpt-4o",
             "agent_iterations": state.get("iteration_count", 0),
+            "termination_reason": state.get("termination_reason"),
             "status_updates": state.get("status_updates") or [],
         }
 

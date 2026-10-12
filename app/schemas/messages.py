@@ -65,3 +65,6 @@ class SendMessageResponse(BaseModel):
 
     user_message: MessageResponse
     bot_message: MessageResponse
+    # Agentic RAG diagnostics (null for classic RAG / normal completion)
+    agent_iterations: int | None = None
+    termination_reason: str | None = None  # "max_iterations" | "token_budget"

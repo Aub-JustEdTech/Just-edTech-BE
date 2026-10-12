@@ -31,12 +31,18 @@ async def guard_rails_node(state: AgentState) -> dict[str, Any]:
     hit_token_limit = total_tokens >= token_budget
 
     if hit_iteration_limit or hit_token_limit:
-        reason = (
-            f"iteration_count={iteration_count}>={max_iterations}"
-            if hit_iteration_limit
-            else f"total_tokens={total_tokens}>={token_budget}"
+        termination_reason = (
+            "max_iterations" if hit_iteration_limit else "token_budget"
         )
-        logger.info(f"[guard_rails] Limit reached ({reason}); forcing final answer.")
-        return {"force_answer": True}
+        logger.info(
+            f"[guard_rails] Limit reached "
+            f"(termination_reason={termination_reason}, "
+            f"iteration_count={iteration_count}, "
+            f"total_tokens={total_tokens}); forcing final answer."
+        )
+        return {
+            "force_answer": True,
+            "termination_reason": termination_reason,
+        }
 
     return {}

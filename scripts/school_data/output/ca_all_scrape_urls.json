@@ -837,5 +837,17 @@
         "use_playwright": true
       }
     ]
+  },
+  {
+    "name": "Sacramento City Unified School District",
+    "org_code": "34-67439",
+    "website": "https://www.scusd.edu",
+    "urls": [
+      {
+        "url": "https://www.scusd.edu/about/board-of-education/board-meetings",
+        "crawl_depth": 2,
+        "use_playwright": true
+      }
+    ]
   }
 ]
