@@ -2,9 +2,10 @@
 Celery tasks for OpenAI Batch API chunk classification.
 
 Two scheduled tasks:
-  - submit_pending_batch_classification: daily at 4 AM UTC. Pulls all
+  - submit_pending_batch_classification: daily at 5 AM UTC. Pulls
     status='pending' rows from pending_classifications, builds a JSONL,
-    uploads it to OpenAI's Batch API, and flips rows to 'submitted'.
+    uploads it to OpenAI's Batch API (OPENAI_API_KEY only — never
+    OpenRouter), and flips rows to 'submitted'.
   - poll_batch_classification: every 15 minutes. For every batch job in
     'submitted' or 'in_progress' state, refreshes status from OpenAI and,
     if completed, applies the results (writes to Qdrant + heatmap_aggregate).
@@ -34,7 +35,7 @@ def submit_pending_batch_classification_task(self) -> dict:
     """
     Submit any pending chunk classifications to OpenAI's Batch API.
 
-    Scheduled daily at 4 AM UTC. Can also be triggered manually for a
+    Scheduled daily at 5 AM UTC. Can also be triggered manually for a
     backfill (see scripts/backfill/run_heatmap_backfill.py).
     """
     loop = get_event_loop()

@@ -41,10 +41,8 @@ from app.services.heatmap_ingest.prompt import (
 )
 from app.services.heatmap_ingest.taxonomy import ChunkClassification
 from app.services.llm.client import (
-    get_async_openai_client,
-    get_llm_api_key,
-    normalize_model_name,
-    uses_openrouter,
+    get_openai_batch_client,
+    strip_model_provider_prefix,
 )
 from app.utils.s3 import S3Manager
 
@@ -64,13 +62,15 @@ class BatchClassifier:
     """
 
     def __init__(self, model: str | None = None):
-        self._model = normalize_model_name(
-            model or getattr(
+        # OpenAI Batch JSONL requires bare model ids (gpt-4o-mini), not
+        # OpenRouter-style openai/gpt-4o-mini prefixes.
+        self._model = strip_model_provider_prefix(
+            model
+            or getattr(
                 settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-4o-mini"
             )
         )
-        get_llm_api_key()
-        self._client = get_async_openai_client()
+        self._client = get_openai_batch_client()
         # Reuse a single S3Manager instance.
         self._s3 = S3Manager(
             bucket_name=settings.S3_BUCKET_NAME,
@@ -121,17 +121,15 @@ class BatchClassifier:
 
     async def submit_pending_batch(self, db: AsyncSession) -> BatchClassificationJob | None:
         """
-        Pull all status='pending' rows, build + upload JSONL, submit to
+        Pull status='pending' rows, build + upload JSONL, submit to the
         OpenAI Batch API. Returns the new job row, or None if no pending
         rows existed.
 
-        OpenRouter does not expose OpenAI's Batch API, so when
-        LLM_API_PROVIDER=openrouter we classify chunks via concurrent
-        chat-completions calls instead.
+        Always uses OpenAI Files/Batches (via get_openai_batch_client), even
+        when LLM_API_PROVIDER=openrouter for the rest of the app. OpenRouter
+        has no Batch API; the old inline chat path is intentionally gone so
+        the daily cron cannot starve the single ingest worker.
         """
-        if uses_openrouter():
-            return await self._submit_pending_via_direct_api(db)
-
         batch_size = int(getattr(settings, "HEATMAP_INGEST_BATCH_SIZE", 50_000))
         # Byte budget to stay under OpenAI Batch's 200 MB input-file cap.
         # With a ~24 KB system prompt, each line is ~35 KB, so the file-size
@@ -253,143 +251,6 @@ class BatchClassifier:
         logger.info(
             f"Submitted batch {batch.id} ({len(pending_rows)} chunks, "
             f"input file {file_obj.id}, s3 {s3_url})"
-        )
-        return job
-
-    async def _submit_pending_via_direct_api(
-        self, db: AsyncSession
-    ) -> BatchClassificationJob | None:
-        """Classify pending chunks via concurrent chat-completions (OpenRouter)."""
-        batch_size = int(getattr(settings, "HEATMAP_INGEST_BATCH_SIZE", 50_000))
-        concurrency = int(getattr(settings, "OPENROUTER_BATCH_CONCURRENCY", 10))
-
-        pending_rows = (
-            (
-                await db.execute(
-                    select(PendingClassification)
-                    .where(PendingClassification.status == "pending")
-                    .order_by(PendingClassification.id)
-                    .limit(batch_size)
-                )
-            )
-            .scalars()
-            .all()
-        )
-        if not pending_rows:
-            logger.info("No pending classifications to submit.")
-            return None
-
-        batch_id = f"direct-{_utcnow().strftime('%Y%m%d_%H%M%S')}"
-        logger.info(
-            "Classifying %s chunks via OpenRouter direct API (concurrency=%s)",
-            len(pending_rows),
-            concurrency,
-        )
-
-        from app.services.vector_store.factory import (
-            VectorStoreFactory,
-            VectorStoreType,
-        )
-
-        vector_store = VectorStoreFactory.create(
-            VectorStoreType(settings.VECTOR_STORE_TYPE)
-        )
-        tenant_cache: dict[int, int] = {}
-        doc_state_cache: dict[int, str | None] = {}
-        per_doc_classifications: dict[
-            int, list[tuple[PendingClassification, ChunkClassification]]
-        ] = {}
-        stats = {"applied": 0, "failed": 0}
-        semaphore = asyncio.Semaphore(concurrency)
-
-        async def _classify_row(row: PendingClassification) -> None:
-            async with semaphore:
-                if row.document_id not in doc_state_cache:
-                    doc_state_cache[row.document_id] = await self._state_for_doc(
-                        db, row.document_id
-                    )
-                request = build_batch_request_line(
-                    custom_id=str(row.id),
-                    chunk_text=row.chunk_text,
-                    entity_type=row.entity_type,
-                    meeting_date=(
-                        row.meeting_date.isoformat() if row.meeting_date else None
-                    ),
-                    state=doc_state_cache[row.document_id],
-                    model=self._model,
-                )
-                body = dict(request["body"])
-                body["model"] = normalize_model_name(body["model"])
-                try:
-                    response = await self._client.chat.completions.create(**body)
-                    content = response.choices[0].message.content or "{}"
-                    classification = ChunkClassification.model_validate(
-                        json.loads(content)
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    row.status = "failed"
-                    row.error_message = str(exc)[:1000]
-                    stats["failed"] += 1
-                    return
-
-                try:
-                    if row.document_id not in tenant_cache:
-                        tenant_cache[row.document_id] = (
-                            await self._tenant_id_for_doc(db, row.document_id)
-                        )
-                    tenant_id = tenant_cache[row.document_id]
-                    if hasattr(vector_store, "update_metadata"):
-                        await self._update_metadata_with_retry(
-                            vector_store,
-                            chunk_ids=[row.qdrant_point_id],
-                            metadata=self._build_payload_metadata(
-                                classification, row_entity_type=row.entity_type
-                            ),
-                            tenant_id=tenant_id,
-                        )
-                except Exception as exc:  # noqa: BLE001
-                    row.status = "failed"
-                    row.error_message = f"qdrant set_payload: {exc}"[:1000]
-                    stats["failed"] += 1
-                    return
-
-                per_doc_classifications.setdefault(row.document_id, []).append(
-                    (row, classification)
-                )
-                row.status = "applied"
-                row.batch_id = batch_id
-                row.error_message = None
-                stats["applied"] += 1
-
-                # A9 safety-net signal: a keyword flag fired but the
-                # classifier produced no topic_tags. Logged (not actioned)
-                # so eval can spot classifier misses during spot-check.
-                if not classification.topic_tags and row.chunk_text:
-                    self._log_keyword_safety_net(
-                        row.chunk_text,
-                        doc_state_cache.get(row.document_id),
-                        row.id,
-                    )
-
-        await asyncio.gather(*[_classify_row(row) for row in pending_rows])
-        await self._upsert_heatmap_aggregate(db, per_doc_classifications)
-
-        job = BatchClassificationJob(
-            batch_id=batch_id,
-            # Column is NOT NULL; OpenRouter direct path has no JSONL upload.
-            input_jsonl_s3_key=f"local://{batch_id}",
-            chunk_count=len(pending_rows),
-            status="applied",
-            submitted_at=_utcnow(),
-            applied_at=_utcnow(),
-        )
-        db.add(job)
-        await db.commit()
-        logger.info(
-            "OpenRouter direct classification %s: %s applied, %s failed",
-            batch_id,
-            stats["applied"],
-            stats["failed"],
         )
         return job
 

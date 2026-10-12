@@ -73,53 +73,33 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,  # Retry connection on startup
     # Periodic task schedule (beat schedule).
     #
+    # Nightly pipeline on t4g.2xlarge steady state (1 ingest + 1 scraper),
+    # staggered so scrape/ingest and classify do not pile onto the same
+    # workers at once:
+    #
+    #   01:00  sweep-school-media          (scraping queue)
+    #   02:30–22:30  drain-discovered-media hourly (scraping; skips
+    #              23:00–01:59 so the sweep hour is clear)
+    #   03:30  reconcile-heatmap-aggregate (celery queue; catches
+    #              drift from yesterday's apply / failed set_payload)
+    #   05:00  submit-pending-batch-classification (celery queue;
+    #              OpenAI Batch API only — after overnight drain waves
+    #              at 02:30 / 03:30 / 04:30 have enqueued pending rows)
+    #   */15   poll-batch-classification   (celery queue; apply when
+    #              OpenAI Batch completes — often hours later)
+    #
+    # Classification submit/poll always use OPENAI_API_KEY + OpenAI
+    # Files/Batches, even when LLM_API_PROVIDER=openrouter for chat.
+    # They stay on the default `celery` queue so they never block
+    # scrape/transcribe. Doc-level classify still runs inline in ingest.
+    #
     # Removed entirely (not wanted, not just paused):
     #   - aggregate-daily-token-usage (aggregate_daily_token_usage)
     #   - aggregate-monthly-billing (aggregate_monthly_billing)
     #
-    # All other entries below are PAUSED (commented out) while the tenant-4
-    # heatmap backfill is under manual control -- re-enable by uncommenting
-    # the relevant block(s) once the manual backfill work is done. No task
-    # code was removed; only these beat entries are inactive, so any of them
-    # can still be triggered manually via `<task>.delay(...)`.
+    # Still paused (uncomment when needed):
+    #   - reconcile-stuck-documents (hourly orphan re-enqueue)
     beat_schedule={
-        # "submit-pending-batch-classification": {
-        #     "task": "submit_pending_batch_classification",
-        #     "schedule": crontab(hour=4, minute=0),  # Daily at 4:00 AM UTC
-        #     "options": {"expires": 3600},
-        # },
-        # "poll-batch-classification": {
-        #     "task": "poll_batch_classification",
-        #     "schedule": crontab(minute="*/15"),  # Every 15 minutes
-        #     "options": {"expires": 900},
-        # },
-        # # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
-        # # to catch drift from failed set_payload calls or manual edits.
-        # "reconcile-heatmap-aggregate": {
-        #     "task": "reconcile_heatmap_aggregate",
-        #     "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
-        #     "options": {"expires": 2 * 3600},
-        # },
-        # # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
-        # # PENDING past the staleness threshold. Catches the silent orphan
-        # # failure mode where a Celery chain continuation was lost (broker
-        # # eviction under allkeys-lru, or OOM rejection under noeviction)
-        # # and no _mark_stage_failed ever ran.
-        # "reconcile-stuck-documents": {
-        #     "task": "reconcile_stuck_documents",
-        #     "schedule": crontab(minute=15),  # Hourly at :15
-        #     "options": {"expires": 1800},
-        # },
-        # # Weekly sweep of every active school source URL, tenant-agnostic
-        # # (no school_ids filter = all schools). Runs Monday 1:00 AM UTC,
-        # # ahead of the 2:00-4:00 AM jobs above so they don't compete for the DB.
-        # "sweep-school-media": {
-        #     "task": "app.tasks.school_scraper_tasks.sweep_school_media",
-        #     "schedule": crontab(
-        #         hour=1, minute=0, day_of_week=1
-        #     ),  # Weekly, Monday 1:00 AM UTC
-        #     "options": {"expires": 3 * 3600},
-        # },
         # Bounded school-media sweep. SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (default
         # 50) caps each run; the task self-chains to cover the rest, and this
         # cron tick is the safety net that restarts the chain if a wave
@@ -142,6 +122,39 @@ celery_app.conf.update(
             "args": (50,),
             "options": {"expires": 1800},
         },
+        # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
+        # to catch drift from failed set_payload calls or manual edits.
+        # Runs before submit so yesterday's apply failures are fixed before
+        # today's batch adds more classified payload.
+        "reconcile-heatmap-aggregate": {
+            "task": "reconcile_heatmap_aggregate",
+            "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
+            "options": {"expires": 2 * 3600},
+        },
+        # Pull pending_classifications → OpenAI Batch API (OPENAI_API_KEY).
+        # Chunks ingested during the day sit pending until this tick;
+        # OpenAI Batch is async (hours), so poll below applies when ready.
+        "submit-pending-batch-classification": {
+            "task": "submit_pending_batch_classification",
+            "schedule": crontab(hour=5, minute=0),  # Daily at 5:00 AM UTC
+            "options": {"expires": 3600},
+        },
+        # Apply completed OpenAI Batch jobs → Qdrant + heatmap_aggregate.
+        "poll-batch-classification": {
+            "task": "poll_batch_classification",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+            "options": {"expires": 900},
+        },
+        # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
+        # PENDING past the staleness threshold. Catches the silent orphan
+        # failure mode where a Celery chain continuation was lost (broker
+        # eviction under allkeys-lru, or OOM rejection under noeviction)
+        # and no _mark_stage_failed ever ran.
+        # "reconcile-stuck-documents": {
+        #     "task": "reconcile_stuck_documents",
+        #     "schedule": crontab(minute=15),  # Hourly at :15
+        #     "options": {"expires": 1800},
+        # },
     },
 )
 

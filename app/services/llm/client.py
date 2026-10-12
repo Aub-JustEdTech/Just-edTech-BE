@@ -70,6 +70,22 @@ def get_async_openai_client(**kwargs: Any) -> AsyncOpenAI:
     return AsyncOpenAI(**client_kwargs)
 
 
+def get_openai_batch_client(**kwargs: Any) -> AsyncOpenAI:
+    """OpenAI platform client for Files/Batches APIs (never OpenRouter).
+
+    Chunk classification submit/poll/apply always use OpenAI's Batch API,
+    even when LLM_API_PROVIDER=openrouter for chat/doc-classify.
+    """
+    api_key = kwargs.pop("api_key", None) or settings.OPENAI_API_KEY
+    if not api_key:
+        raise ValueError(
+            "OPENAI_API_KEY is required for OpenAI Batch API classification. "
+            "Set OPENAI_API_KEY even when LLM_API_PROVIDER=openrouter."
+        )
+    # Do not pass OpenRouter base_url or headers — Batch is OpenAI-only.
+    return AsyncOpenAI(api_key=api_key, **kwargs)
+
+
 def get_cached_async_openai_client() -> AsyncOpenAI:
     global _async_client
     if _async_client is None:
