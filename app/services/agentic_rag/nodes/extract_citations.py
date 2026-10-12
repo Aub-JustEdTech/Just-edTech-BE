@@ -2,12 +2,12 @@
 Node 5 – extract_citations
 
 Runs after the agent produces its final answer.  Scans all ToolMessage
-results from search_knowledge_base, search_tables, and
-get_district_citations, resolves each chunk to a Document DB id, and
-builds CitationCreate-compatible dicts with ``document_url`` set to
-``/documents/{id}`` (never scrape ``source_media_url`` /
-``source_page_url``). The API layer upgrades those paths to presigned
-S3 document URLs.
+results from search_knowledge_base, search_tables,
+get_district_citations, and answer_faq_exact_match, resolves each chunk
+to a Document DB id, and builds CitationCreate-compatible dicts with
+``document_url`` set to ``/documents/{id}`` (never scrape
+``source_media_url`` / ``source_page_url``). The API layer upgrades
+those paths to presigned S3 document URLs.
 
 The graph ends immediately after this node.
 """
@@ -31,10 +31,12 @@ logger = logging.getLogger(__name__)
 # `get_district_citations` is the drill-down used after
 # `count_districts_by_topic` — without it, cross-district answers
 # would surface districts with empty UI citations.
+# `answer_faq_exact_match` returns a single matched FAQ entry.
 _SEARCH_TOOLS = {
     "search_knowledge_base",
     "search_tables",
     "get_district_citations",
+    "answer_faq_exact_match",
 }
 
 
@@ -45,6 +47,21 @@ def _iter_chunks(tool_name: str, payload: Any) -> list[dict[str, Any]]:
             citations = payload.get("citations") or []
             return citations if isinstance(citations, list) else []
         return []
+
+    if tool_name == "answer_faq_exact_match":
+        if not isinstance(payload, dict) or not payload.get("matched"):
+            return []
+        answer = payload.get("answer") or ""
+        return [
+            {
+                "document_db_id": payload.get("document_id"),
+                "document_name": payload.get("document_name") or "",
+                "text": answer if isinstance(answer, str) else str(answer),
+                "page_number": payload.get("page_number"),
+                "chunk_index": payload.get("chunk_index", 0),
+                "score": 1.0,
+            }
+        ]
 
     if isinstance(payload, list):
         return [c for c in payload if isinstance(c, dict)]

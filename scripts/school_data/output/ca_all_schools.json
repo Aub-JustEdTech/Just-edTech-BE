@@ -215,5 +215,12 @@
     "district_type": "Unified School District",
     "state": "CA",
     "website": "https://www.chino.k12.ca.us"
+  },
+  {
+    "name": "Sacramento City Unified School District",
+    "org_code": "34-67439",
+    "district_type": "Unified School District",
+    "state": "CA",
+    "website": "https://www.scusd.edu"
   }
 ]

@@ -34,6 +34,23 @@ def _make_status(tool_name: str, args: dict) -> str:
     if tool_name == "get_document_details":
         doc_id = args.get("document_id", "")
         return f"Examining document {doc_id}…"
+    if tool_name == "answer_faq_exact_match":
+        query = args.get("query", "")[:60]
+        return f"Checking FAQ match for '{query}'…"
+    if tool_name == "count_districts_by_topic":
+        return "Counting matching chunks across districts…"
+    if tool_name == "get_district_citations":
+        org_code = args.get("org_code", "")
+        suffix = f" for {org_code}" if org_code else ""
+        return f"Gathering district citations{suffix}…"
+    if tool_name == "list_districts":
+        name = args.get("name_contains") or args.get("state") or ""
+        suffix = f" ({name})" if name else ""
+        return f"Listing districts{suffix}…"
+    if tool_name == "get_taxonomy":
+        state = args.get("state") or ""
+        suffix = f" ({state})" if state else ""
+        return f"Looking up classification vocabulary{suffix}…"
     return f"Running {tool_name}…"
 
 

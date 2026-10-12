@@ -173,6 +173,7 @@ def get_initial_state(
         "iteration_count": 0,
         "max_iterations": settings.AGENT_MAX_ITERATIONS,
         "force_answer": False,
+        "termination_reason": None,
         "status_updates": [],
         "citations": [],
         "token_usage": {},
