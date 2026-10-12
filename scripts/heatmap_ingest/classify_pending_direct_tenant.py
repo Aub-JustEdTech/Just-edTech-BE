@@ -1,7 +1,8 @@
 """Classify pending_classifications for one tenant via direct chat API.
 
-Uses the OpenRouter/direct path in BatchClassifier (no OpenAI Batch API).
-Scoped by tenant so a manual run does not pull other tenants' pending rows.
+Manual OpenRouter/chat path (not the scheduled OpenAI Batch cron).
+BatchClassifier helpers are reused for Qdrant/aggregate writes; chat calls
+go through get_async_openai_client() so LLM_API_PROVIDER=openrouter still works.
 
 Usage:
   POSTGRES_SERVER=localhost QDRANT_URL=http://localhost:6343 \\
@@ -28,7 +29,7 @@ from app.models.pending_classification import PendingClassification
 from app.services.heatmap_ingest.batch_classifier import BatchClassifier
 from app.services.heatmap_ingest.prompt import build_batch_request_line
 from app.services.heatmap_ingest.taxonomy import ChunkClassification
-from app.services.llm.client import normalize_model_name
+from app.services.llm.client import get_async_openai_client, normalize_model_name
 from app.core.config import settings
 
 logging.basicConfig(
@@ -80,6 +81,14 @@ async def classify_tenant(
 
     concurrency = int(getattr(settings, "OPENROUTER_BATCH_CONCURRENCY", 10))
     classifier = BatchClassifier()
+    # Chat via active LLM provider (OpenRouter or OpenAI). BatchClassifier._client
+    # is OpenAI-Batch-only and must not be used for this manual path.
+    chat_client = get_async_openai_client()
+    chat_model = normalize_model_name(
+        getattr(
+            settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-4o-mini"
+        )
+    )
     batch_id = f"direct-t{tenant_id}-{_utcnow().strftime('%Y%m%d_%H%M%S')}"
     logger.info(
         "Classifying %s chunks for tenant %s via direct API (concurrency=%s)",
@@ -117,12 +126,12 @@ async def classify_tenant(
                     row.meeting_date.isoformat() if row.meeting_date else None
                 ),
                 state=doc_state_cache[row.document_id],
-                model=classifier._model,
+                model=chat_model,
             )
             body = dict(request["body"])
-            body["model"] = normalize_model_name(body["model"])
+            body["model"] = chat_model
             try:
-                response = await classifier._client.chat.completions.create(**body)
+                response = await chat_client.chat.completions.create(**body)
                 content = response.choices[0].message.content or "{}"
                 classification = ChunkClassification.model_validate(json.loads(content))
             except Exception as exc:  # noqa: BLE001
