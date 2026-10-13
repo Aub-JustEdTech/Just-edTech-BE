@@ -1,19 +1,25 @@
 """
-Invitation endpoints for tenant admins and public validation.
+Invitation endpoints for tenant admins, super admins, and public validation.
 """
+
+import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.db.redis_connector import redis_manager
+from app.schemas.admin import TenantResponse
 from app.schemas.users import (
     BulkInvitationCreateRequest,
     BulkInvitationResponse,
+    UnifiedInvitationRequest,
     User,
 )
-from app.services.invitation_service import invitation_service
-from app.utils.dependencies import get_current_user, get_db
+from app.services.invitation_service import PreparedInvite, invitation_service
+from app.services.tenant_access_service import list_tenants_for_principal
+from app.utils.dependencies import get_current_tenant_admin, get_current_user, get_db
 from app.utils.response import success_response
 
 router = APIRouter()
@@ -26,22 +32,33 @@ router = APIRouter()
 )
 async def create_invitation(
     tenant_id: int = Path(...),
-    payload: BulkInvitationCreateRequest = ...,  # body: list of emails
+    payload: BulkInvitationCreateRequest = ...,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Authorization: current_user must be admin of the tenant
-    if current_user.tenant_id != tenant_id or not user.is_tenant_admin(current_user):
+    is_super = user.is_super_admin(current_user)
+    is_admin = user.is_tenant_admin(current_user)
+
+    if not (is_super or is_admin):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    # tenant_admin must have access to this tenant; super_admin bypasses
+    if is_admin and not is_super:
+        has = await user_tenant_access.has_access(
+            db, user_id=current_user.id, tenant_id=tenant_id
+        )
+        if not has:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: tenant not in your access list",
+            )
 
     emails = [e.strip().lower() for e in payload.emails]
     results: list[dict[str, str | bool]] = []
     successful = 0
     for e in emails:
-        # Check if user already exists
         existing_user = await user.get_by_email(db, e)
         if existing_user:
-            # Check if user is already in this tenant
             if existing_user.tenant_id == tenant_id:
                 results.append(
                     {
@@ -60,7 +77,6 @@ async def create_invitation(
                 )
             continue
 
-        # Check cooldown for better error message
         if await redis_manager.is_invite_on_cooldown(e):
             remaining = await redis_manager.get_invite_cooldown_remaining(e)
             results.append(
@@ -90,6 +106,135 @@ async def create_invitation(
         },
         status_code=status.HTTP_201_CREATED,
     )
+
+
+@router.post("/send", status_code=201, response_model=BulkInvitationResponse)
+async def send_unified_invitation(
+    payload: UnifiedInvitationRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+):
+    """Unified invite endpoint for both tenant_admin and tenant_user roles.
+
+    - role_id=2 (tenant_admin): tenant_id ignored; invite grants access to all tenants
+    - role_id=3 (tenant_user): each invite's tenant_id is required and must be
+      individually accessible by the caller — different emails in the same
+      request may target different tenants.
+    """
+    TENANT_ADMIN_ROLE_ID = 2
+    TENANT_USER_ROLE_ID = 3
+
+    is_super = user.is_super_admin(current_user)
+    is_admin = user.is_tenant_admin(current_user)
+
+    if payload.role_id == TENANT_USER_ROLE_ID and is_admin and not is_super:
+        distinct_tenant_ids = {
+            inv.tenant_id for inv in payload.invites if inv.tenant_id is not None
+        }
+        for tenant_id in distinct_tenant_ids:
+            has = await user_tenant_access.has_access(
+                db, user_id=current_user.id, tenant_id=tenant_id
+            )
+            if not has:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: tenant not in your access list",
+                )
+
+    invites = [
+        (inv.email.strip().lower(), inv.tenant_id) for inv in payload.invites
+    ]
+    results: list[dict[str, str | bool]] = []
+    successful = 0
+
+    # Phase 1 — sequential: DB/Redis prep only (existing-user + cooldown
+    # checks, invitation record + token). Must be sequential because it all
+    # shares one AsyncSession, which isn't safe for concurrent use.
+    to_send: list[tuple[str, PreparedInvite]] = []
+    for e, tenant_id in invites:
+        existing_user = await user.get_by_email(db, e)
+        if existing_user:
+            results.append(
+                {"email": e, "sent": False, "message": "User already exists in the system"}
+            )
+            continue
+
+        if await redis_manager.is_invite_on_cooldown(e):
+            remaining = await redis_manager.get_invite_cooldown_remaining(e)
+            results.append(
+                {
+                    "email": e,
+                    "sent": False,
+                    "message": f"Please wait {remaining} seconds before requesting another invitation",
+                }
+            )
+            continue
+
+        if payload.role_id == TENANT_ADMIN_ROLE_ID:
+            prepared = await invitation_service.prepare_invite(
+                db,
+                tenant_id=None,
+                email=e,
+                role_id=TENANT_ADMIN_ROLE_ID,
+                enforce_tenant_user=False,
+            )
+        else:
+            prepared = await invitation_service.prepare_invite(
+                db,
+                tenant_id=tenant_id,
+                email=e,
+                role_id=TENANT_USER_ROLE_ID,
+                enforce_tenant_user=True,
+            )
+
+        if prepared is None:
+            # Cooldown was set by a concurrent/prior request between our
+            # earlier check and now — treat consistently with the check above.
+            remaining = await redis_manager.get_invite_cooldown_remaining(e)
+            results.append(
+                {
+                    "email": e,
+                    "sent": False,
+                    "message": f"Please wait {remaining} seconds before requesting another invitation",
+                }
+            )
+            continue
+
+        to_send.append((e, prepared))
+
+    # Phase 2 — concurrent: the actual SMTP sends, which don't touch the DB
+    # session, so a slow batch of emails no longer serializes the request
+    # (and is far less likely to time out and trigger a client-side retry).
+    send_outcomes = await asyncio.gather(
+        *(invitation_service.send_prepared(prepared) for _, prepared in to_send)
+    )
+
+    for (e, _), ok in zip(to_send, send_outcomes, strict=True):
+        if ok:
+            successful += 1
+            results.append({"email": e, "sent": True, "message": "Invitation sent"})
+        else:
+            results.append({"email": e, "sent": False, "message": "Failed to send"})
+
+    return success_response(
+        data={
+            "total": len(invites),
+            "successful": successful,
+            "failed": len(invites) - successful,
+            "results": results,
+        },
+        status_code=status.HTTP_201_CREATED,
+    )
+
+
+@router.get("/accessible-tenants", response_model=list[TenantResponse])
+async def list_accessible_tenants(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_tenant_admin),
+):
+    """Tenants the caller may assign when inviting members (not under /admin)."""
+    tenants = await list_tenants_for_principal(db, current_user)
+    return success_response(data=[TenantResponse.model_validate(t) for t in tenants])
 
 
 @router.get("/{token}/validate")

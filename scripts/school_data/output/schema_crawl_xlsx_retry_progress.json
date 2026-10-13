@@ -1,0 +1,2265 @@
+{
+  "generated_at": "2026-08-23T21:44:04.309970+00:00",
+  "mode": "retry-under-explored",
+  "source_json": "/home/aubergine/Desktop/Just-EdTech-BE/scripts/school_data/output/schema_crawl_xlsx_results.json",
+  "max_pages": 30,
+  "candidate_threshold": 3,
+  "retried": 67,
+  "retry_targets": 67,
+  "districts": [
+    {
+      "name": "Advanced Math and Science Academy Charter (District)",
+      "website": "https://www.amsacs.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.amsacs.org/about/trustees/meeting-documents",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 136.8,
+      "crawled_at": "2026-08-23T13:38:13.525098+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Amesbury",
+      "website": "https://schools.amesburyma.gov",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://schools.amesburyma.gov/aps-district/school-committee/meetings",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2026
+          ]
+        },
+        {
+          "url": "https://schools.amesburyma.gov/aps-district/school-committee/contracts",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 160.3,
+      "crawled_at": "2026-08-23T13:38:13.558194+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Benjamin Franklin Classical Charter Public (District)",
+      "website": "https://www.bfccps.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 5,
+      "candidates": [
+        {
+          "url": "https://www.bfccps.org/apps/pages/index.jsp?uREC_ID=517601&type=d",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2017,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.bfccps.org/apps/pages/index.jsp?uREC_ID=517601&type=d&termREC_ID=&pREC_ID=993404",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.bfccps.org/apps/pages/index.jsp?uREC_ID=517601&type=d&termREC_ID=&pREC_ID=993704",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2017,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.bfccps.org/apps/events2/event.jsp?eREC_ID=5902687&d=2026-08-06&id=2",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.bfccps.org/apps/events",
+          "matched_keywords": [],
+          "score": 80,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 103.9,
+      "crawled_at": "2026-08-23T13:41:00.981889+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Berkshire Arts and Technology Charter Public (District)",
+      "website": "https://www.bartcharter.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 29,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.bartcharter.org/apps/pages/index.jsp?uREC_ID=1573219&type=d&pREC_ID=2751269",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": "fetch_failed: https://www.bartcharter.org/apps/pages/index.jsp?uREC_ID=1573219&type=d&pREC_ID=2639095",
+      "elapsed_seconds": 117.0,
+      "crawled_at": "2026-08-23T13:41:01.110629+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Arlington",
+      "website": "https://www.arlington.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.arlington.k12.ma.us/apps/pages/index.jsp?uREC_ID=4412125&type=d&pREC_ID=2643936",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.arlington.k12.ma.us/apps/pages/index.jsp?uREC_ID=2858178&type=d&pREC_ID=2539876",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": [
+            2024,
+            2023
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 123.2,
+      "crawled_at": "2026-08-23T13:41:00.890347+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Boston Green Academy Horace Mann Charter School (District)",
+      "website": "https://www.bostongreenacademy.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.bostongreenacademy.org/bboard-committee-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 126.2,
+      "crawled_at": "2026-08-23T13:41:01.145580+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Bristol County Agricultural",
+      "website": "https://www.bristolaggie.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 1,
+      "max_pages_limit_reached": true,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.bristolaggie.org/page/board-of-trustees; fetch_failed: https://www.bristolaggie.org/documents/board-of-trustees/606496; fetch_failed: https://www.bristolaggie.org/live-feed; fetch_failed: https://www.bristolaggie.org/news; fetch_failed: https://www.bristolaggie.org/athletics; fetch_failed: https://www.bristolaggie.org/staff; fetch_failed: https://www.bristolaggie.org/events; fetch_failed: https://www.bristolaggie.org/dining; fetch_failed: https://www.bristolaggie.org/documents; fetch_failed: https://www.bristolaggie.org/page/admissions-policy; fetch_failed: https://www.bristolaggie.org/page/staff; fetch_failed: https://www.bristolaggie.org/page/administration; fetch_failed: https://www.bristolaggie.org/page/application-process; fetch_failed: https://www.bristolaggie.org/page/clubs-and-activities; fetch_failed: https://www.bristolaggie.org/page/athletics; fetch_failed: https://www.bristolaggie.org/page/facilities-use; fetch_failed: https://www.bristolaggie.org/page/frequently-asked-questions; fetch_failed: https://www.bristolaggie.org/page/food-services; fetch_failed: https://www.bristolaggie.org/page/bristol-aggie-brick-legacy-project; fetch_failed: https://www.bristolaggie.org/page/health-office; fetch_failed: https://www.bristolaggie.org/page/parent-resources; fetch_failed: https://www.bristolaggie.org/page/bristol-aggie-educational-foundation-inc; fetch_failed: https://www.bristolaggie.org/page/student-services; fetch_failed: https://www.bristolaggie.org/page/student-resources; fetch_failed: https://www.bristolaggie.org/page/campus-bidss; fetch_failed: https://www.bristolaggie.org/page/transportation; fetch_failed: https://www.bristolaggie.org/page/coop; fetch_failed: https://www.bristolaggie.org/page/core-values; fetch_failed: https://www.bristolaggie.org/page/employmentopportunities",
+      "elapsed_seconds": 21.1,
+      "crawled_at": "2026-08-23T13:42:59.231867+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Burlington",
+      "website": "https://www.burlingtonpublicschools.org",
+      "status": "ok",
+      "pages_crawled": 1,
+      "llm_calls": 0,
+      "max_pages_limit_reached": false,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.burlingtonpublicschools.org",
+      "elapsed_seconds": 0.9,
+      "crawled_at": "2026-08-23T13:43:20.992313+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Cape Cod Lighthouse Charter (District)",
+      "website": "http://www.cclighthouseschool.org",
+      "status": "ok",
+      "pages_crawled": 1,
+      "llm_calls": 0,
+      "max_pages_limit_reached": false,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: http://www.cclighthouseschool.org",
+      "elapsed_seconds": 0.7,
+      "crawled_at": "2026-08-23T21:15:21.746032+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Central Berkshire",
+      "website": "https://www.cbrsd.org",
+      "status": "ok",
+      "pages_crawled": 1,
+      "llm_calls": 0,
+      "max_pages_limit_reached": false,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.cbrsd.org",
+      "elapsed_seconds": 0.7,
+      "crawled_at": "2026-08-23T21:15:23.167200+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Chelsea",
+      "website": "https://www.chelseaschools.com",
+      "status": "ok",
+      "pages_crawled": 1,
+      "llm_calls": 0,
+      "max_pages_limit_reached": false,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.chelseaschools.com",
+      "elapsed_seconds": 0.7,
+      "crawled_at": "2026-08-23T21:15:24.684936+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Cohasset",
+      "website": "http://www.cohassetk12.org",
+      "status": "ok",
+      "pages_crawled": 1,
+      "llm_calls": 0,
+      "max_pages_limit_reached": false,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: http://www.cohassetk12.org",
+      "elapsed_seconds": 0.8,
+      "crawled_at": "2026-08-23T21:15:26.105932+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Community Charter School of Cambridge (District)",
+      "website": "https://www.ccscambridge.org",
+      "status": "ok",
+      "pages_crawled": 1,
+      "llm_calls": 0,
+      "max_pages_limit_reached": false,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.ccscambridge.org",
+      "elapsed_seconds": 0.8,
+      "crawled_at": "2026-08-23T21:15:27.531337+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Ayer Shirley School District",
+      "website": "https://www.asrsd.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.asrsd.org/school-committee/agendas-and-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 197.1,
+      "crawled_at": "2026-08-23T13:41:00.924217+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Belchertown",
+      "website": "https://www.belchertownps.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 29,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.belchertownps.org/school-committee-document-archives",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.belchertownps.org/agenda-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.belchertownps.org/jabish-brook-building-project",
+      "elapsed_seconds": 229.8,
+      "crawled_at": "2026-08-23T13:41:00.953005+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Brooke Charter School (District)",
+      "website": "https://www.ebrooke.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.ebrooke.org/documents/brooke-charter-schools-fy24-board-committee-meeting-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": [
+            2024
+          ]
+        },
+        {
+          "url": "https://www.ebrooke.org/documents/bcs-board-committee-minutes-2022-2023",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2022,
+            2023
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 156.0,
+      "crawled_at": "2026-08-23T13:43:08.098655+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Bristol-Plymouth Regional Vocational Technical",
+      "website": "https://www.bptech.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 29,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.bptech.org/about/school-committee/meeting-minutes-archive",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.bptech.org/about/school-council/meeting-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.bptech.org/about/school-council/meeting-minutes-archive",
+      "elapsed_seconds": 186.9,
+      "crawled_at": "2026-08-23T13:43:04.920200+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Fall River",
+      "website": "https://www.fallriverschools.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.fallriverschools.org/school-committee",
+          "matched_keywords": [],
+          "score": 40,
+          "data_type": "hub",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 173.6,
+      "crawled_at": "2026-08-23T21:15:29.169812+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Falmouth",
+      "website": "https://www.falmouth.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 11,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.falmouth.k12.ma.us/school_committee/agendas_and_minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022,
+            2021,
+            2020,
+            2019,
+            2018,
+            2017,
+            2016,
+            2015,
+            2014,
+            2013
+          ]
+        },
+        {
+          "url": "https://www.falmouth.k12.ma.us/school_committee/meeting_packets",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_08182026-16892; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_08182026-16893; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_08102026-16874; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_08062026-16869; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_07282026-16853; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_06232026-16791; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_06232026-16791; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_06092026-16756; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_06092026-16756; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_05262026-16730; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_05262026-16730; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_05122026-16699; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_05122026-16699; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_04142026-16628; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_04142026-16628; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_04062026-16616; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_04062026-16616; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Agenda/_03102026-16545; fetch_failed: https://www.falmouth.k12.ma.us/AgendaCenter/ViewFile/Minutes/_03102026-16545",
+      "elapsed_seconds": 148.4,
+      "crawled_at": "2026-08-23T21:16:16.820967+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Gateway",
+      "website": "https://www.grsd.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.grsd.org/school-committee",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022,
+            2021,
+            2020,
+            2019,
+            2018,
+            2017,
+            2016,
+            2015,
+            2014,
+            2013,
+            2012,
+            2011,
+            2010
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 150.0,
+      "crawled_at": "2026-08-23T21:17:42.909616+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Franklin County Regional Vocational Technical",
+      "website": "https://www.fcts.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.fcts.us/apps/pages/index.jsp?uREC_ID=3465851&type=d&pREC_ID=2390153",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 218.7,
+      "crawled_at": "2026-08-23T21:16:49.441850+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Gill-Montague",
+      "website": "https://www.gmrsd.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.gmrsd.org/school-committee-2",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 181.2,
+      "crawled_at": "2026-08-23T21:18:10.597883+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Holbrook",
+      "website": "https://www.holbrook.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.holbrook.k12.ma.us/school-committeebudget/school-committee-agendas-and-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.holbrook.k12.ma.us",
+          "matched_keywords": [],
+          "score": 80,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 151.4,
+      "crawled_at": "2026-08-23T21:18:45.976679+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Greenfield",
+      "website": "https://gpsk12.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://gpsk12.org/school-committee/archived-meetings",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025
+          ]
+        },
+        {
+          "url": "https://gpsk12.org/archived-school-committee-meetings",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 215.1,
+      "crawled_at": "2026-08-23T21:18:23.421837+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Holliston",
+      "website": "https://www.holliston.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 29,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.holliston.k12.ma.us/about/school-committee",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": "empty_markdown: https://www.holliston.k12.ma.us/fs-login",
+      "elapsed_seconds": 127.8,
+      "crawled_at": "2026-08-23T21:20:13.748108+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Bridgewater-Raynham",
+      "website": "https://bridge-rayn.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 4,
+      "candidates": [
+        {
+          "url": "https://bridge-rayn.org/pages/9945763c-e3fa-4006-85a1-ed1d5d37a142",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2014,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ]
+        },
+        {
+          "url": "https://bridge-rayn.org/pages/05e13fdc-5236-4cb6-88f1-8ac82e2a6538",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ]
+        },
+        {
+          "url": "https://bridge-rayn.org/en-US/pages/9945763c-e3fa-4006-85a1-ed1d5d37a142",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2014,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://bridge-rayn.org/en-US/pages/05e13fdc-5236-4cb6-88f1-8ac82e2a6538",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 458.8,
+      "crawled_at": "2026-08-23T13:42:45.801610+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Hoosac Valley Regional",
+      "website": "https://www.hoosacvalley.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "url": "https://www.hoosacvalley.org/about-us/school-committee",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.hoosacvalley.org/fs/resource-manager/view/db10c34b-e52c-4baa-9f64-31b519f2b4e7",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.hoosacvalley.org/fs/resource-manager/view/377f543b-0a01-40f9-8397-e8d6c77f0877",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 119.8,
+      "crawled_at": "2026-08-23T21:20:28.557110+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Institutional Schools",
+      "website": "https://www.doe.mass.edu/seis",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 10,
+      "candidates": [
+        {
+          "url": "https://www.doe.mass.edu/bese/boedate.html",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2025-09",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2025
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2025-10",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2025
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2025-11",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2025
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2025-12",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2025
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2026-01",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2026-02",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2026-03",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2026-04",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        },
+        {
+          "url": "https://www.doe.mass.edu/bese/docs/fy2026/2026-05",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 122.1,
+      "crawled_at": "2026-08-23T21:21:17.845114+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Lowell Community Charter Public (District)",
+      "website": "https://www.lccps.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.lccps.org/apps/pages/index.jsp?uREC_ID=502330&type=d&termREC_ID=&pREC_ID=968570",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 88.4,
+      "crawled_at": "2026-08-23T21:22:22.762534+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Longmeadow",
+      "website": "https://www.longmeadow.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 29,
+      "max_pages_limit_reached": true,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "url": "https://www.longmeadow.k12.ma.us/school-committee/s-c-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.longmeadow.k12.ma.us/school-committee/middle-school-building-project",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.longmeadow.k12.ma.us/school-committee/middle-school-building-project/meeting-videos-agendas-and-slide-decks",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.longmeadow.k12.ma.us/school-committee/sc-minutes",
+      "elapsed_seconds": 113.2,
+      "crawled_at": "2026-08-23T21:21:58.997113+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Lowell Middlesex Academy Charter (District)",
+      "website": "https://www.lmacs.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.lmacs.org/board-of-trustees",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 106.5,
+      "crawled_at": "2026-08-23T21:22:28.751408+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Lowell",
+      "website": "http://www.lowell.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "http://www.lowell.k12.ma.us/departments/school-committee/subcommittee-agendas-minutes",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 153.9,
+      "crawled_at": "2026-08-23T21:22:21.905159+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Map Academy Charter School (District)",
+      "website": "https://themapacademy.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://themapacademy.org/our-team/board-of-trustees/board-meetings-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 124.7,
+      "crawled_at": "2026-08-23T21:23:20.429824+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Hudson",
+      "website": "https://www.hudson.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 27,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.hudson.k12.ma.us/school_committee/agenda__minutes__packets",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.hudson.k12.ma.us/parents/parent_organizations/hudson_high_school_boosters; fetch_failed: https://www.hudson.k12.ma.us/parents/parent_organizations/portuguese_liaisons; fetch_failed: https://www.hudson.k12.ma.us/parents/parent_organizations/elpac",
+      "elapsed_seconds": 305.7,
+      "crawled_at": "2026-08-23T21:21:12.133812+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Masconomet",
+      "website": "https://www.masconomet.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.masconomet.org/school-committee/meeting-agenda-minutes-documents/minutes-agendas-and-documents",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.masconomet.org",
+          "matched_keywords": [],
+          "score": 80,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 150.1,
+      "crawled_at": "2026-08-23T21:24:15.754393+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Marion",
+      "website": "https://www.oldrochester.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "url": "https://www.oldrochester.org/district/schoolchoice",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.oldrochester.org/district/orrttef",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2024
+          ]
+        },
+        {
+          "url": "https://www.oldrochester.org/district/sc",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022,
+            2021,
+            2020,
+            2019
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 176.5,
+      "crawled_at": "2026-08-23T21:23:52.591467+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Marblehead",
+      "website": "https://www.marbleheadschools.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.marbleheadschools.org/school-committee/agendas-materials-and-minutes",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.marbleheadschools.org",
+          "matched_keywords": [],
+          "score": 80,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 179.3,
+      "crawled_at": "2026-08-23T21:23:51.699239+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Mashpee",
+      "website": "https://www.mpspk12.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.mpspk12.org/apps/pages/index.jsp?uREC_ID=4466441&type=d&pREC_ID=2739938",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.mpspk12.org/apps/pages/index.jsp?uREC_ID=4466441&type=d&pREC_ID=2740921",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2021,
+            2020
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 152.4,
+      "crawled_at": "2026-08-23T21:24:56.217528+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Methuen",
+      "website": "https://www.methuen.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.methuen.k12.ma.us/school-community/meetings-documents",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022,
+            2021,
+            2020,
+            2019,
+            2018
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 133.9,
+      "crawled_at": "2026-08-23T21:25:25.579667+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Mount Greylock",
+      "website": "https://www.mgrsd.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.mgrsd.org/school-committee/meeting-documents",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.mgrsd.org/school-committee/meeting-documents/meeting-documents-archive",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2020,
+            2021
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 127.6,
+      "crawled_at": "2026-08-23T21:26:18.213114+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "North Andover",
+      "website": "https://www.northandoverpublicschools.com",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.northandoverpublicschools.com/school-committee/agendas-documents",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 120.1,
+      "crawled_at": "2026-08-23T21:26:49.512635+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Northampton-Smith Vocational Agricultural",
+      "website": "https://www.smithtec.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.smithtec.org/board-of-trustees",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 105.9,
+      "crawled_at": "2026-08-23T21:27:29.015668+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "North Reading",
+      "website": "http://www.north-reading.k12.ma.us/Pages/index",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 29,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "http://www.north-reading.k12.ma.us/school-committee/school-committee-meeting-minutes-agendas",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.north-reading.k12.ma.us/school-committee/school-committee-meeting-minutes-agendas",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: http://www.north-reading.k12.ma.us/Pages/index",
+      "elapsed_seconds": 178.9,
+      "crawled_at": "2026-08-23T21:26:51.453172+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Northern Berkshire Regional Vocational Technical",
+      "website": "https://www.mccanntech.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.mccanntech.org/about/school-committee",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        },
+        {
+          "url": "https://www.mccanntech.org/fs/resource-manager/view/a871e003-639f-4a04-9590-5da3f47e417e",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 146.3,
+      "crawled_at": "2026-08-23T21:27:39.841471+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Phoenix Academy Charter Public High School, Chelsea (District)",
+      "website": "https://www.phoenixcharteracademy.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 0,
+      "max_pages_limit_reached": true,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.phoenixcharteracademy.org; fetch_failed: https://www.phoenixcharteracademy.org/board-of-trustees; fetch_failed: https://www.phoenixcharteracademy.org/who-we-are/governance/public-board-meeting-archive; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-announces-phoenix-gala-2016; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-2016-graduates-featured-on-necns-the-take; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-lawrence-graduate-featured-in-book-project-giving-students-voice-on-their-experiences-in-us-public-education; fetch_failed: https://www.phoenixcharteracademy.org/the-pioneer-institute-publishes-white-paper-examining-how-how-phoenix-academies-transform-potential-high-school-dropouts-into-college-grads; fetch_failed: https://www.phoenixcharteracademy.org/thomas-birmingham-calls-phoenix-an-exemplar-of-charter-and-district-partnerships; fetch_failed: https://www.phoenixcharteracademy.org/cbs-news-covers-phoenix-chelsea-graduation; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-students-showed-that-yes-you-can; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-celebrates-11-graduates; fetch_failed: https://www.phoenixcharteracademy.org/the-eagle-tribune-features-phoenix-lawrence-graduates-story-of-perseverance; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-charter-academy-network-awarded-150000-by-barr-foundation-to-advance-greater-success-for-all-new-england-students; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-charter-academy-networks-beth-anderson-named-a-barr-foundation-class-of-2017-fellow; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-featured-in-the-74-million-article-a-phoenix-breakthrough-how-3-massachusetts-high-schools-are-helping-dropouts-become-college-bound-grads; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-chelsea-celebrates-new-campus-with-ribbon-cutting-ceremony; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-moves-forward-with-plan-for-regional-charter-school; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-recognized-as-one-of-the-13-most-innovative-schools-visited-by-the-74-million; fetch_failed: https://www.phoenixcharteracademy.org/lawrence-may-see-a-new-regional-charter-school; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-featured-in-the-boston-globe; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-lawrence-2018-graduation-featured-in-the-eagle-tribune; fetch_failed: https://www.phoenixcharteracademy.org/1236-2; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-chelsea-alumnus-feza-immaculee-featured-in-educationpost-article; fetch_failed: https://www.phoenixcharteracademy.org/statistics-cant-measure-hearts-determination-persistence-hope-define-phoenix-springfields-class-of-2018; fetch_failed: https://www.phoenixcharteracademy.org/faces-of-lawrence-are-the-faces-of-america; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-forward-work-continues-under-generous-funding-from-the-barr-foundation; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-associate-leadership-event-10-29-18; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-lawrence-ribbon-cutting-ceremony-9-13-18-at-4pm; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-founder-ceo-beth-anderson-featured-on-podcast; fetch_failed: https://www.phoenixcharteracademy.org/you-wont-believe-how-phoenix-chelsea-started-the-year",
+      "elapsed_seconds": 88.6,
+      "crawled_at": "2026-08-23T21:28:50.136282+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Natick",
+      "website": "https://www.natickps.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.natickps.org/page/school-committee",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": [
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 212.9,
+      "crawled_at": "2026-08-23T21:26:46.344986+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Phoenix Academy Public Charter High School, Lawrence (District)",
+      "website": "http://www.phoenixcharteracademy.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 0,
+      "max_pages_limit_reached": true,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: http://www.phoenixcharteracademy.org; fetch_failed: https://www.phoenixcharteracademy.org/board-of-trustees; fetch_failed: https://www.phoenixcharteracademy.org/who-we-are/governance/public-board-meeting-archive; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-announces-phoenix-gala-2016; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-2016-graduates-featured-on-necns-the-take; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-lawrence-graduate-featured-in-book-project-giving-students-voice-on-their-experiences-in-us-public-education; fetch_failed: https://www.phoenixcharteracademy.org/the-pioneer-institute-publishes-white-paper-examining-how-how-phoenix-academies-transform-potential-high-school-dropouts-into-college-grads; fetch_failed: https://www.phoenixcharteracademy.org/thomas-birmingham-calls-phoenix-an-exemplar-of-charter-and-district-partnerships; fetch_failed: https://www.phoenixcharteracademy.org/cbs-news-covers-phoenix-chelsea-graduation; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-students-showed-that-yes-you-can; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-celebrates-11-graduates; fetch_failed: https://www.phoenixcharteracademy.org/the-eagle-tribune-features-phoenix-lawrence-graduates-story-of-perseverance; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-charter-academy-network-awarded-150000-by-barr-foundation-to-advance-greater-success-for-all-new-england-students; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-charter-academy-networks-beth-anderson-named-a-barr-foundation-class-of-2017-fellow; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-featured-in-the-74-million-article-a-phoenix-breakthrough-how-3-massachusetts-high-schools-are-helping-dropouts-become-college-bound-grads; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-chelsea-celebrates-new-campus-with-ribbon-cutting-ceremony; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-moves-forward-with-plan-for-regional-charter-school; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-recognized-as-one-of-the-13-most-innovative-schools-visited-by-the-74-million; fetch_failed: https://www.phoenixcharteracademy.org/lawrence-may-see-a-new-regional-charter-school; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-featured-in-the-boston-globe; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-lawrence-2018-graduation-featured-in-the-eagle-tribune; fetch_failed: https://www.phoenixcharteracademy.org/1236-2; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-chelsea-alumnus-feza-immaculee-featured-in-educationpost-article; fetch_failed: https://www.phoenixcharteracademy.org/statistics-cant-measure-hearts-determination-persistence-hope-define-phoenix-springfields-class-of-2018; fetch_failed: https://www.phoenixcharteracademy.org/faces-of-lawrence-are-the-faces-of-america; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-forward-work-continues-under-generous-funding-from-the-barr-foundation; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-associate-leadership-event-10-29-18; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-lawrence-ribbon-cutting-ceremony-9-13-18-at-4pm; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-founder-ceo-beth-anderson-featured-on-podcast; fetch_failed: https://www.phoenixcharteracademy.org/you-wont-believe-how-phoenix-chelsea-started-the-year",
+      "elapsed_seconds": 78.7,
+      "crawled_at": "2026-08-23T21:29:15.457191+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Palmer",
+      "website": "https://www.palmerschools.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.palmerschools.org",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.palmerschools.org/apps/pages/index.jsp?uREC_ID=293361&type=d",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2008,
+            2009,
+            2010,
+            2011,
+            2012,
+            2013,
+            2014,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 133.3,
+      "crawled_at": "2026-08-23T21:28:26.245991+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Phoenix Academy Public Charter High School, Springfield (District)",
+      "website": "https://www.phoenixcharteracademy.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 0,
+      "max_pages_limit_reached": true,
+      "candidate_count": 0,
+      "candidates": [],
+      "error": "fetch_failed: https://www.phoenixcharteracademy.org; fetch_failed: https://www.phoenixcharteracademy.org/board-of-trustees; fetch_failed: https://www.phoenixcharteracademy.org/who-we-are/governance/public-board-meeting-archive; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-announces-phoenix-gala-2016; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-2016-graduates-featured-on-necns-the-take; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-lawrence-graduate-featured-in-book-project-giving-students-voice-on-their-experiences-in-us-public-education; fetch_failed: https://www.phoenixcharteracademy.org/the-pioneer-institute-publishes-white-paper-examining-how-how-phoenix-academies-transform-potential-high-school-dropouts-into-college-grads; fetch_failed: https://www.phoenixcharteracademy.org/thomas-birmingham-calls-phoenix-an-exemplar-of-charter-and-district-partnerships; fetch_failed: https://www.phoenixcharteracademy.org/cbs-news-covers-phoenix-chelsea-graduation; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-students-showed-that-yes-you-can; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-celebrates-11-graduates; fetch_failed: https://www.phoenixcharteracademy.org/the-eagle-tribune-features-phoenix-lawrence-graduates-story-of-perseverance; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-charter-academy-network-awarded-150000-by-barr-foundation-to-advance-greater-success-for-all-new-england-students; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-charter-academy-networks-beth-anderson-named-a-barr-foundation-class-of-2017-fellow; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-featured-in-the-74-million-article-a-phoenix-breakthrough-how-3-massachusetts-high-schools-are-helping-dropouts-become-college-bound-grads; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-chelsea-celebrates-new-campus-with-ribbon-cutting-ceremony; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-academy-moves-forward-with-plan-for-regional-charter-school; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-recognized-as-one-of-the-13-most-innovative-schools-visited-by-the-74-million; fetch_failed: https://www.phoenixcharteracademy.org/lawrence-may-see-a-new-regional-charter-school; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-featured-in-the-boston-globe; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-lawrence-2018-graduation-featured-in-the-eagle-tribune; fetch_failed: https://www.phoenixcharteracademy.org/1236-2; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-chelsea-alumnus-feza-immaculee-featured-in-educationpost-article; fetch_failed: https://www.phoenixcharteracademy.org/statistics-cant-measure-hearts-determination-persistence-hope-define-phoenix-springfields-class-of-2018; fetch_failed: https://www.phoenixcharteracademy.org/faces-of-lawrence-are-the-faces-of-america; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-forward-work-continues-under-generous-funding-from-the-barr-foundation; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-associate-leadership-event-10-29-18; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-lawrence-ribbon-cutting-ceremony-9-13-18-at-4pm; fetch_failed: https://www.phoenixcharteracademy.org/phoenix-founder-ceo-beth-anderson-featured-on-podcast; fetch_failed: https://www.phoenixcharteracademy.org/you-wont-believe-how-phoenix-chelsea-started-the-year",
+      "elapsed_seconds": 75.8,
+      "crawled_at": "2026-08-23T21:29:50.820812+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Richmond",
+      "website": "http://www.richmondconsolidated.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.richmondconsolidated.org/school-committee",
+          "matched_keywords": [],
+          "score": 40,
+          "data_type": "hub",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 107.7,
+      "crawled_at": "2026-08-23T21:30:19.172062+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "River Valley Charter (District)",
+      "website": "https://www.rivervalleycharter.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 28,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.rivervalleycharter.org/governance/BOT-docs",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2022,
+            2023
+          ]
+        },
+        {
+          "url": "https://www.rivervalleycharter.org/learning-rvcs/curriculum-instruction/learning-goals",
+          "matched_keywords": [],
+          "score": 50,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.rivervalleycharter.org/governance/board-documents; fetch_failed: https://www.rivervalleycharter.org/governance/public-access-to-board-info",
+      "elapsed_seconds": 120.7,
+      "crawled_at": "2026-08-23T21:30:19.596906+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Salem Academy Charter (District)",
+      "website": "https://www.salemacademycs.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.salemacademycs.org/about/board-of-trustees/agenda-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2027
+          ]
+        },
+        {
+          "url": "https://www.salemacademycs.org/about/board-of-trustees/agenda-minutes/?page_id=22038&preview=true",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 130.3,
+      "crawled_at": "2026-08-23T21:30:39.994703+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Saugus",
+      "website": "https://www.saugus.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "url": "https://www.saugus.k12.ma.us/apps/pages/index.jsp?uREC_ID=504154&type=d&termREC_ID=&pREC_ID=987762&hideMenu=0",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.saugus.k12.ma.us/apps/pages/index.jsp?uREC_ID=504154&type=d&termREC_ID=&pREC_ID=987762",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.saugus.k12.ma.us/apps/pages/index.jsp?uREC_ID=504154&type=d&termREC_ID=&pREC_ID=987761&hideMenu=0",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2022,
+            2023,
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 129.2,
+      "crawled_at": "2026-08-23T21:31:07.069373+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Rochester",
+      "website": "https://www.oldrochester.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 3,
+      "candidates": [
+        {
+          "url": "https://www.oldrochester.org/district/schoolchoice",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.oldrochester.org/district/orrttef",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2024
+          ]
+        },
+        {
+          "url": "https://www.oldrochester.org/district/sc",
+          "matched_keywords": [],
+          "score": 90,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022,
+            2021,
+            2020,
+            2019
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 189.0,
+      "crawled_at": "2026-08-23T21:30:34.582881+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "South Hadley",
+      "website": "http://www.southhadleyschools.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "http://www.southhadleyschools.org/community/school-committee12",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 126.3,
+      "crawled_at": "2026-08-23T21:32:20.776292+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Southern Worcester County Regional Vocational School District",
+      "website": "https://www.baypath.net",
+      "status": "ok",
+      "pages_crawled": 25,
+      "llm_calls": 25,
+      "max_pages_limit_reached": false,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.baypath.net/web/content/page/412",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.baypath.net/web/district/committee?name=Minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022,
+            2021,
+            2020,
+            2019,
+            2018,
+            2017,
+            2016,
+            2015,
+            2014,
+            2013,
+            2012,
+            2011
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 75.9,
+      "crawled_at": "2026-08-23T21:33:43.971258+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "South Middlesex Regional Vocational Technical",
+      "website": "https://www.KeefeTech.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.KeefeTech.org/community/public-meeting-info",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 131.3,
+      "crawled_at": "2026-08-23T21:32:50.688790+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "South Shore Charter Public (District)",
+      "website": "https://www.sscps.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.sscps.org/about/board-of-trustees/agendas",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "https://www.sscps.org/about/school-council",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2023,
+            2024,
+            2025
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 118.4,
+      "crawled_at": "2026-08-23T21:33:16.682051+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Somerset",
+      "website": "https://www.somersetschools.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 23,
+      "max_pages_limit_reached": true,
+      "candidate_count": 4,
+      "candidates": [
+        {
+          "url": "https://www.somersetschools.org/District-Info/Somerset-Middle-School-Building-Project/Meeting-Minutes/index.html",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.somersetschools.org/District-Info/Somerset-Middle-School-Building-Project/Meeting-Minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "http://www.somersetschools.org/District-Info/Somerset-Middle-School-Building-Project/Meeting-Minutes/index.html",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2025,
+            2026
+          ]
+        },
+        {
+          "url": "http://www.somersetschools.org/District-Info/Somerset-Middle-School-Building-Project/Meeting-Minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": "fetch_failed: https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/Meeting-Minutes/index.html; fetch_failed: https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/Virtual-School-Committee-Meetings/index.html; fetch_failed: https://www.somersetschools.org/School-Committee/Somerset-Middle-School-Building-Project/Meeting-Minutes/index.html; fetch_failed: https://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/View%20Meetings; fetch_failed: https://www.somersetschools.org/School-Committee/Somerset-Public-Schools/View%20Meetings; fetch_failed: http://www.somersetschools.org/School-Committee/Somerset-Berkley-Regional/View%20Meetings; fetch_failed: http://www.somersetschools.org/School-Committee/Somerset-Public-Schools/View%20Meetings",
+      "elapsed_seconds": 257.0,
+      "crawled_at": "2026-08-23T21:32:07.331744+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Upper Cape Cod Regional Vocational Technical",
+      "website": "https://www.uppercapetech.com",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.uppercapetech.com/about",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": false,
+          "data_years_available": [
+            2025
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 84.6,
+      "crawled_at": "2026-08-23T21:35:02.493013+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Sudbury",
+      "website": "http://www.sudbury.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "http://www.sudbury.k12.ma.us/school-committee/agendas-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 143.9,
+      "crawled_at": "2026-08-23T21:34:27.526469+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Swampscott",
+      "website": "https://www.swampscottps.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.swampscottps.org/about/school-committee",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 121.9,
+      "crawled_at": "2026-08-23T21:35:00.214351+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Wachusett",
+      "website": "https://www.wrsd.net",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.wrsd.net/school-committee/agendas-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.wrsd.net/school-committee/subcommittee-minutes",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_minutes",
+          "is_archive": true,
+          "data_years_available": [
+            2021,
+            2024
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 134.1,
+      "crawled_at": "2026-08-23T21:35:15.615260+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Reading",
+      "website": "https://www.reading.k12.ma.us",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.reading.k12.ma.us/pages/8170080d-8a91-4af2-a1b2-f379936839c8",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026,
+            2025,
+            2024,
+            2023,
+            2022
+          ]
+        },
+        {
+          "url": "https://www.reading.k12.ma.us/pages/e1f83068-5309-4e3e-9759-a648d741ec39",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "unknown",
+          "is_archive": true,
+          "data_years_available": [
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025,
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 450.7,
+      "crawled_at": "2026-08-23T21:30:06.583420+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Westport",
+      "website": "https://www.westportschools.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://www.westportschools.org/about/westport-school-committee/past-agendas",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": true,
+          "data_years_available": [
+            2024,
+            2025
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 123.7,
+      "crawled_at": "2026-08-23T21:36:27.599117+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Winchendon",
+      "website": "https://www.winchendonk12.org",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 2,
+      "candidates": [
+        {
+          "url": "https://www.winchendonk12.org/page/school-committee-members",
+          "matched_keywords": [],
+          "score": 40,
+          "data_type": "hub",
+          "is_archive": false,
+          "data_years_available": []
+        },
+        {
+          "url": "https://www.winchendonk12.org/documents/presentations-by-the-director-of-curriculum,-instruction-&-assessment-to-the-school-committee/556578",
+          "matched_keywords": [],
+          "score": 40,
+          "data_type": "hub",
+          "is_archive": false,
+          "data_years_available": []
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 294.5,
+      "crawled_at": "2026-08-23T21:36:51.935912+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    },
+    {
+      "name": "Wareham",
+      "website": "https://warehamps.schoolblocks.com",
+      "status": "ok",
+      "pages_crawled": 30,
+      "llm_calls": 30,
+      "max_pages_limit_reached": true,
+      "candidate_count": 1,
+      "candidates": [
+        {
+          "url": "https://warehamps.schoolblocks.com/pages/091dcd09-0de9-4a95-a512-034c851e3a50",
+          "matched_keywords": [],
+          "score": 100,
+          "data_type": "board_agenda",
+          "is_archive": false,
+          "data_years_available": [
+            2026
+          ]
+        }
+      ],
+      "error": null,
+      "elapsed_seconds": 459.5,
+      "crawled_at": "2026-08-23T21:36:24.853266+00:00",
+      "retry_pass": true,
+      "retry_max_pages": 30
+    }
+  ]
+}

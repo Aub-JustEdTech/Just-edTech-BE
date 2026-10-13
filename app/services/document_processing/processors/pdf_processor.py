@@ -30,6 +30,9 @@ class PDFProcessor(DocumentProcessor):
     def __init__(self):
         """Initialize PDF processor with optional image extractor"""
         self.image_extractor: ImageExtractor | None = None
+        # Set by extract_text_by_page when OCR fallback runs.
+        self.ocr_used: bool = False
+        self.ocr_pages_count: int = 0
 
         if getattr(settings, "ENABLE_IMAGE_EXTRACTION", True):
             self.image_extractor = ImageExtractor()
@@ -37,47 +40,29 @@ class PDFProcessor(DocumentProcessor):
             logger.info("PDF image extraction is disabled via settings.")
 
     def extract_text(self, file_path: str) -> str:
-        """Extract text from PDF using PyMuPDF (preferred) or PyPDF2 (fallback)"""
-        # Prefer PyMuPDF for better text extraction
-        if fitz is not None:
-            try:
-                text = ""
-                doc = fitz.open(file_path)
-                for page in doc:
-                    text += page.get_text() + "\n\n"
-                doc.close()
-                logger.info(f"Extracted {len(text)} characters from PDF using PyMuPDF")
-                return text.strip()
-            except Exception as e:
-                logger.warning(f"PyMuPDF text extraction failed: {e}, trying PyPDF2")
-                # Fall through to PyPDF2
-
-        # Fallback to PyPDF2
-        if PyPDF2 is None:
-            raise ImportError(
-                "Neither PyMuPDF nor PyPDF2 is installed. "
-                "Install at least one: pip install PyMuPDF or pip install PyPDF2"
-            )
-
-        try:
-            text = ""
-            with open(file_path, "rb") as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                for page in pdf_reader.pages:
-                    text += page.extract_text() + "\n\n"
-            logger.info(f"Extracted {len(text)} characters from PDF using PyPDF2")
-            return text.strip()
-        except Exception as e:
-            logger.error(f"Error extracting text from PDF: {e}")
-            raise
+        """Extract text from PDF (digital layer, with OCR fallback when enabled)."""
+        pages = self.extract_text_by_page(file_path)
+        text = "\n\n".join(p for p in pages if p).strip()
+        logger.info("Extracted %s characters from PDF", len(text))
+        return text
 
     def extract_text_by_page(self, file_path: str) -> list[str]:
         """
         Extract text from a PDF as a list of page strings (1:1 with PDF pages).
 
-        This is used to preserve `page_number` metadata for downstream chunking/citations.
+        When ENABLE_OCR is on and digital text is below OCR_MIN_CHARS_THRESHOLD,
+        empty/sparse pages are rendered and OCR'd via the configured provider.
         """
-        # Prefer PyMuPDF for more accurate per-page extraction
+        self.ocr_used = False
+        self.ocr_pages_count = 0
+
+        pages = self._extract_digital_pages(file_path)
+        if self._should_apply_ocr(pages):
+            pages = self._apply_ocr_fallback(file_path, pages)
+        return pages
+
+    def _extract_digital_pages(self, file_path: str) -> list[str]:
+        """Extract text-layer content only (no OCR)."""
         if fitz is not None:
             try:
                 doc = fitz.open(file_path)
@@ -89,7 +74,6 @@ class PDFProcessor(DocumentProcessor):
             except Exception as e:
                 logger.warning(f"PyMuPDF per-page extraction failed: {e}, trying PyPDF2")
 
-        # Fallback to PyPDF2
         if PyPDF2 is None:
             raise ImportError(
                 "Neither PyMuPDF nor PyPDF2 is installed. "
@@ -106,6 +90,69 @@ class PDFProcessor(DocumentProcessor):
         except Exception as e:
             logger.error(f"Error extracting per-page text from PDF: {e}")
             raise
+
+    @staticmethod
+    def _should_apply_ocr(pages: list[str]) -> bool:
+        if not getattr(settings, "ENABLE_OCR", False):
+            return False
+        total_chars = sum(len(p.strip()) for p in pages)
+        return total_chars < settings.OCR_MIN_CHARS_THRESHOLD
+
+    def _apply_ocr_fallback(self, file_path: str, pages: list[str]) -> list[str]:
+        """OCR empty/sparse pages when digital extraction yielded too little text."""
+        if fitz is None:
+            logger.warning("OCR fallback skipped: PyMuPDF is required to render pages")
+            return pages
+
+        from app.services.document_processing.ocr.factory import OCRProviderFactory
+
+        try:
+            ocr = OCRProviderFactory.create()
+        except Exception as exc:
+            logger.warning("OCR provider unavailable, skipping fallback: %s", exc)
+            return pages
+
+        threshold = settings.OCR_MIN_CHARS_THRESHOLD
+        max_pages = settings.OCR_MAX_PAGES
+        dpi = settings.OCR_DPI
+        zoom = dpi / 72.0
+        matrix = fitz.Matrix(zoom, zoom)
+
+        updated = list(pages)
+        ocr_count = 0
+
+        try:
+            doc = fitz.open(file_path)
+        except Exception as exc:
+            logger.warning("OCR fallback could not open PDF: %s", exc)
+            return pages
+
+        try:
+            page_count = min(len(doc), len(updated), max_pages)
+            for idx in range(page_count):
+                if len(updated[idx].strip()) >= threshold:
+                    continue
+                try:
+                    pix = doc[idx].get_pixmap(matrix=matrix)
+                    image_bytes = pix.tobytes("png")
+                    text = (ocr.ocr_image(image_bytes) or "").strip()
+                    if text:
+                        updated[idx] = text
+                        ocr_count += 1
+                except Exception as exc:
+                    logger.warning("OCR failed for page %s: %s", idx + 1, exc)
+        finally:
+            doc.close()
+
+        if ocr_count:
+            self.ocr_used = True
+            self.ocr_pages_count = ocr_count
+            logger.info(
+                "OCR fallback (%s) recovered text on %s page(s)",
+                ocr.get_provider_name(),
+                ocr_count,
+            )
+        return updated
 
     def extract_metadata(self, file_path: str) -> dict[str, Any]:
         """Extract PDF metadata using PyMuPDF (preferred) or PyPDF2 (fallback)"""

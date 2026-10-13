@@ -15,8 +15,7 @@ from app.schemas.upload_batches import (
     UploadBatchDetailResponse,
     UploadBatchResponse,
 )
-from app.schemas.users import User
-from app.utils.dependencies import get_current_tenant_user, get_db
+from app.utils.dependencies import get_db, get_effective_tenant_id
 from app.utils.response import success_response
 
 router = APIRouter()
@@ -30,7 +29,7 @@ router = APIRouter()
 async def create_batch(
     request: CreateBatchRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Create a new upload batch for tracking bulk document uploads.
@@ -54,13 +53,6 @@ async def create_batch(
     # Returns: {completed: 150/200, progress: 75%}
     ```
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     batch = await crud.create_batch(
         db=db, tenant_id=tenant_id, description=request.description
     )
@@ -77,20 +69,13 @@ async def list_batches(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     List all upload batches for the current tenant.
 
     Ordered by creation date (newest first).
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     batches = await crud.list_batches(
         db=db, tenant_id=tenant_id, skip=skip, limit=limit
     )
@@ -105,7 +90,7 @@ async def list_batches(
 async def get_batch_detail(
     batch_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get detailed information about a specific batch, including all documents.
@@ -113,13 +98,6 @@ async def get_batch_detail(
     Use this to see the full list of documents in the batch.
     For real-time progress monitoring, use GET /batches/{batch_id}/status instead.
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     batch = await crud.get_batch(db=db, batch_id=batch_id, tenant_id=tenant_id)
     if not batch:
         raise HTTPException(
@@ -145,7 +123,7 @@ async def get_batch_detail(
 async def get_batch_status(
     batch_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get real-time status of a batch upload.
@@ -190,13 +168,6 @@ async def get_batch_status(
     }
     ```
     """
-    tenant_id = current_user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User does not have an associated tenant",
-        )
-
     batch = await crud.get_batch(db=db, batch_id=batch_id, tenant_id=tenant_id)
     if not batch:
         raise HTTPException(

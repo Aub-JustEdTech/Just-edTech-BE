@@ -20,6 +20,14 @@ class ConversationCreate(ConversationBase):
     pass
 
 
+class CreateEmptyConversationRequest(BaseModel):
+    """Request body for creating a conversation with no first message —
+    backs the "New Chat" action, which selects a chat instantly instead of
+    waiting for the user to type."""
+
+    chatbot_id: int
+
+
 class ConversationUpdate(BaseModel):
     """Schema for conversation updates"""
 
@@ -48,6 +56,7 @@ class ConversationListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
     last_message_preview: str | None = None
+    chatbot_config_id: int | None = None
 
     class Config:
         from_attributes = True

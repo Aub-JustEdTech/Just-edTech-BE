@@ -45,6 +45,7 @@ class ConversationCRUD:
         per_page: int = 20,
         user_id: int | None = None,
         chat_consumer_id: int | None = None,
+        chatbot_config_id: int | None = None,
     ) -> tuple[list[ConversationListItem], int]:
         """Get conversations with pagination and last message preview"""
         offset = (page - 1) * per_page
@@ -55,6 +56,10 @@ class ConversationCRUD:
             where_conditions.append(Conversation.user_id == user_id)
         if chat_consumer_id is not None:
             where_conditions.append(Conversation.chat_consumer_id == chat_consumer_id)
+        if chatbot_config_id is not None:
+            where_conditions.append(
+                Conversation.chatbot_config_id == chatbot_config_id
+            )
 
         # Get total count
         total_query = select(func.count(Conversation.id)).where(*where_conditions)
@@ -111,6 +116,7 @@ class ConversationCRUD:
                     created_at=conv.created_at,
                     updated_at=conv.updated_at,
                     last_message_preview=preview,
+                    chatbot_config_id=conv.chatbot_config_id,
                 )
             )
 

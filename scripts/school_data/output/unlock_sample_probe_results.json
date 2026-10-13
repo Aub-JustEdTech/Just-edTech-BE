@@ -1,0 +1,663 @@
+[
+  {
+    "name": "Ashburnham-Westminster",
+    "org_code": "06100000",
+    "website": "https://www.awrsd.org",
+    "pages_crawled": 1,
+    "llm_calls": 0,
+    "data_pages": [],
+    "visited_pages": [],
+    "errors": [
+      "fetch_failed: https://www.awrsd.org (Error: Page.goto: net::ERR_EMPTY_RESPONSE at https://www.awrsd.org/\nCall log:\n  - navigating to \"https://www.awrsd.org/\", waiting until \"load\"\n, stage=playwright_http1)"
+    ],
+    "error_details": [
+      {
+        "code": "fetch_failed",
+        "url": "https://www.awrsd.org",
+        "http_status": null,
+        "exception_type": "Error",
+        "exception_message": "Page.goto: net::ERR_EMPTY_RESPONSE at https://www.awrsd.org/\nCall log:\n  - navigating to \"https://www.awrsd.org/\", waiting until \"load\"\n",
+        "stage": "playwright_http1",
+        "html_length": null
+      }
+    ],
+    "max_pages_limit_reached": false
+  },
+  {
+    "name": "Hancock",
+    "org_code": "01210000",
+    "website": "https://www.hancockschool.org",
+    "pages_crawled": 2,
+    "llm_calls": 2,
+    "data_pages": [],
+    "visited_pages": [
+      {
+        "url": "https://www.hancockschool.org",
+        "title": "Hancock Elementary School",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Homepage of Hancock Elementary School with links to various sections including the School Committee.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://hancockschool.org/school-comittee",
+            "confidence": 0.8,
+            "reason": "link to School Committee likely contains meeting minutes/agendas"
+          }
+        ]
+      },
+      {
+        "url": "https://hancockschool.org/school-comittee",
+        "title": "",
+        "has_data": false,
+        "has_data_links": false,
+        "description": null,
+        "data_page_info": null,
+        "possible_relevant_pages": []
+      }
+    ],
+    "errors": [],
+    "error_details": [],
+    "max_pages_limit_reached": false
+  },
+  {
+    "name": "Halifax",
+    "org_code": "01180000",
+    "website": "https://hes.slrsd.org",
+    "pages_crawled": 1,
+    "llm_calls": 1,
+    "data_pages": [],
+    "visited_pages": [
+      {
+        "url": "https://hes.slrsd.org",
+        "title": "Halifax Elementary School",
+        "has_data": false,
+        "has_data_links": false,
+        "description": "Homepage for Halifax Elementary School with various links and resources.",
+        "data_page_info": null,
+        "possible_relevant_pages": []
+      }
+    ],
+    "errors": [],
+    "error_details": [],
+    "max_pages_limit_reached": false
+  },
+  {
+    "name": "Old Sturbridge Academy Charter Public School (District)",
+    "org_code": "35150000",
+    "website": "http://www.osacps.org",
+    "pages_crawled": 14,
+    "llm_calls": 0,
+    "data_pages": [],
+    "visited_pages": [],
+    "errors": [
+      "empty_markdown: http://www.osacps.org (stage=playwright, html_len=85513)",
+      "empty_markdown: https://www.osacps.org/about (stage=playwright, html_len=74461)",
+      "empty_markdown: https://www.osacps.org/academics (stage=playwright, html_len=66054)",
+      "empty_markdown: https://www.osacps.org/admissions (stage=playwright, html_len=66284)",
+      "empty_markdown: https://www.osacps.org/board (stage=playwright, html_len=76983)",
+      "empty_markdown: https://www.osacps.org/careers (stage=playwright, html_len=57781)",
+      "empty_markdown: https://www.osacps.org/charter-information (stage=playwright, html_len=66225)",
+      "empty_markdown: https://www.osacps.org/contact (stage=playwright, html_len=57313)",
+      "empty_markdown: https://www.osacps.org/family-resources (stage=playwright, html_len=66735)",
+      "empty_markdown: https://www.osacps.org/food-services (stage=playwright, html_len=63029)",
+      "empty_markdown: https://www.osacps.org/health-office (stage=playwright, html_len=57248)",
+      "empty_markdown: https://www.osacps.org (stage=playwright, html_len=85510)",
+      "empty_markdown: https://www.osacps.org/staff-resources (stage=playwright, html_len=57226)",
+      "empty_markdown: https://www.osacps.org/s/shop (stage=playwright, html_len=52697)"
+    ],
+    "error_details": [
+      {
+        "code": "empty_markdown",
+        "url": "http://www.osacps.org",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 85513
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/about",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 74461
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/academics",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 66054
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/admissions",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 66284
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/board",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 76983
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/careers",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 57781
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/charter-information",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 66225
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/contact",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 57313
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/family-resources",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 66735
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/food-services",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 63029
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/health-office",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 57248
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 85510
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/staff-resources",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 57226
+      },
+      {
+        "code": "empty_markdown",
+        "url": "https://www.osacps.org/s/shop",
+        "http_status": null,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "playwright",
+        "html_length": 52697
+      }
+    ],
+    "max_pages_limit_reached": false
+  },
+  {
+    "name": "Athol-Royalston",
+    "org_code": "06150000",
+    "website": "https://www.arrsd.org",
+    "pages_crawled": 20,
+    "llm_calls": 18,
+    "data_pages": [],
+    "visited_pages": [
+      {
+        "url": "https://www.arrsd.org",
+        "title": "Athol-Royalston Regional School District",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Main page for the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/o/district/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/o/district/page/school-committee",
+        "title": "School Committee",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Page for the Athol-Royalston Regional School District School Committee, including member information and meeting video archives.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/o/district/page/school-committee",
+            "confidence": 0.8,
+            "reason": "page mentions previous school committee meeting videos"
+          },
+          {
+            "url": "https://www.arrsd.org/o/district/page/school-committee",
+            "confidence": 0.7,
+            "reason": "page lists years for previous meetings (2018-2026)"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/school-committee",
+        "title": "School Committee",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Page for the Athol-Royalston Regional School District School Committee with links to previous meeting videos.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "contains links to previous meeting videos"
+          },
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.5,
+            "reason": "page title suggests it may lead to meeting materials"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/live-feed",
+        "title": "Live Feed",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "This page provides updates and announcements from the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/news",
+        "title": "News",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "This page contains news articles and updates from the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/staff",
+        "title": "Staff",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "This page provides links to various staff-related resources but does not directly host meeting minutes or agendas.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/events",
+        "title": "Events",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Page listing events for the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/o/arrsd/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/documents",
+        "title": "Documents",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "This page lists various documents related to the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/o/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/athletics",
+        "title": "Athletics",
+        "has_data": false,
+        "has_data_links": false,
+        "description": "Page about athletics in the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": []
+      },
+      {
+        "url": "https://www.arrsd.org/page/athletic-staff",
+        "title": "Athletic Staff",
+        "has_data": false,
+        "has_data_links": false,
+        "description": "Page listing athletic staff members for the Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": []
+      },
+      {
+        "url": "https://www.arrsd.org/page/about-us",
+        "title": "About Us",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "About the Athol-Royalston Regional School District and its commitment to education.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/food-pantry",
+        "title": "Food Pantry",
+        "has_data": false,
+        "has_data_links": false,
+        "description": "Information about the food pantry services offered by the district.",
+        "data_page_info": null,
+        "possible_relevant_pages": []
+      },
+      {
+        "url": "https://www.arrsd.org/page/ahs-community-service-opportunities",
+        "title": "AHS Community Service Opportunities",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Information about community service opportunities for students at Athol High School.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/linq-connect",
+        "title": "LINQ Connect",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Information about the LINQ Connect platform for school-related meal payments.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/parent-engagement",
+        "title": "Parent Engagement",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "This page provides information about parent engagement but does not host meeting minutes or agendas directly.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/ahsmsba",
+        "title": "Athol High School MSBA Project",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Page for the Athol High School MSBA Project with various documents.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/fallcoaches",
+        "title": "Fall Coaches",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "List of fall coaches for various sports at Athol-Royalston Regional School District.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      },
+      {
+        "url": "https://www.arrsd.org/page/business-office",
+        "title": "Business Office",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "The Business Office oversees all aspects of the district's financial operations, ensuring that resources are managed efficiently to meet the needs of our students, staff, and community.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://www.arrsd.org/page/school-committee",
+            "confidence": 0.8,
+            "reason": "path contains /school-committee/"
+          }
+        ]
+      }
+    ],
+    "errors": [
+      "fetch_failed: https://www.arrsd.org/o/arrsd/page/school-committee (status=500, stage=httpx)",
+      "fetch_failed: https://www.arrsd.org/o/school-committee (status=500, stage=httpx)"
+    ],
+    "error_details": [
+      {
+        "code": "fetch_failed",
+        "url": "https://www.arrsd.org/o/arrsd/page/school-committee",
+        "http_status": 500,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      },
+      {
+        "code": "fetch_failed",
+        "url": "https://www.arrsd.org/o/school-committee",
+        "http_status": 500,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      }
+    ],
+    "max_pages_limit_reached": true
+  },
+  {
+    "name": "Argosy Collegiate Charter School (District)",
+    "org_code": "35090000",
+    "website": "https://www.argosycollegiate.org",
+    "pages_crawled": 2,
+    "llm_calls": 2,
+    "data_pages": [],
+    "visited_pages": [
+      {
+        "url": "https://www.argosycollegiate.org",
+        "title": "Argosy Collegiate Charter School",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Homepage of Argosy Collegiate Charter School with links to various sections including the Board of Trustees.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "https://argosycollegiate.org/board-of-trustees",
+            "confidence": 0.8,
+            "reason": "path contains /board-of-trustees/"
+          }
+        ]
+      },
+      {
+        "url": "https://argosycollegiate.org/board-of-trustees",
+        "title": "Board of Trustees",
+        "has_data": false,
+        "has_data_links": false,
+        "description": "This page is a security verification page and does not contain meeting minutes, agendas, or packets.",
+        "data_page_info": null,
+        "possible_relevant_pages": []
+      }
+    ],
+    "errors": [],
+    "error_details": [],
+    "max_pages_limit_reached": false
+  },
+  {
+    "name": "Fitchburg",
+    "org_code": "00970000",
+    "website": "http://www.fitchburgschools.org",
+    "pages_crawled": 7,
+    "llm_calls": 1,
+    "data_pages": [],
+    "visited_pages": [
+      {
+        "url": "http://www.fitchburgschools.org",
+        "title": "Fitchburg Public Schools",
+        "has_data": false,
+        "has_data_links": true,
+        "description": "Main page for Fitchburg Public Schools with links to various sections including the School Committee.",
+        "data_page_info": null,
+        "possible_relevant_pages": [
+          {
+            "url": "http://www.fitchburgschools.org/fitchburg/school-committee/meeting-information",
+            "confidence": 0.8,
+            "reason": "path contains /meeting-information/"
+          }
+        ]
+      }
+    ],
+    "errors": [
+      "fetch_failed: http://www.fitchburgschools.org/fitchburg/school-committee/meeting-information (status=404, stage=httpx)",
+      "fetch_failed: http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee (status=404, stage=httpx)",
+      "fetch_failed: http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/budget (status=404, stage=httpx)",
+      "fetch_failed: http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/meeting-information (status=404, stage=httpx)",
+      "fetch_failed: http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/cell-phone-and-personal-electronic-device-policy (status=404, stage=httpx)",
+      "fetch_failed: http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/superintendents-evaluation-documents (status=404, stage=httpx)"
+    ],
+    "error_details": [
+      {
+        "code": "fetch_failed",
+        "url": "http://www.fitchburgschools.org/fitchburg/school-committee/meeting-information",
+        "http_status": 404,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      },
+      {
+        "code": "fetch_failed",
+        "url": "http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee",
+        "http_status": 404,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      },
+      {
+        "code": "fetch_failed",
+        "url": "http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/budget",
+        "http_status": 404,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      },
+      {
+        "code": "fetch_failed",
+        "url": "http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/meeting-information",
+        "http_status": 404,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      },
+      {
+        "code": "fetch_failed",
+        "url": "http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/cell-phone-and-personal-electronic-device-policy",
+        "http_status": 404,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      },
+      {
+        "code": "fetch_failed",
+        "url": "http://www.fitchburgschools.org/fitchburg.k12.ma.us/fitchburg/school-committee/superintendents-evaluation-documents",
+        "http_status": 404,
+        "exception_type": null,
+        "exception_message": null,
+        "stage": "httpx",
+        "html_length": null
+      }
+    ],
+    "max_pages_limit_reached": false
+  }
+]

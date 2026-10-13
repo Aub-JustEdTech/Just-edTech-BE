@@ -13,7 +13,7 @@ class InvitationCRUD:
         self,
         db: AsyncSession,
         *,
-        tenant_id: int,
+        tenant_id: int | None,
         email: str,
         role_id: int | None,
         token: str,
@@ -33,6 +33,21 @@ class InvitationCRUD:
     async def get_by_token(self, db: AsyncSession, token: str) -> Invitation | None:
         res = await db.execute(select(Invitation).where(Invitation.token == token))
         return res.scalar_one_or_none()
+
+    async def get_active_admin_invite_by_email(
+        self, db: AsyncSession, email: str
+    ) -> Invitation | None:
+        """Find an active admin invite (tenant_id IS NULL) for this email."""
+        res = await db.execute(
+            select(Invitation)
+            .where(
+                Invitation.email == email,
+                Invitation.tenant_id.is_(None),
+                Invitation.accepted.is_(False),
+            )
+            .order_by(Invitation.id.desc())
+        )
+        return res.scalars().first()
 
     async def get_active_by_email_tenant(
         self, db: AsyncSession, *, tenant_id: int, email: str

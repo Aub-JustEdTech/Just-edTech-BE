@@ -422,25 +422,25 @@ class ChromaDBStore(VectorStore):
     async def update_metadata(
         self, chunk_ids: list[str], metadata: dict[str, Any], tenant_id: int
     ) -> bool:
-        """Update metadata for chunks"""
-        try:
-            collection = self._get_or_create_collection(tenant_id)
+        """Update metadata for chunks.
 
-            # ChromaDB doesn't support direct metadata updates, so we need to get existing data
-            # and update it
-            for chunk_id in chunk_ids:
-                results = collection.get(ids=[chunk_id], include=["metadatas"])
-                if results["ids"]:
-                    existing_metadata = results["metadatas"][0]
-                    updated_metadata = {**existing_metadata, **metadata}
-                    collection.update(ids=[chunk_id], metadatas=[updated_metadata])
+        Raises on failure rather than swallowing it -- callers rely on the
+        exception to mark a chunk failed instead of treating a no-op as
+        success.
+        """
+        collection = self._get_or_create_collection(tenant_id)
 
-            logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
-            return True
+        # ChromaDB doesn't support direct metadata updates, so we need to get existing data
+        # and update it
+        for chunk_id in chunk_ids:
+            results = collection.get(ids=[chunk_id], include=["metadatas"])
+            if results["ids"]:
+                existing_metadata = results["metadatas"][0]
+                updated_metadata = {**existing_metadata, **metadata}
+                collection.update(ids=[chunk_id], metadatas=[updated_metadata])
 
-        except Exception as e:
-            logger.error(f"Error updating metadata: {e}", exc_info=True)
-            return False
+        logger.info(f"Updated metadata for {len(chunk_ids)} chunks")
+        return True
 
     async def get_collection_stats(self, tenant_id: int) -> dict[str, Any]:
         """Get collection statistics"""

@@ -7,8 +7,8 @@ from app.core.config import settings
 
 celery_app = Celery(
     "just-edtech",
-    broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/2",
-    backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/2",
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_BACKEND_URL,
 )
 
 celery_app.conf.update(
@@ -28,10 +28,40 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,  # Prefetch 1 task per worker to minimize memory usage
     # For high-memory instances, increase to 4 for better throughput
     # Task result settings
-    result_expires=3600,  # Results expire after 1 hour
+    result_expires=900,  # Results expire after 15 min
     # Task routing
     task_routes={
         "app.tasks.document_tasks.process_document_task": {"queue": "documents"},
+        "pipeline.process_document": {"queue": "documents"},
+        "pipeline.download_from_s3": {"queue": "documents"},
+        "pipeline.extract_text": {"queue": "documents"},
+        "pipeline.summarize_document": {"queue": "documents"},
+        "pipeline.classify_document": {"queue": "documents"},
+        "pipeline.chunk_text": {"queue": "documents"},
+        "pipeline.contextualize_chunks": {"queue": "documents"},
+        "pipeline.generate_embeddings": {"queue": "documents"},
+        "pipeline.store_vectors": {"queue": "documents"},
+        "pipeline.accumulate_batch": {"queue": "documents"},
+        "app.tasks.school_scraper_tasks.ingest_scraped_media": {
+            "queue": "scraping"
+        },
+        "app.tasks.school_scraper_tasks.sweep_school_media": {
+            "queue": "scraping"
+        },
+        "app.tasks.school_scraper_tasks.scrape_media_batch": {
+            "queue": "scraping"
+        },
+        "app.tasks.school_scraper_tasks.drain_discovered_media": {
+            "queue": "scraping"
+        },
+        # Transcription is minutes-long and I/O-bound — the same workload shape
+        # the scraping queue already carries, and that queue runs with a 6000s
+        # soft limit. The documents queue is sized for second-scale parses; a
+        # long provider poll parked there would starve ordinary uploads.
+        "pipeline.transcribe_media": {"queue": "scraping"},
+        # District analytics reports — retrieval + LLM writer + PDF render.
+        # Same shape as the documents queue (DB + LLM), not scraping.
+        "generate_district_report": {"queue": "documents"},
     },
     # Retry settings
     task_acks_late=True,  # Acknowledge after task completion
@@ -41,24 +71,90 @@ celery_app.conf.update(
     worker_disable_rate_limits=True,  # Disable rate limits for better performance
     broker_pool_limit=10,  # Increase Redis connection pool
     broker_connection_retry_on_startup=True,  # Retry connection on startup
-    # Periodic task schedule (beat schedule)
+    # Periodic task schedule (beat schedule).
+    #
+    # Nightly pipeline on t4g.2xlarge steady state (1 ingest + 1 scraper),
+    # staggered so scrape/ingest and classify do not pile onto the same
+    # workers at once:
+    #
+    #   01:00  sweep-school-media          (scraping queue)
+    #   02:30–22:30  drain-discovered-media hourly (scraping; skips
+    #              23:00–01:59 so the sweep hour is clear)
+    #   03:30  reconcile-heatmap-aggregate (celery queue; catches
+    #              drift from yesterday's apply / failed set_payload)
+    #   05:00  submit-pending-batch-classification (celery queue;
+    #              OpenAI Batch API only — after overnight drain waves
+    #              at 02:30 / 03:30 / 04:30 have enqueued pending rows)
+    #   */15   poll-batch-classification   (celery queue; apply when
+    #              OpenAI Batch completes — often hours later)
+    #
+    # Classification submit/poll always use OPENAI_API_KEY + OpenAI
+    # Files/Batches, even when LLM_API_PROVIDER=openrouter for chat.
+    # They stay on the default `celery` queue so they never block
+    # scrape/transcribe. Doc-level classify still runs inline in ingest.
+    #
+    # Removed entirely (not wanted, not just paused):
+    #   - aggregate-daily-token-usage (aggregate_daily_token_usage)
+    #   - aggregate-monthly-billing (aggregate_monthly_billing)
+    #
+    # Still paused (uncomment when needed):
+    #   - reconcile-stuck-documents (hourly orphan re-enqueue)
     beat_schedule={
-        "aggregate-daily-token-usage": {
-            "task": "aggregate_daily_token_usage",
-            "schedule": crontab(hour=2, minute=0),  # Run daily at 2:00 AM UTC
-            "options": {
-                "expires": 3600,  # Task expires after 1 hour if not picked up
-            },
+        # Bounded school-media sweep. SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS (default
+        # 50) caps each run; the task self-chains to cover the rest, and this
+        # cron tick is the safety net that restarts the chain if a wave
+        # crashed. Daily at 1:00 AM UTC so the full corpus is re-covered every
+        # ~5 days at 50/run (faster than weekly, bounded vs unbounded).
+        "sweep-school-media": {
+            "task": "app.tasks.school_scraper_tasks.sweep_school_media",
+            "schedule": crontab(hour=1, minute=0),  # Daily at 1:00 AM UTC
+            "options": {"expires": 3 * 3600},
         },
-        "aggregate-monthly-billing": {
-            "task": "aggregate_monthly_billing",
-            "schedule": crontab(
-                hour=3, minute=0, day_of_month=1
-            ),  # Run on 1st of each month at 3:00 AM UTC
-            "options": {
-                "expires": 7200,  # Task expires after 2 hours if not picked up
-            },
+        # Drain deferred discovered rows left behind by the per-URL enqueue
+        # cap (SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL). Hourly at :30 UTC
+        # except 23:00–01:59 — stop enqueueing ingest ~2h before the 1:00 AM
+        # sweep (and through the sweep hour) so the shared scraping queue can
+        # drain and the sweep is not stuck behind backlog ingest. batch_size=50
+        # keeps each wave within steady-state scraper+ingest throughput.
+        "drain-discovered-media": {
+            "task": "app.tasks.school_scraper_tasks.drain_discovered_media",
+            "schedule": crontab(minute=30, hour="2-22"),  # :30 UTC, skip pre-sweep window
+            "args": (50,),
+            "options": {"expires": 1800},
         },
+        # Nightly reconciliation: recompute heatmap_aggregate from Qdrant
+        # to catch drift from failed set_payload calls or manual edits.
+        # Runs before submit so yesterday's apply failures are fixed before
+        # today's batch adds more classified payload.
+        "reconcile-heatmap-aggregate": {
+            "task": "reconcile_heatmap_aggregate",
+            "schedule": crontab(hour=3, minute=30),  # Daily at 3:30 AM UTC
+            "options": {"expires": 2 * 3600},
+        },
+        # Pull pending_classifications → OpenAI Batch API (OPENAI_API_KEY).
+        # Chunks ingested during the day sit pending until this tick;
+        # OpenAI Batch is async (hours), so poll below applies when ready.
+        "submit-pending-batch-classification": {
+            "task": "submit_pending_batch_classification",
+            "schedule": crontab(hour=5, minute=0),  # Daily at 5:00 AM UTC
+            "options": {"expires": 3600},
+        },
+        # Apply completed OpenAI Batch jobs → Qdrant + heatmap_aggregate.
+        "poll-batch-classification": {
+            "task": "poll_batch_classification",
+            "schedule": crontab(minute="*/15"),  # Every 15 minutes
+            "options": {"expires": 900},
+        },
+        # Hourly reconciliation: re-enqueue documents stuck at PROCESSING or
+        # PENDING past the staleness threshold. Catches the silent orphan
+        # failure mode where a Celery chain continuation was lost (broker
+        # eviction under allkeys-lru, or OOM rejection under noeviction)
+        # and no _mark_stage_failed ever ran.
+        # "reconcile-stuck-documents": {
+        #     "task": "reconcile_stuck_documents",
+        #     "schedule": crontab(minute=15),  # Hourly at :15
+        #     "options": {"expires": 1800},
+        # },
     },
 )
 
