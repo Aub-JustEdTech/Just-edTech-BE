@@ -407,6 +407,13 @@ class Settings(BaseSettings):
     # (which can find 100+ historical docs) from enqueuing all of them at once.
     # 0 = unlimited (enqueue all newly created rows, original behavior).
     SCHOOL_SCRAPER_SWEEP_MAX_ENQUEUE_PER_URL: int = 5
+    # Hard wall-clock cap per scrape URL inside sweep_school_media. Without
+    # this, one hung Playwright/httpx crawl can burn the worker soft limit
+    # (~6000s) before record_scrape_result runs, so last_scrapped_at never
+    # advances and the nightly round-robin stays stuck on the same district.
+    # On timeout the URL is stamped failed (last_http_status=None) and the
+    # sweep continues to the next school.
+    SCHOOL_SCRAPER_SWEEP_URL_TIMEOUT_SECONDS: int = 300
     # Offline URL-discovery candidates JSON (used by scrape-url-candidates API).
     SCHOOL_URL_CANDIDATES_JSON_PATH: str = (
         "scripts/school_data/output/selected_schools_url_candidates_both.json"

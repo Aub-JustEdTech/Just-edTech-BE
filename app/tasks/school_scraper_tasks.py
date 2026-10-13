@@ -13,6 +13,7 @@ Cost model, cheapest gate first:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 import tempfile
@@ -20,6 +21,7 @@ from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from celery.exceptions import SoftTimeLimitExceeded
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -754,24 +756,48 @@ def sweep_school_media(
     Every URL attempt -- success or failure -- is persisted via
     ``record_scrape_result`` so the FE URL manager can surface crawl failures
     (last_http_status != 200 / null after an attempt) without a separate
-    table. One failed district does not abort the sweep.
+    table. One failed district does not abort the sweep. Each URL is also
+    capped by SCHOOL_SCRAPER_SWEEP_URL_TIMEOUT_SECONDS so a hung crawl cannot
+    burn the worker soft limit before stamping last_scrapped_at.
 
     Args:
         school_ids: Optional allow-list of school ids. When None, every
             school with at least one active scrape URL is a candidate.
+            A bare int is coerced to a one-element list (celery call
+            ``[644, 1]`` vs ``[[644], 1]`` footgun).
         max_schools: Optional override for the school cap. Falls back to
             ``settings.SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS``. ``0`` = unlimited.
     """
+    school_ids = _coerce_school_ids(school_ids)
     try:
         loop = get_event_loop()
         return loop.run_until_complete(
             _sweep_school_media_async(school_ids, max_schools)
         )
+    except SoftTimeLimitExceeded:
+        # Partial progress is already committed per-URL. Do not retry — that
+        # would re-enter the same head-of-queue hang without advancing.
+        logger.error(
+            "sweep_school_media hit SoftTimeLimitExceeded; returning partial "
+            "progress without retry"
+        )
+        return {"soft_time_limit": True}
     except Exception as exc:
         logger.error("sweep_school_media failed: %s", str(exc))
         raise self.retry(
             exc=exc, countdown=60 * (2**self.request.retries)
         ) from exc
+
+
+def _coerce_school_ids(
+    school_ids: list[int] | int | None,
+) -> list[int] | None:
+    """Normalize celery CLI / call args into a list of ints (or None)."""
+    if school_ids is None:
+        return None
+    if isinstance(school_ids, int):
+        return [school_ids]
+    return list(school_ids)
 
 
 async def _sweep_school_media_async(
@@ -784,6 +810,7 @@ async def _sweep_school_media_async(
         SchoolScraperService,
     )
 
+    school_ids = _coerce_school_ids(school_ids)
     cap = (
         max_schools
         if max_schools is not None
@@ -944,11 +971,33 @@ async def _sweep_one_url(
 
     from app.crud.schools import bulk_create_scraped_media, record_scrape_result
 
+    url_timeout = float(
+        getattr(settings, "SCHOOL_SCRAPER_SWEEP_URL_TIMEOUT_SECONDS", 300) or 300
+    )
+
     try:
-        result = await service.scrape_media_files(
-            page_url=scrape_url.url,
-            crawl_depth=scrape_url.crawl_depth,
+        result = await asyncio.wait_for(
+            service.scrape_media_files(
+                page_url=scrape_url.url,
+                crawl_depth=scrape_url.crawl_depth,
+            ),
+            timeout=url_timeout,
         )
+    except TimeoutError:
+        # Wall-clock cap: stamp failed so round-robin advances past this URL
+        # instead of burning SoftTimeLimitExceeded on one hung Playwright crawl.
+        await record_scrape_result(
+            db, scrape_url, http_status=None, page_count=None
+        )
+        logger.error(
+            "Sweep scrape timed out after %ss for %s (school_id=%s)",
+            int(url_timeout),
+            scrape_url.url,
+            school.id,
+        )
+        totals["scrape_failures"] += 1
+        failed_urls.append(scrape_url.url)
+        return
     except httpx.HTTPStatusError as exc:
         # Mirror the interactive mapping: persist the real status so the
         # FE can show 403/404/5xx specifically, not just "failed".

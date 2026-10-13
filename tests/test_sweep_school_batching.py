@@ -18,6 +18,7 @@ All DB and HTTP calls are mocked. Run:
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -437,6 +438,79 @@ async def test_sweep_persists_none_for_timeout_or_network(mock_db):
     assert totals["scrape_failures"] == 1
     # Timeout: no HTTP response -> http_status=None, page_count=None.
     assert record_calls == [(1, None, None)]
+
+
+@pytest.mark.asyncio
+async def test_sweep_url_wall_clock_timeout_stamps_and_continues(mock_db):
+    """asyncio.wait_for wall-clock cap stamps the hung URL and moves on."""
+    schools = {
+        10: _school(10, last_scrapped_at=None),
+        20: _school(20, last_scrapped_at=None),
+    }
+    _configure_db(
+        mock_db,
+        school_ids_in_order=[10, 20],
+        schools_with_urls={10, 20},
+        scrape_urls=[_scrape_url(1, 10), _scrape_url(2, 20)],
+        schools=schools,
+    )
+
+    record_calls = []
+    service = AsyncMock()
+    calls = {"n": 0}
+
+    async def _scrape(*_a, **_k):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            await asyncio.sleep(60)
+        return {"pages_crawled": 1, "media_files": []}
+
+    service.scrape_media_files.side_effect = _scrape
+    service.__aenter__ = AsyncMock(return_value=service)
+    service.__aexit__ = AsyncMock(return_value=None)
+
+    async def _record(db, scrape_url, *, http_status, page_count):
+        record_calls.append((scrape_url.id, http_status, page_count))
+
+    with (
+        patch(
+            "app.tasks.school_scraper_tasks.AsyncSessionLocal",
+            return_value=_async_ctx(mock_db),
+        ),
+        patch(
+            "app.tasks.school_scraper_tasks.settings.SCHOOL_SCRAPER_SWEEP_MAX_SCHOOLS",
+            50,
+        ),
+        patch(
+            "app.tasks.school_scraper_tasks.settings.SCHOOL_SCRAPER_SWEEP_URL_TIMEOUT_SECONDS",
+            0.05,
+        ),
+        patch("app.crud.schools.record_scrape_result", new=_record),
+        patch(
+            "app.crud.schools.bulk_create_scraped_media",
+            new=AsyncMock(return_value=([], 0)),
+        ),
+        patch(
+            "app.services.web_scraper.school_scraper_service.SchoolScraperService",
+            return_value=service,
+        ),
+    ):
+        from app.tasks.school_scraper_tasks import _sweep_school_media_async
+
+        totals = await _sweep_school_media_async(None, 50)
+
+    assert totals["scrape_failures"] == 1
+    assert totals["schools"] == 2
+    # First URL timed out (None); second succeeded (200).
+    assert record_calls == [(1, None, None), (2, 200, 1)]
+
+
+def test_coerce_school_ids_accepts_bare_int():
+    from app.tasks.school_scraper_tasks import _coerce_school_ids
+
+    assert _coerce_school_ids(644) == [644]
+    assert _coerce_school_ids([644, 645]) == [644, 645]
+    assert _coerce_school_ids(None) is None
 
 
 @pytest.mark.asyncio
