@@ -130,14 +130,11 @@ class BatchClassifier:
         has no Batch API; the old inline chat path is intentionally gone so
         the daily cron cannot starve the single ingest worker.
         """
-        batch_size = int(getattr(settings, "HEATMAP_INGEST_BATCH_SIZE", 50_000))
-        # Byte budget to stay under OpenAI Batch's 200 MB input-file cap.
-        # With a ~24 KB system prompt, each line is ~35 KB, so the file-size
-        # cap binds well before the 50,000-request cap (50k * 35 KB ~ 1.7 GB).
-        # Default 180 MB leaves headroom and yields ~5,000 lines per batch,
-        # so a ~116k-chunk corpus needs ~23-30 batches, not 3.
+        # Defaults match settings (500 / 20 MB) — sized for the 2G ingest
+        # worker. Larger values OOM the fork child during JSONL build.
+        batch_size = int(getattr(settings, "HEATMAP_INGEST_BATCH_SIZE", 500))
         max_bytes = int(
-            getattr(settings, "HEATMAP_INGEST_BATCH_MAX_BYTES", 180 * 1024 * 1024)
+            getattr(settings, "HEATMAP_INGEST_BATCH_MAX_BYTES", 20 * 1024 * 1024)
         )
 
         pending_rows = (

@@ -1,9 +1,11 @@
 """One-at-a-time OpenAI Batch API submit for the heatmap chunk classifier.
 
-Submits ~4,300 chunks per batch (HEATMAP_INGEST_BATCH_MAX_BYTES=150MB to stay
-under OpenAI's 40M enqueued-token limit for gpt-4o-mini at Tier 3 -- 75%
-utilization leaves headroom for chunk-size variance), waits for the batch to
-reach `completed` (only then is the token budget freed -- per OpenAI's docs,
+App defaults are 500 chunks / 20 MB (safe for 2G celery-ingest cron). This
+script intentionally raises HEATMAP_INGEST_BATCH_MAX_BYTES via --batch-max-mb
+(default 150 MB ≈ ~4,300 chunks) for dedicated backfill runs under OpenAI's
+40M enqueued-token limit for gpt-4o-mini at Tier 3 -- 75% utilization leaves
+headroom for chunk-size variance. It waits for each batch to reach
+`completed` (only then is the token budget freed -- per OpenAI's docs,
 `in_progress` batches still count against the queue limit), then submits the
 next. On batch failure, calls poll_batch to immediately reset stranded
 `submitted` rows back to `pending` so the next iteration picks them up.

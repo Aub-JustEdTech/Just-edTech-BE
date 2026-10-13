@@ -87,10 +87,10 @@ logging.basicConfig(
 logger = logging.getLogger("build_classifier_batch_jsonl")
 
 SCROLL_BATCH = 1024
-# OpenAI Batch hard caps: 50,000 requests and 200 MB per input file.
-# Our ~24 KB system prompt yields ~35 KB/line, so the file-size cap bites
-# at ~5,700 lines — well below 50,000. Keep a safety margin under 200 MB.
-DEFAULT_MAX_BYTES = 180 * 1024 * 1024
+# Align with HEATMAP_INGEST_BATCH_MAX_BYTES (20 MB) so offline exports match
+# what the 2G celery-ingest worker can submit. OpenAI allows up to 200 MB;
+# raise via settings / a larger override only on a high-RAM machine.
+DEFAULT_MAX_BYTES = 20 * 1024 * 1024
 # Stable prompt_cache_key so requests sharing the static SYSTEM_PROMPT prefix
 # route to the same cache. Batch fans work across workers, so hits are
 # unreliable — do not budget cost as if cache hits (see SKILL.md pitfall).

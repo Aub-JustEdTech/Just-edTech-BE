@@ -144,14 +144,15 @@ class Settings(BaseSettings):
     # Document summarizer (app/services/document_processing/summarizer.py).
     DOCUMENT_SUMMARIZER_MODEL: str = "openai/gpt-4o-mini"
     # Max chunks per OpenAI Batch API submission. The API caps at 50,000
-    # requests per batch; we use a smaller default to keep batches quick.
-    HEATMAP_INGEST_BATCH_SIZE: int = 50_000
-    # Max bytes for one OpenAI Batch input JSONL. The API hard-caps a batch
-    # input file at 200 MB; with a ~24 KB system prompt each line is ~35 KB,
-    # so the file-size cap binds well before the 50,000-request cap
-    # (50k * 35 KB ~ 1.7 GB). Default 180 MB yields ~5,000 lines per batch,
-    # so a ~116k-chunk corpus needs ~23-30 batches.
-    HEATMAP_INGEST_BATCH_MAX_BYTES: int = 180 * 1024 * 1024
+    # requests/batch, but celery-ingest is memory-capped (~2G on t4g.2xlarge):
+    # loading tens of thousands of chunk_text rows OOMs the fork child
+    # (SIGKILL / WorkerLostError). Keep this small for the daily cron.
+    HEATMAP_INGEST_BATCH_SIZE: int = 500
+    # Max bytes for one OpenAI Batch input JSONL. API hard-cap is 200 MB;
+    # with a ~24 KB system prompt each line is ~35 KB, so 20 MB ≈ ~500–600
+    # lines and matches HEATMAP_INGEST_BATCH_SIZE on the 2G ingest worker.
+    # Raise only for offline/backfill runs with more RAM.
+    HEATMAP_INGEST_BATCH_MAX_BYTES: int = 20 * 1024 * 1024
     # A chunk whose batch ends failed/expired/cancelled is reset to
     # 'pending' for resubmission. After this many resets it's parked at
     # 'dead_letter' instead, so a batch that keeps failing for a content
