@@ -19,7 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.documents import Document
 from app.services.embeddings.embedding_service import EmbeddingService
-from app.services.llm.client import get_async_openai_client, normalize_model_name
+from app.services.llm.client import (
+    get_async_openai_client,
+    normalize_model_name,
+    reasoning_effort_kwargs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +142,8 @@ class DocumentSummarizer:
                     },
                 ],
                 temperature=0.1,
-                max_tokens=600,
+                max_completion_tokens=600,
+                **reasoning_effort_kwargs(self._model),
             )
             raw = response.choices[0].message.content.strip()
             parsed = json.loads(raw)

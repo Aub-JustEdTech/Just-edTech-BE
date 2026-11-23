@@ -36,6 +36,7 @@ from app.services.llm.client import (
     get_async_openai_client,
     get_llm_api_key,
     normalize_model_name,
+    reasoning_effort_kwargs,
 )
 
 logger = logging.getLogger(__name__)
@@ -231,6 +232,7 @@ class DocClassifier:
                 temperature=0,
                 max_completion_tokens=200,
                 response_format=_doc_response_format_schema(),
+                **reasoning_effort_kwargs(self._model),
             )
             raw = response.choices[0].message.content or "{}"
             payload = json.loads(raw)

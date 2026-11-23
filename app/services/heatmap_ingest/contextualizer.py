@@ -32,6 +32,7 @@ from app.services.llm.client import (
     get_async_openai_client,
     get_llm_api_key,
     normalize_model_name,
+    reasoning_effort_kwargs,
 )
 
 logger = logging.getLogger(__name__)
@@ -150,6 +151,7 @@ class Contextualizer:
                 temperature=0,
                 max_completion_tokens=120,
                 response_format=_response_format_schema(),
+                **reasoning_effort_kwargs(self._model),
             )
             raw = response.choices[0].message.content or "{}"
             payload = json.loads(raw)

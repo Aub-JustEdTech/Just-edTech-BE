@@ -51,7 +51,11 @@ from app.services.agentic_rag.nodes import (
 )
 from app.services.agentic_rag.state import AgentState
 from app.services.agentic_rag.tools import AGENT_TOOLS
-from app.services.llm.client import get_chat_openai_kwargs, normalize_model_name
+from app.services.llm.client import (
+    get_chat_openai_kwargs,
+    normalize_model_name,
+    reasoning_effort_kwargs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -98,13 +102,12 @@ def build_agent_graph(model: str = "openai/gpt-6-luna") -> StateGraph:
     Returns:
         An uncompiled `StateGraph[AgentState]`.
     """
+    # Function tools on /v1/chat/completions are rejected for gpt-6-luna unless
+    # reasoning_effort is "none".
     llm_kwargs: dict[str, Any] = {}
-    if settings.AGENT_REASONING_EFFORT:
-        # Function tools on /v1/chat/completions are rejected for gpt-6-luna
-        # unless reasoning_effort is "none".
-        llm_kwargs["model_kwargs"] = {
-            "reasoning_effort": settings.AGENT_REASONING_EFFORT
-        }
+    effort_kwargs = reasoning_effort_kwargs(model)
+    if effort_kwargs:
+        llm_kwargs["model_kwargs"] = effort_kwargs
     llm = ChatOpenAI(
         model=normalize_model_name(model),
         temperature=0,

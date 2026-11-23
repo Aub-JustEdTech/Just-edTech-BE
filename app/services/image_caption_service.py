@@ -5,7 +5,11 @@ Image caption service using vision for generating context-aware captions.
 import base64
 import logging
 
-from app.services.llm.client import get_async_openai_client, normalize_model_name
+from app.services.llm.client import (
+    get_async_openai_client,
+    normalize_model_name,
+    reasoning_effort_kwargs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +78,9 @@ The caption should:
 Generate a detailed caption that captures both visual content and contextual meaning:"""
 
             # Call vision
+            model = normalize_model_name("openai/gpt-6-luna")
             response = await self.client.chat.completions.create(
-                model=normalize_model_name("openai/gpt-6-luna"),
+                model=model,
                 messages=[
                     {
                         "role": "user",
@@ -91,8 +96,9 @@ Generate a detailed caption that captures both visual content and contextual mea
                         ],
                     }
                 ],
-                max_tokens=400,  # Increased for more detailed captions
+                max_completion_tokens=400,  # Increased for more detailed captions
                 temperature=0.2,  # Lower temperature for more consistent, detailed captions
+                **reasoning_effort_kwargs(model),
             )
 
             caption = response.choices[0].message.content.strip()

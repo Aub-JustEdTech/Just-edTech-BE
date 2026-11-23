@@ -18,6 +18,7 @@ from app.services.llm.client import (
     get_chat_openai_kwargs,
     get_llm_api_key,
     normalize_model_name,
+    reasoning_effort_kwargs,
     strip_model_provider_prefix,
 )
 
@@ -96,6 +97,10 @@ class OpenAIProvider(BaseLLMProvider):
 
         if timeout_s is not None:
             kwargs["timeout"] = timeout_s
+
+        effort_kwargs = reasoning_effort_kwargs(model)
+        if effort_kwargs:
+            kwargs["model_kwargs"] = effort_kwargs
 
         return ChatOpenAI(**kwargs)
 
@@ -193,6 +198,8 @@ class OpenAIProvider(BaseLLMProvider):
 
                 if timeout_s is not None:
                     request_params["timeout"] = timeout_s
+
+                request_params.update(reasoning_effort_kwargs(api_model))
 
                 response = await client.chat.completions.create(**request_params)
 
