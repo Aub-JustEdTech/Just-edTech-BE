@@ -24,41 +24,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Pricing per 1M tokens in USD (update these values as needed)
 # Source: https://openai.com/pricing
 PRICING = {
-    "gpt-4o": {
-        "input": Decimal("2.50"),
-        "output": Decimal("10.00"),
-        "cache": Decimal("1.25"),
-    },
-    "gpt-4o-mini": {
-        "input": Decimal("0.150"),
-        "output": Decimal("0.600"),
-        "cache": Decimal("0.075"),
-    },
-    # GPT-4 models
-    "gpt-4": {
-        "input": Decimal("30.00"),
-        "output": Decimal("60.00"),
-        "cache": Decimal("15.00"),
-    },
-    "gpt-4-turbo": {
-        "input": Decimal("10.00"),
-        "output": Decimal("30.00"),
-        "cache": Decimal("5.00"),
-    },
-    "gpt-4-turbo-preview": {
-        "input": Decimal("10.00"),
-        "output": Decimal("30.00"),
-        "cache": Decimal("5.00"),
-    },
-    "gpt-3.5-turbo": {
-        "input": Decimal("0.50"),
-        "output": Decimal("1.50"),
-        "cache": Decimal("0.25"),
-    },
-    "gpt-3.5-turbo-16k": {
-        "input": Decimal("3.00"),
-        "output": Decimal("4.00"),
-        "cache": Decimal("1.50"),
+    "gpt-6-luna": {
+        "input": Decimal("0"),
+        "output": Decimal("0"),
+        "cache": Decimal("0"),
     },
     # Claude models (Anthropic)
     "claude-3-opus": {

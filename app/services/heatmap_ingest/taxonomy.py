@@ -126,7 +126,7 @@ class Speaker(BaseModel):
 
 
 class ChunkClassification(BaseModel):
-    """Structured output returned by the chunk classifier (gpt-4o-mini).
+    """Structured output returned by the chunk classifier (gpt-6-luna).
 
     V1 additions (spec A2/A3/A5): `topic_tags`, `action_stage`, `speakers`.
     The legacy `topics` / `action_types` / `subtopics` arrays are preserved

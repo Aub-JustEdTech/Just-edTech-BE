@@ -170,7 +170,7 @@ class PageClassifier:
         self.last_response_meta = None
         today = today or date.today()
         # Trim to a token-ish budget. ~4 chars/token, cap at ~16k chars to keep
-        # the per-page call well under $0.001 on gpt-4o-mini while preserving
+        # the per-page call well under $0.001 on gpt-6-luna while preserving
         # long archive year-listings (which were getting truncated mid-list,
         # hurting is_archive / data_years_available recall).
         trimmed = markdown[:16000]

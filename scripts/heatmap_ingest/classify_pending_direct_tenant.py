@@ -86,7 +86,7 @@ async def classify_tenant(
     chat_client = get_async_openai_client()
     chat_model = normalize_model_name(
         getattr(
-            settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-4o-mini"
+            settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-6-luna"
         )
     )
     batch_id = f"direct-t{tenant_id}-{_utcnow().strftime('%Y%m%d_%H%M%S')}"

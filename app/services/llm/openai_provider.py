@@ -29,48 +29,11 @@ class OpenAIProvider(BaseLLMProvider):
 
     # Model families and their parameter mappings
     MODEL_CONFIGS = {
-        "gpt-3.5-turbo": {
-            "max_tokens_param": "max_tokens",  # Older models use max_tokens
-            "supports_system_prompt": True,
-            "default_max_tokens": 4096,
-            "supports_temperature": True,
-            "default_temperature": 0.7,
-            "temperature_range": (0, 2),
-        },
-        "gpt-4": {
-            "max_tokens_param": "max_tokens",  # GPT-4 base uses max_tokens
-            "supports_system_prompt": True,
-            "default_max_tokens": 4096,
-            "supports_temperature": True,
-            "default_temperature": 0.7,
-            "temperature_range": (0, 2),
-        },
-        "gpt-4-turbo": {
-            "max_tokens_param": "max_tokens",  # GPT-4-turbo uses max_tokens
-            "supports_system_prompt": True,
-            "default_max_tokens": 4096,
-            "supports_temperature": True,
-            "default_temperature": 0.7,
-            "temperature_range": (0, 2),
-        },
-        "gpt-4o": {
-            # For this LangChain/OpenAI client combo, passing any
-            # explicit max tokens param for gpt-4o tends to result
-            # in the server receiving an unsupported `max_tokens`
-            # field. For these models we bypass ChatOpenAI and call
-            # the OpenAI client directly instead (see generate_completion).
-            "max_tokens_param": None,
-            "supports_system_prompt": True,
-            "default_max_tokens": 4096,
-            "supports_temperature": True,
-            "default_temperature": 1.0,
-            "temperature_range": (0, 2),
-        },
-        "gpt-4o-mini": {
-            # Default model for most calls; see note above.
-            # We bypass ChatOpenAI and call the OpenAI client directly
-            # for this family, so we don't use a ChatOpenAI-level
-            # max tokens parameter here.
+        "gpt-6-luna": {
+            # Default model for all calls. We bypass ChatOpenAI and call the
+            # OpenAI client directly for this family, so we don't use a
+            # ChatOpenAI-level max tokens parameter here (the request uses
+            # max_completion_tokens instead; see generate_completion).
             "max_tokens_param": None,
             "supports_system_prompt": True,
             "default_max_tokens": 16384,
@@ -79,30 +42,6 @@ class OpenAIProvider(BaseLLMProvider):
             "temperature_range": (0, 2),
         },
         "gpt-5": {
-            "max_tokens_param": None,  # Uses max_completion_tokens via direct OpenAI client
-            "supports_system_prompt": False,
-            "default_max_tokens": 16384,
-            "supports_temperature": False,  # o1 models don't support temperature
-            "default_temperature": 1.0,
-            "temperature_range": None,
-        },
-        "o1-mini": {
-            "max_tokens_param": None,  # Uses max_completion_tokens via direct OpenAI client
-            "supports_system_prompt": False,
-            "default_max_tokens": 16384,
-            "supports_temperature": False,  # o1 models don't support temperature
-            "default_temperature": 1.0,
-            "temperature_range": None,
-        },
-        "o1-preview": {
-            "max_tokens_param": None,  # Uses max_completion_tokens via direct OpenAI client
-            "supports_system_prompt": False,
-            "default_max_tokens": 16384,
-            "supports_temperature": False,  # o1 models don't support temperature
-            "default_temperature": 1.0,
-            "temperature_range": None,
-        },
-        "o1": {
             "max_tokens_param": None,  # Uses max_completion_tokens via direct OpenAI client
             "supports_system_prompt": False,
             "default_max_tokens": 16384,
@@ -149,7 +88,7 @@ class OpenAIProvider(BaseLLMProvider):
             kwargs["temperature"] = temperature
 
         # Respect per-model token parameter name to avoid API errors.
-        # Some newer models (e.g., gpt-4o / gpt-4o-mini in this environment)
+        # Some newer models (e.g., gpt-6-luna in this environment)
         # reject any explicit max tokens parameter; for those we skip it.
         max_tokens_param = model_config.get("max_tokens_param", "max_tokens")
         if max_tokens_param:
@@ -165,7 +104,7 @@ class OpenAIProvider(BaseLLMProvider):
         Get configuration for a specific model.
 
         Args:
-            model_name: Full model name (e.g., "gpt-4-turbo-preview")
+            model_name: Full model name (e.g., "gpt-6-luna")
 
         Returns:
             Model configuration dictionary
@@ -175,23 +114,23 @@ class OpenAIProvider(BaseLLMProvider):
         if model_name in self.MODEL_CONFIGS:
             return self.MODEL_CONFIGS[model_name]
 
-        # Check for prefix match (e.g., "gpt-4-turbo-preview" matches "gpt-4-turbo")
+        # Check for prefix match (e.g., "gpt-6-luna-2026-01-01" matches "gpt-6-luna")
         for model_prefix, config in self.MODEL_CONFIGS.items():
             if model_name.startswith(model_prefix):
                 return config
 
         # Default to GPT-4 config for unknown models (safer default)
         logger.warning(
-            f"Unknown model {model_name}, using gpt-4o-mini parameter format as default"
+            f"Unknown model {model_name}, using gpt-6-luna parameter format as default"
         )
-        return self.MODEL_CONFIGS["gpt-4o-mini"]
+        return self.MODEL_CONFIGS["gpt-6-luna"]
 
     async def generate_completion(
         self,
         messages: list[dict[str, str]],
         temperature: float,
         max_tokens: int,
-        model: str = "gpt-4o-mini",
+        model: str = "gpt-6-luna",
         **kwargs: Any,
     ) -> dict[str, Any]:
         """
@@ -228,7 +167,7 @@ class OpenAIProvider(BaseLLMProvider):
             if "request_timeout" in kwargs:
                 timeout_s = kwargs.pop("request_timeout")
 
-            # For models that require max_completion_tokens (gpt-4o, o1, etc.)
+            # For models that require max_completion_tokens (gpt-6-luna, gpt-5, etc.)
             # we bypass ChatOpenAI and call the OpenAI client directly
             # so we can control the payload and use max_completion_tokens.
             if model_config.get("max_tokens_param") is None:

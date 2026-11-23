@@ -48,7 +48,7 @@ class AgenticRAGService:
     matches the signature of `process_rag_query_with_citations`.
     """
 
-    def __init__(self, model: str = "gpt-4o"):
+    def __init__(self, model: str = "gpt-6-luna"):
         self._graph = build_agent_graph(model=model)
         # Compiled graph without checkpointing — used as a fallback and cached
         # for requests that don't need conversation persistence.
@@ -210,7 +210,7 @@ class AgenticRAGService:
             "input_tokens": token_usage.get("input_tokens", 0),
             "output_tokens": token_usage.get("output_tokens", 0),
             "chunks_retrieved": len(citations),
-            "model": "gpt-4o",
+            "model": "gpt-6-luna",
             "agent_iterations": state.get("iteration_count", 0),
             "termination_reason": state.get("termination_reason"),
             "status_updates": state.get("status_updates") or [],

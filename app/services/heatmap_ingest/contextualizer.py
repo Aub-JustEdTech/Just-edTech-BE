@@ -102,7 +102,7 @@ class Contextualizer:
         timeout_s: float = 60.0,
     ):
         self._model = normalize_model_name(
-            model or getattr(settings, "HEATMAP_CONTEXT_MODEL", "openai/gpt-4o-mini")
+            model or getattr(settings, "HEATMAP_CONTEXT_MODEL", "openai/gpt-6-luna")
         )
         self._max_concurrency = int(
             max_concurrency

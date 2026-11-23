@@ -2,7 +2,7 @@
 """
 Phase 1 eval harness runner for the heatmap chunk classifier.
 
-Calls gpt-4o-mini (sync, structured output) on each labeled chunk in
+Calls gpt-6-luna (sync, structured output) on each labeled chunk in
 labeled_chunks.yaml and prints per-label precision / recall / F1 plus a
 per-chunk error dump.
 
@@ -49,7 +49,7 @@ from scripts.classifier_eval.taxonomy import (
 
 logger = logging.getLogger(__name__)
 
-MODEL_DEFAULT = "openai/gpt-4o-mini"
+MODEL_DEFAULT = "openai/gpt-6-luna"
 HERE = Path(__file__).resolve().parent
 LABELED_CHUNKS_PATH = HERE / "labeled_chunks.yaml"
 DEFAULT_REPORT_PATH = HERE / "eval_report.md"

@@ -1,7 +1,7 @@
 # Eval set for the heatmap chunk classifier.
 #
 # Each entry is a chunk with the *expected* classification. The runner calls
-# gpt-4o-mini, parses the structured response, and computes per-label
+# gpt-6-luna, parses the structured response, and computes per-label
 # precision/recall/F1 against these expectations.
 #
 # Composition (100 chunks total):

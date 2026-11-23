@@ -55,7 +55,7 @@ from app.services.web_scraper.schema_driven_crawler import SchemaDrivenCrawler
 
 logger = logging.getLogger(__name__)
 
-MODEL_DEFAULT = "openai/gpt-4o-mini"
+MODEL_DEFAULT = "openai/gpt-6-luna"
 HERE = Path(__file__).resolve().parent
 LABELED_PAGES_PATH = HERE / "labeled_pages.yaml"
 DEFAULT_REPORT_PATH = HERE / "eval_report.md"
@@ -64,8 +64,7 @@ FIXTURES_DIR = HERE / "fixtures"
 # Per-1M-token USD prices (mirrors scripts/setup_model_pricing.py for the
 # models we expect to eval). Used only for the cost estimate in the report.
 PRICING_PER_1M: dict[str, dict[str, float]] = {
-    "gpt-4o-mini": {"input": 0.150, "output": 0.600},
-    "gpt-4o": {"input": 2.50, "output": 10.00},
+    "gpt-6-luna": {"input": 0.0, "output": 0.0},
 }
 
 

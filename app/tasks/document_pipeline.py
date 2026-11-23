@@ -786,7 +786,7 @@ def step2_6_classify_document(self, context_dict: dict[str, Any]) -> dict[str, A
     Runs only when ctx.source_type == 'school_scraper'. Non-heatmap docs
     skip this stage entirely (no LLM call, no DB writes).
 
-    Calls DocClassifier (one sync gpt-4o-mini call per doc) and writes the
+    Calls DocClassifier (one sync gpt-6-luna call per doc) and writes the
     resulting entity_type / doc_kind / meeting_date to the documents table
     (the new columns added in the Phase 2 migration).
 
@@ -1996,7 +1996,7 @@ async def _process_images(
                 )
                 continue
 
-            # Generate caption using GPT-4o vision
+            # Generate caption using vision
             surrounding_before = image_meta.get("surrounding_text_before")
             surrounding_after = image_meta.get("surrounding_text_after")
             caption = await image_caption_service.generate_caption(

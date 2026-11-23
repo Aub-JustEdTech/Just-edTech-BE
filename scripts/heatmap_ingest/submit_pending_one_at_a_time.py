@@ -3,7 +3,7 @@
 App defaults are 500 chunks / 20 MB (safe for 2G celery-ingest cron). This
 script intentionally raises HEATMAP_INGEST_BATCH_MAX_BYTES via --batch-max-mb
 (default 150 MB ≈ ~4,300 chunks) for dedicated backfill runs under OpenAI's
-40M enqueued-token limit for gpt-4o-mini at Tier 3 -- 75% utilization leaves
+40M enqueued-token limit for gpt-6-luna at Tier 3 -- 75% utilization leaves
 headroom for chunk-size variance. It waits for each batch to reach
 `completed` (only then is the token budget freed -- per OpenAI's docs,
 `in_progress` batches still count against the queue limit), then submits the
@@ -57,7 +57,7 @@ logging.basicConfig(
 logger = logging.getLogger("submit_pending_one_at_a_time")
 
 # Max bytes for one OpenAI Batch input JSONL. Sized for the active OpenAI
-# tier's enqueued-token queue limit for gpt-4o-mini. With a ~24 KB system
+# tier's enqueued-token queue limit for gpt-6-luna. With a ~24 KB system
 # prompt, each line is ~35 KB:
 #   - Tier 2 (20M tokens): 70 MB -> ~2,000 chunks/batch (~14M tokens, 70%)
 #   - Tier 3 (40M tokens): 150 MB -> ~4,300 chunks/batch (~30M tokens, 75%)

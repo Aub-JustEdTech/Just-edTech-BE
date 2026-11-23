@@ -1,7 +1,7 @@
 """
 Doc-level classifier for the heatmap ingest pipeline.
 
-Runs once per document (sync, gpt-4o-mini) to extract:
+Runs once per document (sync, gpt-6-luna) to extract:
   - entity_type  (one of ENTITY_TYPES, single-label)
   - doc_kind     (agenda | minutes | packet | resolution | policy | news | other)
   - meeting_date (ISO YYYY-MM-DD if extractable, else None)
@@ -183,13 +183,13 @@ class DocClassifier:
     """
     Classifies a single document's entity_type, doc_kind, and meeting_date.
 
-    One LLM call per document. Cheap (gpt-4o-mini, ~$3 for 30k docs).
+    One LLM call per document. Cheap (gpt-6-luna, ~$3 for 30k docs).
     """
 
     def __init__(self, model: str | None = None, timeout_s: float = 60.0):
         self._model = normalize_model_name(
             model or getattr(
-                settings, "HEATMAP_INGEST_DOC_CLASSIFIER_MODEL", "openai/gpt-4o-mini"
+                settings, "HEATMAP_INGEST_DOC_CLASSIFIER_MODEL", "openai/gpt-6-luna"
             )
         )
         get_llm_api_key()
