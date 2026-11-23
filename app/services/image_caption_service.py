@@ -1,5 +1,5 @@
 """
-Image caption service using GPT-4o vision for generating context-aware captions.
+Image caption service using vision for generating context-aware captions.
 """
 
 import base64
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageCaptionService:
-    """Service for generating image captions using GPT-4o vision"""
+    """Service for generating image captions using vision"""
 
     def __init__(self):
         """Initialize the image caption service"""
@@ -28,7 +28,7 @@ class ImageCaptionService:
         surrounding_text_after: str | None = None,
     ) -> str:
         """
-        Generate a caption for an image using GPT-4o vision.
+        Generate a caption for an image using vision.
 
         Args:
             image_path: Path to the image file
@@ -73,9 +73,9 @@ The caption should:
 
 Generate a detailed caption that captures both visual content and contextual meaning:"""
 
-            # Call GPT-4o vision
+            # Call vision
             response = await self.client.chat.completions.create(
-                model=normalize_model_name("openai/gpt-4o"),
+                model=normalize_model_name("openai/gpt-6-luna"),
                 messages=[
                     {
                         "role": "user",

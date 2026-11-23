@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     CHATBOT_DEFAULT_TITLE: str = "Assistant"
     CHATBOT_DEFAULT_WELCOME_MESSAGE: str = "Hi there! How can I help you today?"
     CHATBOT_DEFAULT_SYSTEM_PROMPT: str = "You are a helpful assistant that answers using the organization's knowledge base."
-    CHATBOT_DEFAULT_CHAT_MODEL: str = "openai/gpt-4o-mini"
+    CHATBOT_DEFAULT_CHAT_MODEL: str = "openai/gpt-6-luna"
     CHATBOT_DEFAULT_CHAT_TEMPERATURE: float = 0.7
     CHATBOT_DEFAULT_RAG_TOP_K: int = 3
     CHATBOT_DEFAULT_RAG_MAX_HISTORY: int = 25
@@ -139,10 +139,10 @@ class Settings(BaseSettings):
     HEATMAP_INGEST_CHUNK_OVERLAP: int = 100
     # Doc-level (entity_type/doc_kind/meeting_date) and chunk-level
     # (topics/action_types) classifier settings.
-    HEATMAP_INGEST_DOC_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
-    HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    HEATMAP_INGEST_DOC_CLASSIFIER_MODEL: str = "openai/gpt-6-luna"
+    HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL: str = "openai/gpt-6-luna"
     # Document summarizer (app/services/document_processing/summarizer.py).
-    DOCUMENT_SUMMARIZER_MODEL: str = "openai/gpt-4o-mini"
+    DOCUMENT_SUMMARIZER_MODEL: str = "openai/gpt-6-luna"
     # Max chunks per OpenAI Batch API submission. The API caps at 50,000
     # requests/batch, but celery-ingest is memory-capped (~2G on t4g.2xlarge):
     # loading tens of thousands of chunk_text rows OOMs the fork child
@@ -173,7 +173,7 @@ class Settings(BaseSettings):
     # Disabled by default; flip to True to enable the step2_7 stage for
     # school_scraper docs.
     HEATMAP_CONTEXT_ENABLED: bool = True
-    HEATMAP_CONTEXT_MODEL: str = "openai/gpt-4o-mini"
+    HEATMAP_CONTEXT_MODEL: str = "openai/gpt-6-luna"
     HEATMAP_CONTEXT_MAX_CONCURRENCY: int = 5
 
     # LangSmith Configuration
@@ -356,7 +356,7 @@ class Settings(BaseSettings):
     # Schema-driven crawler POC (experiment branch only). Model used by
     # scripts/school_data/schema_crawl_poc; defaults to the heatmap doc
     # classifier model when unset. Not used by SchoolScraperService.
-    SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-4o-mini"
+    SCHOOL_SCRAPER_LLM_PAGE_CLASSIFIER_MODEL: str = "openai/gpt-6-luna"
     # Hybrid crawler ranking mode. "keyword" = existing SchoolScraperService
     # discover_candidate_urls (default, unchanged behavior). "llm" = use the
     # schema-driven crawler for discovery. "both" = run both and union the

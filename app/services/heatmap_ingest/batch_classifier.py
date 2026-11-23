@@ -62,12 +62,12 @@ class BatchClassifier:
     """
 
     def __init__(self, model: str | None = None):
-        # OpenAI Batch JSONL requires bare model ids (gpt-4o-mini), not
-        # OpenRouter-style openai/gpt-4o-mini prefixes.
+        # OpenAI Batch JSONL requires bare model ids (gpt-6-luna), not
+        # OpenRouter-style openai/gpt-6-luna prefixes.
         self._model = strip_model_provider_prefix(
             model
             or getattr(
-                settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-4o-mini"
+                settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-6-luna"
             )
         )
         self._client = get_openai_batch_client()

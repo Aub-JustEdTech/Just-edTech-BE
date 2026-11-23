@@ -83,7 +83,7 @@ def route_after_reasoning(state: AgentState) -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_agent_graph(model: str = "openai/gpt-4o") -> StateGraph:
+def build_agent_graph(model: str = "openai/gpt-6-luna") -> StateGraph:
     """
     Build the uncompiled StateGraph.
 
@@ -93,7 +93,7 @@ def build_agent_graph(model: str = "openai/gpt-4o") -> StateGraph:
 
     Args:
         model: LLM model name to use for agent reasoning.
-               Defaults to 'openai/gpt-4o' for strong tool-use performance.
+               Defaults to 'openai/gpt-6-luna' for strong tool-use performance.
 
     Returns:
         An uncompiled `StateGraph[AgentState]`.

@@ -303,7 +303,7 @@ class ChatbotConfigService:
     def _get_default_chat_config(self) -> dict[str, Any]:
         """Get default chat configuration when chatbot config is missing."""
         return {
-            "model": "gpt-3.5-turbo",
+            "model": "gpt-6-luna",
             "temperature": 0.7,
             "max_tokens": settings.MAX_TOKENS,
             "system_prompt": None,
@@ -322,7 +322,7 @@ class ChatbotConfigService:
     def _get_default_rag_config(self) -> dict[str, Any]:
         """Get default RAG configuration when chatbot config is missing."""
         return {
-            "chat_model": "gpt-4o-mini",
+            "chat_model": "gpt-6-luna",
             "chat_temperature": 0.7,
             "chat_max_tokens": settings.MAX_TOKENS,
             "system_prompt": None,

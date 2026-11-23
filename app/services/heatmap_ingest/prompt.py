@@ -541,7 +541,7 @@ def build_batch_request_line(
     entity_type: str | None = None,
     meeting_date: str | None = None,
     state: str | None = None,
-    model: str = "openai/gpt-4o-mini",
+    model: str = "openai/gpt-6-luna",
 ) -> dict[str, Any]:
     """
     Build one JSONL line for OpenAI Batch API submission.

@@ -112,7 +112,7 @@ def _refuse_openrouter() -> None:
 def _openai_model() -> str:
     """Return the bare OpenAI model name (provider prefix stripped)."""
     model = getattr(
-        settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-4o-mini"
+        settings, "HEATMAP_INGEST_CHUNK_CLASSIFIER_MODEL", "openai/gpt-6-luna"
     )
     return normalize_model_name(model)
 
@@ -143,7 +143,7 @@ async def _state_for_doc_id(db, document_id: int | None) -> str | None:
 def _add_prompt_cache_key(body: dict[str, Any], key: str | None) -> dict[str, Any]:
     """Attach a stable prompt_cache_key to a Chat Completions request body.
 
-    Prompt caching is automatic for gpt-4o-mini when the prefix is long enough;
+    Prompt caching is automatic for gpt-6-luna when the prefix is long enough;
     a stable key helps route requests that share the static SYSTEM_PROMPT
     prefix to the same cache. Batch API has no separate "enable caching" flag,
     and prior runs measured cached_tokens=0 — this is best-effort, not a cost
