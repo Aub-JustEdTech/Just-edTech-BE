@@ -28,6 +28,7 @@ from app.services.llm.client import (
     get_async_openai_client,
     get_llm_api_key,
     normalize_model_name,
+    reasoning_effort_kwargs,
 )
 from app.services.web_scraper.page_schemas import DATA_TYPES, RelevantPage
 
@@ -186,6 +187,7 @@ class PageClassifier:
                 temperature=0,
                 max_completion_tokens=self._max_completion_tokens,
                 response_format=_response_format_schema(),
+                **reasoning_effort_kwargs(self._model),
             )
             raw = response.choices[0].message.content or "{}"
             payload = json.loads(raw)

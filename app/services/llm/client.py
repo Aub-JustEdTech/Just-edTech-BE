@@ -93,6 +93,18 @@ def get_cached_async_openai_client() -> AsyncOpenAI:
     return _async_client
 
 
+def reasoning_effort_kwargs(model: str) -> dict[str, Any]:
+    """`reasoning_effort` request kwarg for gpt-6* models, else empty.
+
+    gpt-6-luna on /v1/chat/completions rejects function tools and a non-default
+    temperature unless reasoning_effort is "none". Other models are untouched.
+    """
+    effort = settings.LLM_REASONING_EFFORT
+    if effort and strip_model_provider_prefix(model).startswith("gpt-6"):
+        return {"reasoning_effort": effort}
+    return {}
+
+
 def get_chat_openai_kwargs() -> dict[str, Any]:
     """Keyword arguments for langchain_openai.ChatOpenAI."""
     kwargs: dict[str, Any] = {"api_key": get_llm_api_key()}

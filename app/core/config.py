@@ -116,6 +116,12 @@ class Settings(BaseSettings):
     PINECONE_ENVIRONMENT: str | None = None
     WEAVIATE_URL: str | None = None
 
+    # reasoning_effort sent with every gpt-6* chat-completions call.
+    # On the direct OpenAI API gpt-6-luna returns HTTP 400 for function tools,
+    # and for any temperature other than 1, unless this is "none".
+    # Set to "" to omit the parameter entirely.
+    LLM_REASONING_EFFORT: str = "none"
+
     # LLM API provider: "openrouter" (default) or "openai"
     LLM_API_PROVIDER: str = "openrouter"
     # OpenRouter (primary when LLM_API_PROVIDER=openrouter)

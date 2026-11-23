@@ -17,6 +17,7 @@ from app.services.heatmap_ingest.taxonomy import (
     SPEAKER_ROLES,
     TOPICS,
 )
+from app.services.llm.client import reasoning_effort_kwargs
 
 SYSTEM_PROMPT: str = """You classify excerpts ("chunks") from K-12 US school district
 documents (board minutes, agendas, policies, public comments) into a fixed taxonomy.
@@ -574,6 +575,7 @@ def build_batch_request_line(
             ],
             "response_format": build_response_format_schema(),
             "max_completion_tokens": 300,
+            **reasoning_effort_kwargs(model),
         },
     }
 
