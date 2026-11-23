@@ -116,6 +116,11 @@ class Settings(BaseSettings):
     PINECONE_ENVIRONMENT: str | None = None
     WEAVIATE_URL: str | None = None
 
+    # reasoning_effort sent with the agentic RAG's function-tool calls.
+    # gpt-6-luna rejects function tools on /v1/chat/completions unless this is
+    # "none" (HTTP 400). Set to "" to omit the parameter entirely.
+    AGENT_REASONING_EFFORT: str = "none"
+
     # LLM API provider: "openrouter" (default) or "openai"
     LLM_API_PROVIDER: str = "openrouter"
     # OpenRouter (primary when LLM_API_PROVIDER=openrouter)

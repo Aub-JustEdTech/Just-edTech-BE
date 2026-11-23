@@ -98,10 +98,18 @@ def build_agent_graph(model: str = "openai/gpt-6-luna") -> StateGraph:
     Returns:
         An uncompiled `StateGraph[AgentState]`.
     """
+    llm_kwargs: dict[str, Any] = {}
+    if settings.AGENT_REASONING_EFFORT:
+        # Function tools on /v1/chat/completions are rejected for gpt-6-luna
+        # unless reasoning_effort is "none".
+        llm_kwargs["model_kwargs"] = {
+            "reasoning_effort": settings.AGENT_REASONING_EFFORT
+        }
     llm = ChatOpenAI(
         model=normalize_model_name(model),
         temperature=0,
         **get_chat_openai_kwargs(),
+        **llm_kwargs,
     ).bind_tools(AGENT_TOOLS)
 
     agent_reasoning_node = make_agent_reasoning_node(llm)
