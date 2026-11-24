@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.api_keys import api_keys
 from app.crud.chat_consumers import chat_consumer
+from app.crud.user_tenant_access import user_tenant_access
 from app.crud.users import user
 from app.db.connector import get_session
 from app.models.chat_consumers import ChatConsumer
@@ -27,31 +28,24 @@ async def get_db() -> AsyncSession:
         yield session
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db),
+async def _user_from_token(
+    token: str,
+    db: AsyncSession,
 ) -> User:
-    """Get current authenticated user with specific error handling for expired/invalid tokens"""
-
-    token = credentials.credentials
+    """Validate a JWT and return the corresponding User, raising HTTPException on failure."""
     user_id, verification_result = verify_token_and_get_user_id(token)
-
-    # Handle expired token
     if verification_result.is_expired:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Token expired", "expired": True},
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    # Handle invalid token
     if verification_result.is_invalid or user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Invalid token", "expired": False},
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     db_user = await user.get(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(
@@ -59,8 +53,15 @@ async def get_current_user(
             detail={"message": "Could not validate credentials", "expired": False},
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     return db_user
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Get current authenticated user with specific error handling for expired/invalid tokens"""
+    return await _user_from_token(credentials.credentials, db)
 
 
 # Role-based access control dependencies
@@ -79,13 +80,24 @@ async def get_current_super_admin(
 
 async def get_current_tenant_admin(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Require tenant admin role or higher"""
-    if not (user.is_super_admin(current_user) or user.is_tenant_admin(current_user)):
+    """Require tenant admin role or higher."""
+    from app.services.tenant_access_service import is_privileged_admin
+
+    db_user = await user.get(db, user_id=current_user.id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Could not validate credentials", "expired": False},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not is_privileged_admin(db_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Tenant admin access required"
         )
-    return current_user
+    return db_user
 
 
 async def get_current_tenant_user(
@@ -102,35 +114,156 @@ async def get_current_tenant_user(
 def require_tenant_access(check_admin_only: bool = False):
     """
     Factory function to create tenant-specific access dependency.
-    If check_admin_only=True, only tenant admins and super admins can access.
-    If check_admin_only=False, any user in the same tenant can access.
+    - super_admin: bypasses all checks
+    - tenant_admin: checked against user_tenant_access join table
+    - tenant_user: checked against their single tenant_id column
+    If check_admin_only=True, tenant_users are rejected regardless of tenant match.
     """
 
     async def check_tenant_access(
         tenant_id: int,
         current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
     ) -> User:
-        # Super admins have access to all tenants
         if user.is_super_admin(current_user):
             return current_user
 
-        # Check if user belongs to the requested tenant
+        if user.is_tenant_admin(current_user):
+            has = await user_tenant_access.has_access(
+                db, user_id=current_user.id, tenant_id=tenant_id
+            )
+            if not has:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: tenant not in your access list",
+                )
+            return current_user
+
+        # tenant_user path
+        if check_admin_only:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tenant admin access required",
+            )
         if current_user.tenant_id != tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: Different tenant",
             )
-
-        # If admin-only check is required
-        if check_admin_only and not user.is_tenant_admin(current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Tenant admin access required",
-            )
-
         return current_user
 
     return check_tenant_access
+
+
+async def resolve_effective_tenant_id(
+    current_user: User,
+    tenant_id: int | None,
+    db: AsyncSession,
+) -> int:
+    """Resolve the tenant_id a request should be scoped to, for a JWT user.
+
+    super_admin / tenant_admin: an explicit `tenant_id` query param is
+    honored (validated against `user_tenant_access` for tenant_admin;
+    super_admin bypasses that check) so they can switch tenants regardless
+    of whether they also have their own `tenant_id` set.
+    Everyone else (or an admin who omits the query param): falls back to
+    their own `tenant_id` column.
+    """
+    is_super = user.is_super_admin(current_user)
+    is_switchable_admin = is_super or user.is_tenant_admin(current_user)
+
+    if tenant_id is not None and is_switchable_admin:
+        if is_super:
+            return tenant_id
+
+        has = await user_tenant_access.has_access(
+            db, user_id=current_user.id, tenant_id=tenant_id
+        )
+        if not has:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: tenant not in your access list",
+            )
+        return tenant_id
+
+    if current_user.tenant_id is not None:
+        return current_user.tenant_id
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="tenant_id query parameter is required for admins with access to multiple tenants",
+    )
+
+
+async def get_effective_tenant_id(
+    tenant_id: int | None = Query(
+        None, description="Tenant to scope to. Required for admins with access to all tenants."
+    ),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> int:
+    """FastAPI dependency wrapper around `resolve_effective_tenant_id` for a
+    plain JWT-only route (see that function for the resolution rules)."""
+    return await resolve_effective_tenant_id(current_user, tenant_id, db)
+
+
+async def get_authorized_tenant_id(
+    tenant_id: int = Query(
+        ...,
+        description=(
+            "Tenant ID to scope the request to. Required — the JWT claim is "
+            "not used because a user may have access to multiple tenants "
+            "(via user_tenant_access). super_admin bypasses the access check; "
+            "tenant_admin must have a row in user_tenant_access."
+        ),
+    ),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> int:
+    """Authorize a required `tenant_id` query param against user_tenant_access.
+
+    Unlike `get_effective_tenant_id`, there is no JWT fallback — the caller
+    must pass `tenant_id` explicitly. A user can have access to multiple
+    tenants, so the JWT's single `tenant_id` claim is not a safe default.
+    """
+    if user.is_super_admin(current_user):
+        return tenant_id
+
+    if user.is_tenant_admin(current_user):
+        has = await user_tenant_access.has_access(
+            db, user_id=current_user.id, tenant_id=tenant_id
+        )
+        if not has:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: tenant not in your access list",
+            )
+        return tenant_id
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Tenant admin access required",
+    )
+
+
+async def resolve_chat_tenant_id(
+    principal: User | ChatConsumer,
+    tenant_id: int | None,
+    db: AsyncSession,
+) -> int:
+    """Resolve the tenant_id a chat/RAG request should be scoped to, for
+    either principal type returned by `get_current_user_or_chat_consumer` /
+    `get_principal_with_api_key`.
+
+    A ChatConsumer always carries a concrete `tenant_id` already. A JWT User
+    is resolved via the same rules as `resolve_effective_tenant_id` — without
+    this, a cross-tenant super_admin/tenant_admin (whose own `tenant_id`
+    column is NULL) would silently scope every chat/RAG call to `tenant_id
+    is None` instead of the tenant selected in the UI.
+    """
+    if isinstance(principal, ChatConsumer):
+        return principal.tenant_id
+    return await resolve_effective_tenant_id(principal, tenant_id, db)
 
 
 def require_role(*allowed_roles: str) -> Callable:
@@ -223,35 +356,7 @@ async def get_current_user_or_chat_consumer(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required. Provide either X-Chat-Consumer-UUID header/query parameter or Bearer token",
         )
-
-    token = credentials.credentials
-    user_id, verification_result = verify_token_and_get_user_id(token)
-
-    # Handle expired token
-    if verification_result.is_expired:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Token expired", "expired": True},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Handle invalid token
-    if verification_result.is_invalid or user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Invalid token", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    db_user = await user.get(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Could not validate credentials", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return db_user
+    return await _user_from_token(credentials.credentials, db)
 
 
 # Convenience aliases for common role combinations
@@ -285,81 +390,64 @@ async def require_api_key(
 
 
 async def get_principal_with_api_key(
-    api_key_info: dict = Depends(require_api_key),
     credentials: HTTPAuthorizationCredentials | None = Depends(optional_security),
     x_chat_consumer_uuid: str | None = Header(None, alias="X-Chat-Consumer-UUID"),
     chat_consumer_uuid: str | None = Query(None),
+    x_api_key: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> User | ChatConsumer:
     """
-    Require a valid API key AND one of:
-      - a valid JWT user
-      - a valid chat consumer UUID (via header or query)
+    Authenticate either:
+      - a JWT tenant user (super_admin, tenant_admin, or tenant_user) — no API
+        key required, since their own tenant_id already scopes the request
+      - an anonymous chat consumer — an API key is still mandatory here, since
+        a bare chat-consumer UUID alone is not proof of tenant authorization
 
-    Ensures the tenant from API key matches the principal tenant.
     Returns the authenticated principal (User or ChatConsumer).
     """
-    # Try chat consumer auth first if UUID provided
     uuid_str = x_chat_consumer_uuid or chat_consumer_uuid
-    if uuid_str:
-        try:
-            consumer_uuid = UUID(uuid_str)
-        except ValueError as err:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid UUID format",
-            ) from err
-        db_chat_consumer = await chat_consumer.get_by_uuid(db, consumer_uuid)
-        if not db_chat_consumer:
+
+    if not uuid_str:
+        # No consumer UUID presented -> this must be a JWT tenant user.
+        if not credentials:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid chat consumer UUID",
+                detail="Authentication required: provide Bearer token or chat UUID",
             )
-        if db_chat_consumer.tenant_id != api_key_info["tenant_id"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="API key tenant mismatch",
-            )
-        return db_chat_consumer
+        return await _user_from_token(credentials.credentials, db)
 
-    # Else require JWT user
-    if not credentials:
+    # Chat consumer path — API key remains mandatory, exactly as before.
+    if not x_api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required: provide Bearer token or chat UUID",
+            detail="Missing API key",
+        )
+    api_key_record = await api_keys.get_by_key(db, x_api_key)
+    if not api_key_record:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
         )
 
-    token = credentials.credentials
-    user_id, verification_result = verify_token_and_get_user_id(token)
-    if verification_result.is_expired:
+    try:
+        consumer_uuid = UUID(uuid_str)
+    except ValueError as err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid UUID format",
+        ) from err
+    db_chat_consumer = await chat_consumer.get_by_uuid(db, consumer_uuid)
+    if not db_chat_consumer:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Token expired", "expired": True},
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid chat consumer UUID",
         )
-    if verification_result.is_invalid or user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Invalid token", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    db_user = await user.get(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Could not validate credentials", "expired": False},
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if db_user.tenant_id != api_key_info["tenant_id"]:
+    if db_chat_consumer.tenant_id != api_key_record.tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="API key tenant mismatch",
         )
+    return db_chat_consumer
 
-    return db_user
 
-
-# Convenience alias for endpoints: require API key + (user or chat consumer)
+# Convenience alias for endpoints: JWT tenant user, or API-key-verified chat consumer
 require_api_key_user_or_chat_consumer = Depends(get_principal_with_api_key)

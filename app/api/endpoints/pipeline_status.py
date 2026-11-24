@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.documents import Document
 from app.models.processing_stages import DocumentProcessingStage
 from app.schemas.users import User
-from app.utils.dependencies import get_current_tenant_user, get_db
+from app.utils.dependencies import (
+    get_current_tenant_user,
+    get_db,
+    get_effective_tenant_id,
+)
 from app.utils.redis_pipeline import get_redis_tracker
 from app.utils.response import success_response
 
@@ -21,7 +25,7 @@ router = APIRouter(prefix="/pipeline")
 async def get_pipeline_status(
     document_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get detailed pipeline status for a document.
@@ -96,7 +100,7 @@ async def get_pipeline_status(
             detail="Document not found",
         )
 
-    if document.tenant_id != current_user.tenant_id:
+    if document.tenant_id != tenant_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied",
@@ -320,7 +324,7 @@ async def get_batch_progress(
 async def get_batch_status(
     document_ids: list[int],
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_tenant_user),
+    tenant_id: int = Depends(get_effective_tenant_id),
 ):
     """
     Get status for multiple documents in a single API call.
@@ -387,7 +391,7 @@ async def get_batch_status(
     # Verify all documents belong to user's tenant
     result = await db.execute(
         select(Document).where(
-            Document.id.in_(document_ids), Document.tenant_id == current_user.tenant_id
+            Document.id.in_(document_ids), Document.tenant_id == tenant_id
         )
     )
     documents = result.scalars().all()

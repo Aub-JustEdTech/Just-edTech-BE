@@ -1,0 +1,502 @@
+[
+  {
+    "name": "Abby Kelley Foster Charter Public (District)",
+    "org_code": "04450000",
+    "website": "https://www.akfcs.org"
+  },
+  {
+    "name": "Abington",
+    "org_code": "00010000",
+    "website": "https://www.abingtonps.org"
+  },
+  {
+    "name": "Academy Of the Pacific Rim Charter Public (District)",
+    "org_code": "04120000",
+    "website": "https://www.pacrim.org"
+  },
+  {
+    "name": "Acton-Boxborough",
+    "org_code": "06000000",
+    "website": "http://www.abschools.org/"
+  },
+  {
+    "name": "Acushnet",
+    "org_code": "00030000",
+    "website": "https://www.acushnetschools.us"
+  },
+  {
+    "name": "Advanced Math and Science Academy Charter (District)",
+    "org_code": "04300000",
+    "website": "https://www.amsacs.org"
+  },
+  {
+    "name": "Agawam",
+    "org_code": "00050000",
+    "website": "https://www.agawamed.org/"
+  },
+  {
+    "name": "Alma del Mar Charter School (District)",
+    "org_code": "04090000",
+    "website": "https://almadelmar.org"
+  },
+  {
+    "name": "Amesbury",
+    "org_code": "00070000",
+    "website": "https://schools.amesburyma.gov/"
+  },
+  {
+    "name": "Amherst",
+    "org_code": "00080000",
+    "website": "https://arps.org"
+  },
+  {
+    "name": "Amherst-Pelham",
+    "org_code": "06050000",
+    "website": "https://arps.org"
+  },
+  {
+    "name": "Andover",
+    "org_code": "00090000",
+    "website": "https://www.aps1.net"
+  },
+  {
+    "name": "Argosy Collegiate Charter School (District)",
+    "org_code": "35090000",
+    "website": "https://www.argosycollegiate.org"
+  },
+  {
+    "name": "Arlington",
+    "org_code": "00100000",
+    "website": "https://www.arlington.k12.ma.us/"
+  },
+  {
+    "name": "Ashburnham-Westminster",
+    "org_code": "06100000",
+    "website": "https://www.awrsd.org"
+  },
+  {
+    "name": "Ashland",
+    "org_code": "00140000",
+    "website": "http://www.ashland.k12.ma.us"
+  },
+  {
+    "name": "Assabet Valley Regional Vocational Technical",
+    "org_code": "08010000",
+    "website": "https://www.assabet.org"
+  },
+  {
+    "name": "Athol-Royalston",
+    "org_code": "06150000",
+    "website": "https://www.arrsd.org"
+  },
+  {
+    "name": "Atlantis Charter (District)",
+    "org_code": "04910000",
+    "website": "https://www.atlantiscs.org"
+  },
+  {
+    "name": "Attleboro",
+    "org_code": "00160000",
+    "website": "https://www.attleboroschools.com"
+  },
+  {
+    "name": "Auburn",
+    "org_code": "00170000",
+    "website": "https://www.auburn.k12.ma.us"
+  },
+  {
+    "name": "Avon",
+    "org_code": "00180000",
+    "website": "https://avon.k12.ma.us"
+  },
+  {
+    "name": "Ayer Shirley School District",
+    "org_code": "06160000",
+    "website": "https://www.asrsd.org/"
+  },
+  {
+    "name": "Barnstable",
+    "org_code": "00200000",
+    "website": "http://www.barnstable.k12.ma.us/"
+  },
+  {
+    "name": "Baystate Academy Charter Public School (District)",
+    "org_code": "35020000",
+    "website": "https://www.bacps.net"
+  },
+  {
+    "name": "Bedford",
+    "org_code": "00230000",
+    "website": "https://bedfordps.org"
+  },
+  {
+    "name": "Belchertown",
+    "org_code": "00240000",
+    "website": "https://www.belchertownps.org"
+  },
+  {
+    "name": "Bellingham",
+    "org_code": "00250000",
+    "website": "https://www.bellinghamk12.org"
+  },
+  {
+    "name": "Belmont",
+    "org_code": "00260000",
+    "website": "https://www.belmont.k12.ma.us"
+  },
+  {
+    "name": "Benjamin Banneker Charter Public (District)",
+    "org_code": "04200000",
+    "website": "https://www.banneker.org"
+  },
+  {
+    "name": "Benjamin Franklin Classical Charter Public (District)",
+    "org_code": "04470000",
+    "website": "https://www.bfccps.org"
+  },
+  {
+    "name": "Berkley",
+    "org_code": "00270000",
+    "website": "https://www.BerkleyPublicSchools.org"
+  },
+  {
+    "name": "Berkshire Arts and Technology Charter Public (District)",
+    "org_code": "04140000",
+    "website": "https://www.bartcharter.org"
+  },
+  {
+    "name": "Berkshire Hills",
+    "org_code": "06180000",
+    "website": "https://www.bhrsd.org"
+  },
+  {
+    "name": "Berlin-Boylston",
+    "org_code": "06200000",
+    "website": "https://www.bbrsd.org"
+  },
+  {
+    "name": "Beverly",
+    "org_code": "00300000",
+    "website": "https://www.beverlyschools.org"
+  },
+  {
+    "name": "Billerica",
+    "org_code": "00310000",
+    "website": "https://www.billericak12.com"
+  },
+  {
+    "name": "Blackstone Valley Regional Vocational Technical",
+    "org_code": "08050000",
+    "website": "https://www.valleytech.k12.ma.us"
+  },
+  {
+    "name": "Blackstone-Millville",
+    "org_code": "06220000",
+    "website": "https://www.bmrsd.net"
+  },
+  {
+    "name": "Blue Hills Regional Vocational Technical",
+    "org_code": "08060000",
+    "website": "https://www.bluehills.org"
+  },
+  {
+    "name": "Boston",
+    "org_code": "00350000",
+    "website": "https://www.bostonpublicschools.org"
+  },
+  {
+    "name": "Boston Collegiate Charter (District)",
+    "org_code": "04490000",
+    "website": "https://www.bostoncollegiate.org"
+  },
+  {
+    "name": "Boston Day and Evening Academy Charter (District)",
+    "org_code": "04240000",
+    "website": "https://www.bdea.com"
+  },
+  {
+    "name": "Boston Green Academy Horace Mann Charter School (District)",
+    "org_code": "04110000",
+    "website": "https://www.bostongreenacademy.org"
+  },
+  {
+    "name": "Boston Preparatory Charter Public (District)",
+    "org_code": "04160000",
+    "website": "https://www.bostonprep.org"
+  },
+  {
+    "name": "Boston Renaissance Charter Public (District)",
+    "org_code": "04810000",
+    "website": "https://www.bostonrenaissance.org"
+  },
+  {
+    "name": "Bourne",
+    "org_code": "00360000",
+    "website": "https://www.bourneps.org/"
+  },
+  {
+    "name": "Boxford",
+    "org_code": "00380000",
+    "website": "https://www.tritownschoolunion.com"
+  },
+  {
+    "name": "Braintree",
+    "org_code": "00400000",
+    "website": "http://www.braintreeschools.org"
+  },
+  {
+    "name": "Brewster",
+    "org_code": "00410000",
+    "website": "http://nausetschools.org"
+  },
+  {
+    "name": "Bridge Boston Charter School (District)",
+    "org_code": "04170000",
+    "website": "https://www.bridgebostoncs.org"
+  },
+  {
+    "name": "Bridgewater-Raynham",
+    "org_code": "06250000",
+    "website": "https://bridge-rayn.org"
+  },
+  {
+    "name": "Brimfield",
+    "org_code": "00430000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Bristol County Agricultural",
+    "org_code": "09100000",
+    "website": "https://www.bristolaggie.org"
+  },
+  {
+    "name": "Bristol-Plymouth Regional Vocational Technical",
+    "org_code": "08100000",
+    "website": "https://www.bptech.org"
+  },
+  {
+    "name": "Brockton",
+    "org_code": "00440000",
+    "website": "https://www.bpsma.org"
+  },
+  {
+    "name": "Brooke Charter School (District)",
+    "org_code": "04280000",
+    "website": "https://www.ebrooke.org"
+  },
+  {
+    "name": "Brookfield",
+    "org_code": "00450000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Brookline",
+    "org_code": "00460000",
+    "website": "http://www.brookline.k12.ma.us/"
+  },
+  {
+    "name": "Burlington",
+    "org_code": "00480000",
+    "website": "https://www.burlingtonpublicschools.org"
+  },
+  {
+    "name": "Cambridge",
+    "org_code": "00490000",
+    "website": "https://www.cpsd.us"
+  },
+  {
+    "name": "Canton",
+    "org_code": "00500000",
+    "website": "https://www.cantonma.org/"
+  },
+  {
+    "name": "Cape Cod Lighthouse Charter (District)",
+    "org_code": "04320000",
+    "website": "http://www.cclighthouseschool.org"
+  },
+  {
+    "name": "Cape Cod Regional Vocational Technical",
+    "org_code": "08150000",
+    "website": "https://capetech.us"
+  },
+  {
+    "name": "Carlisle",
+    "org_code": "00510000",
+    "website": "https://www.carlisle.k12.ma.us"
+  },
+  {
+    "name": "Carver",
+    "org_code": "00520000",
+    "website": "https://www.carver.org"
+  },
+  {
+    "name": "Central Berkshire",
+    "org_code": "06350000",
+    "website": "https://www.cbrsd.org"
+  },
+  {
+    "name": "Chelmsford",
+    "org_code": "00560000",
+    "website": "https://www.chelmsford.k12.ma.us"
+  },
+  {
+    "name": "Chelsea",
+    "org_code": "00570000",
+    "website": "https://www.chelseaschools.com/"
+  },
+  {
+    "name": "Chesterfield-Goshen",
+    "org_code": "06320000",
+    "website": "https://www.hr-k12.org"
+  },
+  {
+    "name": "Chicopee",
+    "org_code": "00610000",
+    "website": "https://www.chicopeeps.org"
+  },
+  {
+    "name": "Christa McAuliffe Charter School (District)",
+    "org_code": "04180000",
+    "website": "https://www.mcauliffecharter.org"
+  },
+  {
+    "name": "Clarksburg",
+    "org_code": "00630000",
+    "website": "https://www.clarksburgschool.org"
+  },
+  {
+    "name": "Clinton",
+    "org_code": "00640000",
+    "website": "https://www.clinton.k12.ma.us"
+  },
+  {
+    "name": "Codman Academy Charter Public (District)",
+    "org_code": "04380000",
+    "website": "https://www.codmanacademy.org"
+  },
+  {
+    "name": "Cohasset",
+    "org_code": "00650000",
+    "website": "http://www.cohassetk12.org"
+  },
+  {
+    "name": "Collegiate Charter School of Lowell (District)",
+    "org_code": "35030000",
+    "website": "https://collegiatelowell.org"
+  },
+  {
+    "name": "Community Charter School of Cambridge (District)",
+    "org_code": "04360000",
+    "website": "https://www.ccscambridge.org"
+  },
+  {
+    "name": "Community Day Charter Public School (District)",
+    "org_code": "04400000",
+    "website": "https://www.cdcps.org"
+  },
+  {
+    "name": "Concord",
+    "org_code": "00670000",
+    "website": "https://www.concordpublicschools.net"
+  },
+  {
+    "name": "Concord-Carlisle",
+    "org_code": "06400000",
+    "website": "https://www.concordps.org"
+  },
+  {
+    "name": "Conservatory Lab Charter (District)",
+    "org_code": "04390000",
+    "website": "https://www.conservatorylab.org"
+  },
+  {
+    "name": "Conway",
+    "org_code": "00680000",
+    "website": "https://www.frsu38.org"
+  },
+  {
+    "name": "Danvers",
+    "org_code": "00710000",
+    "website": "https://danverspublicschools.org"
+  },
+  {
+    "name": "Dartmouth",
+    "org_code": "00720000",
+    "website": "https://www.dartmouth.school"
+  },
+  {
+    "name": "Dedham",
+    "org_code": "00730000",
+    "website": "http://www.dedham.k12.ma.us"
+  },
+  {
+    "name": "Deerfield",
+    "org_code": "00740000",
+    "website": "https://www.frsu38.org"
+  },
+  {
+    "name": "Dennis-Yarmouth",
+    "org_code": "06450000",
+    "website": "https://www.dy-regional.k12.ma.us"
+  },
+  {
+    "name": "Dighton-Rehoboth",
+    "org_code": "06500000",
+    "website": "https://www.drregional.org"
+  },
+  {
+    "name": "Douglas",
+    "org_code": "00770000",
+    "website": "https://www.douglasps.net"
+  },
+  {
+    "name": "Dover",
+    "org_code": "00780000",
+    "website": "http://www.doversherborn.org"
+  },
+  {
+    "name": "Dover-Sherborn",
+    "org_code": "06550000",
+    "website": "http://www.doversherborn.org"
+  },
+  {
+    "name": "Dracut",
+    "org_code": "00790000",
+    "website": "https://dracutps.org"
+  },
+  {
+    "name": "Dudley Street Neighborhood Charter School (District)",
+    "org_code": "04070000",
+    "website": "http://www.dudleystreetschool.org/"
+  },
+  {
+    "name": "Dudley-Charlton Reg",
+    "org_code": "06580000",
+    "website": "http://dcrsd.org"
+  },
+  {
+    "name": "Duxbury",
+    "org_code": "00820000",
+    "website": "https://www.duxbury.k12.ma.us"
+  },
+  {
+    "name": "East Bridgewater",
+    "org_code": "00830000",
+    "website": "https://www.ebps.net"
+  },
+  {
+    "name": "East Longmeadow",
+    "org_code": "00870000",
+    "website": "https://www.eastlongmeadowma.gov/378/Schools"
+  },
+  {
+    "name": "Eastham",
+    "org_code": "00850000",
+    "website": "http://nausetschools.org"
+  },
+  {
+    "name": "Easthampton",
+    "org_code": "00860000",
+    "website": "https://www.epsd.us"
+  }
+]

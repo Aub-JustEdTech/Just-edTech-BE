@@ -35,6 +35,9 @@ class AgentState(TypedDict):
     iteration_count: int   # Incremented by tool_executor each cycle
     max_iterations: int    # Ceiling; defaults to settings.AGENT_MAX_ITERATIONS
     force_answer: bool     # Set by guard_rails when limits are hit
+    # Set by guard_rails when force_answer trips: "max_iterations" |
+    # "token_budget". None when the agent finished normally.
+    termination_reason: str | None
 
     # ------------------------------------------------------------------ #
     # Streaming / observability                                            #

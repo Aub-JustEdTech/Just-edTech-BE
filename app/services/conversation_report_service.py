@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.conversations import conversation as conversation_crud
 from app.models.conversations import Conversation, Message
 from app.services.llm_service import llm_service
+from app.services.report_branding import wrap_branded_document
 
 logger = logging.getLogger(__name__)
 
@@ -294,138 +295,84 @@ class ConversationReportService:
         """
         # Use generated report title (max 5 words)
         title = report_title or "Conversation Report"
-        
-        # Build HTML content
-        html_parts = [
-            '<!DOCTYPE html>',
-            '<html>',
-            '<head>',
-            '<meta charset="UTF-8">',
-            '<style>',
-            '@page {',
-            '    size: letter;',
-            '    margin: 0.75in;',
-            '}',
-            'body {',
-            '    font-family: "Helvetica", "Arial", sans-serif;',
-            '    font-size: 10pt;',
-            '    color: #333;',
-            '    line-height: 1.5;',
-            '}',
-            'h1 {',
-            '    font-size: 18pt;',
-            '    color: #1a1a1a;',
-            '    margin: 0 0 20px 0;',
-            '    padding-bottom: 15px;',
-            '    border-bottom: 1px solid #b3b3b3;',
-            '    font-weight: bold;',
-            '}',
-            'h2 {',
-            '    font-size: 13pt;',
-            '    color: #2c5aa0;',
-            '    margin: 20px 0 10px 0;',
-            '    font-weight: bold;',
-            '}',
-            'p {',
-            '    margin: 0 0 12px 0;',
-            '    text-align: justify;',
-            '}',
-            'ul {',
-            '    margin: 8px 0;',
-            '    padding-left: 20px;',
-            '}',
-            'li {',
-            '    margin: 6px 0;',
-            '}',
-            'strong {',
-            '    font-weight: bold;',
-            '    color: #1a1a1a;',
-            '}',
-            '</style>',
-            '</head>',
-            '<body>',
-            f'<h1>{self._escape_html(title)}</h1>',
+
+        body_parts = [
+            f"<h1>{self._escape_html(title)}</h1>",
         ]
-        
+
         # Parse report content
         lines = report_text.split("\n")
-        current_section = []
         in_list = False
-        
+
         for line in lines:
             line = line.strip()
-            
+
             # Skip markdown headings like "## Professional Summary Report"
             if line.startswith("#"):
                 continue
-            
+
             if not line:
                 # Empty line - close any open list
                 if in_list:
-                    html_parts.append('</ul>')
+                    body_parts.append("</ul>")
                     in_list = False
                 continue
-            
+
             # Check if line is a section heading (all caps)
             if line.isupper() and len(line) > 3:
                 # Close any open list
                 if in_list:
-                    html_parts.append('</ul>')
+                    body_parts.append("</ul>")
                     in_list = False
-                
+
                 heading_text = line.rstrip(":")
-                html_parts.append(f'<h2>{self._escape_html(heading_text)}</h2>')
-            
+                body_parts.append(f"<h2>{self._escape_html(heading_text)}</h2>")
+
             # Check for bullet points
             elif line.startswith("•") or line.startswith("-") or line.startswith("*"):
                 bullet_text = line.lstrip("•-* ").strip()
                 bullet_html = self._convert_markdown_to_html(bullet_text)
-                
+
                 if not in_list:
-                    html_parts.append('<ul>')
+                    body_parts.append("<ul>")
                     in_list = True
-                
-                html_parts.append(f'<li>{bullet_html}</li>')
-            
+
+                body_parts.append(f"<li>{bullet_html}</li>")
+
             # Check for numbered lists
             elif len(line) > 0 and line[0].isdigit() and len(line) > 2 and line[1:3] in (". ", ") "):
                 # Close bullet list if open
                 if in_list:
-                    html_parts.append('</ul>')
+                    body_parts.append("</ul>")
                     in_list = False
-                
+
                 list_html = self._convert_markdown_to_html(line)
-                html_parts.append(f'<p>{list_html}</p>')
-            
+                body_parts.append(f"<p>{list_html}</p>")
+
             else:
                 # Regular paragraph
                 if in_list:
-                    html_parts.append('</ul>')
+                    body_parts.append("</ul>")
                     in_list = False
-                
+
                 para_html = self._convert_markdown_to_html(line)
-                html_parts.append(f'<p>{para_html}</p>')
-        
+                body_parts.append(f"<p>{para_html}</p>")
+
         # Close any open list
         if in_list:
-            html_parts.append('</ul>')
-        
-        html_parts.extend([
-            '</body>',
-            '</html>',
-        ])
-        
-        # Generate HTML string
-        html_string = '\n'.join(html_parts)
-        
+            body_parts.append("</ul>")
+
+        html_string = wrap_branded_document("\n".join(body_parts))
+
         # Generate PDF using WeasyPrint (lazy import to avoid loading at startup)
         from weasyprint import HTML
+
         pdf_bytes = HTML(string=html_string).write_pdf()
-        
+
         # Return as BytesIO buffer
         buffer = BytesIO(pdf_bytes)
         buffer.seek(0)
-        
+
         return buffer
     
     def _escape_html(self, text: str) -> str:

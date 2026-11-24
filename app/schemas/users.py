@@ -5,7 +5,7 @@ User schemas for request/response validation.
 import re
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, model_validator, validator
 
 
 class UserBase(BaseModel):
@@ -50,7 +50,7 @@ class UserInDB(UserBase):
     """Schema for user in database"""
 
     id: int
-    tenant_id: int
+    tenant_id: int | None = None
     password_hash: str
     role_id: int | None = None
 
@@ -62,7 +62,7 @@ class User(UserBase):
     """Schema for user response"""
 
     id: int
-    tenant_id: int
+    tenant_id: int | None = None
     role_id: int | None = None
     role_name: str | None = None  # Populated from relationship
     tenant_name: str | None = None  # Populated from relationship
@@ -147,8 +147,41 @@ class BulkInvitationCreateRequest(BaseModel):
 
 class InvitationValidateResponse(BaseModel):
     email: EmailStr
-    tenant_id: int
+    tenant_id: int | None = None
     role_id: int | None = None
+
+
+class UnifiedInvite(BaseModel):
+    email: EmailStr
+    tenant_id: int | None = None
+
+
+class UnifiedInvitationRequest(BaseModel):
+    invites: list[UnifiedInvite]
+    role_id: int
+
+    @validator("invites")
+    def validate_invites(cls, v):
+        if len(v) == 0:
+            raise ValueError("At least one email is required")
+        if len(v) > 9:
+            raise ValueError("Maximum 9 emails allowed per request")
+        normalized = [i.email.lower().strip() for i in v]
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Duplicate emails are not allowed")
+        return v
+
+    @model_validator(mode="after")
+    def tenant_required_for_user(self) -> "UnifiedInvitationRequest":
+        TENANT_USER_ROLE_ID = 3
+        if self.role_id == TENANT_USER_ROLE_ID:
+            missing = [i.email for i in self.invites if i.tenant_id is None]
+            if missing:
+                raise ValueError(
+                    "tenant_id is required for each invite when inviting a tenant_user: "
+                    + ", ".join(missing)
+                )
+        return self
 
 
 class BulkInvitationResponse(BaseModel):

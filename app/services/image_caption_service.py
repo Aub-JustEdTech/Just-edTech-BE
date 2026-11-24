@@ -1,27 +1,29 @@
 """
-Image caption service using GPT-4o vision for generating context-aware captions.
+Image caption service using vision for generating context-aware captions.
 """
 
 import base64
 import logging
-from pathlib import Path
-from typing import Any
 
-from openai import AsyncOpenAI
-
-from app.core.config import settings
+from app.services.llm.client import (
+    get_async_openai_client,
+    normalize_model_name,
+    reasoning_effort_kwargs,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class ImageCaptionService:
-    """Service for generating image captions using GPT-4o vision"""
+    """Service for generating image captions using vision"""
 
     def __init__(self):
         """Initialize the image caption service"""
-        self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
-        if not self.client:
-            logger.warning("OpenAI API key not configured. Image captioning will be disabled.")
+        try:
+            self.client = get_async_openai_client()
+        except ValueError:
+            self.client = None
+            logger.warning("LLM API key not configured. Image captioning will be disabled.")
 
     async def generate_caption(
         self,
@@ -30,7 +32,7 @@ class ImageCaptionService:
         surrounding_text_after: str | None = None,
     ) -> str:
         """
-        Generate a caption for an image using GPT-4o vision.
+        Generate a caption for an image using vision.
 
         Args:
             image_path: Path to the image file
@@ -75,9 +77,10 @@ The caption should:
 
 Generate a detailed caption that captures both visual content and contextual meaning:"""
 
-            # Call GPT-4o vision
+            # Call vision
+            model = normalize_model_name("openai/gpt-6-luna")
             response = await self.client.chat.completions.create(
-                model="gpt-4o",
+                model=model,
                 messages=[
                     {
                         "role": "user",
@@ -93,8 +96,9 @@ Generate a detailed caption that captures both visual content and contextual mea
                         ],
                     }
                 ],
-                max_tokens=400,  # Increased for more detailed captions
+                max_completion_tokens=400,  # Increased for more detailed captions
                 temperature=0.2,  # Lower temperature for more consistent, detailed captions
+                **reasoning_effort_kwargs(model),
             )
 
             caption = response.choices[0].message.content.strip()

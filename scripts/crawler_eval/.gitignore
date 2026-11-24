@@ -1,0 +1,4 @@
+# Generated eval report and structured JSON — keep out of git.
+eval_report.md
+*.json
+fixtures/*.md

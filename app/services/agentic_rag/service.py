@@ -48,7 +48,7 @@ class AgenticRAGService:
     matches the signature of `process_rag_query_with_citations`.
     """
 
-    def __init__(self, model: str = "gpt-4o"):
+    def __init__(self, model: str = "gpt-6-luna"):
         self._graph = build_agent_graph(model=model)
         # Compiled graph without checkpointing — used as a fallback and cached
         # for requests that don't need conversation persistence.
@@ -100,7 +100,7 @@ class AgenticRAGService:
                 "tenant_id": tenant_id,
                 "chatbot_config_id": chatbot_config_id,
             },
-            "recursion_limit": settings.AGENT_MAX_ITERATIONS * 3,
+            "recursion_limit": settings.AGENT_MAX_ITERATIONS * 4,
         }
 
         try:
@@ -185,29 +185,34 @@ class AgenticRAGService:
         if not response_text:
             response_text = "I was unable to produce an answer from the available documents."
 
-        # Build CitationCreate objects
+        # Build CitationCreate objects. Only keep citations that point at a
+        # Document (`/documents/{id}`); never scrape/resource URLs or `#`.
         raw_citations: list[dict] = state.get("citations") or []
         citations = []
         for i, c in enumerate(raw_citations):
+            document_url = (c.get("document_url") or "").strip()
+            if not document_url.startswith("/documents/"):
+                continue
             citations.append(
                 CitationCreate(
                     document_title=c.get("document_title", ""),
-                    document_url=c.get("document_url", "#"),
+                    document_url=document_url,
                     snippet=c.get("snippet", ""),
                     position=c.get("position", i + 1),
                     page_number=c.get("page_number"),
                 )
             )
 
-        # Metadata — match the shape expected by ChatService
+        # Metadata — match the shape expected by ChatService / conversations API
         token_usage: dict = state.get("token_usage") or {}
         metadata: dict[str, Any] = {
             "tokens_used": token_usage.get("total_tokens", 0),
             "input_tokens": token_usage.get("input_tokens", 0),
             "output_tokens": token_usage.get("output_tokens", 0),
-            "chunks_retrieved": len(raw_citations),
-            "model": "gpt-4o",
+            "chunks_retrieved": len(citations),
+            "model": "gpt-6-luna",
             "agent_iterations": state.get("iteration_count", 0),
+            "termination_reason": state.get("termination_reason"),
             "status_updates": state.get("status_updates") or [],
         }
 

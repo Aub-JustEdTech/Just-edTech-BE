@@ -1,0 +1,472 @@
+[
+  {
+    "name": "Acton-Boxborough",
+    "org_code": "06000000",
+    "website": "http://www.abschools.org/"
+  },
+  {
+    "name": "Ashburnham-Westminster",
+    "org_code": "06100000",
+    "website": "https://www.awrsd.org"
+  },
+  {
+    "name": "Ashland",
+    "org_code": "00140000",
+    "website": "http://www.ashland.k12.ma.us"
+  },
+  {
+    "name": "Athol-Royalston",
+    "org_code": "06150000",
+    "website": "https://www.arrsd.org"
+  },
+  {
+    "name": "Auburn",
+    "org_code": "00170000",
+    "website": "https://www.auburn.k12.ma.us"
+  },
+  {
+    "name": "Avon",
+    "org_code": "00180000",
+    "website": "https://avon.k12.ma.us"
+  },
+  {
+    "name": "Bedford",
+    "org_code": "00230000",
+    "website": "https://bedfordps.org"
+  },
+  {
+    "name": "Bellingham",
+    "org_code": "00250000",
+    "website": "https://www.bellinghamk12.org"
+  },
+  {
+    "name": "Berkshire Arts and Technology Charter Public (District)",
+    "org_code": "04140000",
+    "website": "https://www.bartcharter.org"
+  },
+  {
+    "name": "Berkshire Hills",
+    "org_code": "06180000",
+    "website": "https://www.bhrsd.org"
+  },
+  {
+    "name": "Berlin-Boylston",
+    "org_code": "06200000",
+    "website": "https://www.bbrsd.org"
+  },
+  {
+    "name": "Boxford",
+    "org_code": "00380000",
+    "website": "https://www.tritownschoolunion.com"
+  },
+  {
+    "name": "Bridge Boston Charter School (District)",
+    "org_code": "04170000",
+    "website": "https://www.bridgebostoncs.org"
+  },
+  {
+    "name": "Brimfield",
+    "org_code": "00430000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Bristol County Agricultural",
+    "org_code": "09100000",
+    "website": "https://www.bristolaggie.org"
+  },
+  {
+    "name": "Bristol-Plymouth Regional Vocational Technical",
+    "org_code": "08100000",
+    "website": "https://www.bptech.org"
+  },
+  {
+    "name": "Brookfield",
+    "org_code": "00450000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Burlington",
+    "org_code": "00480000",
+    "website": "https://www.burlingtonpublicschools.org"
+  },
+  {
+    "name": "Canton",
+    "org_code": "00500000",
+    "website": "https://www.cantonma.org/"
+  },
+  {
+    "name": "Clinton",
+    "org_code": "00640000",
+    "website": "https://www.clinton.k12.ma.us"
+  },
+  {
+    "name": "Collegiate Charter School of Lowell (District)",
+    "org_code": "35030000",
+    "website": "https://collegiatelowell.org"
+  },
+  {
+    "name": "Conservatory Lab Charter (District)",
+    "org_code": "04390000",
+    "website": "https://www.conservatorylab.org"
+  },
+  {
+    "name": "Dedham",
+    "org_code": "00730000",
+    "website": "http://www.dedham.k12.ma.us"
+  },
+  {
+    "name": "Dennis-Yarmouth",
+    "org_code": "06450000",
+    "website": "https://www.dy-regional.k12.ma.us"
+  },
+  {
+    "name": "Duxbury",
+    "org_code": "00820000",
+    "website": "https://www.duxbury.k12.ma.us"
+  },
+  {
+    "name": "East Bridgewater",
+    "org_code": "00830000",
+    "website": "https://www.ebps.net"
+  },
+  {
+    "name": "Falmouth",
+    "org_code": "00960000",
+    "website": "https://www.falmouth.k12.ma.us"
+  },
+  {
+    "name": "Fitchburg",
+    "org_code": "00970000",
+    "website": "http://www.fitchburgschools.org"
+  },
+  {
+    "name": "Freetown-Lakeville",
+    "org_code": "06650000",
+    "website": "https://www.freelake.org"
+  },
+  {
+    "name": "Gardner",
+    "org_code": "01030000",
+    "website": "https://www.gardnerk12.org"
+  },
+  {
+    "name": "Greater New Bedford Regional Vocational Technical",
+    "org_code": "08250000",
+    "website": "http://www.gnbvt.edu"
+  },
+  {
+    "name": "Hampden Charter School of Science (District)",
+    "org_code": "04990000",
+    "website": "http://www.hampdencharter.org"
+  },
+  {
+    "name": "Hancock",
+    "org_code": "01210000",
+    "website": "https://www.hancockschool.org"
+  },
+  {
+    "name": "Harvard",
+    "org_code": "01250000",
+    "website": "https://www.psharvard.org"
+  },
+  {
+    "name": "Haverhill",
+    "org_code": "01280000",
+    "website": "http://www.haverhill-ps.org"
+  },
+  {
+    "name": "Holland",
+    "org_code": "01350000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Holyoke Community Charter (District)",
+    "org_code": "04530000",
+    "website": "https://www.hccs-sabis.net"
+  },
+  {
+    "name": "Lincoln",
+    "org_code": "01570000",
+    "website": "https://www.lincnet.org"
+  },
+  {
+    "name": "Lincoln-Sudbury",
+    "org_code": "06950000",
+    "website": "https://www.lsrhs.net"
+  },
+  {
+    "name": "Longmeadow",
+    "org_code": "01590000",
+    "website": "https://www.longmeadow.k12.ma.us"
+  },
+  {
+    "name": "Ludlow",
+    "org_code": "01610000",
+    "website": "https://ludlowps.org"
+  },
+  {
+    "name": "Lynn",
+    "org_code": "01630000",
+    "website": "https://www.lynnschools.org"
+  },
+  {
+    "name": "Marblehead Community Charter Public (District)",
+    "org_code": "04640000",
+    "website": "https://marbleheadcharter.org"
+  },
+  {
+    "name": "Middleborough",
+    "org_code": "01820000",
+    "website": "https://www.middleboro.k12.ma.us"
+  },
+  {
+    "name": "Middleton",
+    "org_code": "01840000",
+    "website": "https://www.tritownschoolunion.com"
+  },
+  {
+    "name": "Millbury",
+    "org_code": "01860000",
+    "website": "http://www.millburyschools.org"
+  },
+  {
+    "name": "Milton",
+    "org_code": "01890000",
+    "website": "https://www.miltonps.org"
+  },
+  {
+    "name": "Minuteman Regional Vocational Technical",
+    "org_code": "08300000",
+    "website": "https://www.minuteman.org"
+  },
+  {
+    "name": "Monomoy Regional School District",
+    "org_code": "07120000",
+    "website": "https://www.monomoy.edu"
+  },
+  {
+    "name": "Narragansett",
+    "org_code": "07200000",
+    "website": "https://www.nrsd.org"
+  },
+  {
+    "name": "New Bedford",
+    "org_code": "02010000",
+    "website": "http://www.newbedfordschools.org"
+  },
+  {
+    "name": "Newburyport",
+    "org_code": "02040000",
+    "website": "https://www.newburyport.k12.ma.us"
+  },
+  {
+    "name": "North Reading",
+    "org_code": "02170000",
+    "website": "http://www.north-reading.k12.ma.us/Pages/index"
+  },
+  {
+    "name": "Northampton",
+    "org_code": "02100000",
+    "website": "https://northamptonschools.org"
+  },
+  {
+    "name": "Northboro-Southboro",
+    "org_code": "07300000",
+    "website": "http://www.nsboro.k12.ma.us"
+  },
+  {
+    "name": "Northborough",
+    "org_code": "02130000",
+    "website": "http://www.nsboro.k12.ma.us"
+  },
+  {
+    "name": "Northeast Metropolitan Regional Vocational Technical",
+    "org_code": "08530000",
+    "website": "https://northeastmetrotech.com"
+  },
+  {
+    "name": "Norton",
+    "org_code": "02180000",
+    "website": "https://www.norton.k12.ma.us"
+  },
+  {
+    "name": "Old Sturbridge Academy Charter Public School (District)",
+    "org_code": "35150000",
+    "website": "http://www.osacps.org"
+  },
+  {
+    "name": "Oxford",
+    "org_code": "02260000",
+    "website": "https://www.oxps.org"
+  },
+  {
+    "name": "Pentucket",
+    "org_code": "07450000",
+    "website": "https://www.prsd.org"
+  },
+  {
+    "name": "Randolph",
+    "org_code": "02440000",
+    "website": "https://www.randolph.k12.ma.us"
+  },
+  {
+    "name": "Rockport",
+    "org_code": "02520000",
+    "website": "https://www.rpk12.org"
+  },
+  {
+    "name": "Sandwich",
+    "org_code": "02610000",
+    "website": "http://www.sandwichk12.org/"
+  },
+  {
+    "name": "Scituate",
+    "org_code": "02640000",
+    "website": "https://scit.org/"
+  },
+  {
+    "name": "Sharon",
+    "org_code": "02660000",
+    "website": "https://www.sharonschools.net"
+  },
+  {
+    "name": "Silver Lake",
+    "org_code": "07600000",
+    "website": "https://slrsd.org"
+  },
+  {
+    "name": "Somerset Berkley Regional School District",
+    "org_code": "07630000",
+    "website": "https://somersetschools.org"
+  },
+  {
+    "name": "Somerville",
+    "org_code": "02740000",
+    "website": "https://www.somerville.k12.ma.us"
+  },
+  {
+    "name": "South Shore Regional Vocational Technical",
+    "org_code": "08730000",
+    "website": "https://southshore.tech"
+  },
+  {
+    "name": "Southborough",
+    "org_code": "02760000",
+    "website": "http://www.nsboro.k12.ma.us"
+  },
+  {
+    "name": "Southern Berkshire",
+    "org_code": "07650000",
+    "website": "https://www.sbrsd.org"
+  },
+  {
+    "name": "Springfield",
+    "org_code": "02810000",
+    "website": "https://www.springfieldpublicschools.com"
+  },
+  {
+    "name": "Sturbridge",
+    "org_code": "02870000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Sunderland",
+    "org_code": "02890000",
+    "website": "https://www.frsu38.org"
+  },
+  {
+    "name": "Taunton",
+    "org_code": "02930000",
+    "website": "http://www.tauntonschools.org"
+  },
+  {
+    "name": "Topsfield",
+    "org_code": "02980000",
+    "website": "https://www.tritownschoolunion.com"
+  },
+  {
+    "name": "UP Academy Charter School of Dorchester (District)",
+    "org_code": "35050000",
+    "website": "https://www.upacademydorchester.org"
+  },
+  {
+    "name": "Uxbridge",
+    "org_code": "03040000",
+    "website": "https://www.uxbridgeschools.com"
+  },
+  {
+    "name": "Wakefield",
+    "org_code": "03050000",
+    "website": "http://www.wakefieldpublicschools.org"
+  },
+  {
+    "name": "Wales",
+    "org_code": "03060000",
+    "website": "https://www.tantasqua.org"
+  },
+  {
+    "name": "Waltham",
+    "org_code": "03080000",
+    "website": "https://www.walthampublicschools.org/"
+  },
+  {
+    "name": "Warwick",
+    "org_code": "03120000",
+    "website": "https://warwick-k12.us/"
+  },
+  {
+    "name": "Watertown",
+    "org_code": "03140000",
+    "website": "http://www.watertown.k12.ma.us"
+  },
+  {
+    "name": "Wayland",
+    "org_code": "03150000",
+    "website": "http://www.wayland.k12.ma.us"
+  },
+  {
+    "name": "West Boylston",
+    "org_code": "03220000",
+    "website": "https://www.wbschools.com/"
+  },
+  {
+    "name": "Westborough",
+    "org_code": "03210000",
+    "website": "https://www.westboroughk12.org"
+  },
+  {
+    "name": "Westford",
+    "org_code": "03260000",
+    "website": "http://westfordk12.us/Pages/index"
+  },
+  {
+    "name": "Westwood",
+    "org_code": "03350000",
+    "website": "https://www.westwood.k12.ma.us"
+  },
+  {
+    "name": "Whately",
+    "org_code": "03370000",
+    "website": "https://www.frsu38.org"
+  },
+  {
+    "name": "Williamsburg",
+    "org_code": "03400000",
+    "website": "http://www.hr-k12.org"
+  },
+  {
+    "name": "Winchester",
+    "org_code": "03440000",
+    "website": "https://www.winchesterps.org"
+  },
+  {
+    "name": "Worcester Cultural Academy Charter Public School (District)",
+    "org_code": "35190000",
+    "website": "https://www.wcacps.org/"
+  },
+  {
+    "name": "Wrentham",
+    "org_code": "03500000",
+    "website": "https://wrentham.k12.ma.us"
+  }
+]

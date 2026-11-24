@@ -38,7 +38,6 @@ import logging
 from typing import Any
 
 from langchain_core.messages import AIMessage
-from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 
@@ -52,6 +51,11 @@ from app.services.agentic_rag.nodes import (
 )
 from app.services.agentic_rag.state import AgentState
 from app.services.agentic_rag.tools import AGENT_TOOLS
+from app.services.llm.client import (
+    get_chat_openai_kwargs,
+    normalize_model_name,
+    reasoning_effort_kwargs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +87,7 @@ def route_after_reasoning(state: AgentState) -> str:
 # ---------------------------------------------------------------------------
 
 
-def build_agent_graph(model: str = "gpt-4o") -> StateGraph:
+def build_agent_graph(model: str = "openai/gpt-6-luna") -> StateGraph:
     """
     Build the uncompiled StateGraph.
 
@@ -92,16 +96,23 @@ def build_agent_graph(model: str = "gpt-4o") -> StateGraph:
         compiled = build_agent_graph().compile(checkpointer=my_checkpointer)
 
     Args:
-        model: OpenAI model name to use for agent reasoning.
-               Defaults to 'gpt-4o' for strong tool-use performance.
+        model: LLM model name to use for agent reasoning.
+               Defaults to 'openai/gpt-6-luna' for strong tool-use performance.
 
     Returns:
         An uncompiled `StateGraph[AgentState]`.
     """
+    # Function tools on /v1/chat/completions are rejected for gpt-6-luna unless
+    # reasoning_effort is "none".
+    llm_kwargs: dict[str, Any] = {}
+    effort_kwargs = reasoning_effort_kwargs(model)
+    if effort_kwargs:
+        llm_kwargs["model_kwargs"] = effort_kwargs
     llm = ChatOpenAI(
-        model=model,
+        model=normalize_model_name(model),
         temperature=0,
-        api_key=settings.OPENAI_API_KEY,
+        **get_chat_openai_kwargs(),
+        **llm_kwargs,
     ).bind_tools(AGENT_TOOLS)
 
     agent_reasoning_node = make_agent_reasoning_node(llm)
@@ -173,6 +184,7 @@ def get_initial_state(
         "iteration_count": 0,
         "max_iterations": settings.AGENT_MAX_ITERATIONS,
         "force_answer": False,
+        "termination_reason": None,
         "status_updates": [],
         "citations": [],
         "token_usage": {},

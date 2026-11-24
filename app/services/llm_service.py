@@ -38,7 +38,7 @@ class LLMService:
 
         Args:
             messages: List of message dicts with 'role' and 'content'
-            model: Model name to use (defaults to gpt-4o-mini)
+            model: Model name to use (defaults to gpt-6-luna)
             temperature: Sampling temperature (0-2, defaults to 0.7)
             max_tokens: Maximum tokens to generate (defaults to 4096)
             provider: Provider name (auto-detected from model if not provided)
@@ -49,7 +49,7 @@ class LLMService:
         """
         try:
             # Use defaults if not provided
-            model = model or "gpt-4o-mini"
+            model = model or "openai/gpt-6-luna"
             temperature = temperature if temperature is not None else 0.7
             max_tokens = max_tokens or 4096
 

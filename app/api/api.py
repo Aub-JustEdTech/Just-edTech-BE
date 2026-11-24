@@ -13,12 +13,16 @@ from app.api.endpoints import (
     chatbots,
     conversations,
     daily_token_usage,
+    district_reports,
     documents,
+    heatmap_engine,
     invitations,
     llm_models,
     monthly_billing,
     pipeline_status,
     rag,
+    school_scraper,
+    schools,
     upload_batches,
 )
 
@@ -53,4 +57,16 @@ api_router.include_router(
 )
 api_router.include_router(
     llm_models.router, prefix="/llm-models", tags=["LLM Models"]
+)
+api_router.include_router(heatmap_engine.router)  # prefix set in router
+api_router.include_router(
+    school_scraper.router, prefix="/school-scraper", tags=["School Scraper"]
+)
+api_router.include_router(
+    schools.router, prefix="/schools", tags=["Schools"]
+)
+api_router.include_router(
+    district_reports.router,
+    prefix="/district-reports",
+    tags=["District Reports"],
 )

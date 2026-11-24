@@ -27,6 +27,10 @@ class JobStatus(str, enum.Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    # Mirrors ProcessingStatus.SKIPPED -- job wasn't retried, document was
+    # intentionally excluded (e.g. the post-classification year gate), not
+    # broken.
+    SKIPPED = "skipped"
 
 
 # PostgreSQL enum type matching the database schema
@@ -35,6 +39,7 @@ _job_status_enum = PG_ENUM(
     "processing",
     "completed",
     "failed",
+    "skipped",
     name="jobstatus",
     create_type=False,  # Use existing type, don't create
 )
